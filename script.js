@@ -41,15 +41,15 @@ window.onload = function() {
             const scriptURL = '본인의_구글_스크립트_URL'; // 여기에 URL 꼭 넣기
             fetch(scriptURL, { method: 'POST', body: new FormData(orderForm)})
                 .then(() => {
-                    alert('주문이 접수되었습니다.');
-                    orderForm.reset();
-                    btn.innerText = "PLACE ORDER";
-                    btn.disabled = false;
-                })
-                .catch(() => {
-                    alert('오류가 발생했습니다.');
-                    btn.disabled = false;
-                });
+    const orderBox = document.querySelector('.order-box');
+    orderBox.innerHTML = `
+        <div class="order-success-msg">
+            <h4>THANK YOU.</h4>
+            <p>주문이 성공적으로 접수되었습니다.<br>입력하신 연락처로 곧 안내 메시지를 보내드릴게요.</p>
+            <button onclick="location.reload()" class="view-btn" style="margin-top:20px; width:auto;">BACK TO SHOP</button>
+        </div>
+    `;
+})
         });
     }
 };
@@ -61,26 +61,24 @@ function renderGallery(filter = 'all') {
 
     const filtered = (filter === 'all') 
         ? galleryData 
-        : galleryData.filter(p => {
-            // categories가 배열인 경우와 일반 글자인 경우 모두 대응
-            if (Array.isArray(p.categories)) {
-                return p.categories.includes(filter);
-            } else if (typeof p.category === 'string') {
-                return p.category === filter;
-            }
-            return false;
-        });
-
-    if (filtered.length === 0) {
-        grid.innerHTML = "<p style='color:#555; text-align:center; grid-column:1/-1;'>해당 카테고리의 사진이 없습니다.</p>";
-    }
+        : galleryData.filter(p => p.categories.includes(filter));
 
     filtered.forEach(p => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
+        
+        // 태그를 HTML 문자열로 생성
+        const tagsHTML = p.categories.map(cat => `<span class="tag">#${cat}</span>`).join("");
+
         item.innerHTML = `
             <div class="img-wrapper"><img src="${p.src}" class="gallery-img"></div>
-            <div class="photo-info"><span>${p.title}</span><span style="color:#444">${p.location}</span></div>`;
+            <div class="photo-info">
+                <div>
+                    <span class="photo-title">${p.title}</span>
+                    <div class="photo-tags">${tagsHTML}</div>
+                </div>
+                <span class="meta">${p.location}</span>
+            </div>`;
         grid.appendChild(item);
 
         item.querySelector('img').onclick = function() {

@@ -67,7 +67,184 @@ input[type=number] { -moz-appearance: textfield; }
 
 footer { text-align: center; padding: 100px 0 50px; color: #333; font-size: 0.7rem; }
 
-@media (max-width: 900px) {
-    .detail-content, .about-content { grid-template-columns: 1fr; flex-direction: column; gap: 50px; }
-    .main-title { font-size: 2.5rem; }
+/* --- 모바일 및 태블릿 최적화 (iPhone 15 Pro Max 등 대응) --- */
+@media (max-width: 768px) {
+    /* 1. 헤더: 여백을 넓혀서 꽉 찬 느낌 해소 */
+    header {
+        flex-direction: column; /* 로고와 메뉴를 위아래로 배치하여 공간 확보 */
+        gap: 20px;
+        padding: 3rem 5% 2rem; /* 위쪽 여백을 더 크게 */
+    }
+
+    .logo {
+        font-size: 1.1rem;
+        letter-spacing: 6px; /* 로고 간격을 넓혀 시원하게 */
+    }
+
+    /* 2. 네비게이션: 터치하기 쉽게 크기와 간격 확대 */
+    nav ul {
+        gap: 15px;
+        padding: 10px 0;
+    }
+
+    nav a {
+        font-size: 1rem; /* 0.8rem에서 확대 */
+        color: #fff; /* 모바일에서는 가독성을 위해 더 밝게 */
+        padding: 12px 10px; /* 터치 영역 확보 (중요!) */
+        display: inline-block;
+    }
+
+    /* 3. 홈 화면 (Hero) 조절 */
+    .main-title {
+        font-size: 2.4rem;
+        letter-spacing: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .main-subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 50px;
+        padding: 0 10%;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        width: 80%;
+        margin: 0 auto;
+        gap: 15px;
+    }
+
+    .btn-outline, .btn-white {
+        padding: 18px; /* 버튼을 더 두툼하게 */
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* 4. 필터 버튼: 누르기 쉽게 크기 조절 */
+    .filter-container {
+        display: flex;
+        overflow-x: auto; /* 좌우 스크롤 가능하게 */
+        justify-content: flex-start;
+        padding: 10px 5%;
+        gap: 10px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-btn {
+        flex: 0 0 auto;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        background: #111; /* 모바일 버튼 가이드라인 */
+        border: 1px solid #222;
+    }
+
+    /* 5. 샵/갤러리 그리드: 2열 유지 및 버튼 확대 */
+    .grid {
+        grid-template-columns: repeat(2, 1fr); /* 2열 유지 */
+        gap: 20px; /* 간격 최적화 */
+    }
+
+    .item-card h3 {
+        font-size: 0.85rem;
+        height: 2.4rem; /* 제목 높이 일정하게 */
+    }
+
+    .view-btn {
+        padding: 15px; /* 버튼 높이 확대 */
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* 6. 주문 폼: 모바일 입력 편의성 */
+    .detail-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .order-box {
+        padding: 30px 20px;
+    }
+
+    .order-box input, .order-box select, .order-box textarea {
+        padding: 18px; /* 입력칸 시원하게 */
+        font-size: 1rem; /* 아이폰 자동 줌 방지를 위해 16px(1rem) 권장 */
+    }
+
+    /* 7. About 페이지 */
+    .about-content {
+        flex-direction: column-reverse;
+        text-align: center;
+        gap: 40px;
+    }
+    
+    .about-text h1 {
+        font-size: 2.2rem;
+    }
+
+    .about-image img {
+        max-width: 100%;
+        box-shadow: 10px 10px 0px #0a0a0a;
+    }
+}
+
+/* --- 기존 코드에 추가 또는 덮어쓰기 --- */
+
+/* [추가] 사진 태그 스타일 */
+.photo-tags {
+    margin-top: 5px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tag {
+    font-size: 0.65rem;
+    color: #444;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* [수정] 푸터 디테일 디자인 */
+footer {
+    border-top: 1px solid #111;
+    padding: 80px 5% 50px;
+    margin-top: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+.footer-links {
+    display: flex;
+    gap: 30px;
+}
+.footer-links a {
+    font-size: 0.75rem;
+    color: #888;
+    letter-spacing: 2px;
+    transition: 0.3s;
+}
+.footer-links a:hover { color: #fff; }
+.copyright {
+    font-size: 0.65rem;
+    color: #333;
+    letter-spacing: 1px;
+}
+
+/* [추가] 주문 완료 메시지 스타일 */
+.order-success-msg {
+    text-align: center;
+    padding: 40px 0;
+    animation: fadeIn 0.5s ease;
+}
+.order-success-msg h4 { color: #d4a373; margin-bottom: 10px; }
+.order-success-msg p { font-size: 0.85rem; color: #888; }
+
+/* [수정] About 페이지 텍스트 감성 */
+.about-text p {
+    line-height: 2;
+    margin-bottom: 25px;
+    font-weight: 300;
+}
+.about-image img {
+    box-shadow: 20px 20px 0px #0a0a0a; /* 이미지 뒤에 살짝 그림자 디테일 */
 }
