@@ -1,429 +1,73 @@
-/* 1. 기본 설정 (Reset & Base) */
-body {
-    background-color: #000;
-    color: #fff;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-    margin: 0;
-    padding: 0;
-    line-height: 1.6;
-    word-break: keep-all;
-}
+/* --- 1. 전역 스타일 --- */
+body { background: #000; color: #fff; font-family: 'Pretendard', sans-serif; margin: 0; line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 1100px; margin: 60px auto; padding: 0 5%; }
 
-/* 2. 헤더 및 로고 (Header & Logo) */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2rem 5%;
-    border-bottom: 1px solid #111;
-}
+/* --- 2. 헤더 --- */
+header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 5%; border-bottom: 1px solid #111; position: relative; z-index: 100; }
+.logo { font-size: 1.2rem; font-weight: 800; letter-spacing: 4px; }
+nav ul { display: flex; list-style: none; gap: 30px; margin: 0; }
+nav a { color: #555; font-size: 0.85rem; transition: 0.3s; }
+nav a:hover { color: #fff; }
 
-.logo {
-    font-size: 1.2rem;
-    font-weight: 800;
-    letter-spacing: 4px;
-}
+/* --- 3. 홈 화면 (Hero) --- */
+.home-body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.hero-section { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; }
+.hero-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+.hero-image img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
+.hero-content { z-index: 10; padding: 20px; }
+.main-title { font-size: 4rem; font-weight: 200; letter-spacing: 15px; margin-bottom: 10px; }
+.main-subtitle { font-size: 1rem; color: #888; letter-spacing: 3px; margin-bottom: 40px; }
+.cta-buttons { display: flex; gap: 20px; justify-content: center; }
+.btn-outline { padding: 15px 30px; border: 1px solid #fff; color: #fff; font-size: 0.8rem; }
+.btn-white { padding: 15px 30px; background: #fff; color: #000; font-weight: bold; font-size: 0.8rem; }
 
-.logo a {
-    text-decoration: none;
-    color: inherit; /* 링크 색상을 흰색으로 유지 */
-    display: inline-block;
-}
+/* --- 4. 갤러리 --- */
+.filter-container { text-align: center; margin-bottom: 50px; }
+.filter-btn { background: none; border: none; color: #444; font-size: 0.8rem; letter-spacing: 2px; margin: 0 15px; cursor: pointer; transition: 0.3s; }
+.filter-btn.active, .filter-btn:hover { color: #fff; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 50px; }
+.img-wrapper { overflow: hidden; background: #0a0a0a; }
+.gallery-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; cursor: pointer; transition: 0.6s; display: block; }
+.gallery-img:hover { transform: scale(1.03); }
+.photo-info { display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 15px; border-bottom: 1px solid #111; padding-bottom: 10px; }
 
-nav ul {
-    display: flex;
-    list-style: none;
-    gap: 30px;
-    margin: 0;
-    padding: 0;
-}
+/* --- 5. 쇼핑 & 주문 폼 --- */
+.item-card h3 { font-size: 1rem; margin: 15px 0 5px; }
+.item-card p { color: #d4a373; font-size: 0.9rem; margin-bottom: 20px; }
+.view-btn { width: 100%; padding: 12px; background: none; border: 1px solid #333; color: #fff; font-size: 0.75rem; cursor: pointer; transition: 0.3s; }
+.view-btn:hover { background: #fff; color: #000; }
 
-nav a {
-    color: #666;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: 0.3s;
-}
+.divider { border: 0; border-top: 1px solid #111; margin: 150px 0 80px 0; }
+.detail-content { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 80px; align-items: start; }
+.detail-text h2 { font-size: 2.5rem; font-weight: 200; margin-bottom: 20px; }
+.order-box { background: #0a0a0a; padding: 40px; border: 1px solid #1a1a1a; }
+.order-box h3 { font-size: 0.8rem; letter-spacing: 4px; text-align: center; margin-bottom: 30px; border-bottom: 1px solid #222; padding-bottom: 20px; }
+.order-box label { display: block; font-size: 0.7rem; color: #555; margin-bottom: 8px; font-weight: 600; }
+.order-box input, .order-box select, .order-box textarea { width: 100%; padding: 15px; background: #111; border: 1px solid #222; color: #fff; margin-bottom: 25px; box-sizing: border-box; font-size: 0.9rem; }
+.order-box input:focus { border-color: #d4a373; outline: none; }
+#order-item { background: #1a1a1a; color: #d4a373; font-weight: bold; }
 
-nav a:hover {
-    color: #fff;
-}
+/* 숫자 화살표 제거 */
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
 
-/* 3. 레이아웃 컨테이너 */
-.container {
-    max-width: 1200px;
-    margin: 60px auto;
-    padding: 0 5%;
-}
+.buy-btn { width: 100%; padding: 20px; background: #fff; color: #000; border: none; font-weight: 800; cursor: pointer; transition: 0.4s; }
+.buy-btn:hover { background: #d4a373; color: #fff; }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 50px;
-}
+/* --- 6. 모달 & About --- */
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; flex-direction: column; }
+.modal-content { max-width: 90%; max-height: 75vh; object-fit: contain; }
+#caption { margin-top: 20px; color: #888; letter-spacing: 2px; }
+.close { position: absolute; top: 20px; right: 30px; font-size: 40px; color: #fff; cursor: pointer; }
 
-/* 4. 갤러리 아이템 (Gallery) */
-.gallery-item {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeIn 0.8s forwards;
-}
+.about-content { display: flex; align-items: center; gap: 80px; }
+.about-text h1 { font-size: 3rem; font-weight: 200; margin-bottom: 30px; }
+.about-image img { width: 100%; max-width: 400px; filter: grayscale(100%); }
 
-@keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-}
+footer { text-align: center; padding: 100px 0 50px; color: #333; font-size: 0.7rem; }
 
-.img-wrapper {
-    overflow: hidden;
-    background: #0a0a0a;
-}
-
-.gallery-img {
-    width: 100%;
-    aspect-ratio: 3 / 4;
-    object-fit: cover;
-    display: block;
-    cursor: pointer;
-    transition: transform 0.6s ease;
-}
-
-.gallery-item:hover .gallery-img {
-    transform: scale(1.05);
-}
-
-.photo-info {
-    margin-top: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #111;
-}
-
-.photo-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.photo-meta {
-    font-size: 0.75rem;
-    color: #444;
-}
-
-/* 5. 이미지 모달 (Modal - 크게 보기) */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 90%;
-    max-width: 900px;
-}
-
-.modal-content {
-    max-width: 100%;
-    max-height: 75vh;
-    object-fit: contain;
-    animation: zoomIn 0.3s ease;
-}
-
-@keyframes zoomIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-#caption {
-    margin-top: 25px;
-    color: #888;
-    text-align: center;
-    letter-spacing: 2px;
-    font-size: 1rem;
-}
-
-.close {
-    position: absolute;
-    top: 30px;
-    right: 40px;
-    color: #fff;
-    font-size: 40px;
-    cursor: pointer;
-    font-weight: 200;
-}
-
-/* 6. 쇼핑 페이지 (Shop & Order Form) */
-.item-card h3 {
-    font-size: 1rem;
-    margin: 15px 0 5px;
-    font-weight: 600;
-}
-
-.item-card p {
-    color: #d4a373; /* 포인트 컬러 (금색/베이지) */
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-}
-
-/* 상세 페이지 간격 조절 */
-.divider {
-    border: 0;
-    border-top: 1px solid #111;
-    margin: 150px 0 80px 0; /* 위쪽 사진 그리드와 큰 간격 */
-}
-
-.detail-container {
-    padding-bottom: 150px;
-}
-
-.detail-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-}
-
-.detail-text h2 {
-    font-size: 2.2rem;
-    font-weight: 300;
-    margin-bottom: 20px;
-}
-
-.description {
-    color: #888;
-    font-size: 0.95rem;
-    line-height: 1.8;
-}
-
-/* 주문 폼 디자인 */
-.order-box {
-    background: #0a0a0a;
-    padding: 40px;
-    border: 1px solid #1a1a1a;
-}
-
-.order-box h3 {
-    font-size: 0.8rem;
-    letter-spacing: 3px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
-label {
-    display: block;
-    font-size: 0.75rem;
-    color: #555;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-}
-
-input, select, textarea {
-    width: 100%;
-    padding: 15px;
-    background-color: #111;
-    border: 1px solid #222;
-    color: #fff;
-    margin-bottom: 20px;
-    box-sizing: border-box;
-    font-size: 0.9rem;
-    font-family: inherit;
-}
-
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: #d4a373;
-}
-
-/* 셀렉트 박스 화살표 커스텀 */
-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-}
-
-.buy-btn {
-    width: 100%;
-    padding: 20px;
-    background-color: #fff;
-    color: #000;
-    border: none;
-    font-weight: 700;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: 0.3s;
-    margin-top: 10px;
-}
-
-.buy-btn:hover {
-    background-color: #d4a373;
-    color: #fff;
-}
-
-/* 7. 푸터 및 기타 */
-footer {
-    text-align: center;
-    padding: 100px 0 50px;
-    color: #333;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-}
-
-/* 8. 모바일 대응 (Responsive) */
 @media (max-width: 900px) {
-    .detail-content {
-        grid-template-columns: 1fr;
-        gap: 50px;
-    }
-    
-    .logo { font-size: 1rem; }
-    
-    .detail-text h2 { font-size: 1.8rem; }
-}
-
-/* 숫자 입력창의 기본 화살표 숨기기 */
-
-/* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Firefox */
-input[type=number] {
-    -moz-appearance: textfield;
-}
-
-/* 직접 입력창 스타일 조금 더 다듬기 (선택사항) */
-#quantity-direct {
-    text-align: center; /* 숫자를 가운데 정렬하면 더 깔끔합니다 */
-}
-
-/* --- Home Page Specific Styles --- */
-
-.home-body {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 스크롤 없이 한 화면에 다 보이게 함 */
-}
-
-.hero-section {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.hero-content {
-    z-index: 10;
-    padding: 20px;
-}
-
-.main-title {
-    font-size: 4rem;
-    font-weight: 200;
-    letter-spacing: 15px;
-    margin-bottom: 10px;
-    animation: fadeInUp 1s ease;
-}
-
-.main-subtitle {
-    font-size: 1rem;
-    color: #888;
-    letter-spacing: 3px;
-    margin-bottom: 40px;
-    font-weight: 300;
-    animation: fadeInUp 1.2s ease;
-}
-
-/* 히어로 이미지 (배경처럼 깔리는 큰 사진) */
-.hero-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
-
-.hero-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* 이미지를 꽉 채움 */
-    filter: brightness(0.4); /* 글자가 잘 보이게 사진을 어둡게 조절 */
-}
-
-/* 버튼 스타일 */
-.cta-buttons {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    animation: fadeInUp 1.4s ease;
-}
-
-.btn-outline {
-    padding: 15px 30px;
-    border: 1px solid #fff;
-    color: #fff;
-    text-decoration: none;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    transition: 0.3s;
-}
-
-.btn-outline:hover {
-    background: #fff;
-    color: #000;
-}
-
-.btn-white {
-    padding: 15px 30px;
-    background: #fff;
-    color: #000;
-    text-decoration: none;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-.btn-white:hover {
-    background: #d4a373; /* 샵 포인트 컬러 */
-    color: #fff;
-}
-
-.home-footer {
-    position: absolute;
-    bottom: 30px;
-    width: 100%;
-    text-align: center;
-    z-index: 10;
-    border-top: none;
-    padding: 0;
-}
-
-/* 애니메이션 효과 */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* 모바일 대응 */
-@media (max-width: 768px) {
-    .main-title { font-size: 2.5rem; letter-spacing: 8px; }
-    .cta-buttons { flex-direction: column; gap: 10px; align-items: center; }
+    .detail-content, .about-content { grid-template-columns: 1fr; flex-direction: column; gap: 50px; }
+    .main-title { font-size: 2.5rem; }
 }
