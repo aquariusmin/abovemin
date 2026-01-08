@@ -110,9 +110,7 @@ footer {
     footer { padding: 50px 5% 30px !important; margin-top: 50px !important; }
 
     .photo-tags { display: none !important; }
-    .photo-meta { display: none !important; }
-    .photo-info { justify-content: center !important; }
-    .photo-title { font-size: 0.85rem !important; display: block; width: 100%; }
-
-    
+    .photo-meta { display: block !important; color: #444 !important; font-size: 0.7rem !important; letter-spacing: 0.5px; text-align: left !important; }
+    .photo-info { display: flex !important; flex-direction: column !important; align-items: flex-start !important; justify-content: flex-start !important; padding: 4px 0 20px !important; gap : 4px !important; }
+    .photo-title { color: #ffffff !important; font-size: 0.9rem !important; font-weight: 400; letter-spacing: 0.5px; text-align: left !important; line-height: 1.2;}
 }
