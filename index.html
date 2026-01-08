@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOVEMIN | Home</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="home-body">
     <header>
-        <div class="logo">ABOVEMIN</div>
+        <div class="logo">
+            <a href="index.html">ABOVEMIN</a>
+        </div>
         <nav>
             <ul>
                 <li><a href="index.html" style="color:#fff">Home</a></li>
@@ -17,17 +20,24 @@
         </nav>
     </header>
 
-    <main>
-        <section class="hero-full">
-            <img src="main_cover.jpeg" alt="대표사진" class="main-hero-img">
-            <div class="hero-text">
-                <h1>ABOVEMIN</h1>
-                <p>Capturing the silence and moments.</p>
-                <a href="gallery.html" class="enter-btn">ENTER GALLERY</a>
+    <main class="hero-section">
+        <div class="hero-content">
+            <h1 class="main-title">ABOVE MIN</h1>
+            <p class="main-subtitle">Capturing the silence between the moments.</p>
+            <div class="cta-buttons">
+                <a href="gallery.html" class="btn-outline">VIEW GALLERY</a>
+                <a href="shop.html" class="btn-white">GO SHOP</a>
             </div>
-        </section>
+        </div>
+        <div class="hero-image">
+            <img src="main_photo.jpeg" alt="Main Portfolio Image">
+        </div>
     </main>
 
-    <footer>&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</footer>
+    <footer class="home-footer">
+        &copy; Sangmin Lee. ALL RIGHTS RESERVED.
+    </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>

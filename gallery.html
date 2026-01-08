@@ -2,60 +2,38 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOVEMIN | Gallery</title>
     <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
 </head>
 <body>
-    <header>
-        <div class="logo">ABOVEMIN</div>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="gallery.html" style="color:#fff">Gallery</a></li>
-                <li><a href="shop.html">Shop</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div class="grid">
-        <div class=""gallery-item>
-            <img src="photo1.jpeg" alt="사진1" class="gallery-img">
-            <div class="photo-info">
-                <p class="photo-location">George Washington Bridge Bus Terminal, NY</p>
-                <p class="photo-date">2023.12.25</p>
+        <header>
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">ABOVEMIN</a>
             </div>
-        </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="shop.html">Shop</a></li>
+                </ul>
+            </nav>
+        </header>
 
-        <div class="gallery-item">
-            <img src="photo2.jpg" alt="사진2" class="gallery-img">
-            <div class="photo-info">
-                <p class="photo-location">Statue of Liberty Park, NJ</p>
-                <p class="photo-date">2024.01.10</p>
-            </div>
-        </div>
-
-        <div class="gallery-item">
-            <img src="photo3.jpg" alt="사진3" class="gallery-img">
-            <div class="photo-info">
-                <p class="photo-location">Top of the Rock, NY</p>
-                <p class="photo-date">2024.02.14</p>
-            </div>
-        </div>
-
-        <div class="gallery-item">
-            <img src="photo4.jpeg" alt="사진4" class="gallery-img">
-            <div class="photo-info">
-                <p class="photo-location">Nagoya, JP</p>
-                <p class="photo-date">2024.03.05</p>
-            </div>
+    <div class="container">
+        <div class="grid" id="gallery-grid"></div>
+    </div>
 
     <div id="imageModal" class="modal">
         <span class="close">&times;</span>
-        <img class="modal-content" id="img01">
+        <div class="modal-wrapper">
+            <img class="modal-content" id="img01">
+            <div id="caption"></div>
+        </div>
     </div>
 
-    <footer>&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</footer>
-
+    <footer>&copy; Sangmin Lee.</footer>
     <script src="script.js"></script>
 </body>
 </html>

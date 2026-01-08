@@ -1,29 +1,33 @@
-/* 공통 스타일 */
+/* 1. 기본 설정 (Reset & Base) */
 body {
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #000;
+    color: #fff;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    word-break: keep-all;
 }
 
-/* 헤더/네비게이션 */
+/* 2. 헤더 및 로고 (Header & Logo) */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 2rem 5%;
-    position: sticky;
-    top: 0;
-    background-color: rgba(0, 0, 0, 0.9);
-    z-index: 1000;
+    border-bottom: 1px solid #111;
 }
 
 .logo {
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 4px;
+}
+
+.logo a {
+    text-decoration: none;
+    color: inherit; /* 링크 색상을 흰색으로 유지 */
+    display: inline-block;
 }
 
 nav ul {
@@ -31,13 +35,14 @@ nav ul {
     list-style: none;
     gap: 30px;
     margin: 0;
+    padding: 0;
 }
 
 nav a {
-    color: #888;
+    color: #666;
     text-decoration: none;
     font-size: 0.85rem;
-    text-transform: uppercase;
+    font-weight: 500;
     transition: 0.3s;
 }
 
@@ -45,138 +50,68 @@ nav a:hover {
     color: #fff;
 }
 
-/* 메인 페이지 전용 (Hero) */
-.hero-full {
-    height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.main-hero-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.5;
-}
-
-.hero-text {
-    position: absolute;
-    text-align: center;
-}
-
-.hero-text h1 {
-    font-size: 3rem;
-    font-weight: 200;
-    letter-spacing: 10px;
-    margin-bottom: 20px;
-}
-
-.enter-btn {
-    display: inline-block;
-    padding: 12px 35px;
-    border: 1px solid #fff;
-    color: #fff;
-    text-decoration: none;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    transition: 0.3s;
-}
-
-.enter-btn:hover {
-    background: #fff;
-    color: #000;
-}
-
-/* 갤러리/샵 그리드 공통 */
+/* 3. 레이아웃 컨테이너 */
 .container {
     max-width: 1200px;
-    margin: 50px auto;
+    margin: 60px auto;
     padding: 0 5%;
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
+    gap: 50px;
 }
 
-/* 갤러리 이미지 스타일 */
-
-/* 사진과 글을 담는 전체 박스 */
+/* 4. 갤러리 아이템 (Gallery) */
 .gallery-item {
-    display: flex;
-    flex-direction: column; /* 세로로 정렬 */
-    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 0.8s forwards;
 }
 
-/* 갤러리 이미지 비율 및 간격 */
+@keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.img-wrapper {
+    overflow: hidden;
+    background: #0a0a0a;
+}
+
 .gallery-img {
     width: 100%;
-    aspect-ratio: 3/4;
+    aspect-ratio: 3 / 4;
     object-fit: cover;
+    display: block;
     cursor: pointer;
-    transition: 0.4s;
-    margin-bottom: 12px; /* 사진과 글자 사이 간격 */
+    transition: transform 0.6s ease;
 }
 
-/* 설명 영역 스타일 */
+.gallery-item:hover .gallery-img {
+    transform: scale(1.05);
+}
+
 .photo-info {
-    padding: 0 5px; /* 양옆에 아주 약간의 여백 */
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #111;
 }
 
 .photo-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    color: #ffffff;
-    margin: 0 0 4px 0; /* 아래 설명과의 간격 */
-    letter-spacing: 0.5px;
 }
 
-.photo-desc {
-    font-size: 0.8rem;
-    color: #666; /* 제목보다 조금 더 흐리게 해서 대비를 줌 */
-    margin: 0;
+.photo-meta {
+    font-size: 0.75rem;
+    color: #444;
 }
 
-/* 샵 카드 스타일 */
-.item-card {
-    margin-bottom: 30px;
-}
-
-.item-card img {
-    width: 100%;
-    aspect-ratio: 1/1;
-    object-fit: cover;
-    margin-bottom: 15px;
-}
-
-.item-card h3 {
-    font-size: 1rem;
-    margin: 10px 0;
-    font-weight: 400;
-}
-
-.item-card p {
-    color: #888;
-    margin-bottom: 15px;
-}
-
-.buy-btn {
-    display: block;
-    width: 100%;
-    padding: 12px 0;
-    background: #fff;
-    color: #000;
-    text-align: center;
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-/* 모달 스타일 */
+/* 5. 이미지 모달 (Modal - 크게 보기) */
 .modal {
     display: none;
     position: fixed;
@@ -185,120 +120,310 @@ nav a:hover {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.95);
-    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.95);
     align-items: center;
+    justify-content: center;
+}
+
+.modal-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 900px;
 }
 
 .modal-content {
-    max-width: 90%;
-    max-height: 85%;
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+#caption {
+    margin-top: 25px;
+    color: #888;
+    text-align: center;
+    letter-spacing: 2px;
+    font-size: 1rem;
 }
 
 .close {
     position: absolute;
     top: 30px;
-    right: 30px;
+    right: 40px;
     color: #fff;
     font-size: 40px;
     cursor: pointer;
+    font-weight: 200;
 }
 
-footer {
-    text-align: center;
-    padding: 100px 0 50px;
-    font-size: 0.7rem;
-    color: #444;
-    letter-spacing: 1px;
+/* 6. 쇼핑 페이지 (Shop & Order Form) */
+.item-card h3 {
+    font-size: 1rem;
+    margin: 15px 0 5px;
+    font-weight: 600;
 }
 
-/* 샵 전용 추가 스타일 */
+.item-card p {
+    color: #d4a373; /* 포인트 컬러 (금색/베이지) */
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
 
+/* 상세 페이지 간격 조절 */
 .divider {
     border: 0;
-    border-top: 1px solid #333;
-    margin: 80px 0;
+    border-top: 1px solid #111;
+    margin: 150px 0 80px 0; /* 위쪽 사진 그리드와 큰 간격 */
 }
 
 .detail-container {
-    padding-bottom: 100px;
-    animation: fadeIn 0.8s ease;
+    padding-bottom: 150px;
 }
 
 .detail-content {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 설명과 폼을 반반씩 배치 */
-    gap: 50px;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
 }
 
 .detail-text h2 {
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 300;
     margin-bottom: 20px;
 }
 
-.price {
-    font-size: 1.2rem;
-    color: #d4a373; /* 가격에 포인트 색상 */
-    margin-bottom: 30px;
-}
-
 .description {
-    color: #aaa;
+    color: #888;
+    font-size: 0.95rem;
     line-height: 1.8;
 }
 
+/* 주문 폼 디자인 */
 .order-box {
-    background: #111;
-    padding: 30px;
-    border-radius: 4px;
+    background: #0a0a0a;
+    padding: 40px;
+    border: 1px solid #1a1a1a;
 }
 
 .order-box h3 {
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-    letter-spacing: 2px;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+    text-align: center;
 }
 
-#orderForm input, #orderForm textarea {
+label {
+    display: block;
+    font-size: 0.75rem;
+    color: #555;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+input, select, textarea {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    background: #222;
-    border: 1px solid #333;
+    padding: 15px;
+    background-color: #111;
+    border: 1px solid #222;
     color: #fff;
-    box-sizing: border-box; /* 패딩 포함 너비 계산 */
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    font-size: 0.9rem;
+    font-family: inherit;
 }
 
-#order-item {
-    background: #333 !important; /* 주문 상품명 칸은 강조 */
-    font-weight: bold;
-    color: #d4a373 !important;
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #d4a373;
 }
 
-.view-btn {
-    background: none;
-    border: 1px solid #444;
-    color: #fff;
-    padding: 8px 15px;
+/* 셀렉트 박스 화살표 커스텀 */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+}
+
+.buy-btn {
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    color: #000;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 1px;
     cursor: pointer;
     transition: 0.3s;
-    width: 100%;
+    margin-top: 10px;
 }
 
-.view-btn:hover {
+.buy-btn:hover {
+    background-color: #d4a373;
+    color: #fff;
+}
+
+/* 7. 푸터 및 기타 */
+footer {
+    text-align: center;
+    padding: 100px 0 50px;
+    color: #333;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+/* 8. 모바일 대응 (Responsive) */
+@media (max-width: 900px) {
+    .detail-content {
+        grid-template-columns: 1fr;
+        gap: 50px;
+    }
+    
+    .logo { font-size: 1rem; }
+    
+    .detail-text h2 { font-size: 1.8rem; }
+}
+
+/* 숫자 입력창의 기본 화살표 숨기기 */
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* 직접 입력창 스타일 조금 더 다듬기 (선택사항) */
+#quantity-direct {
+    text-align: center; /* 숫자를 가운데 정렬하면 더 깔끔합니다 */
+}
+
+/* --- Home Page Specific Styles --- */
+
+.home-body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 스크롤 없이 한 화면에 다 보이게 함 */
+}
+
+.hero-section {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-content {
+    z-index: 10;
+    padding: 20px;
+}
+
+.main-title {
+    font-size: 4rem;
+    font-weight: 200;
+    letter-spacing: 15px;
+    margin-bottom: 10px;
+    animation: fadeInUp 1s ease;
+}
+
+.main-subtitle {
+    font-size: 1rem;
+    color: #888;
+    letter-spacing: 3px;
+    margin-bottom: 40px;
+    font-weight: 300;
+    animation: fadeInUp 1.2s ease;
+}
+
+/* 히어로 이미지 (배경처럼 깔리는 큰 사진) */
+.hero-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지를 꽉 채움 */
+    filter: brightness(0.4); /* 글자가 잘 보이게 사진을 어둡게 조절 */
+}
+
+/* 버튼 스타일 */
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    animation: fadeInUp 1.4s ease;
+}
+
+.btn-outline {
+    padding: 15px 30px;
+    border: 1px solid #fff;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    transition: 0.3s;
+}
+
+.btn-outline:hover {
     background: #fff;
     color: #000;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+.btn-white {
+    padding: 15px 30px;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-white:hover {
+    background: #d4a373; /* 샵 포인트 컬러 */
+    color: #fff;
+}
+
+.home-footer {
+    position: absolute;
+    bottom: 30px;
+    width: 100%;
+    text-align: center;
+    z-index: 10;
+    border-top: none;
+    padding: 0;
+}
+
+/* 애니메이션 효과 */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 모바일 대응: 화면이 좁아지면 세로로 배치 */
+/* 모바일 대응 */
 @media (max-width: 768px) {
-    .detail-content {
-        grid-template-columns: 1fr;
-    }
+    .main-title { font-size: 2.5rem; letter-spacing: 8px; }
+    .cta-buttons { flex-direction: column; gap: 10px; align-items: center; }
 }

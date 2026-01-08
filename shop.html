@@ -2,12 +2,17 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOVEMIN | Shop</title>
     <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
     <header>
-        <div class="logo">ABOVEMIN</div>
+        <div class="logo">
+            <a href="index.html">ABOVEMIN</a>
+        </div>
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
@@ -18,14 +23,13 @@
     </header>
 
     <div class="container">
-        <div class="grid" id="product-grid">
-            </div>
+        <div class="grid" id="product-grid"></div>
 
         <div id="product-detail" class="detail-container" style="display: none;">
             <hr class="divider">
             <div class="detail-content">
                 <div class="detail-text">
-                    <h2 id="detail-title">상품명</h2>
+                    <h2 id="detail-title"></h2>
                     <p id="detail-price" class="price"></p>
                     <p id="detail-description" class="description"></p>
                 </div>
@@ -33,89 +37,37 @@
                 <div class="order-box">
                     <h3>ORDER FORM</h3>
                     <form id="orderForm">
+                        <label>주문 상품</label>
                         <input type="text" id="order-item" name="order_item" readonly>
+                        
+                        <label>주문자 정보</label>
                         <input type="text" name="name" placeholder="성함" required>
                         <input type="text" name="phone" placeholder="연락처" required>
-                        <input type="number" name="quantity" placeholder="수량" min="1" value="1" required>
-                        <textarea name="address" placeholder="배송지 주소" required></textarea>
-                        <button type="submit" class="buy-btn">주문하기</button>
+                        
+                        <label>수량 선택</label>
+                        <select id="quantity-select" onchange="checkQuantity(this)">
+                            <option value="1">1개</option>
+                            <option value="2">2개</option>
+                            <option value="3">3개</option>
+                            <option value="5">5개</option>
+                            <option value="direct">직접 입력</option>
+                        </select>
+                        <input type="number" id="quantity-direct" name="quantity" placeholder="수량 입력 (예: 6)" style="display:none; margin-top:10px;">
+                        
+                        
+                        <label>배송지 주소</label>
+                        <input type="text" id="address" name="address" placeholder="주소 찾기 (클릭)" readonly onclick="findAddr()" required>
+                        <input type="text" id="detailAddress" name="detail_address" placeholder="상세 주소 입력" required>
+                        
+                        <button type="submit" class="buy-btn" id="submitBtn">ORDER NOW</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer>&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</footer>
+    <footer>&copy; 2026 Sangmin Lee. ALL RIGHTS RESERVED.</footer>
 
-    <script>
-        // 1. 상품 데이터 (여기에 상품을 추가/수정하세요)
-        const products = [
-            {
-                id: 1,
-                name: "2026 Season Postcard Set",
-                price: "12,000원",
-                img: "photo1.jpeg",
-                desc: "제주의 겨울을 담은 5장 세트입니다. 랑데뷰지 240g 사용으로 고급스러운 질감을 느낄 수 있습니다."
-            },
-            {
-                id: 2,
-                name: "Winter Forest Poster",
-                price: "25,000원",
-                img: "photo2.jpg",
-                desc: "A2 사이즈 포스터입니다. 무광 코팅으로 빛 반사가 적어 어느 공간에나 잘 어울립니다."
-            },
-            {
-                id: 3,
-                name: "2026 Minimal Calendar",
-                price: "18,000원",
-                img: "photo3.jpg",
-                desc: "매달 한 장의 사진과 함께하는 미니멀한 달력입니다. 원목 거치대가 포함됩니다."
-            }
-        ];
-
-        // 2. 화면에 상품 목록 뿌리기
-        const productGrid = document.getElementById('product-grid');
-        
-        products.forEach(product => {
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.innerHTML = `
-                <img src="${product.img}" alt="${product.name}">
-                <h3>${product.name}</h3>
-                <p>${product.price}</p>
-                <button class="view-btn" onclick="showDetail(${product.id})">상세보기</button>
-            `;
-            productGrid.appendChild(card);
-        });
-
-        // 3. 상세보기 함수
-        function showDetail(id) {
-            const product = products.find(p => p.id === id);
-            const detailSection = document.getElementById('product-detail');
-            
-            // 정보 채워넣기
-            document.getElementById('detail-title').innerText = product.name;
-            document.getElementById('detail-price').innerText = product.price;
-            document.getElementById('detail-description').innerText = product.desc;
-            document.getElementById('order-item').value = `[주문상품] ${product.name}`;
-
-            // 상세 영역 보여주기
-            detailSection.style.display = 'block';
-            
-            // 아래로 부드럽게 스크롤
-            detailSection.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // 4. 구글 시트 전송 로직 (지난번 안내드린 URL 넣기)
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxU_sglfSdSfqGKXyWpaCTgDXhLHZBdB5JbkLGwAtbIfemu6M1GMaw24ObK_1ta0nh3/exec';
-        const form = document.getElementById('orderForm');
-
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-                .then(response => alert('주문이 성공적으로 접수되었습니다!'))
-                .catch(error => alert('에러가 발생했습니다. 다시 시도해주세요.'));
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
