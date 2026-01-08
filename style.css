@@ -108,4 +108,10 @@ footer {
     .cta-buttons { flex-direction: column; width: 250px; margin: 40px auto 0; }
     
     footer { padding: 50px 5% 30px !important; margin-top: 50px !important; }
+
+    .photo-tags { display: none !important; }
+    .photo-meta { display: none !important; }
+    .photo-info { justify-content: center !important; }
+    .photo-title { font-size: 0.85rem !important; display: block; width: 100%; }
+
 }
