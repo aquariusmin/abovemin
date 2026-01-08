@@ -2,22 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ABOVEMIN | Gallery</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.3">
     <script src="data.js"></script>
 </head>
 <body>
     <header>
-    <div class="logo"><a href="index.html">ABOVEMIN</a></div>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="gallery.html">Gallery</a></li>
-            <li><a href="shop.html">Shop</a></li>
-            <li><a href="about.html">About</a></li>
-        </ul>
-    </nav>
-</header>
+        <div class="logo"><a href="index.html">ABOVEMIN</a></div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="gallery.html" style="color:#fff">Gallery</a></li>
+                <li><a href="shop.html">Shop</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container">
         <div class="filter-container">
             <button class="filter-btn active" onclick="filterGallery('all', event)">ALL</button>
@@ -25,19 +27,27 @@
             <button class="filter-btn" onclick="filterGallery('winter', event)">WINTER</button>
             <button class="filter-btn" onclick="filterGallery('sea', event)">SEA</button>
         </div>
+
         <div class="grid" id="gallery-grid"></div>
     </div>
-    <div id="imageModal" class="modal"><span class="close">&times;</span><img class="modal-content" id="img01"><div id="caption"></div></div>
-    <script src="script.js"></script>
+
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <div style="display:flex; flex-direction:column; align-items:center; width:90%;">
+            <img class="modal-content" id="img01">
+            <div id="caption"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://instagram.com/본인아이디" target="_blank">INSTAGRAM</a>
+            <a href="about.html">CONTACT</a>
+            <a href="shop.html">ARCHIVE</a>
+        </div>
+        <div class="copyright">&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</div>
+    </footer>
+
+    <script src="script.js?v=1.3"></script>
 </body>
-<footer>
-    <div class="footer-links">
-        <a href="gallery.html">GALLERY</a>
-        <a href="about.html">ABOUT</a>
-        <a href="shop.html">PURCHASE</a>
-    </div>
-    <div class="copyright">
-        &copy; Sangmin Lee. ALL RIGHTS RESERVED.
-    </div>
-</footer>
 </html>

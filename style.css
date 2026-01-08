@@ -166,6 +166,25 @@ footer { border-top: 1px solid #111; padding: 80px 5% 50px; margin-top: 100px; d
 
 /* --- 7. [최종 모바일 최적화] iPhone 15 Pro Max 대응 --- */
 @media (max-width: 768px) {
+    /* 갤러리 필터 버튼 모바일 최적화 */
+    .filter-container {
+        display: flex !important;
+        flex-wrap: wrap !important; /* 버튼이 많으면 다음 줄로 넘어가게 */
+        justify-content: center !important;
+        gap: 10px !important;
+        margin-bottom: 30px !important;
+        padding: 0 10px !important;
+    }
+
+    .filter-btn {
+        padding: 12px 18px !important; /* 터치하기 좋게 크기 확대 */
+        font-size: 0.85rem !important;
+        background: #111 !important; /* 버튼 형태를 더 명확하게 */
+        border: 1px solid #222 !important;
+        margin: 0 !important; /* 기존 데스크탑 마진 제거 */
+        min-width: 70px;
+    }
+    
     /* 헤더: 여백 축소 및 2단 중앙 정렬 */
     header {
         flex-direction: column !important;
