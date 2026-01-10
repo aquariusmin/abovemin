@@ -11,7 +11,7 @@ const galleryData = [
     { id: 2, src: "images/photo2.JPG", title: "Osaca", location: "Osaca", year: "2017", categories: ["Japan", "Summer"], album: "Japan 🇯🇵" },
     { id: 3, src: "images/photo3.JPG", title: "Seoul", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
     { id: 4, src: "images/photo4.jpg", title: "Yeouido Hangang Park", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
-    { id: 5, src: "images/photo5.jpeg", title: "서울사대부고", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
+    { id: 5, src: "images/photo5.jpeg", title: "SNUH", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
 ]
 
 // 상품 데이터
