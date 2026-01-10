@@ -1,29 +1,18 @@
 // 앨범 정보 (커버 이미지와 제목)
 const albumsData = [
-    { id: 1, title: "New York", cover: "images/photo1.jpeg" },
-    { id: 2, title: "Nagoya", cover: "images/photo4.jpeg" },
+    { id: 1, title: "Japan 🇯🇵", cover: "images/photo1.JPG" },
+    { id: 2, title: "Korea 🇰🇷", cover: "images/photo3.JPG" },
+    
 ];
 
 // 갤러리 데이터
 const galleryData = [
-    { id: 1, src: "images/photo1.jpeg", title: "George Washington Bridge Bus Terminal", location: "New York", year: "2024", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 2, src: "images/photo2.jpg", title: "Liberty State Park", location: "New Jersey", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 3, src: "images/photo3.jpg", title: "Top of the Rock", location: "New York", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 4, src: "images/photo4.jpeg", title: "Ogimachi", location: "Shirakawa", year: "2025", categories: ["japan", "autumn"], album: "Nagoya"},
-    { id: 5, src: "images/photo5.jpeg", title: "MIT", location: "Cambridge", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 6, src: "images/photo6.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 7, src: "images/photo7.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["usa", "winter"], album: "New York"},
-    { id: 8, src: "images/photo8.jpeg", title: "9.11 Memorial", location: "New York", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 9, src: "images/photo9.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 10, src: "images/photo10.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 11, src: "images/photo11.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id: 12, src: "images/photo12.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id : 13, src: "images/photo13.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id : 14, src: "images/photo14.jpg", title: "High-Line Park", location: "New York", year: "2026", categories: ["United States of America", "winter"], album: "New York"},
-    { id : 15, src: "images/photo15.jpg", title: "Brooklyn Bridge", location: "New York", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id : 16, src: "images/photo16.jpg", title: "Dumbo", location: "New York", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-    { id : 17, src: "images/photo17.jpg", title: "Dumbo", location: "New York", year: "2025", categories: ["United States of America", "winter"], album: "New York"},
-];
+    { id: 1, src: "images/photo1.JPG", title: "Osaca", location: "KIX to ICN", year: "2017", categories: ["Japan", "Summer"], album: "Japan 🇯🇵" },
+    { id: 2, src: "images/photo2.JPG", title: "Osaca", location: "Osaca", year: "2017", categories: ["Japan", "Summer"], album: "Japan 🇯🇵" },
+    { id: 3, src: "images/photo3.JPG", title: "Seoul", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
+    { id: 4, src: "images/photo4.jpg", title: "Yeouido Hangang Park", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
+    { id: 5, src: "images/photo5.jpeg", title: "서울사대부고", location: "Seoul", year: "2018", categories: ["Korea", "Summer"], album: "Korea 🇰🇷" },
+]
 
 // 상품 데이터
 const productsData = [
