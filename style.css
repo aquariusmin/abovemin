@@ -115,21 +115,20 @@ footer {
     .photo-title { color: #ffffff !important; font-size: 0.9rem !important; font-weight: 400; letter-spacing: 0.5px; text-align: left !important; line-height: 1.2;}
 }
 
-/* --- 추가 스타일: 구글 시트 연동 보정 --- */
+/* --- 앨범/갤러리 레이아웃 원상복구 --- */
 .back-btn-container {
     grid-column: 1 / -1;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
     display: flex;
-    justify-content: flex-start;
 }
 
 .back-btn {
-    padding: 12px 25px;
-    font-size: 0.7rem;
-    letter-spacing: 2px;
     background: none;
     border: 1px solid #fff;
     color: #fff;
+    padding: 12px 30px;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
     cursor: pointer;
     transition: 0.3s;
     text-transform: uppercase;
@@ -140,24 +139,23 @@ footer {
     color: #000;
 }
 
-/* 앨범 카드 내부 텍스트 정렬 유지 */
-.album-info h3 {
-    font-size: 0.9rem;
-    font-weight: 400;
-    letter-spacing: 1px;
+/* 앨범/사진 텍스트 간격 정렬 (상민님 기존 스타일 유지) */
+.photo-info, .album-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     margin-top: 15px;
-    color: #fff;
     text-align: left;
 }
 
-/* 모바일에서 앨범 제목 폰트 조절 */
+.photo-meta {
+    display: block;
+    color: #444;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}
+
+/* 모바일 대응 */
 @media (max-width: 768px) {
-    .album-info h3 {
-        font-size: 0.8rem;
-        margin-top: 10px;
-    }
-    .back-btn {
-        width: 100%; /* 모바일에서는 뒤로가기 버튼 넓게 */
-        text-align: center;
-    }
+    .back-btn { width: 100%; text-align: center; }
 }
