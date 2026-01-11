@@ -115,7 +115,7 @@ footer {
     .photo-title { color: #ffffff !important; font-size: 0.9rem !important; font-weight: 400; letter-spacing: 0.5px; text-align: left !important; line-height: 1.2;}
 }
 
-/* --- 앨범/갤러리 레이아웃 원상복구 --- */
+/* 다른 건 다 지우고, 이 뒤로가기 버튼 스타일만 남겨두세요 */
 .back-btn-container {
     grid-column: 1 / -1;
     margin-bottom: 50px;
@@ -134,28 +134,4 @@ footer {
     text-transform: uppercase;
 }
 
-.back-btn:hover {
-    background: #fff;
-    color: #000;
-}
-
-/* 앨범/사진 텍스트 간격 정렬 (상민님 기존 스타일 유지) */
-.photo-info, .album-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 15px;
-    text-align: left;
-}
-
-.photo-meta {
-    display: block;
-    color: #444;
-    font-size: 0.7rem;
-    letter-spacing: 0.5px;
-}
-
-/* 모바일 대응 */
-@media (max-width: 768px) {
-    .back-btn { width: 100%; text-align: center; }
-}
+.back-btn:hover { background: #fff; color: #000; }

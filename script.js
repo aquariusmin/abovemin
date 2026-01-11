@@ -56,6 +56,7 @@ function renderGSAlbums() {
     });
 }
 
+/* --- 개별 사진 리스트 (상민님의 원래 구조와 100% 일치) --- */
 function showGSPhotos(albumName) {
     const grid = document.getElementById('gallery-grid');
     grid.innerHTML = `
@@ -68,10 +69,15 @@ function showGSPhotos(albumName) {
         const locationInfo = (p.location || p.year) 
             ? `${p.location || ""} ${p.location && p.year ? "/" : ""} ${p.year || ""}` 
             : "";
+            
         const item = document.createElement('div');
         item.className = 'gallery-item';
+        
+        // 이 부분이 상민님의 .photo-info 스타일을 그대로 먹는 구조입니다
         item.innerHTML = `
-            <div class="img-wrapper"><img src="${p.src}" class="gallery-img" loading="lazy" onclick="openModal('${p.src}', '${p.title}')"></div>
+            <div class="img-wrapper">
+                <img src="${p.src}" class="gallery-img" loading="lazy" onclick="openModal('${p.src}', '${p.title}')">
+            </div>
             <div class="photo-info">
                 <span class="photo-title">${p.title}</span>
                 <span class="photo-meta">${locationInfo}</span>
