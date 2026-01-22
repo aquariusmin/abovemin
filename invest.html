@@ -86,46 +86,53 @@
         <div id="chart-area" class="widget-section"></div>
 
         <div class="widget-section">
-            <div class="section-title">Global Heatmaps (US & KR)</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                <div id="heatmap-us" style="height: 450px;">
-                    <div class="tradingview-widget-container">
-                        <div class="tradingview-widget-container__widget"></div>
-                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
-                        {
-                          "dataSource": "S&P500",
-                          "blockSize": "market_cap",
-                          "blockColor": "change",
-                          "locale": "kr",
-                          "colorTheme": "dark",
-                          "hasTopBar": false,
-                          "isTransparent": true,
-                          "width": "100%",
-                          "height": "100%"
-                        }
-                        </script>
-                    </div>
-                </div>
-                <div id="heatmap-kr" style="height: 450px;">
-                    <div class="tradingview-widget-container">
-                        <div class="tradingview-widget-container__widget"></div>
-                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
-                        {
-                          "dataSource": "SouthKorea",
-                          "blockSize": "market_cap",
-                          "blockColor": "change",
-                          "locale": "kr",
-                          "colorTheme": "dark",
-                          "hasTopBar": false,
-                          "isTransparent": true,
-                          "width": "100%",
-                          "height": "100%"
-                        }
-                        </script>
-                    </div>
-                </div>
+    <div class="section-title">Market Overview (US S&P 500 & KR KOSPI/KOSDAQ)</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        
+        <div class="heatmap-box">
+            <div style="color: #666; font-size: 0.7rem; margin-bottom: 10px; letter-spacing: 1px;">USA MARKET</div>
+            <div class="tradingview-widget-container" style="height: 450px;">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                {
+                  "dataSource": "S&P500",
+                  "blockSize": "market_cap",
+                  "blockColor": "change",
+                  "locale": "kr",
+                  "symbolUrl": "",
+                  "colorTheme": "dark",
+                  "hasTopBar": false,
+                  "isTransparent": true,
+                  "width": "100%",
+                  "height": "100%"
+                }
+                </script>
             </div>
         </div>
+
+        <div class="heatmap-box">
+            <div style="color: #666; font-size: 0.7rem; margin-bottom: 10px; letter-spacing: 1px;">KOREA MARKET</div>
+            <div class="tradingview-widget-container" style="height: 450px;">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                {
+                  "dataSource": "SouthKorea",
+                  "blockSize": "market_cap",
+                  "blockColor": "change",
+                  "locale": "kr",
+                  "symbolUrl": "",
+                  "colorTheme": "dark",
+                  "hasTopBar": false,
+                  "isTransparent": true,
+                  "width": "100%",
+                  "height": "100%"
+                }
+                </script>
+            </div>
+        </div>
+
+    </div>
+</div>
 
         <div class="news-calendar-grid">
             <div class="widget-section" style="height: 850px;">
