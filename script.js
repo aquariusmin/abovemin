@@ -5,11 +5,15 @@ const GS_URL = `https://docs.google.com/spreadsheets/d/${GS_ID}/gviz/tq?tqx=out:
 let gs_albumsData = [];
 let gs_galleryData = [];
 let gs_productsData = [];
+let gs_investData = []; // [추가] 투자 데이터 변수
 
 window.onload = async function() {
     await loadDataFromSheet();
+    
+    // 페이지별 그리드 확인 후 렌더링
     if (document.getElementById('gallery-grid')) renderGSAlbumList();
     if (document.getElementById('product-grid')) renderGSProductList();
+    if (document.getElementById('invest-body')) renderGSInvestList(); // [추가] 투자 리스트 렌더링
 };
 
 /* --- 성능 최적화: Cloudinary 주소 변환 --- */
@@ -19,34 +23,62 @@ function optimizeCloudinary(url, width = 800) {
     return url;
 }
 
-/* --- 데이터 로드 --- */
+/* --- 데이터 로드: invest 탭 추가 --- */
 async function loadDataFromSheet() {
     try {
-        const [aRes, gRes, pRes] = await Promise.all([
+        const [aRes, gRes, pRes, iRes] = await Promise.all([
             fetch(`${GS_URL}&sheet=albums`),
             fetch(`${GS_URL}&sheet=photos`),
-            fetch(`${GS_URL}&sheet=products`)
+            fetch(`${GS_URL}&sheet=products`),
+            fetch(`${GS_URL}&sheet=invest`) // [추가] invest 탭 가져오기
         ]);
+        
         gs_albumsData = parseGS(await aRes.text());
         gs_galleryData = parseGS(await gRes.text()).map(p => ({
             ...p,
             categories: p.categories ? String(p.categories).split(',').map(c => c.trim()) : []
         }));
         gs_productsData = parseGS(await pRes.text());
-    } catch (e) { console.error(e); }
+        gs_investData = parseGS(await iRes.text()); // [추가] 투자 데이터 파싱
+        
+    } catch (e) { console.error("데이터 로드 중 오류:", e); }
 }
 
 function parseGS(text) {
-    const json = JSON.parse(text.substring(47, text.length - 2));
-    const cols = json.table.cols.map(c => c.label);
-    return json.table.rows.map(row => {
-        const item = {};
-        row.c.forEach((cell, i) => { if (cols[i]) item[cols[i]] = cell ? (cell.f ? cell.f : cell.v) : ""; });
-        return item;
+    try {
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const cols = json.table.cols.map(c => c.label);
+        return json.table.rows.map(row => {
+            const item = {};
+            row.c.forEach((cell, i) => { if (cols[i]) item[cols[i]] = cell ? (cell.f ? cell.f : cell.v) : ""; });
+            return item;
+        });
+    } catch (e) { return []; }
+}
+
+/* --- [추가] 투자 리스트 렌더링 --- */
+function renderGSInvestList() {
+    const body = document.getElementById('invest-body');
+    if (!body) return;
+    body.innerHTML = "";
+    
+    if (gs_investData.length === 0) {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px; color:#333;">스크랩된 데이터가 없습니다.</td></tr>`;
+        return;
+    }
+
+    gs_investData.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="stock-name">${item.title || ""}</span></td>
+            <td><span class="stock-price">${item.price || ""}</span></td>
+            <td><div class="stock-note">${item.note || ""}</div></td>
+        `;
+        body.appendChild(tr);
     });
 }
 
-/* --- 앨범 및 사진 렌더링 (상민님 원본 디자인) --- */
+/* --- 앨범 및 사진 렌더링 --- */
 function renderGSAlbumList() {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
@@ -110,19 +142,14 @@ function renderGSProductList() {
     });
 }
 
-/* --- [추가] 상세 정보 및 버튼 비활성화 로직 --- */
 function showGSDetail(id) {
     const p = gs_productsData.find(item => String(item.id) === String(id));
     if (!p) return;
-
     document.getElementById('detail-title').innerText = p.name;
     document.getElementById('detail-price').innerText = p.price;
     document.getElementById('detail-description').innerText = p.desc;
     document.getElementById('order-item').value = p.name;
-    
     const submitBtn = document.getElementById('submitBtn');
-    
-    // 가격이 "-원" 이거나 설명에 "준비중"이 포함되어 있으면 버튼 비활성화
     if (p.price === "-원" || p.desc.includes("준비중")) {
         submitBtn.disabled = true;
         submitBtn.innerText = "NOT AVAILABLE (준비중)";
@@ -136,13 +163,11 @@ function showGSDetail(id) {
         submitBtn.style.color = "#000";
         submitBtn.style.cursor = "pointer";
     }
-
     const detailContainer = document.getElementById('product-detail');
     detailContainer.style.display = 'block';
     detailContainer.scrollIntoView({ behavior: 'smooth' });
 }
 
-/* --- [추가] 주소 찾기 기능 복구 --- */
 function findAddr() {
     new daum.Postcode({
         oncomplete: function(data) {
