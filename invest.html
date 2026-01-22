@@ -4,72 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOVEMIN | Investment Terminal</title>
-    <link rel="stylesheet" href="style.css?v=7.0">
+    <link rel="stylesheet" href="style.css?v=8.0">
     <style>
-        :root { --gold: #d4a373; --bg: #000; --border: #1a1a1a; --text-main: #ffffff; --text-dim: #999; }
-        
-        body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; }
-        .invest-container { margin-top: 40px; display: flex; flex-direction: column; gap: 40px; padding-bottom: 100px; }
-        .widget-section { background: var(--bg); border: 1px solid var(--border); padding: 25px; border-radius: 8px; }
+        /* 1. 기본 스타일 및 가시성 강화 */
+        :root { --gold: #d4a373; --bg: #000; --text: #ffffff; }
+        body { background-color: var(--bg); color: var(--text); }
+        .invest-container { margin-top: 40px; display: flex; flex-direction: column; gap: 50px; padding-bottom: 80px; }
+        .widget-section { background: var(--bg); border: 1px solid #111; padding: 25px; border-radius: 10px; }
         
         .section-title { 
-            font-size: 1.1rem; letter-spacing: 3px; color: var(--text-main); 
-            margin-bottom: 25px; text-transform: uppercase; 
+            font-size: 1.1rem; letter-spacing: 3px; color: #fff; 
+            margin-bottom: 30px; text-transform: uppercase; 
             border-left: 4px solid var(--gold); padding-left: 15px; font-weight: 700;
         }
 
-        /* 히트맵 그리드: PC 2단 / 모바일 1단 */
-        .heatmap-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-            min-height: 500px; /* 최소 높이 확보로 작아짐 방지 */
-        }
-        .heatmap-wrapper { 
-            width: 100%; 
-            height: 500px; 
-            background: #050505; 
-            border-radius: 4px; 
-            overflow: hidden; 
-            border: 1px solid #111;
-        }
+        /* 2. 히트맵 영역: 작아짐 방지 및 고정 높이 */
+        .heatmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .heatmap-container { height: 500px; width: 100%; position: relative; }
 
-        /* 차트 및 뉴스 그리드 */
-        .news-calendar-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; }
-        #chart-area { width: 100%; height: 500px; border: 2px solid #222; margin-bottom: 20px; display: none; }
+        /* 3. 뉴스 및 캘린더 레이아웃 */
+        .news-calendar-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; }
+        #chart-area { width: 100%; height: 550px; border: 2px solid #222; margin-bottom: 20px; display: none; }
 
-        /* 테이블 모바일 최적화 */
-        .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        #my-watchlist { width: 100%; border-collapse: collapse; font-size: 1.15rem; min-width: 800px; }
-        #my-watchlist th { border-bottom: 2px solid #222; padding: 15px; color: var(--text-dim); text-align: left; font-size: 0.8rem; }
+        /* 4. 분석 테이블: 글자 크기 및 모바일 스크롤 */
+        .table-responsive { width: 100%; overflow-x: auto; }
+        #my-watchlist { width: 100%; border-collapse: collapse; font-size: 1.15rem; min-width: 900px; }
+        #my-watchlist th { border-bottom: 2px solid #333; padding: 15px; color: #888; text-align: left; font-size: 0.8rem; }
         #my-watchlist td { padding: 30px 15px; border-bottom: 1px solid #111; vertical-align: top; }
+        #invest-body tr:hover { background: #0a0a0a; cursor: pointer; }
         
-        .stock-name { font-size: 1.3rem; font-weight: 800; color: #fff; display: block; margin-bottom: 8px; }
-        .badge { background: var(--gold); color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 3px; }
-        
-        .up { color: #ff3b3b !important; } 
-        .down { color: #3b82ff !important; }
-        .meta-label { color: #555; font-size: 0.75rem; margin-right: 5px; }
-        .meta-value { color: #fff; font-size: 1rem; font-family: monospace; font-weight: 600; }
-        .stock-note { color: #ccc !important; font-size: 1.1rem; line-height: 1.7; }
+        .stock-name { font-size: 1.35rem; font-weight: 800; color: #fff; display: block; margin-bottom: 8px; }
+        .badge { background: var(--gold); color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; }
+        .up { color: #ff3b3b !important; } .down { color: #3b82ff !important; }
+        .meta-value { color: #fff !important; font-size: 1rem; font-weight: 600; }
+        .stock-note { color: #ddd !important; font-size: 1.1rem; line-height: 1.7; }
 
-        /* 52주 게이지 바 */
-        .range-container { width: 100%; height: 8px; background: #111; position: relative; margin-top: 15px; border-radius: 4px; }
-        .range-bar { position: absolute; height: 100%; background: var(--gold); border-radius: 4px; opacity: 0.2; }
-        .current-dot { 
-            position: absolute; width: 12px; height: 12px; background: #fff; 
-            top: -2px; transform: translateX(-50%); border-radius: 50%; 
-            box-shadow: 0 0 10px #fff; z-index: 5;
-        }
+        /* 5. 52주 게이지 */
+        .range-container { width: 100%; height: 10px; background: #111; position: relative; margin-top: 15px; border-radius: 5px; }
+        .range-bar { position: absolute; height: 100%; background: var(--gold); border-radius: 5px; opacity: 0.2; }
+        .current-dot { position: absolute; width: 14px; height: 14px; background: #fff; top: -2px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 10px #fff; z-index: 2; }
 
-        /* --- 모바일 대응 (반응형) --- */
+        /* --- 6. 모바일 최적화 (핵심) --- */
         @media (max-width: 1024px) {
             .heatmap-grid, .news-calendar-grid { grid-template-columns: 1fr; }
-            .widget-section { padding: 15px; }
-            .heatmap-wrapper { height: 400px; } /* 모바일에서 히트맵 높이 조절 */
+            .heatmap-container { height: 400px; } /* 모바일에서는 높이 약간 축소 */
             .section-title { font-size: 1rem; }
-            #my-watchlist { font-size: 1rem; }
-            .stock-name { font-size: 1.1rem; }
+            .invest-container { gap: 30px; }
+            .stock-name { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -106,24 +87,52 @@
         <div id="chart-area" class="widget-section"></div>
 
         <div class="widget-section">
-            <div class="section-title">Market Overview (US & KR)</div>
+            <div class="section-title">Global Markets Heatmap (US & KR)</div>
             <div class="heatmap-grid">
-                <div class="heatmap-wrapper">
-                    <div style="padding: 10px; font-size: 0.7rem; color: #444; letter-spacing: 2px;">USA S&P 500</div>
-                    <iframe src="https://s3.tradingview.com/heatmap/index.html?datasource=S%26P500&blocksize=market_cap&blockcolor=change&locale=kr&theme=dark" 
-                            style="width: 100%; height: calc(100% - 30px); border: none;"></iframe>
+                <div class="heatmap-container">
+                    <div style="font-size:0.7rem; color:#555; margin-bottom:10px; letter-spacing:2px;">USA S&P 500</div>
+                    <div class="tradingview-widget-container" style="height: calc(100% - 25px);">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                        {
+                          "dataSource": "S&P500",
+                          "blockSize": "market_cap",
+                          "blockColor": "change",
+                          "locale": "kr",
+                          "colorTheme": "dark",
+                          "hasTopBar": false,
+                          "isTransparent": true,
+                          "width": "100%",
+                          "height": "100%"
+                        }
+                        </script>
+                    </div>
                 </div>
-                <div class="heatmap-wrapper">
-                    <div style="padding: 10px; font-size: 0.7rem; color: #444; letter-spacing: 2px;">KOREA KOSPI/KOSDAQ</div>
-                    <iframe src="https://s3.tradingview.com/heatmap/index.html?datasource=SouthKorea&blocksize=market_cap&blockcolor=change&locale=kr&theme=dark" 
-                            style="width: 100%; height: calc(100% - 30px); border: none;"></iframe>
+                <div class="heatmap-container">
+                    <div style="font-size:0.7rem; color:#555; margin-bottom:10px; letter-spacing:2px;">SOUTH KOREA</div>
+                    <div class="tradingview-widget-container" style="height: calc(100% - 25px);">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                        {
+                          "dataSource": "SouthKorea",
+                          "blockSize": "market_cap",
+                          "blockColor": "change",
+                          "locale": "kr",
+                          "colorTheme": "dark",
+                          "hasTopBar": false,
+                          "isTransparent": true,
+                          "width": "100%",
+                          "height": "100%"
+                        }
+                        </script>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="news-calendar-grid">
             <div class="widget-section" style="height: 800px;">
-                <div class="section-title">Global News</div>
+                <div class="section-title">Market Intelligence</div>
                 <div class="tradingview-widget-container" style="height: calc(100% - 60px);">
                     <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
@@ -132,7 +141,7 @@
                 </div>
             </div>
             <div class="widget-section" style="height: 800px;">
-                <div class="section-title">Economic Calendar</div>
+                <div class="section-title">Economic Events</div>
                 <div class="tradingview-widget-container" style="height: calc(100% - 60px);">
                     <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
@@ -143,14 +152,14 @@
         </div>
 
         <div class="widget-section">
-            <div class="section-title">Analysis Scraps</div>
-            <div class="table-wrapper">
+            <div class="section-title">Investment Analysis Scraps</div>
+            <div class="table-responsive">
                 <table id="my-watchlist">
                     <thead>
                         <tr>
-                            <th style="width: 20%;">STOCK</th>
+                            <th style="width: 20%;">SYMBOL</th>
                             <th style="width: 15%;">PRICE/CHG</th>
-                            <th style="width: 20%;">VALUATION</th>
+                            <th style="width: 20%;">VALUE METRICS</th>
                             <th style="width: 15%;">52W RANGE</th>
                             <th style="width: 30%;">INSIGHT NOTE</th>
                         </tr>
@@ -162,7 +171,8 @@
     </div>
 
     <footer><div class="copyright">&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</div></footer>
+    
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script src="script.js?v=7.0"></script>
+    <script src="script.js?v=8.0"></script>
 </body>
 </html>
