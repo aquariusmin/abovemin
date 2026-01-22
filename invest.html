@@ -4,40 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOVEMIN | Investment Terminal</title>
-    <link rel="stylesheet" href="style.css?v=5.0">
+    <link rel="stylesheet" href="style.css?v=5.2">
     <style>
         .invest-container { margin-top: 40px; display: flex; flex-direction: column; gap: 50px; }
-        .widget-section { background: #000; border: 1px solid #111; padding: 25px; }
+        .widget-section { background: #000; border: 1px solid #111; padding: 30px; }
         .section-title { 
-            font-size: 0.8rem; letter-spacing: 3px; color: #888; 
-            margin-bottom: 25px; text-transform: uppercase; 
-            border-left: 2px solid #fff; padding-left: 15px;
+            font-size: 0.9rem; letter-spacing: 3px; color: #fff; /* 제목 더 밝게 */
+            margin-bottom: 30px; text-transform: uppercase; 
+            border-left: 3px solid #d4a373; padding-left: 15px;
         }
 
-        /* 가시성 강화 및 레이아웃 */
+        /* 레이아웃 및 차트 영역 */
         .news-calendar-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px; }
-        #chart-area { width: 100%; height: 500px; background: #000; border: 1px solid #222; margin-bottom: 30px; display: none; }
+        #chart-area { width: 100%; height: 550px; background: #000; border: 1px solid #222; margin-bottom: 30px; display: none; }
 
-        /* 테이블 가독성 개선 */
-        #my-watchlist { width: 100%; border-collapse: collapse; font-size: 1rem; color: #fff; }
-        #my-watchlist th { border-bottom: 2px solid #222; padding: 15px 10px; color: #aaa; text-align: left; font-size: 0.75rem; letter-spacing: 1px; }
-        #my-watchlist td { padding: 25px 10px; border-bottom: 1px solid #111; vertical-align: top; }
-        #invest-body tr:hover { background: #0a0a0a; cursor: pointer; transition: 0.2s; }
+        /* 테이블 가시성 대폭 강화 */
+        #my-watchlist { width: 100%; border-collapse: collapse; font-size: 1.1rem; color: #fff; }
+        #my-watchlist th { border-bottom: 2px solid #333; padding: 15px 10px; color: #999; text-align: left; font-size: 0.8rem; }
+        #my-watchlist td { padding: 30px 10px; border-bottom: 1px solid #111; vertical-align: top; }
+        #invest-body tr:hover { background: #0d0d0d; cursor: pointer; transition: 0.2s; }
         
-        .stock-name { font-size: 1.15rem; font-weight: 700; color: #fff; display: block; margin-bottom: 6px; }
-        .badge { background: #333; color: #eee; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; }
-        .up { color: #ff4444 !important; } 
-        .down { color: #4444ff !important; }
-        .meta-label { color: #666; font-size: 0.7rem; margin-right: 4px; }
-        .meta-value { color: #ddd; font-size: 0.9rem; font-family: monospace; }
-        .stock-note { color: #ccc !important; font-size: 0.95rem; line-height: 1.6; }
+        .stock-name { font-size: 1.3rem; font-weight: 800; color: #fff; display: block; margin-bottom: 8px; }
+        .badge { background: #d4a373; color: #000; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 4px; }
+        
+        /* 대비가 뚜렷한 상승/하락 색상 */
+        .up { color: #ff3b3b !important; } 
+        .down { color: #3b82ff !important; }
 
-        /* 52주 게이지 바 */
-        .range-container { width: 100%; height: 6px; background: #222; position: relative; margin-top: 10px; border-radius: 3px; }
-        .range-bar { position: absolute; height: 100%; background: #d4a373; border-radius: 3px; }
-        .current-dot { position: absolute; width: 10px; height: 100%; background: #fff; top: 0; transform: translateX(-50%); border-radius: 2px; }
+        /* 메타 데이터 밝기 수정 (가시성 확보) */
+        .meta-label { color: #777; font-size: 0.75rem; margin-right: 6px; }
+        .meta-value { color: #ffffff; font-size: 1rem; font-family: 'Courier New', monospace; font-weight: 600; }
+        .stock-note { color: #dddddd !important; font-size: 1.05rem; line-height: 1.7; }
 
-        @media (max-width: 1024px) { .news-calendar-grid { grid-template-columns: 1fr; } #my-watchlist { font-size: 0.85rem; } }
+        /* 52주 게이지 바 디자인 강화 */
+        .range-container { width: 100%; height: 10px; background: #1a1a1a; position: relative; margin-top: 15px; border-radius: 5px; overflow: visible; }
+        .range-bar { position: absolute; height: 100%; background: #d4a373; border-radius: 5px; opacity: 0.2; }
+        .current-dot { 
+            position: absolute; width: 14px; height: 14px; background: #fff; 
+            top: -2px; transform: translateX(-50%); border-radius: 50%; 
+            box-shadow: 0 0 10px rgba(255,255,255,0.8); z-index: 2;
+        }
+
+        @media (max-width: 1024px) { 
+            .news-calendar-grid { grid-template-columns: 1fr; } 
+            #my-watchlist { font-size: 0.95rem; } 
+        }
     </style>
 </head>
 <body>
@@ -54,7 +65,7 @@
     </header>
 
     <div class="container invest-container">
-        <div style="margin-bottom: -30px;">
+        <div style="margin-bottom: -20px;">
             <div class="tradingview-widget-container">
                 <div class="tradingview-widget-container__widget"></div>
                 <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
@@ -75,33 +86,61 @@
         <div id="chart-area" class="widget-section"></div>
 
         <div class="widget-section">
-            <div class="section-title">Global Market Heatmaps</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div style="height: 400px;">
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
-                    { "dataSource": "S&P500", "blockSize": "market_cap", "blockColor": "change", "locale": "kr", "colorTheme": "dark", "isTransparent": true, "width": "100%", "height": "100%" }
-                    </script>
+            <div class="section-title">Global Heatmaps (US & KR)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div id="heatmap-us" style="height: 450px;">
+                    <div class="tradingview-widget-container">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                        {
+                          "dataSource": "S&P500",
+                          "blockSize": "market_cap",
+                          "blockColor": "change",
+                          "locale": "kr",
+                          "colorTheme": "dark",
+                          "hasTopBar": false,
+                          "isTransparent": true,
+                          "width": "100%",
+                          "height": "100%"
+                        }
+                        </script>
+                    </div>
                 </div>
-                <div style="height: 400px;">
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
-                    { "dataSource": "SouthKorea", "blockSize": "market_cap", "blockColor": "change", "locale": "kr", "colorTheme": "dark", "isTransparent": true, "width": "100%", "height": "100%" }
-                    </script>
+                <div id="heatmap-kr" style="height: 450px;">
+                    <div class="tradingview-widget-container">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                        {
+                          "dataSource": "SouthKorea",
+                          "blockSize": "market_cap",
+                          "blockColor": "change",
+                          "locale": "kr",
+                          "colorTheme": "dark",
+                          "hasTopBar": false,
+                          "isTransparent": true,
+                          "width": "100%",
+                          "height": "100%"
+                        }
+                        </script>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="news-calendar-grid">
-            <div class="widget-section" style="height: 800px;">
-                <div class="section-title">Global News Feed</div>
-                <div class="tradingview-widget-container" style="height: calc(100% - 40px);">
+            <div class="widget-section" style="height: 850px;">
+                <div class="section-title">Market Intelligence</div>
+                <div class="tradingview-widget-container" style="height: calc(100% - 60px);">
+                    <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
                     { "feedMode": "all_symbols", "isTransparent": true, "displayMode": "regular", "width": "100%", "height": "100%", "colorTheme": "dark", "locale": "kr" }
                     </script>
                 </div>
             </div>
-            <div class="widget-section" style="height: 800px;">
-                <div class="section-title">Economic Calendar</div>
-                <div class="tradingview-widget-container" style="height: calc(100% - 40px);">
+            <div class="widget-section" style="height: 850px;">
+                <div class="section-title">Economic Events</div>
+                <div class="tradingview-widget-container" style="height: calc(100% - 60px);">
+                    <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
                     { "colorTheme": "dark", "isTransparent": true, "width": "100%", "height": "100%", "locale": "kr", "importanceFilter": "-1,0,1" }
                     </script>
@@ -110,15 +149,15 @@
         </div>
 
         <div class="widget-section">
-            <div class="section-title">Investment Scrap & Analysis</div>
+            <div class="section-title">Portfolio Scrap & Quantitative Analysis</div>
             <table id="my-watchlist">
                 <thead>
                     <tr>
-                        <th style="width: 22%;">SYMBOL</th>
+                        <th style="width: 22%;">STOCK</th>
                         <th style="width: 18%;">PRICE / CHANGE</th>
-                        <th style="width: 20%;">VALUATION</th>
+                        <th style="width: 22%;">VALUATION</th>
                         <th style="width: 15%;">52W RANGE</th>
-                        <th style="width: 25%;">NOTE</th>
+                        <th style="width: 23%;">INSIGHT NOTE</th>
                     </tr>
                 </thead>
                 <tbody id="invest-body"></tbody>
@@ -129,6 +168,6 @@
     <footer><div class="copyright">&copy; 2026 ABOVE MIN. ALL RIGHTS RESERVED.</div></footer>
     
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script src="script.js?v=5.0"></script>
+    <script src="script.js?v=5.2"></script>
 </body>
 </html>
