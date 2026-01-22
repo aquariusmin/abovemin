@@ -35,6 +35,7 @@ function parseGS(text) {
 }
 
 /* --- 투자 리스트 렌더링 --- */
+/* --- 정돈된 구조의 투자 리스트 렌더링 --- */
 function renderGSInvestList() {
     const body = document.getElementById('invest-body');
     if (!body) return;
@@ -45,13 +46,14 @@ function renderGSInvestList() {
     sorted.forEach(item => {
         const changeVal = parseFloat(item.change) || 0;
         const colorClass = changeVal > 0 ? "up" : (changeVal < 0 ? "down" : "");
-        const currency = item.curr === "KRW" ? "₩" : (item.curr === "USD" ? "$" : "");
+        const pe = parseFloat(item.pe) || 0;
+        const beta = parseFloat(item.beta) || 0;
         
-        // 시가총액 단위 변환 (상민님 해결 로직 적용)
+        // 시가총액 단위 변환
         let marketCap = item.mc ? (parseFloat(item.mc.toString().replace(/[^0-9.]/g, "")) / 1000000000000).toFixed(1) + "조" : "-";
 
         const tr = document.createElement('tr');
-        tr.onclick = () => showStockChart(item.id); // 클릭 이벤트
+        tr.onclick = () => showStockChart(item.id);
 
         tr.innerHTML = `
             <td>
@@ -59,21 +61,33 @@ function renderGSInvestList() {
                 <span class="badge">${item.sector || "기타"}</span>
             </td>
             <td>
-                <div style="font-size:1.1rem; font-weight:700;">${currency}${item.price}</div>
-                <div class="${colorClass}" style="font-weight:600;">
+                <div style="font-size:1.1rem; font-weight:700; color:#fff;">${item.price}</div>
+                <div class="${colorClass}" style="font-weight:600; font-size:0.9rem;">
                     ${changeVal > 0 ? "+" : ""}${(changeVal * 100).toFixed(2)}%
                 </div>
             </td>
             <td>
-                <div><span class="meta-label">PE</span><span class="meta-value">${item.pe || "-"}</span></div>
-                <div><span class="meta-label">BETA</span><span class="meta-value">${item.beta || "-"}</span></div>
-                <div><span class="meta-label">시총</span><span class="meta-value">${marketCap}</span></div>
+                <div class="valuation-box">
+                    <div class="meta-item">
+                        <span class="meta-label">PE</span>
+                        <span class="meta-value ${(pe > 0 && pe < 12) ? 'good' : ''}">${item.pe || "-"}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">BETA</span>
+                        <span class="meta-value ${(beta > 1.3) ? 'warning' : ''}">${item.beta || "-"}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">MCAP</span>
+                        <span class="meta-value">${marketCap}</span>
+                    </div>
+                </div>
             </td>
             <td>
                 <div class="range-container">
                     <div class="range-bar" style="width: 100%;"></div>
                     <div class="current-dot" style="left: ${calculateRange(item)}%;"></div>
                 </div>
+                <div style="font-size:0.65rem; color:#444; margin-top:8px; text-align:center;">52W RANGE</div>
             </td>
             <td><div class="stock-note">${item.note || ""}</div></td>
         `;

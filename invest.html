@@ -33,6 +33,49 @@
         #my-watchlist td { padding: 30px 15px; border-bottom: 1px solid #111; vertical-align: top; }
         #invest-body tr:hover { background: #0a0a0a; cursor: pointer; }
         
+/* Valuation 섹션 디자인 보강 */
+.valuation-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* 지표 간 간격 */
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between; /* 라벨과 수치를 양끝으로 정렬 */
+    align-items: center;
+    border-bottom: 1px solid #111; /* 구분선 추가 */
+    padding-bottom: 4px;
+}
+
+.meta-label { 
+    color: #666; 
+    font-size: 0.7rem; 
+    font-weight: 700; 
+    letter-spacing: 1px;
+}
+
+.meta-value { 
+    color: #ffffff !important; 
+    font-size: 0.95rem; 
+    font-family: 'Courier New', monospace; 
+    font-weight: 600; 
+}
+
+/* 조건부 서식 색상 */
+.good { color: #00ff88 !important; text-shadow: 0 0 5px rgba(0,255,136,0.3); } /* 저평가 */
+.warning { color: #ffbb00 !important; } /* 고변동 */
+
+/* 비고란(Note) 가시성 추가 개선 */
+.stock-note { 
+    color: #bbb !important; 
+    font-size: 0.95rem; 
+    line-height: 1.6;
+    background: #080808;
+    padding: 10px;
+    border-radius: 4px;
+}
+
         .stock-name { font-size: 1.35rem; font-weight: 800; color: #fff; display: block; margin-bottom: 8px; }
         .badge { background: var(--gold); color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; }
         .up { color: #ff3b3b !important; } .down { color: #3b82ff !important; }
