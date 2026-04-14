@@ -6,7 +6,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const allProducts = await getProducts().catch(() => []);
-  const featured = allProducts.slice(0, 4);
+  const featured = allProducts.slice(-4).reverse();
 
   const accentColor = "text-accent";
   const accentBg = "bg-accent";
@@ -55,7 +55,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {featured.length > 0 ? featured.map((item) => (
             <Link key={item.id} href={`/shop/${item.id}`} className="space-y-4 group cursor-pointer">
-              <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-[#4A5D4E]/50 transition-all relative">
+              <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">
                 {item.image_url ? (
                   <Image
                     src={item.image_url}
