@@ -58,6 +58,17 @@ export async function getAlbumWithPhotos(slug: string): Promise<{ album: Album; 
   return { album, photos: photos ?? [] };
 }
 
+export async function getSiteSettings(): Promise<Record<string, string>> {
+  const { data } = await supabase
+    .from('site_settings')
+    .select('key, value');
+  const settings: Record<string, string> = {};
+  for (const row of data ?? []) {
+    settings[row.key] = row.value;
+  }
+  return settings;
+}
+
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')

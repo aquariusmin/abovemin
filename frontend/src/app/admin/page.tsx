@@ -68,6 +68,13 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [updating, setUpdating] = useState<number | null>(null);
 
+  // Hero settings
+  const [heroImage, setHeroImage] = useState('');
+  const [heroTitle, setHeroTitle] = useState('');
+  const [heroSubtitle, setHeroSubtitle] = useState('');
+  const [heroSaving, setHeroSaving] = useState(false);
+  const [heroSaved, setHeroSaved] = useState(false);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginLoading(true);
@@ -100,9 +107,36 @@ export default function AdminPage() {
     setLoading(false);
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch('/api/admin/settings');
+    if (res.ok) {
+      const data = await res.json();
+      setHeroImage(data.hero_image || '');
+      setHeroTitle(data.hero_title || '');
+      setHeroSubtitle(data.hero_subtitle || '');
+    }
+  }, []);
+
+  async function saveHero() {
+    setHeroSaving(true);
+    const res = await fetch('/api/admin/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hero_image: heroImage, hero_title: heroTitle, hero_subtitle: heroSubtitle }),
+    });
+    setHeroSaving(false);
+    if (res.ok) {
+      setHeroSaved(true);
+      setTimeout(() => setHeroSaved(false), 2000);
+    }
+  }
+
   useEffect(() => {
-    if (authed) fetchOrders();
-  }, [authed, fetchOrders]);
+    if (authed) {
+      fetchOrders();
+      fetchSettings();
+    }
+  }, [authed, fetchOrders, fetchSettings]);
 
   async function updateStatus(orderId: number, newStatus: OrderStatus) {
     setUpdating(orderId);
@@ -205,6 +239,65 @@ export default function AdminPage() {
               <p className={`text-xl font-bold ${s.highlight ? 'text-yellow-600' : 'text-accent'}`}>{s.value}</p>
             </div>
           ))}
+        </div>
+
+        {/* 히어로 설정 */}
+        <div className="mb-8 border border-gray-100 bg-white p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Homepage Hero</p>
+              <p className="text-sm font-serif italic text-[#333]">히어로 이미지 &amp; 텍스트 관리</p>
+            </div>
+            <button
+              onClick={saveHero}
+              disabled={heroSaving}
+              className={`px-5 py-2 text-[10px] uppercase tracking-widest font-bold transition-all ${
+                heroSaved ? 'bg-green-600 text-white' :
+                'bg-accent text-white hover:opacity-90'
+              } disabled:opacity-50`}
+            >
+              {heroSaving ? '저장 중...' : heroSaved ? '✓ 저장됨' : 'Save'}
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">이미지 URL (Cloudinary or Unsplash)</label>
+              <input
+                className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
+                value={heroImage}
+                onChange={e => setHeroImage(e.target.value)}
+                placeholder="https://res.cloudinary.com/..."
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">타이틀</label>
+                <input
+                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  value={heroTitle}
+                  onChange={e => setHeroTitle(e.target.value)}
+                  placeholder="Collecting the Greenery"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">서브타이틀</label>
+                <input
+                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  value={heroSubtitle}
+                  onChange={e => setHeroSubtitle(e.target.value)}
+                  placeholder="무심코 지나친 숲의 색깔..."
+                />
+              </div>
+            </div>
+            {heroImage && (
+              <div className="mt-2">
+                <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">미리보기</p>
+                <div className="aspect-[16/6] bg-gray-100 relative overflow-hidden rounded-sm">
+                  <img src={heroImage} alt="Hero preview" className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 상태 필터 */}

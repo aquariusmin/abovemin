@@ -1,12 +1,19 @@
-import { getProducts } from '@/lib/supabase';
+import { getProducts, getSiteSettings } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const allProducts = await getProducts().catch(() => []);
+  const [allProducts, settings] = await Promise.all([
+    getProducts().catch(() => []),
+    getSiteSettings().catch((): Record<string, string> => ({})),
+  ]);
   const featured = allProducts.slice(-4).reverse();
+
+  const heroImage = settings['hero_image'] || 'https://images.unsplash.com/photo-1493246507139-91e8bef99c02';
+  const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
+  const heroSubtitle = settings['hero_subtitle'] || '무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록. phorage는 자연과 일상이 교차하는 지점을 기록합니다.';
 
   const accentColor = "text-accent";
   const accentBg = "bg-accent";
@@ -18,7 +25,7 @@ export default async function Home() {
       <div className="max-w-6xl mx-auto mb-32 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
         <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-sm shadow-xl shadow-gray-200/40">
           <Image
-            src="https://images.unsplash.com/photo-1493246507139-91e8bef99c02"
+            src={heroImage}
             fill
             className="object-cover grayscale-[10%]"
             alt="Hero"
@@ -30,12 +37,11 @@ export default async function Home() {
 
         <div className="md:col-span-4 space-y-6">
           <h2 className="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
-            Collecting<br />
-            the <span className={accentColor}>Greenery</span>
+            {heroTitle.split(' ').slice(0, -1).join(' ')}<br />
+            <span className={accentColor}>{heroTitle.split(' ').slice(-1)}</span>
           </h2>
           <p className="font-sans text-sm text-gray-500 leading-relaxed">
-            무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록. <br />
-            phorage는 자연과 일상이 교차하는 지점을 기록합니다.
+            {heroSubtitle}
           </p>
         </div>
       </div>
