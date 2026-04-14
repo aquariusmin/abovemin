@@ -45,7 +45,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 text-white/50 hover:text-white text-2xl font-sans transition-colors z-10"
+        className="absolute top-4 right-4 md:top-6 md:right-6 text-white/50 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
         aria-label="Close"
       >
         &times;
@@ -54,7 +54,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       {/* Prev */}
       <button
         onClick={(e) => { e.stopPropagation(); onPrev(); }}
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-3xl font-sans transition-colors z-10"
+        className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
         aria-label="Previous"
       >
         &lsaquo;
@@ -87,7 +87,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       {/* Next */}
       <button
         onClick={(e) => { e.stopPropagation(); onNext(); }}
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-3xl font-sans transition-colors z-10"
+        className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
         aria-label="Next"
       >
         &rsaquo;

@@ -99,7 +99,7 @@ export default function CheckoutPage() {
           <p className="text-2xl font-light italic text-[#333]">주문 정보를 입력해주세요.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
 
           {/* 주문서 폼 */}
           <form onSubmit={handleSubmit} className="md:col-span-7 space-y-6">

@@ -84,7 +84,7 @@ export default function Nav() {
             </Link>
             <button
               onClick={() => setMenuOpen(prev => !prev)}
-              className={`flex flex-col gap-[5px] p-1 ${isLab ? 'text-white' : 'text-[#333]'}`}
+              className={`flex flex-col gap-[5px] p-2 ${isLab ? 'text-white' : 'text-[#333]'}`}
               aria-label="Toggle menu"
             >
               <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />

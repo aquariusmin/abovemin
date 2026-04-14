@@ -38,7 +38,7 @@ export default async function CollectionPage({
   const nextAlbum = albums[(currentIdx + 1) % albums.length];
 
   return (
-    <main className="px-4 md:px-8 py-12 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen bg-[#FAF9F6]">
 
       {/* 헤더 */}
       <div className="max-w-[1400px] mx-auto mb-12 md:mb-16">
@@ -53,7 +53,7 @@ export default async function CollectionPage({
             <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-gray-400 mb-2">
               {photos.length} pieces
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#222]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#222]">
               {album.title}
             </h2>
           </div>
@@ -65,7 +65,7 @@ export default async function CollectionPage({
       <PhotoGrid photos={photos} />
 
       {/* 하단 네비게이션 */}
-      <div className="max-w-[1400px] mx-auto mt-20 pt-10 border-t border-black/5 flex justify-between items-center">
+      <div className="max-w-[1400px] mx-auto mt-12 md:mt-20 pt-8 md:pt-10 border-t border-black/5 flex justify-between items-center">
         <Link href="/archive" className="text-[10px] uppercase tracking-widest text-gray-400 font-sans hover:text-accent transition-colors">
           &larr; All Collections
         </Link>

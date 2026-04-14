@@ -19,10 +19,10 @@ export default async function Home() {
   const accentBg = "bg-accent";
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] text-[#333] px-8 py-12 font-serif">
+    <main className="min-h-screen bg-[#FAF9F6] text-[#333] px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif">
 
       {/* 히어로 섹션 */}
-      <div className="max-w-6xl mx-auto mb-32 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+      <div className="max-w-6xl mx-auto mb-16 md:mb-32 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center">
         <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-sm shadow-xl shadow-gray-200/40">
           <Image
             src={heroImage}
@@ -36,7 +36,7 @@ export default async function Home() {
         </div>
 
         <div className="md:col-span-4 space-y-6">
-          <h2 className="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
             {heroTitle.split(' ').slice(0, -1).join(' ')}<br />
             <span className={accentColor}>{heroTitle.split(' ').slice(-1)}</span>
           </h2>
@@ -48,7 +48,7 @@ export default async function Home() {
 
       {/* 소품샵 미리보기 */}
       <section className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-end mb-12">
+        <div className="flex justify-between items-end mb-8 md:mb-12">
           <div>
             <h3 className="text-2xl font-bold">New Collectibles</h3>
             <p className="text-xs text-gray-400 mt-2 font-sans">주인장이 엄선한 이달의 소품</p>
@@ -58,7 +58,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {featured.length > 0 ? featured.map((item) => (
             <Link key={item.id} href={`/shop/${item.id}`} className="space-y-4 group cursor-pointer">
               <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">

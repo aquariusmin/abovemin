@@ -422,14 +422,14 @@ export default function Lab() {
         )}
 
         {/* ── 차트 ── */}
-        <section className="border border-white/8 bg-white/2 p-6 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex gap-2 flex-wrap">
+        <section className="border border-white/8 bg-white/2 p-4 md:p-6 space-y-4 md:space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+            <div className="flex gap-1.5 md:gap-2 flex-wrap">
               {CHART_SYMBOLS.map(s => (
                 <button
                   key={s.symbol}
                   onClick={() => setActiveSymbol(s.symbol)}
-                  className={`px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                  className={`px-2.5 md:px-4 py-1.5 text-[9px] md:text-[10px] font-mono uppercase tracking-widest transition-all ${
                     activeSymbol === s.symbol
                       ? 'bg-accent text-white'
                       : 'border border-white/10 text-white/40 hover:text-white/70'

@@ -25,7 +25,7 @@ export default async function Archive() {
   }));
 
   return (
-    <main className="px-4 md:px-8 py-16 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-10 md:py-16 font-serif min-h-screen bg-[#FAF9F6]">
 
       <header className="max-w-[1400px] mx-auto mb-12 md:mb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-3 font-sans">

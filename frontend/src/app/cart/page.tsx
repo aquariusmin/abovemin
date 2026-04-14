@@ -38,7 +38,7 @@ export default function CartPage() {
               <div className="flex gap-4 md:gap-8 items-start md:items-center">
 
                 {/* 이미지 */}
-                <Link href={`/shop/${item.id}`} className="w-20 h-20 md:w-24 md:h-24 bg-white border border-gray-100 overflow-hidden flex-shrink-0 relative">
+                <Link href={`/shop/${item.id}`} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white border border-gray-100 overflow-hidden flex-shrink-0 relative">
                   <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="96px" />
                 </Link>
 
@@ -52,14 +52,14 @@ export default function CartPage() {
                     <div className="flex items-center gap-2 font-sans">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
+                        className="w-9 h-9 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
                       >
                         −
                       </button>
                       <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
+                        className="w-9 h-9 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
                       >
                         +
                       </button>
@@ -113,7 +113,7 @@ export default function CartPage() {
         </div>
 
         {/* 합계 & 버튼 */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-8">
           <button
             onClick={clearCart}
             className="text-[9px] uppercase tracking-widest text-gray-300 hover:text-gray-500 font-sans transition-colors"
@@ -128,7 +128,7 @@ export default function CartPage() {
                 ₩ {totalPrice().toLocaleString()}
               </span>
             </div>
-            <Link href="/cart/checkout" className={`w-full md:w-auto px-12 py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all text-center`}>
+            <Link href="/cart/checkout" className={`block w-full md:w-auto px-12 py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all text-center`}>
               Checkout
             </Link>
           </div>

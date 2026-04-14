@@ -35,7 +35,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
               />
               <div className="absolute inset-0 bg-accent/5 group-hover:bg-transparent transition-all duration-700" />
             </div>
-            <div className="mt-3 font-sans">
+            <div className="mt-2 md:mt-3 font-sans">
               <p className="text-[11px] font-semibold text-gray-700 group-hover:text-accent transition-colors">
                 {photo.title}
               </p>

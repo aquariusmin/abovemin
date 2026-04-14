@@ -15,11 +15,11 @@ export default function Footer() {
 
   return (
     <footer className={`py-10 px-6 md:px-10 border-t ${borderColor} ${footerBg} transition-colors duration-500`}>
-      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 font-sans">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 font-sans">
 
         <div className="space-y-6 col-span-2 md:col-span-1">
-          <h4 className={`font-serif text-2xl font-bold ${footerHeading}`}>phorage</h4>
-          <p className={`text-[13px] leading-relaxed font-medium ${footerBody}`}>
+          <h4 className={`font-serif text-xl md:text-2xl font-bold ${footerHeading}`}>phorage</h4>
+          <p className={`text-xs md:text-[13px] leading-relaxed font-medium ${footerBody}`}>
             빛을 수집하고 세상을 분석합니다. <br />
             어제와 오늘의 경계에서 발견한 <br />
             가장 정직하고 따뜻한 기록들.

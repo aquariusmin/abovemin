@@ -78,18 +78,18 @@ export default function Shop() {
   );
 
   return (
-    <main className="px-8 py-12 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen bg-[#FAF9F6]">
       
       {/* 1. Header & Filter Bar (공간 효율 유지) */}
-      <header className="max-w-[1600px] mx-auto mb-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-black/5 pb-6 gap-6">
+      <header className="max-w-[1600px] mx-auto mb-8 md:mb-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-black/5 pb-6 gap-4 md:gap-6">
           <div>
             <h2 className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-2 font-sans">Shop Collection</h2>
             <p className="text-3xl font-light italic text-[#333]">Tangible light for your space.</p>
           </div>
           
-          <div className="flex items-center gap-8 text-[11px] uppercase tracking-widest font-sans font-medium text-gray-500">
-            <div className="flex gap-5">
+          <div className="flex items-center gap-4 md:gap-8 text-[11px] uppercase tracking-widest font-sans font-medium text-gray-500 flex-wrap">
+            <div className="flex gap-3 md:gap-5 flex-wrap">
               {categories.map(cat => (
                 <button
                   key={cat}
@@ -116,7 +116,7 @@ export default function Shop() {
 
       {/* 2. 핀터레스트 스타일 숍 그리드 (Masonry) with Framer Motion */}
       <motion.div 
-        className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12 max-w-[1600px] mx-auto"
+        className="columns-1 md:columns-2 lg:columns-3 gap-6 md:gap-8 lg:gap-12 space-y-6 md:space-y-8 lg:space-y-12 max-w-[1600px] mx-auto"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
@@ -178,7 +178,7 @@ export default function Shop() {
             </div>
 
             {/* 상품 정보: 이미지 바로 아래에 정갈하게 배치 (동일) */}
-            <div className="mt-6 flex justify-between items-start px-1 font-sans">
+            <div className="mt-4 md:mt-6 flex justify-between items-start px-1 font-sans">
               <div className="space-y-1">
                 <p className="text-[14px] font-bold text-gray-800 group-hover:text-accent transition-colors">
                   {item.name}
@@ -195,7 +195,7 @@ export default function Shop() {
               <button
                 onClick={(e) => handleAddToCart(e, item)}
                 disabled={!item.in_stock}
-                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all text-sm font-bold ${
+                className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition-all text-sm font-bold ${
                   !item.in_stock ? 'border-gray-100 text-gray-200 cursor-not-allowed' :
                   addedId === item.id ? 'bg-accent border-[#4A5D4E] text-white' :
                   'border-gray-100 text-gray-300 group-hover:border-accent group-hover:text-accent'

@@ -242,7 +242,7 @@ export default function AdminPage() {
         </div>
 
         {/* 히어로 설정 */}
-        <div className="mb-8 border border-gray-100 bg-white p-6 space-y-4">
+        <div className="mb-8 border border-gray-100 bg-white p-4 md:p-6 space-y-4">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Homepage Hero</p>

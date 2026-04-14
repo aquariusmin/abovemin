@@ -8,13 +8,13 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <main className="min-h-screen bg-surface text-[#333] px-6 md:px-10 py-16 font-serif">
-      <div className="max-w-3xl mx-auto space-y-20">
+    <main className="min-h-screen bg-surface text-[#333] px-4 sm:px-6 md:px-10 py-10 md:py-16 font-serif">
+      <div className="max-w-3xl mx-auto space-y-12 md:space-y-20">
 
         {/* Hero */}
         <header className="space-y-6">
           <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-sans">About</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
             빛을 수집하고,<br />
             세상을 <span className="text-accent">분석</span>합니다.
           </h2>
@@ -22,7 +22,7 @@ export default function About() {
         </header>
 
         {/* Story */}
-        <section className="space-y-6 font-sans text-[15px] text-gray-600 leading-relaxed">
+        <section className="space-y-6 font-sans text-sm md:text-[15px] text-gray-600 leading-relaxed">
           <p>
             <strong className="text-[#222] font-serif text-lg">phorage</strong>는 photography와 forage의 합성어입니다.
             무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록 — 일상 속에서 발견한 빛을 채집하고 기록합니다.
@@ -36,7 +36,7 @@ export default function About() {
         {/* What I do */}
         <section className="space-y-8">
           <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">What I Do</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
               {
                 title: 'Archive',
@@ -57,7 +57,7 @@ export default function About() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="block border border-black/5 p-6 space-y-3 hover:border-accent/30 transition-colors group"
+                className="block border border-black/5 p-4 md:p-6 space-y-3 hover:border-accent/30 transition-colors group"
               >
                 <h4 className="font-serif text-lg font-bold group-hover:text-accent transition-colors">
                   {item.title}
@@ -72,7 +72,7 @@ export default function About() {
         </section>
 
         {/* Contact */}
-        <section className="space-y-6 border-t border-black/5 pt-12">
+        <section className="space-y-6 border-t border-black/5 pt-8 md:pt-12">
           <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">Connect</h3>
           <div className="font-sans text-sm text-gray-600 space-y-2">
             <p>Instagram — <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">@sangmin__02</a></p>
