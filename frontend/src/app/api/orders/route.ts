@@ -4,13 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 
 const OWNER_EMAIL = process.env.OWNER_EMAIL ?? 'owner@phorage.com';
 const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@phorage.com>';
-const BANK_INFO = process.env.BANK_INFO ?? '카카오뱅크 3333-00-0000000 예금주: 홍길동';
+const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
 interface OrderItem {
   id: number;
   name: string;
   price: number;
   quantity: number;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export async function POST(request: Request) {
@@ -55,9 +59,15 @@ export async function POST(request: Request) {
 
   const orderId = order.id;
 
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safePhone = escapeHtml(phone || '-');
+  const safeAddress = escapeHtml(address);
+  const safeNote = escapeHtml(note || '-');
+
   const itemRows = items
     .map(i => `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${i.name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${escapeHtml(i.name)}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center;">×${i.quantity}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;">₩ ${(i.price * i.quantity).toLocaleString()}</td>
     </tr>`)
@@ -72,7 +82,7 @@ export async function POST(request: Request) {
       </div>
 
       <p style="font-size:14px;line-height:1.8;color:#555;">
-        안녕하세요, <strong>${name}</strong>님.<br>
+        안녕하세요, <strong>${safeName}</strong>님.<br>
         주문 번호 <strong>#${orderId}</strong>이 정상적으로 접수되었습니다.
       </p>
 
@@ -96,7 +106,7 @@ export async function POST(request: Request) {
       <div style="background:#f7f5f0;padding:20px 24px;margin:32px 0;border-left:3px solid #4A5D4E;">
         <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#999;margin:0 0 12px;">입금 안내</p>
         <p style="font-size:15px;font-weight:bold;color:#333;margin:0 0 6px;">${BANK_INFO}</p>
-        <p style="font-size:13px;color:#555;margin:0;">입금자명: <strong>${name}</strong> / 금액: <strong>₩ ${total_price.toLocaleString()}</strong></p>
+        <p style="font-size:13px;color:#555;margin:0;">입금자명: <strong>${safeName}</strong> / 금액: <strong>₩ ${total_price.toLocaleString()}</strong></p>
       </div>
 
       <p style="font-size:13px;color:#888;line-height:1.8;">
@@ -114,14 +124,14 @@ export async function POST(request: Request) {
     <div style="font-family:monospace;max-width:560px;margin:0 auto;color:#333;">
       <h2 style="font-size:16px;">새 주문 #${orderId}</h2>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <tr><td style="padding:4px 8px;color:#999;">이름</td><td style="padding:4px 8px;">${name}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">이메일</td><td style="padding:4px 8px;">${email}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">연락처</td><td style="padding:4px 8px;">${phone || '-'}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${address}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">메모</td><td style="padding:4px 8px;">${note || '-'}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">이름</td><td style="padding:4px 8px;">${safeName}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">이메일</td><td style="padding:4px 8px;">${safeEmail}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">연락처</td><td style="padding:4px 8px;">${safePhone}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${safeAddress}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">메모</td><td style="padding:4px 8px;">${safeNote}</td></tr>
         <tr><td style="padding:4px 8px;color:#999;">총액</td><td style="padding:4px 8px;font-weight:bold;">₩ ${total_price.toLocaleString()}</td></tr>
       </table>
-      <p style="font-size:12px;color:#999;margin-top:16px;">상품: ${items.map(i => `${i.name} ×${i.quantity}`).join(', ')}</p>
+      <p style="font-size:12px;color:#999;margin-top:16px;">상품: ${items.map(i => `${escapeHtml(i.name)} ×${i.quantity}`).join(', ')}</p>
     </div>
   `;
 
@@ -137,7 +147,7 @@ export async function POST(request: Request) {
       resend.emails.send({
         from: FROM_EMAIL,
         to: OWNER_EMAIL,
-        subject: `[phorage] 새 주문 #${orderId} — ${name} / ₩${total_price.toLocaleString()}`,
+        subject: `[phorage] 새 주문 #${orderId} — ${safeName} / ₩${total_price.toLocaleString()}`,
         html: ownerHtml,
       }),
     ]);

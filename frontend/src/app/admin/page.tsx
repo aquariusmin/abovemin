@@ -289,10 +289,11 @@ export default function AdminPage() {
                 />
               </div>
             </div>
-            {heroImage && (
+            {heroImage && /^https:\/\/.+/.test(heroImage) && (
               <div className="mt-2">
                 <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">미리보기</p>
                 <div className="aspect-[16/6] bg-gray-100 relative overflow-hidden rounded-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={heroImage} alt="Hero preview" className="w-full h-full object-cover" />
                 </div>
               </div>
