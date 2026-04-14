@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Lightbox from './Lightbox';
+import { withWatermark } from '@/lib/cloudinary';
 
 interface Photo {
   id: number;
@@ -26,12 +27,13 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
           >
             <div className="relative overflow-hidden bg-gray-100">
               <Image
-                src={photo.src}
+                src={withWatermark(photo.src)}
                 alt={photo.title}
                 width={0}
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
+                draggable={false}
               />
               <div className="absolute inset-0 bg-accent/5 group-hover:bg-transparent transition-all duration-700" />
             </div>

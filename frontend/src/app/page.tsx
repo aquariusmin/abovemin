@@ -28,6 +28,7 @@ export default async function Home() {
             <Image
               src={heroImage}
               fill
+              quality={90}
               className="object-cover grayscale-[10%]"
               alt="Hero"
               sizes="(max-width: 768px) 100vw, 66vw"

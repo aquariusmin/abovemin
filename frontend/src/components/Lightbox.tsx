@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { withWatermark } from '@/lib/cloudinary';
 
 interface Photo {
   id: number;
@@ -66,13 +67,14 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         onClick={(e) => e.stopPropagation()}
       >
         <Image
-          src={photo.src}
+          src={withWatermark(photo.src)}
           alt={photo.title}
           width={0}
           height={0}
           sizes="90vw"
           className="w-auto h-auto max-w-full max-h-[78vh] object-contain"
           priority
+          draggable={false}
         />
 
         {/* Caption */}
