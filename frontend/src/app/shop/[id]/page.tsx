@@ -43,8 +43,28 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const accentColor = "text-accent";
   const accentBg = "bg-accent";
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image_url,
+    description: product.description || `${product.name} — phorage shop`,
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'KRW',
+      availability: product.in_stock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+    },
+  };
+
   return (
     <main className="min-h-screen bg-[#FAF9F6] text-[#333] px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* 뒤로가기 */}
       <div className="max-w-7xl mx-auto mb-8 md:mb-12">

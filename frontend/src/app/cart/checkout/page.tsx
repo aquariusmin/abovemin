@@ -10,7 +10,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', note: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
 
   const [mounted, setMounted] = useState(false);
@@ -50,6 +50,7 @@ export default function CheckoutPage() {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || null,
+        zipcode: form.zipcode.trim() || null,
         address: form.address.trim(),
         note: form.note.trim() || null,
         items,
@@ -84,7 +85,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const inputClass = "w-full border border-gray-200 bg-white px-4 py-3 text-sm font-sans text-[#333] focus:outline-none focus:border-accent transition-colors";
+  const inputClass = "w-full border border-gray-200 bg-white px-4 py-3 text-sm font-sans text-[#333] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors";
   const errorClass = "text-[10px] text-red-400 font-sans mt-1";
 
   return (
@@ -133,6 +134,18 @@ export default function CheckoutPage() {
                 value={form.phone}
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="010-0000-0000"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-sans mb-2">우편번호</label>
+              <input
+                className={inputClass}
+                value={form.zipcode}
+                onChange={e => setForm(f => ({ ...f, zipcode: e.target.value }))}
+                placeholder="12345"
+                inputMode="numeric"
+                maxLength={5}
               />
             </div>
 

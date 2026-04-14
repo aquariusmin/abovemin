@@ -104,7 +104,8 @@ export default function Shop() {
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as typeof sortBy)}
-              className="bg-transparent hover:text-black transition-colors italic cursor-pointer focus:outline-none appearance-none"
+              aria-label="Sort products"
+              className="bg-transparent hover:text-black transition-colors italic cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/30 appearance-none"
             >
               <option value="newest">Newest</option>
               <option value="price-asc">Price ↑</option>

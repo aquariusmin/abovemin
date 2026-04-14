@@ -306,6 +306,7 @@ export default function Lab() {
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [loadError, setLoadError] = useState(false);
 
   // 전체 데이터 초기 로드
   useEffect(() => {
@@ -325,6 +326,13 @@ export default function Lab() {
       setBonds(Array.isArray(bond) ? bond : []);
       setLoading(false);
       setLastUpdated(new Date().toLocaleTimeString('ko-KR'));
+      // 모든 데이터가 빈 배열이면 에러로 판단
+      if ([idx, sec, kr, crypto, comm, bond].every(d => !Array.isArray(d) || d.length === 0)) {
+        setLoadError(true);
+      }
+    }).catch(() => {
+      setLoading(false);
+      setLoadError(true);
     });
   }, []);
 
@@ -387,6 +395,17 @@ export default function Lab() {
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="border border-white/5 bg-white/2 p-5 h-28 animate-pulse" />
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="border border-white/8 bg-white/2 p-12 text-center space-y-4">
+            <p className="text-white/40 text-sm font-mono">Market data unavailable</p>
+            <p className="text-white/20 text-[10px] font-mono">데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <>
