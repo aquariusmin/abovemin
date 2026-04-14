@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
 const OWNER_EMAIL = process.env.OWNER_EMAIL ?? 'owner@phorage.com';
-const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@phorage.com>';
+const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.com>';
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
 interface OrderItem {
