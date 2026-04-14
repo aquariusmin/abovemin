@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { verifyToken } from '../auth/route';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,7 +9,8 @@ const supabase = createClient(
 );
 
 function isAuthed(cookieStore: Awaited<ReturnType<typeof cookies>>) {
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
+  const token = cookieStore.get('admin_session')?.value;
+  return token ? verifyToken(token) : false;
 }
 
 export async function GET() {

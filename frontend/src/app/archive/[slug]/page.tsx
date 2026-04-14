@@ -1,7 +1,7 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAlbums, getAlbumWithPhotos } from '@/lib/supabase';
+import PhotoGrid from '@/components/PhotoGrid';
 
 export const revalidate = 0;
 
@@ -61,32 +61,8 @@ export default async function CollectionPage({
         </div>
       </div>
 
-      {/* 사진 그리드 — 원본 비율 자동 */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6 max-w-[1400px] mx-auto">
-        {photos.map((photo) => (
-          <div key={photo.id} className="break-inside-avoid group cursor-crosshair">
-            <div className="relative overflow-hidden bg-gray-100">
-              <Image
-                src={photo.src}
-                alt={photo.title}
-                width={0}
-                height={0}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-accent/5 group-hover:bg-transparent transition-all duration-700" />
-            </div>
-            <div className="mt-3 font-sans">
-              <p className="text-[11px] font-semibold text-gray-700 group-hover:text-accent transition-colors">
-                {photo.title}
-              </p>
-              <p className="text-[9px] uppercase tracking-[0.15em] text-gray-400 mt-0.5">
-                {photo.location} · {photo.year}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* 사진 그리드 + 라이트박스 */}
+      <PhotoGrid photos={photos} />
 
       {/* 하단 네비게이션 */}
       <div className="max-w-[1400px] mx-auto mt-20 pt-10 border-t border-black/5 flex justify-between items-center">

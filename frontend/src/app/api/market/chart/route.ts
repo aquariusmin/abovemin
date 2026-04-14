@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 
-const ALLOWED_SYMBOLS = new Set(['^GSPC', '^IXIC', '^KS11', '^KQ11']);
+const ALLOWED_SYMBOLS = new Set([
+  '^GSPC', '^IXIC', '^KS11', '^KQ11',
+  'BTC-USD', 'ETH-USD', 'GC=F', 'CL=F', '^TNX',
+]);
 const ALLOWED_RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y']);
 
 export async function GET(request: Request) {

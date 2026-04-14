@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Lab — Market Overview',
-  description: '글로벌 시장 지수, 섹터 퍼포먼스, 한국 주요 종목 현황을 한눈에.',
+  description: '글로벌 주식, 암호화폐, 원자재, 채권, 섹터 퍼포먼스를 한눈에. 퀀트 트레이딩 분석 대시보드.',
 };
 
 export default function LabLayout({ children }: { children: React.ReactNode }) {

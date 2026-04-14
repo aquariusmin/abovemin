@@ -35,16 +35,48 @@ interface KrStockData {
   error?: boolean;
 }
 
+interface CryptoData {
+  symbol: string;
+  name: string;
+  price: number | null;
+  changePercent: number;
+  marketCap: number | null;
+  error?: boolean;
+}
+
+interface CommodityData {
+  symbol: string;
+  name: string;
+  unit: string;
+  price: number | null;
+  changePercent: number;
+  error?: boolean;
+}
+
+interface BondData {
+  symbol: string;
+  name: string;
+  maturity: string;
+  yield: number | null;
+  changePercent: number;
+  error?: boolean;
+}
+
 interface ChartPoint {
   date: string;
   close: number | null;
 }
 
 const CHART_SYMBOLS = [
-  { symbol: '^GSPC',  label: 'S&P 500' },
-  { symbol: '^IXIC',  label: 'NASDAQ' },
-  { symbol: '^KS11',  label: 'KOSPI' },
-  { symbol: '^KQ11',  label: 'KOSDAQ' },
+  { symbol: '^GSPC',   label: 'S&P 500' },
+  { symbol: '^IXIC',   label: 'NASDAQ' },
+  { symbol: '^KS11',   label: 'KOSPI' },
+  { symbol: '^KQ11',   label: 'KOSDAQ' },
+  { symbol: 'BTC-USD', label: 'BTC' },
+  { symbol: 'ETH-USD', label: 'ETH' },
+  { symbol: 'GC=F',    label: 'Gold' },
+  { symbol: 'CL=F',    label: 'Oil' },
+  { symbol: '^TNX',    label: 'US10Y' },
 ];
 
 const RANGES = ['1d', '5d', '1mo', '3mo', '6mo', '1y'] as const;
@@ -93,16 +125,19 @@ function IndexCard({ data }: { data: IndexData }) {
   );
 }
 
-function SectorHeatmap({ sectors }: { sectors: SectorData[] }) {
-  const max = Math.max(...sectors.map(s => Math.abs(s.changePercent)), 1);
+function HeatmapGrid({ items, labelKey, subKey }: {
+  items: { symbol: string; name: string; changePercent: number; price?: number | null; error?: boolean; [key: string]: any }[];
+  labelKey?: string;
+  subKey?: string;
+}) {
+  const max = Math.max(...items.map(s => Math.abs(s.changePercent)), 1);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-      {sectors.map(s => {
+      {items.map(s => {
         const pct = s.changePercent;
         const up = pct >= 0;
         const intensity = Math.min(Math.abs(pct) / max, 1);
-
         const bg = up
           ? `rgba(52,211,153,${0.08 + intensity * 0.35})`
           : `rgba(248,113,113,${0.08 + intensity * 0.35})`;
@@ -113,8 +148,16 @@ function SectorHeatmap({ sectors }: { sectors: SectorData[] }) {
             className="p-3 text-center transition-all hover:scale-[1.02] cursor-default rounded-sm"
             style={{ background: bg }}
           >
-            <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mb-1">{s.symbol}</p>
+            {subKey && s[subKey] && (
+              <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mb-0.5">{s[subKey]}</p>
+            )}
             <p className="text-[11px] font-bold text-white/80">{s.name}</p>
+            {s.price != null && (
+              <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                {labelKey === 'yield' ? '' : s.symbol.includes('.KS') ? '₩' : '$'}
+                {s.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+            )}
             <p className={`text-[13px] font-black font-mono mt-1 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
               {up ? '+' : ''}{pct.toFixed(2)}%
             </p>
@@ -125,34 +168,101 @@ function SectorHeatmap({ sectors }: { sectors: SectorData[] }) {
   );
 }
 
-function KrStockHeatmap({ stocks }: { stocks: KrStockData[] }) {
-  const max = Math.max(...stocks.map(s => Math.abs(s.changePercent)), 1);
+function CryptoGrid({ cryptos }: { cryptos: CryptoData[] }) {
+  const max = Math.max(...cryptos.map(c => Math.abs(c.changePercent)), 1);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-      {stocks.map(s => {
-        const pct = s.changePercent;
-        const up = pct >= 0;
-        const intensity = Math.min(Math.abs(pct) / max, 1);
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {cryptos.map(c => {
+        const up = c.changePercent >= 0;
+        const intensity = Math.min(Math.abs(c.changePercent) / max, 1);
         const bg = up
           ? `rgba(52,211,153,${0.08 + intensity * 0.35})`
           : `rgba(248,113,113,${0.08 + intensity * 0.35})`;
 
         return (
           <div
-            key={s.symbol}
-            className="p-3 transition-all hover:scale-[1.02] cursor-default rounded-sm"
+            key={c.symbol}
+            className="p-4 transition-all hover:scale-[1.02] cursor-default rounded-sm"
             style={{ background: bg }}
           >
-            <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mb-0.5">{s.sector}</p>
-            <p className="text-[12px] font-bold text-white/80 leading-tight">{s.name}</p>
-            {s.price && (
-              <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                ₩{s.price.toLocaleString()}
+            <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mb-0.5">
+              {c.symbol.replace('-USD', '')}
+            </p>
+            <p className="text-[13px] font-bold text-white/80">{c.name}</p>
+            {c.price != null && (
+              <p className="text-white text-lg font-black font-mono mt-1">
+                ${c.price.toLocaleString(undefined, { maximumFractionDigits: c.price < 1 ? 4 : 2 })}
               </p>
             )}
             <p className={`text-[13px] font-black font-mono mt-1 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-              {up ? '+' : ''}{pct.toFixed(2)}%
+              {up ? '+' : ''}{c.changePercent.toFixed(2)}%
+            </p>
+            {c.marketCap && (
+              <p className="text-[9px] text-white/30 font-mono mt-1">
+                MCap: ${(c.marketCap / 1e9).toFixed(1)}B
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BondGrid({ bonds }: { bonds: BondData[] }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {bonds.map(b => {
+        const up = b.changePercent >= 0;
+        return (
+          <div key={b.symbol} className="border border-white/8 bg-white/3 p-4 hover:bg-white/6 transition-colors">
+            <p className="text-[9px] font-mono uppercase tracking-widest text-white/30 mb-1">{b.maturity}</p>
+            <p className="text-[12px] font-bold text-white/70">{b.name}</p>
+            {b.yield != null ? (
+              <>
+                <p className="text-xl font-black text-white mt-2 font-mono">{b.yield.toFixed(3)}%</p>
+                <p className={`text-[11px] font-mono font-bold mt-1 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {up ? '+' : ''}{b.changePercent.toFixed(2)}%
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-white/20 font-mono mt-2">— unavailable —</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CommodityGrid({ commodities }: { commodities: CommodityData[] }) {
+  const max = Math.max(...commodities.map(c => Math.abs(c.changePercent)), 1);
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      {commodities.map(c => {
+        const up = c.changePercent >= 0;
+        const intensity = Math.min(Math.abs(c.changePercent) / max, 1);
+        const bg = up
+          ? `rgba(52,211,153,${0.08 + intensity * 0.35})`
+          : `rgba(248,113,113,${0.08 + intensity * 0.35})`;
+
+        return (
+          <div
+            key={c.symbol}
+            className="p-4 transition-all hover:scale-[1.02] cursor-default rounded-sm"
+            style={{ background: bg }}
+          >
+            <p className="text-[9px] font-mono text-white/40 mb-0.5">{c.unit}</p>
+            <p className="text-[13px] font-bold text-white/80">{c.name}</p>
+            {c.price != null && (
+              <p className="text-white text-lg font-black font-mono mt-1">
+                ${c.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+            )}
+            <p className={`text-[13px] font-black font-mono mt-1 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
+              {up ? '+' : ''}{c.changePercent.toFixed(2)}%
             </p>
           </div>
         );
@@ -171,12 +281,25 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+function LoadingPlaceholder({ text }: { text: string }) {
+  return (
+    <div className="h-32 flex items-center justify-center border border-white/5">
+      <p className="text-[9px] font-mono text-white/20 animate-pulse uppercase tracking-widest">
+        {text}
+      </p>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Lab() {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [sectors, setSectors] = useState<SectorData[]>([]);
   const [krStocks, setKrStocks] = useState<KrStockData[]>([]);
+  const [cryptos, setCryptos] = useState<CryptoData[]>([]);
+  const [commodities, setCommodities] = useState<CommodityData[]>([]);
+  const [bonds, setBonds] = useState<BondData[]>([]);
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [activeSymbol, setActiveSymbol] = useState('^GSPC');
   const [activeRange, setActiveRange] = useState<Range>('1mo');
@@ -184,16 +307,22 @@ export default function Lab() {
   const [chartLoading, setChartLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  // 지수 + 섹터 + KR 종목 초기 로드
+  // 전체 데이터 초기 로드
   useEffect(() => {
     Promise.all([
       fetch('/api/market/indices').then(r => r.json()).catch(() => []),
       fetch('/api/market/sectors').then(r => r.json()).catch(() => []),
       fetch('/api/market/kr-stocks').then(r => r.json()).catch(() => []),
-    ]).then(([idx, sec, kr]) => {
+      fetch('/api/market/crypto').then(r => r.json()).catch(() => []),
+      fetch('/api/market/commodities').then(r => r.json()).catch(() => []),
+      fetch('/api/market/bonds').then(r => r.json()).catch(() => []),
+    ]).then(([idx, sec, kr, crypto, comm, bond]) => {
       setIndices(Array.isArray(idx) ? idx : []);
       setSectors(Array.isArray(sec) ? sec : []);
       setKrStocks(Array.isArray(kr) ? kr : []);
+      setCryptos(Array.isArray(crypto) ? crypto : []);
+      setCommodities(Array.isArray(comm) ? comm : []);
+      setBonds(Array.isArray(bond) ? bond : []);
       setLoading(false);
       setLastUpdated(new Date().toLocaleTimeString('ko-KR'));
     });
@@ -243,7 +372,7 @@ export default function Lab() {
               <span className="text-accent">OVERVIEW</span>
             </h2>
             <p className="text-white/30 text-xs font-mono">
-              Global market indices · Sector performance · phorage lab
+              Equities &middot; Crypto &middot; Commodities &middot; Bonds &middot; FX
             </p>
           </div>
           {lastUpdated && (
@@ -255,13 +384,13 @@ export default function Lab() {
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Array.from({ length: 10 }).map((_, i) => (
+            {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="border border-white/5 bg-white/2 p-5 h-28 animate-pulse" />
             ))}
           </div>
         ) : (
           <>
-            {/* ── 주요 지수 카드 ── */}
+            {/* ── 주요 지수 ── */}
             <section className="space-y-4">
               <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
                 ── US Markets
@@ -294,7 +423,6 @@ export default function Lab() {
 
         {/* ── 차트 ── */}
         <section className="border border-white/8 bg-white/2 p-6 space-y-6">
-          {/* 심볼 탭 */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex gap-2 flex-wrap">
               {CHART_SYMBOLS.map(s => (
@@ -311,7 +439,6 @@ export default function Lab() {
                 </button>
               ))}
             </div>
-            {/* 기간 탭 */}
             <div className="flex gap-1">
               {RANGES.map(r => (
                 <button
@@ -329,21 +456,19 @@ export default function Lab() {
             </div>
           </div>
 
-          {/* 차트 헤더 */}
           {chartData.length > 0 && !chartLoading && (
             <div className="flex items-baseline gap-4">
               <span className="text-2xl font-black text-white">
                 {lastClose.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </span>
               <span className={`text-sm font-mono font-bold ${chartUp ? 'text-emerald-400' : 'text-red-400'}`}>
-                {chartUp ? '+' : ''}{((lastClose - firstClose) / firstClose * 100).toFixed(2)}%
+                {chartUp ? '+' : ''}{firstClose ? ((lastClose - firstClose) / firstClose * 100).toFixed(2) : '0.00'}%
                 <span className="text-white/30 font-normal ml-1 text-[10px]">({activeRange})</span>
               </span>
               <span className="text-[10px] text-white/30 font-mono">{activeChartMeta?.label}</span>
             </div>
           )}
 
-          {/* 차트 본체 */}
           <div className="h-64 md:h-80">
             {chartLoading ? (
               <div className="h-full flex items-center justify-center">
@@ -372,7 +497,7 @@ export default function Lab() {
                     tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.25)', fontFamily: 'monospace' }}
                     tickLine={false}
                     axisLine={false}
-                    width={60}
+                    width={70}
                     tickFormatter={v => v.toLocaleString()}
                     domain={['auto', 'auto']}
                   />
@@ -392,39 +517,66 @@ export default function Lab() {
           </div>
         </section>
 
-        {/* ── 섹터 히트맵 ── */}
+        {/* ── Crypto ── */}
+        <section className="space-y-4">
+          <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
+            ── Cryptocurrency
+          </h3>
+          {cryptos.length > 0 ? (
+            <CryptoGrid cryptos={cryptos} />
+          ) : (
+            <LoadingPlaceholder text="Loading crypto data..." />
+          )}
+        </section>
+
+        {/* ── Commodities ── */}
+        <section className="space-y-4">
+          <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
+            ── Commodities
+          </h3>
+          {commodities.length > 0 ? (
+            <CommodityGrid commodities={commodities} />
+          ) : (
+            <LoadingPlaceholder text="Loading commodity data..." />
+          )}
+        </section>
+
+        {/* ── Bonds / Treasury ── */}
+        <section className="space-y-4">
+          <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
+            ── US Treasury Yields
+          </h3>
+          {bonds.length > 0 ? (
+            <BondGrid bonds={bonds} />
+          ) : (
+            <LoadingPlaceholder text="Loading bond data..." />
+          )}
+        </section>
+
+        {/* ── Sector Heatmap ── */}
         <section className="space-y-4">
           <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
             ── US Sector Performance (SPDR ETF)
           </h3>
           {sectors.length > 0 ? (
-            <SectorHeatmap sectors={sectors} />
+            <HeatmapGrid items={sectors} />
           ) : (
-            <div className="h-32 flex items-center justify-center border border-white/5">
-              <p className="text-[9px] font-mono text-white/20 animate-pulse uppercase tracking-widest">
-                Loading sector data...
-              </p>
-            </div>
+            <LoadingPlaceholder text="Loading sector data..." />
           )}
         </section>
 
-        {/* ── KR 주요 종목 히트맵 ── */}
+        {/* ── KR Stocks ── */}
         <section className="space-y-4">
           <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
             ── KR Major Stocks (KRX)
           </h3>
           {krStocks.length > 0 ? (
-            <KrStockHeatmap stocks={krStocks} />
+            <HeatmapGrid items={krStocks} subKey="sector" />
           ) : (
-            <div className="h-32 flex items-center justify-center border border-white/5">
-              <p className="text-[9px] font-mono text-white/20 animate-pulse uppercase tracking-widest">
-                Loading KR stock data...
-              </p>
-            </div>
+            <LoadingPlaceholder text="Loading KR stock data..." />
           )}
         </section>
 
-        {/* 하단 여백 */}
         <div className="h-8" />
       </div>
     </main>

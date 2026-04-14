@@ -29,6 +29,7 @@ export default function Footer() {
         <div className="space-y-6">
           <h5 className={`text-[10px] uppercase tracking-[0.2em] font-bold ${footerSubHeading}`}>Index</h5>
           <ul className={`text-[13px] space-y-3 font-semibold ${footerBody}`}>
+            <li><Link href="/about" className="hover:text-accent transition-colors">About</Link></li>
             <li><Link href="/archive" className="hover:text-accent transition-colors">Archive</Link></li>
             <li><Link href="/shop" className="hover:text-accent transition-colors">Shop</Link></li>
             <li><Link href="/lab" className="hover:text-accent transition-colors italic">The Lab</Link></li>

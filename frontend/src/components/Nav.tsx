@@ -19,6 +19,7 @@ export default function Nav() {
   const displayCount = mounted ? cartCount : 0;
 
   const navLinks = [
+    { href: '/about', label: 'About' },
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },
     { href: '/lab', label: 'Lab', italic: true },
