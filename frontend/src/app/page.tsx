@@ -19,48 +19,50 @@ export default async function Home() {
   const accentBg = "bg-accent";
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] text-[#333] px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif">
+    <main className="min-h-screen bg-[#FAF9F6] text-[#333] font-serif">
 
-      {/* 히어로 섹션 */}
-      <div className="max-w-6xl mx-auto mb-16 md:mb-32 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center">
-        <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-sm shadow-xl shadow-gray-200/40">
-          <Image
-            src={heroImage}
-            fill
-            className="object-cover grayscale-[10%]"
-            alt="Hero"
-            sizes="(max-width: 768px) 100vw, 66vw"
-            priority
-          />
-          <div className="absolute inset-0 bg-accent/10 mix-blend-multiply"></div>
-        </div>
+      {/* 히어로 섹션 — 풀스크린 */}
+      <section className="min-h-[calc(100dvh-72px)] md:min-h-[calc(100dvh-88px)] flex items-center px-4 sm:px-6 md:px-8">
+        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center">
+          <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-sm shadow-xl shadow-gray-200/40">
+            <Image
+              src={heroImage}
+              fill
+              className="object-cover grayscale-[10%]"
+              alt="Hero"
+              sizes="(max-width: 768px) 100vw, 66vw"
+              priority
+            />
+            <div className="absolute inset-0 bg-accent/10 mix-blend-multiply"></div>
+          </div>
 
-        <div className="md:col-span-4 space-y-6">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
-            {heroTitle.split(' ').slice(0, -1).join(' ')}<br />
-            <span className={accentColor}>{heroTitle.split(' ').slice(-1)}</span>
-          </h2>
-          <p className="font-sans text-sm text-gray-500 leading-relaxed">
-            {heroSubtitle}
-          </p>
+          <div className="md:col-span-4 space-y-4 md:space-y-6">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
+              {heroTitle.split(' ').slice(0, -1).join(' ')}<br />
+              <span className={accentColor}>{heroTitle.split(' ').slice(-1)}</span>
+            </h2>
+            <p className="font-sans text-sm text-gray-500 leading-relaxed">
+              {heroSubtitle}
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* 소품샵 미리보기 */}
-      <section className="max-w-6xl mx-auto">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-12 md:py-20">
         <div className="flex justify-between items-end mb-8 md:mb-12">
           <div>
-            <h3 className="text-2xl font-bold">New Collectibles</h3>
+            <h3 className="text-xl sm:text-2xl font-bold">New Collectibles</h3>
             <p className="text-xs text-gray-400 mt-2 font-sans">주인장이 엄선한 이달의 소품</p>
           </div>
-          <Link href="/shop" className={`px-6 py-2 font-sans text-[10px] uppercase tracking-widest text-white ${accentBg} rounded-sm shadow-md`}>
+          <Link href="/shop" className={`px-4 sm:px-6 py-2 font-sans text-[10px] uppercase tracking-widest text-white ${accentBg} rounded-sm shadow-md`}>
             Explore All
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {featured.length > 0 ? featured.map((item) => (
-            <Link key={item.id} href={`/shop/${item.id}`} className="space-y-4 group cursor-pointer">
+            <Link key={item.id} href={`/shop/${item.id}`} className="space-y-3 md:space-y-4 group cursor-pointer">
               <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">
                 {item.image_url ? (
                   <Image
@@ -68,23 +70,22 @@ export default async function Home() {
                     alt={item.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 25vw"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 ) : (
                   <div className={`w-full h-full opacity-5 ${accentBg}`} />
                 )}
               </div>
-              <p className="font-sans text-sm font-medium">{item.name}</p>
+              <p className="font-sans text-xs sm:text-sm font-medium">{item.name}</p>
               <p className={`font-sans text-xs ${accentColor}`}>₩ {item.price.toLocaleString()}</p>
             </Link>
           )) : (
-            // 로딩 실패 시 플레이스홀더
             [{id:1,name:"Olive Leaf Poster",price:18000},{id:2,name:"Sage Pencil Set",price:8000},{id:3,name:"Forest Postcard Pack",price:12000},{id:4,name:"Khaki Canvas Bag",price:24000}].map((item) => (
-              <div key={item.id} className="space-y-4 group cursor-pointer">
+              <div key={item.id} className="space-y-3 md:space-y-4 group cursor-pointer">
                 <div className={`aspect-square bg-white rounded-sm overflow-hidden border border-gray-100`}>
                   <div className={`w-full h-full opacity-5 ${accentBg}`}></div>
                 </div>
-                <p className="font-sans text-sm font-medium">{item.name}</p>
+                <p className="font-sans text-xs sm:text-sm font-medium">{item.name}</p>
                 <p className={`font-sans text-xs ${accentColor}`}>₩ {item.price.toLocaleString()}</p>
               </div>
             ))

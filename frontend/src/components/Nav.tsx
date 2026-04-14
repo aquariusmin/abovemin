@@ -27,22 +27,29 @@ export default function Nav() {
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>
-      <div className="grid grid-cols-3 items-center px-6 md:px-10 py-5 md:py-7 max-w-[1920px] mx-auto">
+      <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-4 md:py-7 max-w-[1920px] mx-auto">
 
-        {/* Left: tagline (desktop only) */}
-        <div className="text-[10px] tracking-[0.2em] uppercase opacity-50 font-sans hidden md:block italic">
-          Seoul / 2026
+        {/* Left: tagline (desktop) / logo (mobile) */}
+        <div className="flex items-center">
+          <Link href="/" className="md:hidden" onClick={() => setMenuOpen(false)}>
+            <h1 className={`text-lg font-bold tracking-tighter ${accentColor} transition-colors`}>
+              phorage
+            </h1>
+          </Link>
+          <span className="text-[10px] tracking-[0.2em] uppercase opacity-50 font-sans hidden md:block italic">
+            Seoul / 2026
+          </span>
         </div>
 
-        {/* Center: logo */}
-        <Link href="/" className="flex justify-center" onClick={() => setMenuOpen(false)}>
-          <h1 className={`text-xl md:text-2xl font-bold tracking-tighter ${accentColor} transition-colors`}>
+        {/* Center: logo (desktop only) */}
+        <Link href="/" className="hidden md:flex absolute left-1/2 -translate-x-1/2" onClick={() => setMenuOpen(false)}>
+          <h1 className={`text-2xl font-bold tracking-tighter ${accentColor} transition-colors`}>
             phorage
           </h1>
         </Link>
 
         {/* Right: desktop links + mobile controls */}
-        <div className="flex justify-end items-center gap-6 md:gap-10">
+        <div className="flex items-center gap-6 md:gap-10">
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-10 text-[11px] uppercase tracking-widest font-sans font-bold">
             {navLinks.map(link => (
