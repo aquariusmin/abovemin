@@ -130,8 +130,6 @@ export default function Shop() {
             variants={itemVariants}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
-            whileHover={{ y: -8, scale: 1.01 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             
             {/* 🌟 껍데기 박스: '애플 글래스' 효과 적용 */}
