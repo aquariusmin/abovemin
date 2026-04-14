@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+
+const MotionLink = motion.create(Link);
 
 interface Product {
   id: number;
@@ -11,21 +15,25 @@ interface Product {
   category: string;
   tag: string | null;
   image_url: string;
+  in_stock: boolean;
 }
 
 export default function Shop() {
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
+
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [addedId, setAddedId] = useState<number | null>(null);
   const { addItem } = useCartStore();
 
-  const accentColor = "text-[#4A5D4E]";
-  const accentBg = "bg-[#4A5D4E]";
+  const accentColor = "text-accent";
+  const accentBg = "bg-accent";
 
   const handleAddToCart = (e: React.MouseEvent, item: Product) => {
     e.preventDefault();
+    if (!item.in_stock) return;
     addItem({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
     setAddedId(item.id);
     setTimeout(() => setAddedId(null), 1200);
@@ -55,6 +63,14 @@ export default function Shop() {
     visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } }
   };
 
+  const categories = ['All', ...Array.from(new Set(items.map(i => i.category)))];
+  const filtered = (selectedCategory === 'All' ? items : items.filter(i => i.category === selectedCategory))
+    .toSorted((a, b) => {
+      if (sortBy === 'price-asc') return a.price - b.price;
+      if (sortBy === 'price-desc') return b.price - a.price;
+      return b.id - a.id; // newest
+    });
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center font-serif opacity-30 tracking-widest uppercase text-[10px] text-gray-500">
       Synchronizing phorage stock...
@@ -74,12 +90,26 @@ export default function Shop() {
           
           <div className="flex items-center gap-8 text-[11px] uppercase tracking-widest font-sans font-medium text-gray-500">
             <div className="flex gap-5">
-              <button className={`${accentColor} font-bold`}>All</button>
-              <button className="hover:text-black transition-colors">Posters</button>
-              <button className="hover:text-black transition-colors">Postcards</button>
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`transition-colors ${selectedCategory === cat ? `${accentColor} font-bold` : 'hover:text-black'}`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
             <div className="h-3 w-[1px] bg-black/10"></div>
-            <button className="hover:text-black transition-colors italic">Sort / Newest</button>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as typeof sortBy)}
+              className="bg-transparent hover:text-black transition-colors italic cursor-pointer focus:outline-none appearance-none"
+            >
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price ↑</option>
+              <option value="price-desc">Price ↓</option>
+            </select>
           </div>
         </div>
       </header>
@@ -91,9 +121,9 @@ export default function Shop() {
         animate="visible"
         variants={containerVariants}
       >
-        {items.map((item) => (
-          <motion.a 
-            href={`/shop/${item.id}`} 
+        {filtered.map((item) => (
+          <MotionLink
+            href={`/shop/${item.id}`}
             key={item.id} 
             className="break-inside-avoid group cursor-pointer block"
             variants={itemVariants}
@@ -105,9 +135,7 @@ export default function Shop() {
             
             {/* 🌟 껍데기 박스: '애플 글래스' 효과 적용 */}
             {/* bg-white/10(투명도), backdrop-blur-md(흐림), border-white/10(얇은 흰색 테두리) */}
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/10 overflow-hidden 
-                            # 🌟 마우스 오버 시 더 깊어진 카키색 프리미엄 그림자
-                            group-hover:shadow-[0_20px_80px_-15px_rgba(74,93,78,0.3)] transition-all duration-700">
+            <div className="relative bg-white/10 backdrop-blur-md border border-white/10 overflow-hidden group-hover:shadow-[0_20px_80px_-15px_rgba(74,93,78,0.3)] transition-all duration-700">
               
               {/* 태그 (Best, New 등) */}
               {item.tag && (
@@ -118,17 +146,17 @@ export default function Shop() {
               
               {/* 이미지 영역 */}
               <div className="w-full h-auto relative">
-                <img 
-                  src={item.image_url} 
+                <Image
+                  src={item.image_url}
                   alt={item.name}
+                  width={0}
+                  height={0}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="w-full h-auto object-cover transition-transform duration-1000 group-hover:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "https://via.placeholder.com/600x800?text=Preparing+Item";
-                  }}
                 />
 
                 {/* 미세한 카키색 오버레이 */}
-                <div className="absolute inset-0 bg-[#4A5D4E]/5 group-hover:bg-transparent transition-colors duration-700 z-10"></div>
+                <div className="absolute inset-0 bg-accent/5 group-hover:bg-transparent transition-colors duration-700 z-10"></div>
                 
                 {/* 🌟 디자인 디테일: 유리 표면 빛 반사 애니메이션 (Shine Effect) */}
                 <AnimatePresence>
@@ -152,7 +180,7 @@ export default function Shop() {
             {/* 상품 정보: 이미지 바로 아래에 정갈하게 배치 (동일) */}
             <div className="mt-6 flex justify-between items-start px-1 font-sans">
               <div className="space-y-1">
-                <p className="text-[14px] font-bold text-gray-800 group-hover:text-[#4A5D4E] transition-colors">
+                <p className="text-[14px] font-bold text-gray-800 group-hover:text-accent transition-colors">
                   {item.name}
                 </p>
                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium">
@@ -166,12 +194,17 @@ export default function Shop() {
               {/* 장바구니 담기 버튼 */}
               <button
                 onClick={(e) => handleAddToCart(e, item)}
-                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all text-sm font-bold ${addedId === item.id ? 'bg-[#4A5D4E] border-[#4A5D4E] text-white' : 'border-gray-100 text-gray-300 group-hover:border-[#4A5D4E] group-hover:text-[#4A5D4E]'}`}
+                disabled={!item.in_stock}
+                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all text-sm font-bold ${
+                  !item.in_stock ? 'border-gray-100 text-gray-200 cursor-not-allowed' :
+                  addedId === item.id ? 'bg-accent border-[#4A5D4E] text-white' :
+                  'border-gray-100 text-gray-300 group-hover:border-accent group-hover:text-accent'
+                }`}
               >
-                {addedId === item.id ? '✓' : '+'}
+                {!item.in_stock ? '—' : addedId === item.id ? '✓' : '+'}
               </button>
             </div>
-          </motion.a>
+          </MotionLink>
         ))}
       </motion.div>
 

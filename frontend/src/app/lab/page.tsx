@@ -25,6 +25,16 @@ interface SectorData {
   error?: boolean;
 }
 
+interface KrStockData {
+  symbol: string;
+  name: string;
+  sector: string;
+  price: number | null;
+  changePercent: number;
+  change: number | null;
+  error?: boolean;
+}
+
 interface ChartPoint {
   date: string;
   close: number | null;
@@ -115,6 +125,42 @@ function SectorHeatmap({ sectors }: { sectors: SectorData[] }) {
   );
 }
 
+function KrStockHeatmap({ stocks }: { stocks: KrStockData[] }) {
+  const max = Math.max(...stocks.map(s => Math.abs(s.changePercent)), 1);
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+      {stocks.map(s => {
+        const pct = s.changePercent;
+        const up = pct >= 0;
+        const intensity = Math.min(Math.abs(pct) / max, 1);
+        const bg = up
+          ? `rgba(52,211,153,${0.08 + intensity * 0.35})`
+          : `rgba(248,113,113,${0.08 + intensity * 0.35})`;
+
+        return (
+          <div
+            key={s.symbol}
+            className="p-3 transition-all hover:scale-[1.02] cursor-default rounded-sm"
+            style={{ background: bg }}
+          >
+            <p className="text-[9px] font-mono uppercase tracking-widest text-white/40 mb-0.5">{s.sector}</p>
+            <p className="text-[12px] font-bold text-white/80 leading-tight">{s.name}</p>
+            {s.price && (
+              <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                ₩{s.price.toLocaleString()}
+              </p>
+            )}
+            <p className={`text-[13px] font-black font-mono mt-1 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
+              {up ? '+' : ''}{pct.toFixed(2)}%
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -130,6 +176,7 @@ function CustomTooltip({ active, payload, label }: any) {
 export default function Lab() {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [sectors, setSectors] = useState<SectorData[]>([]);
+  const [krStocks, setKrStocks] = useState<KrStockData[]>([]);
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [activeSymbol, setActiveSymbol] = useState('^GSPC');
   const [activeRange, setActiveRange] = useState<Range>('1mo');
@@ -137,14 +184,16 @@ export default function Lab() {
   const [chartLoading, setChartLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  // 지수 + 섹터 초기 로드
+  // 지수 + 섹터 + KR 종목 초기 로드
   useEffect(() => {
     Promise.all([
       fetch('/api/market/indices').then(r => r.json()).catch(() => []),
       fetch('/api/market/sectors').then(r => r.json()).catch(() => []),
-    ]).then(([idx, sec]) => {
+      fetch('/api/market/kr-stocks').then(r => r.json()).catch(() => []),
+    ]).then(([idx, sec, kr]) => {
       setIndices(Array.isArray(idx) ? idx : []);
       setSectors(Array.isArray(sec) ? sec : []);
+      setKrStocks(Array.isArray(kr) ? kr : []);
       setLoading(false);
       setLastUpdated(new Date().toLocaleTimeString('ko-KR'));
     });
@@ -186,12 +235,12 @@ export default function Lab() {
         {/* ── 헤더 ── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-3">
-            <div className="inline-block px-3 py-1 border border-[#4A5D4E] text-[#6B8E6B] text-[9px] font-mono tracking-widest uppercase">
+            <div className="inline-block px-3 py-1 border border-accent text-accent-light text-[9px] font-mono tracking-widest uppercase">
               System.Status: Live
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-none">
               MARKET <br />
-              <span className="text-[#4A5D4E]">OVERVIEW</span>
+              <span className="text-accent">OVERVIEW</span>
             </h2>
             <p className="text-white/30 text-xs font-mono">
               Global market indices · Sector performance · phorage lab
@@ -254,7 +303,7 @@ export default function Lab() {
                   onClick={() => setActiveSymbol(s.symbol)}
                   className={`px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-all ${
                     activeSymbol === s.symbol
-                      ? 'bg-[#4A5D4E] text-white'
+                      ? 'bg-accent text-white'
                       : 'border border-white/10 text-white/40 hover:text-white/70'
                   }`}
                 >
@@ -270,7 +319,7 @@ export default function Lab() {
                   onClick={() => setActiveRange(r)}
                   className={`px-3 py-1 text-[9px] font-mono uppercase tracking-widest transition-all ${
                     activeRange === r
-                      ? 'text-[#6B8E6B] border-b border-[#4A5D4E]'
+                      ? 'text-accent-light border-b border-accent'
                       : 'text-white/25 hover:text-white/50'
                   }`}
                 >
@@ -354,6 +403,22 @@ export default function Lab() {
             <div className="h-32 flex items-center justify-center border border-white/5">
               <p className="text-[9px] font-mono text-white/20 animate-pulse uppercase tracking-widest">
                 Loading sector data...
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ── KR 주요 종목 히트맵 ── */}
+        <section className="space-y-4">
+          <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
+            ── KR Major Stocks (KRX)
+          </h3>
+          {krStocks.length > 0 ? (
+            <KrStockHeatmap stocks={krStocks} />
+          ) : (
+            <div className="h-32 flex items-center justify-center border border-white/5">
+              <p className="text-[9px] font-mono text-white/20 animate-pulse uppercase tracking-widest">
+                Loading KR stock data...
               </p>
             </div>
           )}

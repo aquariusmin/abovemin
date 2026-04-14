@@ -1,19 +1,21 @@
 "use client";
 
+import Image from 'next/image';
+import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCartStore();
-  const accentColor = "text-[#4A5D4E]";
-  const accentBg = "bg-[#4A5D4E]";
+  const accentColor = "text-accent";
+  const accentBg = "bg-accent";
 
   if (items.length === 0) return (
     <main className="min-h-screen bg-[#FAF9F6] flex flex-col items-center justify-center font-serif text-center px-8">
       <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-4 font-sans">Cart</p>
       <p className="text-2xl font-light italic text-[#333] mb-8">Your cart is empty.</p>
-      <a href="/shop" className={`px-8 py-3 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold`}>
+      <Link href="/shop" className={`px-8 py-3 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold`}>
         Back to Shop
-      </a>
+      </Link>
     </main>
   );
 
@@ -36,9 +38,9 @@ export default function CartPage() {
               <div className="flex gap-4 md:gap-8 items-start md:items-center">
 
                 {/* 이미지 */}
-                <a href={`/shop/${item.id}`} className="w-20 h-20 md:w-24 md:h-24 bg-white border border-gray-100 overflow-hidden flex-shrink-0">
-                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                </a>
+                <Link href={`/shop/${item.id}`} className="w-20 h-20 md:w-24 md:h-24 bg-white border border-gray-100 overflow-hidden flex-shrink-0 relative">
+                  <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="96px" />
+                </Link>
 
                 {/* 정보 + 모바일용 소계 */}
                 <div className="flex-1 min-w-0">
@@ -50,14 +52,14 @@ export default function CartPage() {
                     <div className="flex items-center gap-2 font-sans">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-[#4A5D4E] hover:text-[#4A5D4E] transition-all text-base leading-none"
+                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
                       >
                         −
                       </button>
                       <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-[#4A5D4E] hover:text-[#4A5D4E] transition-all text-base leading-none"
+                        className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-base leading-none"
                       >
                         +
                       </button>
@@ -80,14 +82,14 @@ export default function CartPage() {
                 <div className="hidden md:flex items-center gap-3 font-sans">
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-[#4A5D4E] hover:text-[#4A5D4E] transition-all text-lg leading-none"
+                    className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-lg leading-none"
                   >
                     −
                   </button>
                   <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-[#4A5D4E] hover:text-[#4A5D4E] transition-all text-lg leading-none"
+                    className="w-7 h-7 border border-gray-200 text-gray-400 hover:border-accent hover:text-accent transition-all text-lg leading-none"
                   >
                     +
                   </button>
@@ -126,9 +128,9 @@ export default function CartPage() {
                 ₩ {totalPrice().toLocaleString()}
               </span>
             </div>
-            <button className={`w-full md:w-auto px-12 py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all`}>
+            <Link href="/cart/checkout" className={`w-full md:w-auto px-12 py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all text-center`}>
               Checkout
-            </button>
+            </Link>
           </div>
         </div>
 

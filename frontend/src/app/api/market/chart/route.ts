@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 
+const ALLOWED_SYMBOLS = new Set(['^GSPC', '^IXIC', '^KS11', '^KQ11']);
+const ALLOWED_RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y']);
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol') ?? '^GSPC';
-  const range = searchParams.get('range') ?? '1mo'; // 1d, 5d, 1mo, 3mo, 6mo, 1y
+  const range = searchParams.get('range') ?? '1mo';
+
+  if (!ALLOWED_SYMBOLS.has(symbol)) {
+    return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
+  }
+  if (!ALLOWED_RANGES.has(range)) {
+    return NextResponse.json({ error: 'Invalid range' }, { status: 400 });
+  }
 
   const intervalMap: Record<string, string> = {
     '1d':  '5m',

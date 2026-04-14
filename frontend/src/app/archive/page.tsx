@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
 import { getAlbums, supabase } from '@/lib/supabase';
+
+export const metadata: Metadata = {
+  title: 'Archive',
+  description: "Yesterday's light, collected today. phorage의 사진 아카이브.",
+};
 
 export const revalidate = 0;
 
@@ -26,24 +34,26 @@ export default async function Archive() {
         <p className="text-2xl md:text-3xl font-light italic text-[#333]">
           Yesterday's light, collected today.
         </p>
-        <div className="w-12 h-[1px] bg-[#4A5D4E] mt-8 opacity-30" />
+        <div className="w-12 h-[1px] bg-accent mt-8 opacity-30" />
       </header>
 
       {/* Pinterest-style masonry grid */}
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 md:gap-6 space-y-5 md:space-y-6 max-w-[1400px] mx-auto">
         {albumsWithCount.map((album) => (
-          <a
+          <Link
             key={album.slug}
             href={`/archive/${album.slug}`}
             className="break-inside-avoid group block relative overflow-hidden bg-gray-100 cursor-pointer"
           >
             {album.cover && (
               <div className="relative overflow-hidden">
-                <img
+                <Image
                   src={album.cover}
                   alt={album.title}
+                  width={0}
+                  height={0}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
-                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-500" />
 
@@ -64,10 +74,10 @@ export default async function Archive() {
                   </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#4A5D4E] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
               </div>
             )}
-          </a>
+          </Link>
         ))}
       </div>
 
