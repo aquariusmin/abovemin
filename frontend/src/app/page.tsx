@@ -1,17 +1,20 @@
-import { getProducts, getSiteSettings } from '@/lib/supabase';
+import { getFeaturedProducts, getSiteSettings } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export const revalidate = 60;
 
+const DEFAULT_HERO_IMAGE =
+  process.env.NEXT_PUBLIC_DEFAULT_HERO_IMAGE ||
+  'https://res.cloudinary.com/dmljaqqzc/image/upload/v1776151998/C92CC8C0-9B98-4F63-9331-674818552AD9_4_5005_c_rxmdjn.jpg';
+
 export default async function Home() {
-  const [allProducts, settings] = await Promise.all([
-    getProducts().catch(() => []),
+  const [featured, settings] = await Promise.all([
+    getFeaturedProducts(4),
     getSiteSettings().catch((): Record<string, string> => ({})),
   ]);
-  const featured = allProducts.slice(-4).reverse();
 
-  const heroImage = settings['hero_image'] || 'https://images.unsplash.com/photo-1493246507139-91e8bef99c02';
+  const heroImage = settings['hero_image'] || DEFAULT_HERO_IMAGE;
   const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
   const heroSubtitle = settings['hero_subtitle'] || '무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록. phorage는 자연과 일상이 교차하는 지점을 기록합니다.';
 
@@ -61,37 +64,33 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {featured.length > 0 ? featured.map((item) => (
-            <Link key={item.id} href={`/shop/${item.id}`} className="space-y-3 md:space-y-4 group cursor-pointer">
-              <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">
-                {item.image_url ? (
-                  <Image
-                    src={item.image_url}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
-                ) : (
-                  <div className={`w-full h-full opacity-5 ${accentBg}`} />
-                )}
-              </div>
-              <p className="font-sans text-xs sm:text-sm font-medium">{item.name}</p>
-              <p className={`font-sans text-xs ${accentColor}`}>₩ {item.price.toLocaleString()}</p>
-            </Link>
-          )) : (
-            [{id:1,name:"Olive Leaf Poster",price:18000},{id:2,name:"Sage Pencil Set",price:8000},{id:3,name:"Forest Postcard Pack",price:12000},{id:4,name:"Khaki Canvas Bag",price:24000}].map((item) => (
-              <div key={item.id} className="space-y-3 md:space-y-4 group cursor-pointer">
-                <div className={`aspect-square bg-white rounded-sm overflow-hidden border border-gray-100`}>
-                  <div className={`w-full h-full opacity-5 ${accentBg}`}></div>
+        {featured.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+            {featured.map((item) => (
+              <Link key={item.id} href={`/shop/${item.id}`} className="space-y-3 md:space-y-4 group cursor-pointer">
+                <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <div className={`w-full h-full opacity-5 ${accentBg}`} />
+                  )}
                 </div>
                 <p className="font-sans text-xs sm:text-sm font-medium">{item.name}</p>
                 <p className={`font-sans text-xs ${accentColor}`}>₩ {item.price.toLocaleString()}</p>
-              </div>
-            ))
-          )}
-        </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-xs text-gray-400 font-sans py-12">
+            새로운 소품을 준비 중입니다.
+          </p>
+        )}
       </section>
     </main>
   );
