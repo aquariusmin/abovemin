@@ -1,46 +1,45 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-import { verifyToken } from '../auth/route';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-function isAuthed(cookieStore: Awaited<ReturnType<typeof cookies>>) {
-  const token = cookieStore.get('admin_session')?.value;
-  return token ? verifyToken(token) : false;
-}
+import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { log } from '@/lib/logger';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  if (!isAuthed(cookieStore)) {
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseAdmin()
     .from('orders')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  if (error) {
+    log.error('admin_orders_fetch', error);
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
   return NextResponse.json(data);
 }
 
 export async function PATCH(request: Request) {
-  const cookieStore = await cookies();
-  if (!isAuthed(cookieStore)) {
+  if (!assertSameOrigin(request)) {
+    return NextResponse.json({ error: 'Bad origin' }, { status: 403 });
+  }
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id, status } = await request.json().catch(() => ({}));
-  const VALID = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
-  if (!id || !VALID.includes(status)) {
+  const body = await request.json().catch(() => ({}));
+  const id = Number((body as { id?: unknown }).id);
+  const status = (body as { status?: unknown }).status;
+  const VALID = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const;
+  if (!Number.isFinite(id) || typeof status !== 'string' || !VALID.includes(status as typeof VALID[number])) {
     return NextResponse.json({ error: 'Invalid params' }, { status: 400 });
   }
 
-  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
-  if (error) return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  const { error } = await getSupabaseAdmin().from('orders').update({ status }).eq('id', id);
+  if (error) {
+    log.error('admin_orders_update', error);
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -1,56 +1,65 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-import { verifyToken } from '../auth/route';
+import { revalidateTag } from 'next/cache';
+import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { log } from '@/lib/logger';
+import { SETTINGS_CACHE_TAG } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-function isAuthed(cookieStore: Awaited<ReturnType<typeof cookies>>) {
-  const token = cookieStore.get('admin_session')?.value;
-  return token ? verifyToken(token) : false;
-}
+const ALLOWED_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'] as const;
+type AllowedKey = typeof ALLOWED_KEYS[number];
 
 export async function GET() {
-  const cookieStore = await cookies();
-  if (!isAuthed(cookieStore)) {
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseAdmin()
     .from('site_settings')
     .select('key, value');
 
-  if (error) return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  if (error) {
+    log.error('admin_settings_fetch', error);
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
 
   const settings: Record<string, string> = {};
-  for (const row of data ?? []) {
-    settings[row.key] = row.value;
-  }
+  for (const row of data ?? []) settings[row.key] = row.value;
   return NextResponse.json(settings);
 }
 
 export async function PATCH(request: Request) {
-  const cookieStore = await cookies();
-  if (!isAuthed(cookieStore)) {
+  if (!assertSameOrigin(request)) {
+    return NextResponse.json({ error: 'Bad origin' }, { status: 403 });
+  }
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body: Record<string, string> = await request.json().catch(() => ({}));
-  const ALLOWED_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'];
+  const body = await request.json().catch(() => ({}));
+  if (typeof body !== 'object' || body === null) {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
 
-  const updates = Object.entries(body).filter(([key]) => ALLOWED_KEYS.includes(key));
+  const updates = Object.entries(body as Record<string, unknown>)
+    .filter(([k, v]) => (ALLOWED_KEYS as readonly string[]).includes(k) && typeof v === 'string')
+    .map(([k, v]) => [k as AllowedKey, v as string] as const);
+
   if (updates.length === 0) {
     return NextResponse.json({ error: 'No valid keys' }, { status: 400 });
   }
 
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
   for (const [key, value] of updates) {
-    await supabase
+    const { error } = await supabase
       .from('site_settings')
-      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      .upsert({ key, value, updated_at: now }, { onConflict: 'key' });
+    if (error) {
+      log.error('admin_settings_upsert', { key, error });
+      return NextResponse.json({ error: 'DB error' }, { status: 500 });
+    }
   }
 
+  revalidateTag(SETTINGS_CACHE_TAG, { expire: 0 });
   return NextResponse.json({ ok: true });
 }

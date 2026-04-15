@@ -1,53 +1,51 @@
 import { NextResponse } from 'next/server';
-import { createHmac, randomBytes } from 'crypto';
+import { cookies } from 'next/headers';
+import { timingSafeEqual } from 'crypto';
+import { signSession, revoke, SESSION_COOKIE } from '@/lib/auth';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { log } from '@/lib/logger';
 
-const SECRET = process.env.ADMIN_SESSION_SECRET ?? process.env.ADMIN_PASSWORD!;
-
-function signToken(): string {
-  const nonce = randomBytes(16).toString('hex');
-  const expires = Date.now() + 8 * 60 * 60 * 1000; // 8시간
-  const payload = `${nonce}:${expires}`;
-  const sig = createHmac('sha256', SECRET).update(payload).digest('hex');
-  return `${payload}:${sig}`;
-}
-
-export function verifyToken(token: string): boolean {
-  const parts = token.split(':');
-  if (parts.length !== 3) return false;
-  const [nonce, expiresStr, sig] = parts;
-  const expires = Number(expiresStr);
-  if (Date.now() > expires) return false;
-  const expected = createHmac('sha256', SECRET).update(`${nonce}:${expiresStr}`).digest('hex');
-  if (sig.length !== expected.length) return false;
-  // timing-safe comparison
-  let mismatch = 0;
-  for (let i = 0; i < sig.length; i++) {
-    mismatch |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+function passwordMatches(input: string): boolean {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) return false;
+  const a = Buffer.from(input);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 export async function POST(request: Request) {
-  const { password } = await request.json().catch(() => ({ password: '' }));
+  const ip = clientIp(request);
+  const rl = rateLimit(`admin-auth:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
+  }
 
-  if (password !== process.env.ADMIN_PASSWORD) {
+  const body = await request.json().catch(() => ({ password: '' }));
+  const password = typeof body?.password === 'string' ? body.password : '';
+
+  if (!passwordMatches(password)) {
+    log.warn('admin_auth_failed', { ip });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const token = signToken();
+  const { token, expires } = signSession();
   const response = NextResponse.json({ ok: true });
-  response.cookies.set('admin_session', token, {
+  response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 60 * 60 * 8,
+    expires: new Date(expires),
     sameSite: 'strict',
   });
   return response;
 }
 
 export async function DELETE() {
+  const jar = await cookies();
+  const current = jar.get(SESSION_COOKIE)?.value;
+  if (current) revoke(current);
   const response = NextResponse.json({ ok: true });
-  response.cookies.delete('admin_session');
+  response.cookies.delete(SESSION_COOKIE);
   return response;
 }
