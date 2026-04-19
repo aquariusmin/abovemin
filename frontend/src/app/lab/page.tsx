@@ -67,6 +67,23 @@ interface ChartPoint {
   close: number | null;
 }
 
+interface FleetBot {
+  id: string;
+  bot_name: string;
+  strategy: string;
+  market: string;
+  equity: number;
+  pnl_pct: number;
+  position_pct: number;
+  holdings_count: number;
+  fills_count: number;
+  last_fill: string | null;
+  cash: number;
+  mark: number | null;
+  equity_curve: string;
+  updated_at: string;
+}
+
 const CHART_SYMBOLS = [
   { symbol: '^GSPC',   label: 'S&P 500' },
   { symbol: '^IXIC',   label: 'NASDAQ' },
@@ -281,6 +298,88 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+function FleetGrid({ bots }: { bots: FleetBot[] }) {
+  const totalEquity = bots.reduce((s, b) => s + b.equity, 0);
+  const totalInitial = bots.reduce((s, b) => {
+    return s + (b.pnl_pct !== -100 ? b.equity / (1 + b.pnl_pct / 100) : 0);
+  }, 0);
+  const totalPnl = totalInitial ? (totalEquity / totalInitial - 1) * 100 : 0;
+  const totalUp = totalPnl >= 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-white/8 bg-white/3 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-[9px] font-mono uppercase tracking-widest text-white/30">Fleet Total</p>
+          <p className="text-3xl font-black text-white mt-1">
+            ${totalEquity.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className={`text-lg font-mono font-black ${totalUp ? 'text-emerald-400' : 'text-red-400'}`}>
+            {totalUp ? '+' : ''}{totalPnl.toFixed(2)}%
+          </span>
+          <span className="text-[10px] font-mono text-white/30">{bots.length} bots</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {bots.map(bot => {
+          const up = bot.pnl_pct >= 0;
+          const curve: [string, number][] = (() => {
+            try { return JSON.parse(bot.equity_curve); } catch { return []; }
+          })();
+          const sparkline = curve.slice(-30).map(([, eq]) => eq);
+          const sparkMin = Math.min(...sparkline);
+          const sparkMax = Math.max(...sparkline);
+          const sparkRange = sparkMax - sparkMin || 1;
+
+          return (
+            <div key={bot.id} className="border border-white/8 bg-white/3 p-5 space-y-3 hover:bg-white/6 transition-colors">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-white/30">
+                    {bot.market}
+                  </p>
+                  <p className="text-[13px] font-bold text-white/80 mt-1">{bot.bot_name}</p>
+                </div>
+                <span className={`text-[9px] font-mono px-2 py-0.5 rounded-sm font-bold ${
+                  up ? 'text-emerald-400 bg-emerald-400/10' : 'text-red-400 bg-red-400/10'
+                }`}>
+                  {up ? '+' : ''}{bot.pnl_pct.toFixed(2)}%
+                </span>
+              </div>
+              <p className="text-2xl font-black tracking-tight text-white">
+                ${bot.equity.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              {sparkline.length > 2 && (
+                <svg viewBox={`0 0 ${sparkline.length - 1} 20`} className="w-full h-5" preserveAspectRatio="none">
+                  <polyline
+                    fill="none"
+                    stroke={up ? '#34d399' : '#f87171'}
+                    strokeWidth="1.2"
+                    points={sparkline.map((v, i) =>
+                      `${i},${20 - ((v - sparkMin) / sparkRange) * 18}`
+                    ).join(' ')}
+                  />
+                </svg>
+              )}
+              <div className="flex justify-between text-[10px] font-mono text-white/30">
+                <span>pos {bot.position_pct}% · {bot.holdings_count} {bot.holdings_count === 1 ? 'sym' : 'syms'}</span>
+                <span>{bot.fills_count} fills</span>
+              </div>
+              {bot.last_fill && (
+                <p className="text-[9px] font-mono text-white/20 truncate">
+                  last: {bot.last_fill}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LoadingPlaceholder({ text }: { text: string }) {
   return (
     <div className="h-32 flex items-center justify-center border border-white/5">
@@ -300,6 +399,7 @@ export default function Lab() {
   const [cryptos, setCryptos] = useState<CryptoData[]>([]);
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
   const [bonds, setBonds] = useState<BondData[]>([]);
+  const [fleet, setFleet] = useState<FleetBot[]>([]);
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [activeSymbol, setActiveSymbol] = useState('^GSPC');
   const [activeRange, setActiveRange] = useState<Range>('1mo');
@@ -317,13 +417,15 @@ export default function Lab() {
       fetch('/api/market/crypto').then(r => r.json()).catch(() => []),
       fetch('/api/market/commodities').then(r => r.json()).catch(() => []),
       fetch('/api/market/bonds').then(r => r.json()).catch(() => []),
-    ]).then(([idx, sec, kr, crypto, comm, bond]) => {
+      fetch('/api/market/quant-fleet').then(r => r.json()).catch(() => []),
+    ]).then(([idx, sec, kr, crypto, comm, bond, fl]) => {
       setIndices(Array.isArray(idx) ? idx : []);
       setSectors(Array.isArray(sec) ? sec : []);
       setKrStocks(Array.isArray(kr) ? kr : []);
       setCryptos(Array.isArray(crypto) ? crypto : []);
       setCommodities(Array.isArray(comm) ? comm : []);
       setBonds(Array.isArray(bond) ? bond : []);
+      setFleet(Array.isArray(fl) ? fl : []);
       setLoading(false);
       setLastUpdated(new Date().toLocaleTimeString('ko-KR'));
       // 모든 데이터가 빈 배열이면 에러로 판단
@@ -595,6 +697,16 @@ export default function Lab() {
             <LoadingPlaceholder text="Loading KR stock data..." />
           )}
         </section>
+
+        {/* ── Quant Fleet ── */}
+        {fleet.length > 0 && (
+          <section className="space-y-4">
+            <h3 className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
+              ── Quant Trading Fleet
+            </h3>
+            <FleetGrid bots={fleet} />
+          </section>
+        )}
 
         <div className="h-8" />
       </div>
