@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Lab — Market Overview',
-  description: '글로벌 주식, 암호화폐, 원자재, 채권, 섹터 퍼포먼스를 한눈에. 퀀트 트레이딩 분석 대시보드.',
+  title: 'Lab — Quant Fleet',
+  description: '실시간 퀀트 트레이딩 봇 대시보드. 봇별 equity, PnL, 보유 종목, 90일 equity 추이.',
   other: { 'color-scheme': 'dark' },
 };
 
