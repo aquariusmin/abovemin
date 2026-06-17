@@ -31,7 +31,7 @@ export default function AddToCartButton({ product }: Props) {
       <button
         onClick={handleAddToCart}
         disabled={!product.in_stock}
-        className={`flex-1 py-4 text-xs uppercase tracking-widest text-white rounded-sm font-sans font-bold shadow-md transition-all ${
+        className={`glass-btn flex-1 py-4 text-xs uppercase tracking-widest text-white font-sans font-bold shadow-md transition-all ${
           !product.in_stock ? 'bg-gray-300 cursor-not-allowed' :
           added ? 'bg-green-600' : accentBg + ' hover:opacity-90'
         }`}

@@ -7,15 +7,14 @@ export default function Footer() {
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
 
-  const borderColor = isLab ? 'border-white/10' : 'border-black/5';
-  const footerBg = isLab ? 'bg-[#1a1c1a]' : 'bg-[#F0EEEA]';
   const footerHeading = isLab ? 'text-accent-light' : 'text-accent';
   const footerSubHeading = isLab ? 'text-white/40' : 'text-black/50';
   const footerBody = isLab ? 'text-white/70' : 'text-black/90';
 
   return (
-    <footer className={`py-10 px-6 md:px-10 border-t ${borderColor} ${footerBg} transition-colors duration-500`}>
-      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 font-sans">
+    <footer className="px-3 sm:px-4 md:px-6 pb-4 md:pb-6 pt-6">
+      <div className="glass max-w-7xl mx-auto rounded-[1.75rem] py-10 px-6 md:px-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 font-sans">
 
         <div className="space-y-6 col-span-2 md:col-span-1">
           <h4 className={`font-serif text-xl md:text-2xl font-bold ${footerHeading}`}>phorage</h4>
@@ -45,9 +44,10 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className={`max-w-7xl mx-auto mt-10 pt-10 border-t ${isLab ? 'border-white/5' : 'border-black/5'} flex justify-between items-center text-[10px] uppercase tracking-[0.4em] font-bold ${footerSubHeading}`}>
+      <div className={`mt-10 pt-10 border-t ${isLab ? 'border-white/5' : 'border-black/5'} flex justify-between items-center text-[10px] uppercase tracking-[0.4em] font-bold ${footerSubHeading}`}>
         <span>&copy; 2026 phorage studio.</span>
         <span className="hover:text-black transition-colors cursor-help">Digital Studio by Sangmin</span>
+      </div>
       </div>
     </footer>
   );

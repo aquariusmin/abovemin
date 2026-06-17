@@ -60,7 +60,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   };
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] text-[#333] px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif">
+    <main className="min-h-screen text-[#333] px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -77,7 +77,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <section className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
 
         {/* 이미지 */}
-        <div className="md:col-span-7 bg-white border border-gray-100 overflow-hidden shadow-lg shadow-gray-200/50">
+        <div className="md:col-span-7 glass rounded-[1.5rem] overflow-hidden">
           <Image
             src={product.image_url}
             alt={product.name}

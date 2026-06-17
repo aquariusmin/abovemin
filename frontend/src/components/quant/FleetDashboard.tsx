@@ -23,7 +23,7 @@ type SortKey = "equity" | "pnl_pct" | "updated_at" | "bot_name";
 const SECTION_LABEL =
   "text-[9px] font-mono uppercase tracking-[0.3em] text-white/30";
 const STAT_BLOCK =
-  "border border-white/8 bg-white/3 p-5 space-y-2";
+  "glass rounded-2xl p-5 space-y-2";
 const STAT_LABEL =
   "text-[9px] font-mono uppercase tracking-widest text-white/30";
 
@@ -90,7 +90,7 @@ export function FleetDashboard() {
 
   if (error) {
     return (
-      <div className="border border-red-400/20 bg-red-400/5 p-6">
+      <div className="glass rounded-2xl border-red-400/20 p-6">
         <p className={SECTION_LABEL}>── Error</p>
         <p className="mt-2 font-mono text-[11px] text-red-400">
           Failed to load fleet: {error}
@@ -101,7 +101,7 @@ export function FleetDashboard() {
 
   if (!bots) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 text-center">
+      <div className="glass rounded-2xl p-12 text-center">
         <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest animate-pulse">
           Loading fleet data...
         </p>
@@ -133,10 +133,10 @@ export function FleetDashboard() {
             <button
               key={m}
               onClick={() => setMarketFilter(m)}
-              className={`px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest transition-all ${
+              className={`px-4 py-1.5 text-[9px] font-mono uppercase tracking-widest transition-all rounded-full ${
                 marketFilter === m
                   ? "bg-accent text-white"
-                  : "border border-white/10 text-white/40 hover:text-white/70"
+                  : "glass text-white/50 hover:text-white/80"
               }`}
             >
               {m}
@@ -151,7 +151,7 @@ export function FleetDashboard() {
       {/* Fleet table */}
       <section className="space-y-4">
         <h3 className={SECTION_LABEL}>── Fleet · {filtered.length} bot(s)</h3>
-        <div className="border border-white/8 bg-white/2 overflow-x-auto">
+        <div className="glass rounded-2xl overflow-x-auto">
           <table className="w-full font-mono text-[11px]">
             <thead>
               <tr className="text-[9px] uppercase tracking-widest text-white/30 border-b border-white/8">

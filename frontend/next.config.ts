@@ -32,6 +32,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ['yahoo-finance2'],
+  // This app lives in a subdir under a home folder that also has a lockfile,
+  // so pin the workspace root to silence the multi-lockfile inference warning.
+  turbopack: { root: __dirname },
   async headers() {
     return [
       {
@@ -41,6 +44,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),
       new URL('https://images.unsplash.com/**'),

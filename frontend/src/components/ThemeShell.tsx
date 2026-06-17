@@ -7,7 +7,7 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
 
-  const bgColor = isLab ? 'bg-[#1a1c1a]' : 'bg-[#FAF9F6]';
+  const bgColor = isLab ? 'bg-[#141613]' : 'bg-[#F4F2EC]';
   const textColor = isLab ? 'text-white' : 'text-[#222]';
 
   useEffect(() => {
@@ -22,7 +22,8 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <body className={`${bgColor} ${textColor} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
+    <body className={`${bgColor} ${textColor} ${isLab ? 'theme-lab' : ''} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
+      <div className="ambient" aria-hidden />
       {children}
     </body>
   );

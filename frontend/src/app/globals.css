@@ -1,13 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F7F6F2;
   --foreground: #171717;
   --accent: #4A5D4E;
   --accent-light: #6B8E6B;
   --surface: #FAF9F6;
   --surface-dark: #1a1c1a;
   --surface-muted: #F0EEEA;
+
+  /* ── Liquid Glass tokens (light context) ──────────────────────── */
+  --glass-tint-hi: rgba(255, 255, 255, 0.55);
+  --glass-tint-lo: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-edge: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 10px 40px -10px rgba(31, 38, 35, 0.22);
+  --glass-blur: 16px;
+}
+
+/* Dark "Lab" context — same glass, deeper tint. ThemeShell adds .theme-lab */
+.theme-lab {
+  --glass-tint-hi: rgba(255, 255, 255, 0.10);
+  --glass-tint-lo: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-edge: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 14px 48px -10px rgba(0, 0, 0, 0.6);
+  --glass-blur: 16px;
 }
 
 @theme inline {
@@ -18,13 +36,16 @@
   --color-surface: var(--surface);
   --color-surface-dark: var(--surface-dark);
   --color-surface-muted: var(--surface-muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Korean has no Latin webfont glyphs, so each stack ends in clean system
+     Hangul faces (Apple / Windows) before the generic fallback. */
+  --font-sans: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: var(--font-fraunces), "Apple SD Gothic Neo", "Malgun Gothic", ui-serif, Georgia, serif;
 }
 
 body {
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* 키보드 포커스 시 글로벌 링 스타일 */
@@ -39,4 +60,126 @@ img {
   user-select: none;
   -webkit-touch-callout: none;
   pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Liquid Glass design system
+   A frosted, translucent surface with a bright specular top edge and a
+   soft floating shadow. Adapts to light / .theme-lab via CSS vars, so
+   the same class works on every page. Lives in @layer components so
+   Tailwind radius/spacing utilities can still override it inline.
+   ════════════════════════════════════════════════════════════════ */
+@layer components {
+  .glass {
+    position: relative;
+    background-image: linear-gradient(
+      135deg,
+      var(--glass-tint-hi),
+      var(--glass-tint-lo)
+    );
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow),
+      inset 0 1px 0 var(--glass-edge),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    border-radius: 1.5rem;
+  }
+
+  /* Interactive surfaces (cards / buttons) lift and brighten on hover. */
+  .glass-interactive {
+    transition:
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.4s ease,
+      background-image 0.4s ease;
+  }
+  .glass-interactive:hover {
+    transform: translateY(-3px);
+    background-image: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--glass-tint-hi) 135%, white),
+      var(--glass-tint-lo)
+    );
+    box-shadow:
+      0 22px 60px -14px rgba(31, 38, 35, 0.3),
+      inset 0 1px 0 var(--glass-edge);
+  }
+  .theme-lab .glass-interactive:hover {
+    box-shadow:
+      0 22px 60px -14px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 var(--glass-edge);
+  }
+
+  /* Pill button with a specular sheen that sweeps across on hover. */
+  .glass-btn {
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+    isolation: isolate;
+  }
+  .glass-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.45) 50%,
+      transparent 70%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+  }
+  .glass-btn:hover::after {
+    transform: translateX(120%);
+  }
+
+  /* Translucent form control that matches the glass palette. */
+  .glass-input {
+    background: var(--glass-tint-lo);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.85rem;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Ambient backdrop — soft drifting color fields that the glass
+   surfaces refract. Sits behind all content (z-index -1).
+   ════════════════════════════════════════════════════════════════ */
+.ambient {
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(38% 48% at 16% 18%, rgba(107, 142, 107, 0.15), transparent 70%),
+    radial-gradient(34% 44% at 84% 14%, rgba(196, 208, 178, 0.13), transparent 70%),
+    radial-gradient(46% 52% at 78% 82%, rgba(74, 93, 78, 0.12), transparent 70%),
+    radial-gradient(40% 42% at 22% 88%, rgba(214, 206, 190, 0.16), transparent 70%);
+  filter: blur(36px);
+}
+.theme-lab .ambient {
+  background-image:
+    radial-gradient(40% 50% at 18% 22%, rgba(74, 93, 78, 0.38), transparent 70%),
+    radial-gradient(36% 46% at 82% 16%, rgba(34, 52, 44, 0.55), transparent 72%),
+    radial-gradient(52% 56% at 72% 86%, rgba(58, 88, 68, 0.32), transparent 72%),
+    radial-gradient(38% 40% at 26% 84%, rgba(40, 60, 50, 0.4), transparent 72%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ambient {
+    animation: ambient-drift 26s ease-in-out infinite alternate;
+  }
+}
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(0, -2.5%, 0) scale(1.08) rotate(1.5deg);
+  }
 }

@@ -63,7 +63,9 @@ export default function AdminPage() {
   const [loginLoading, setLoginLoading] = useState(false);
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Starts true so the first authed load shows the spinner without the effect
+  // having to call setState synchronously (react-hooks/set-state-in-effect).
+  const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [updating, setUpdating] = useState<number | null>(null);
@@ -99,7 +101,6 @@ export default function AdminPage() {
   }
 
   const fetchOrders = useCallback(async () => {
-    setLoading(true);
     const res = await fetch('/api/admin/orders');
     if (res.status === 401) { setAuthed(false); return; }
     const data = await res.json();
@@ -131,8 +132,13 @@ export default function AdminPage() {
     }
   }
 
+  // Load orders + settings once the admin authenticates. This is a genuine
+  // "sync with an external system" effect — every setState inside the fetchers
+  // runs after `await`, so it can't cause the synchronous cascading renders the
+  // set-state-in-effect rule guards against.
   useEffect(() => {
     if (authed) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchOrders();
       fetchSettings();
     }
@@ -171,8 +177,8 @@ export default function AdminPage() {
   // ── 로그인 화면 ──
   if (!authed) {
     return (
-      <main className="min-h-screen bg-[#FAF9F6] flex items-center justify-center font-serif">
-        <div className="w-full max-w-sm px-8">
+      <main className="min-h-screen flex items-center justify-center font-serif px-6">
+        <div className="glass rounded-[1.5rem] w-full max-w-sm p-8 md:p-10">
           <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-2 font-sans text-center">phorage</p>
           <h2 className="text-2xl font-light italic text-center text-[#333] mb-10">Admin</h2>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -181,14 +187,14 @@ export default function AdminPage() {
               value={pw}
               onChange={e => { setPw(e.target.value); setPwError(false); }}
               placeholder="Password"
-              className="w-full border border-gray-200 px-4 py-3 text-sm font-sans focus:outline-none focus:border-accent transition-colors"
+              className="w-full glass-input px-4 py-3 text-sm font-sans focus:outline-none focus:ring-1 focus:ring-accent/30 transition-colors"
               autoFocus
             />
             {pwError && <p className="text-[10px] text-red-400 font-sans">비밀번호가 틀렸습니다.</p>}
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full py-3 bg-accent text-white text-[10px] uppercase tracking-widest font-sans font-bold disabled:opacity-50"
+              className="glass-btn w-full py-3 bg-accent text-white text-[10px] uppercase tracking-widest font-sans font-bold disabled:opacity-50"
             >
               {loginLoading ? '...' : 'Enter'}
             </button>
@@ -200,7 +206,7 @@ export default function AdminPage() {
 
   // ── 어드민 대시보드 ──
   return (
-    <main className="min-h-screen bg-[#FAF9F6] font-sans px-4 md:px-8 py-8">
+    <main className="min-h-screen font-sans px-4 md:px-8 py-8">
       <div className="max-w-5xl mx-auto">
 
         {/* 헤더 */}
@@ -211,8 +217,8 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={fetchOrders}
-              className="px-4 py-2 text-[10px] uppercase tracking-widest border border-gray-200 text-gray-500 hover:border-accent hover:text-accent transition-colors"
+              onClick={() => { setLoading(true); fetchOrders(); }}
+              className="glass-btn px-5 py-2 text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent transition-colors"
             >
               Refresh
             </button>
@@ -234,7 +240,7 @@ export default function AdminPage() {
             { label: '배송 중',   value: stats.shipped },
             { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}` },
           ].map(s => (
-            <div key={s.label} className={`p-4 border ${s.highlight ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
+            <div key={s.label} className={`p-4 rounded-2xl ${s.highlight ? 'border border-yellow-300 bg-yellow-50' : 'glass'}`}>
               <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">{s.label}</p>
               <p className={`text-xl font-bold ${s.highlight ? 'text-yellow-600' : 'text-accent'}`}>{s.value}</p>
             </div>
@@ -242,7 +248,7 @@ export default function AdminPage() {
         </div>
 
         {/* 히어로 설정 */}
-        <div className="mb-8 border border-gray-100 bg-white p-4 md:p-6 space-y-4">
+        <div className="mb-8 glass rounded-2xl p-4 md:p-6 space-y-4">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Homepage Hero</p>
@@ -251,7 +257,7 @@ export default function AdminPage() {
             <button
               onClick={saveHero}
               disabled={heroSaving}
-              className={`px-5 py-2 text-[10px] uppercase tracking-widest font-bold transition-all ${
+              className={`glass-btn px-5 py-2 text-[10px] uppercase tracking-widest font-bold transition-all ${
                 heroSaved ? 'bg-green-600 text-white' :
                 'bg-accent text-white hover:opacity-90'
               } disabled:opacity-50`}
@@ -263,7 +269,7 @@ export default function AdminPage() {
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">이미지 URL (Cloudinary or Unsplash)</label>
               <input
-                className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
+                className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/30 transition-colors font-mono text-[12px]"
                 value={heroImage}
                 onChange={e => setHeroImage(e.target.value)}
                 placeholder="https://res.cloudinary.com/..."
@@ -273,7 +279,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">타이틀</label>
                 <input
-                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/30 transition-colors"
                   value={heroTitle}
                   onChange={e => setHeroTitle(e.target.value)}
                   placeholder="Collecting the Greenery"
@@ -282,7 +288,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">서브타이틀</label>
                 <input
-                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/30 transition-colors"
                   value={heroSubtitle}
                   onChange={e => setHeroSubtitle(e.target.value)}
                   placeholder="무심코 지나친 숲의 색깔..."
@@ -307,10 +313,10 @@ export default function AdminPage() {
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
-              className={`px-4 py-1.5 text-[10px] uppercase tracking-widest transition-all ${
+              className={`px-4 py-1.5 text-[10px] uppercase tracking-widest transition-all rounded-full ${
                 filterStatus === s
                   ? 'bg-accent text-white'
-                  : 'border border-gray-200 text-gray-400 hover:text-accent hover:border-accent'
+                  : 'glass text-gray-400 hover:text-accent'
               }`}
             >
               {s === 'all' ? `전체 (${orders.length})` : `${STATUS_LABELS[s]} (${orders.filter(o => o.status === s).length})`}
@@ -335,10 +341,10 @@ export default function AdminPage() {
               const nextLabel = NEXT_STATUS_LABEL[order.status];
 
               return (
-                <div key={order.id} className="border border-gray-100 bg-white">
+                <div key={order.id} className="glass rounded-2xl overflow-hidden">
                   {/* 요약 행 */}
                   <div
-                    className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-black/[0.03] transition-colors"
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                   >
                     <span className="text-[11px] text-gray-400 font-mono w-12 flex-shrink-0">#{order.id}</span>
@@ -392,7 +398,7 @@ export default function AdminPage() {
                           <button
                             disabled={updating === order.id}
                             onClick={() => updateStatus(order.id, next)}
-                            className="px-5 py-2 bg-accent text-white text-[10px] uppercase tracking-widest font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                            className="glass-btn px-5 py-2 bg-accent text-white text-[10px] uppercase tracking-widest font-bold hover:opacity-90 transition-all disabled:opacity-50"
                           >
                             {updating === order.id ? '처리 중...' : `→ ${nextLabel}`}
                           </button>
@@ -401,7 +407,7 @@ export default function AdminPage() {
                           <button
                             disabled={updating === order.id}
                             onClick={() => cancelOrder(order.id)}
-                            className="px-5 py-2 border border-gray-200 text-gray-400 text-[10px] uppercase tracking-widest hover:border-red-300 hover:text-red-400 transition-all disabled:opacity-50"
+                            className="glass-btn px-5 py-2 text-gray-400 text-[10px] uppercase tracking-widest hover:text-red-400 transition-all disabled:opacity-50"
                           >
                             취소
                           </button>

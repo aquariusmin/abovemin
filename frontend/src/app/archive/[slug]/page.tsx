@@ -38,7 +38,7 @@ export default async function CollectionPage({
   const nextAlbum = albums[(currentIdx + 1) % albums.length];
 
   return (
-    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen">
 
       {/* 헤더 */}
       <div className="max-w-[1400px] mx-auto mb-12 md:mb-16">

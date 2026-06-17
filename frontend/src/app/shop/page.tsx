@@ -78,17 +78,17 @@ export default function Shop() {
   );
 
   return (
-    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen">
       
       {/* 1. Header & Filter Bar (공간 효율 유지) */}
       <header className="max-w-[1600px] mx-auto mb-8 md:mb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-black/5 pb-6 gap-4 md:gap-6">
           <div>
             <h2 className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-2 font-sans">Shop Collection</h2>
-            <p className="text-3xl font-light italic text-[#333]">Tangible light for your space.</p>
+            <p className="text-3xl font-light italic tracking-tight text-[#333]">Tangible light for your space.</p>
           </div>
           
-          <div className="flex items-center gap-4 md:gap-8 text-[11px] uppercase tracking-widest font-sans font-medium text-gray-500 flex-wrap">
+          <div className="glass rounded-full px-5 py-3 flex items-center gap-4 md:gap-8 text-[11px] uppercase tracking-widest font-sans font-medium text-gray-500 flex-wrap">
             <div className="flex gap-3 md:gap-5 flex-wrap">
               {categories.map(cat => (
                 <button
@@ -132,9 +132,8 @@ export default function Shop() {
             onMouseLeave={() => setHoveredId(null)}
           >
             
-            {/* 🌟 껍데기 박스: '애플 글래스' 효과 적용 */}
-            {/* bg-white/10(투명도), backdrop-blur-md(흐림), border-white/10(얇은 흰색 테두리) */}
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/10 overflow-hidden group-hover:shadow-[0_20px_80px_-15px_rgba(74,93,78,0.3)] transition-all duration-700">
+            {/* 🌟 껍데기 박스: 'Liquid Glass' 표면 — globals.css의 .glass 시스템 사용 */}
+            <div className="relative glass glass-interactive rounded-[1.25rem] overflow-hidden">
               
               {/* 태그 (Best, New 등) */}
               {item.tag && (

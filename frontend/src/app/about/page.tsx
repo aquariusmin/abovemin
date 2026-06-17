@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <main className="min-h-screen bg-surface text-[#333] px-4 sm:px-6 md:px-10 py-10 md:py-16 font-serif">
+    <main className="min-h-screen text-[#333] px-4 sm:px-6 md:px-10 py-10 md:py-16 font-serif">
       <div className="max-w-3xl mx-auto space-y-12 md:space-y-20">
 
         {/* Hero */}
@@ -57,7 +57,7 @@ export default function About() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="block border border-black/5 p-4 md:p-6 space-y-3 hover:border-accent/30 transition-colors group"
+                className="block glass glass-interactive rounded-[1.25rem] p-4 md:p-6 space-y-3 group"
               >
                 <h4 className="font-serif text-lg font-bold group-hover:text-accent transition-colors">
                   {item.title}

@@ -10,9 +10,10 @@ export default function Nav() {
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // Hydration guard: defer client-only UI (cart count) until after mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
-  const navBg = isLab ? 'bg-[#1a1c1a]/90' : 'bg-[#FAF9F6]/95';
   const borderColor = isLab ? 'border-white/10' : 'border-black/5';
   const accentColor = isLab ? 'text-accent-light' : 'text-accent';
   const cartCount = useCartStore(state => state.totalCount());
@@ -26,8 +27,9 @@ export default function Nav() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>
-      <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-4 md:py-7 max-w-[1920px] mx-auto">
+    <nav className="fixed top-0 left-0 w-full z-50 font-serif px-3 sm:px-4 md:px-6 pt-3 md:pt-4">
+      <div className="glass max-w-[1920px] mx-auto rounded-[1.75rem] overflow-hidden">
+      <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-3.5 md:py-5">
 
         {/* Left: tagline (desktop) / logo (mobile) */}
         <div className="flex items-center">
@@ -118,6 +120,7 @@ export default function Nav() {
             </Link>
           ))}
         </div>
+      </div>
       </div>
     </nav>
   );

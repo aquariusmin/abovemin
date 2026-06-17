@@ -17,7 +17,9 @@ export default function CheckoutPage() {
   const accentBg = "bg-accent";
   const accentColor = "text-accent";
 
+  // Hydration guard: cart contents are client-only (persisted store).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -71,25 +73,25 @@ export default function CheckoutPage() {
 
   if (done) {
     return (
-      <main className="min-h-screen bg-[#FAF9F6] flex flex-col items-center justify-center font-serif text-center px-8">
+      <main className="min-h-screen flex flex-col items-center justify-center font-serif text-center px-8">
         <div className={`w-12 h-12 rounded-full ${accentBg} flex items-center justify-center text-white text-xl mb-8`}>✓</div>
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-4 font-sans">Order Placed</p>
         <h2 className="text-3xl font-light italic text-[#333] mb-4">주문이 완료되었습니다.</h2>
         <p className="text-sm text-gray-400 font-sans mb-10">
           확인 이메일을 <span className={accentColor}>{form.email}</span>으로 보내드릴게요.
         </p>
-        <Link href="/shop" className={`px-8 py-3 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold`}>
+        <Link href="/shop" className={`glass-btn px-8 py-3 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold`}>
           Continue Shopping
         </Link>
       </main>
     );
   }
 
-  const inputClass = "w-full border border-gray-200 bg-white px-4 py-3 text-sm font-sans text-[#333] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors";
+  const inputClass = "w-full glass-input px-4 py-3 text-sm font-sans text-[#333] focus:outline-none focus:ring-1 focus:ring-accent/30 transition-colors";
   const errorClass = "text-[10px] text-red-400 font-sans mt-1";
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] px-4 md:px-8 py-8 md:py-12 font-serif">
+    <main className="min-h-screen px-4 md:px-8 py-8 md:py-12 font-serif">
       <div className="max-w-4xl mx-auto">
 
         <header className="mb-10 border-b border-black/5 pb-6">
@@ -174,7 +176,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all disabled:opacity-50`}
+              className={`glass-btn w-full py-4 text-[10px] uppercase tracking-widest text-white ${accentBg} font-sans font-bold shadow-md hover:opacity-90 transition-all disabled:opacity-50`}
             >
               {submitting ? 'Processing...' : 'Place Order'}
             </button>

@@ -25,14 +25,14 @@ export default async function Archive() {
   }));
 
   return (
-    <main className="px-4 sm:px-6 md:px-8 py-10 md:py-16 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-4 sm:px-6 md:px-8 py-10 md:py-16 font-serif min-h-screen">
 
       <header className="max-w-[1400px] mx-auto mb-12 md:mb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-3 font-sans">
           The Archive
         </p>
-        <p className="text-2xl md:text-3xl font-light italic text-[#333]">
-          Yesterday's light, collected today.
+        <p className="text-2xl md:text-3xl font-light italic tracking-tight text-[#333]">
+          Yesterday&apos;s light, collected today.
         </p>
         <div className="w-12 h-[1px] bg-accent mt-8 opacity-30" />
       </header>
@@ -43,7 +43,7 @@ export default async function Archive() {
           <Link
             key={album.slug}
             href={`/archive/${album.slug}`}
-            className="break-inside-avoid group block relative overflow-hidden bg-gray-100 cursor-pointer"
+            className="break-inside-avoid group block relative overflow-hidden rounded-[1.25rem] glass-interactive bg-gray-100 cursor-pointer"
           >
             {album.cover && (
               <div className="relative overflow-hidden">

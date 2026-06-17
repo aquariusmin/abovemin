@@ -22,12 +22,12 @@ export default async function Home() {
   const accentBg = "bg-accent";
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] text-[#333] font-serif">
+    <main className="min-h-screen text-[#333] font-serif">
 
       {/* 히어로 섹션 — 풀스크린 */}
       <section className="min-h-[calc(100dvh-72px)] md:min-h-[calc(100dvh-88px)] flex items-center px-4 sm:px-6 md:px-8">
         <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center">
-          <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-sm shadow-xl shadow-gray-200/40">
+          <div className="md:col-span-8 aspect-[16/10] bg-gray-200 relative overflow-hidden rounded-[1.75rem] border border-white/60 ring-1 ring-black/5 shadow-xl shadow-gray-300/30">
             <Image
               src={heroImage}
               fill
@@ -59,7 +59,7 @@ export default async function Home() {
             <h3 className="text-xl sm:text-2xl font-bold">New Collectibles</h3>
             <p className="text-xs text-gray-400 mt-2 font-sans">주인장이 엄선한 이달의 소품</p>
           </div>
-          <Link href="/shop" className={`px-4 sm:px-6 py-2 font-sans text-[10px] uppercase tracking-widest text-white ${accentBg} rounded-sm shadow-md`}>
+          <Link href="/shop" className={`glass-btn px-5 sm:px-7 py-2.5 font-sans text-[10px] uppercase tracking-widest text-white ${accentBg} shadow-md`}>
             Explore All
           </Link>
         </div>
@@ -68,7 +68,7 @@ export default async function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
             {featured.map((item) => (
               <Link key={item.id} href={`/shop/${item.id}`} className="space-y-3 md:space-y-4 group cursor-pointer">
-                <div className="aspect-square bg-white rounded-sm overflow-hidden border border-gray-100 group-hover:border-accent/50 transition-all relative">
+                <div className="aspect-square glass glass-interactive rounded-[1.25rem] overflow-hidden relative">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}

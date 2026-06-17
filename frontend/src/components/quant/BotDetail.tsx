@@ -17,7 +17,7 @@ const REFRESH_MS = 60_000;
 
 const SECTION_LABEL =
   "text-[9px] font-mono uppercase tracking-[0.3em] text-white/30";
-const STAT_BLOCK = "border border-white/8 bg-white/3 p-5 space-y-2";
+const STAT_BLOCK = "glass rounded-2xl p-5 space-y-2";
 const STAT_LABEL =
   "text-[9px] font-mono uppercase tracking-widest text-white/30";
 
@@ -61,7 +61,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (error) {
     return (
-      <div className="border border-red-400/20 bg-red-400/5 p-6">
+      <div className="glass rounded-2xl border-red-400/20 p-6">
         <p className={SECTION_LABEL}>── Error</p>
         <p className="mt-2 font-mono text-[11px] text-red-400">{error}</p>
       </div>
@@ -70,7 +70,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (!bots) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 text-center">
+      <div className="glass rounded-2xl p-12 text-center">
         <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest animate-pulse">
           Loading...
         </p>
@@ -80,7 +80,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (!bot) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 space-y-4">
+      <div className="glass rounded-2xl p-12 space-y-4">
         <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
           No bot with id <span className="text-white/70">{botId}</span>
         </p>
@@ -152,7 +152,7 @@ export function BotDetail({ botId }: { botId: string }) {
         />
       </section>
 
-      <section className="border border-white/8 bg-white/2 p-4 md:p-6 space-y-3 md:space-y-4">
+      <section className="glass rounded-2xl p-4 md:p-6 space-y-3 md:space-y-4">
         <h3 className={SECTION_LABEL}>
           ── Equity Curve · last {points.length} points
         </h3>
@@ -160,13 +160,13 @@ export function BotDetail({ botId }: { botId: string }) {
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="border border-white/8 bg-white/2 p-5 space-y-4">
+        <div className="glass rounded-2xl p-5 space-y-4">
           <h3 className={SECTION_LABEL}>
             ── Holdings · {bot.holdings ? Object.keys(bot.holdings).length : 0} symbol(s)
           </h3>
           <HoldingsTable holdings={bot.holdings} equity={bot.equity} />
         </div>
-        <div className="border border-white/8 bg-white/2 p-5 space-y-3">
+        <div className="glass rounded-2xl p-5 space-y-3">
           <h3 className={SECTION_LABEL}>── Recent Activity</h3>
           <KV
             k="Total Fills"

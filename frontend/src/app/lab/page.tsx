@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function Lab() {
   return (
-    <main className="min-h-screen bg-[#1a1c1a] pt-32 pb-16 px-6 md:px-10">
+    <main className="min-h-screen pt-32 pb-16 px-6 md:px-10">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="space-y-3">
           <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-white/30">
