@@ -46,7 +46,7 @@ export default function Footer() {
 
       <div className={`mt-10 pt-10 border-t ${isLab ? 'border-white/5' : 'border-black/5'} flex justify-between items-center text-[10px] uppercase tracking-[0.4em] font-bold ${footerSubHeading}`}>
         <span>&copy; 2026 phorage studio.</span>
-        <span className="hover:text-black transition-colors cursor-help">Digital Studio by Sangmin</span>
+        <span className={`${isLab ? 'hover:text-white' : 'hover:text-black'} transition-colors cursor-help`}>Digital Studio by Sangmin</span>
       </div>
       </div>
     </footer>
