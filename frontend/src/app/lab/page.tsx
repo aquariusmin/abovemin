@@ -14,9 +14,12 @@ export default function Lab() {
             Quant Trading Fleet
           </h1>
           <p className="text-[11px] font-mono text-white/40 max-w-2xl leading-relaxed">
-            Live status of every trading bot. Equity, PnL, holdings, and a
-            90-day curve per bot, synced from the NAS every 10 min.
+            Operational status for paper-trading validation. Simulated equity,
+            PnL, holdings, and a 90-day curve per bot are synced from the validation server.
           </p>
+          <div className="inline-flex items-center gap-2 border border-amber-300/20 bg-amber-300/5 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-200">
+            Paper trading only · simulated capital · no real-money performance
+          </div>
         </div>
         <FleetDashboard />
       </div>

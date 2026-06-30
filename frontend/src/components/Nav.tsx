@@ -10,7 +10,10 @@ export default function Nav() {
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const navBg = isLab ? 'bg-[#1a1c1a]/90' : 'bg-[#FAF9F6]/95';
   const borderColor = isLab ? 'border-white/10' : 'border-black/5';
@@ -20,6 +23,7 @@ export default function Nav() {
 
   const navLinks = [
     { href: '/about', label: 'About' },
+    { href: '/portfolio', label: 'Portfolio' },
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },
     { href: '/lab', label: 'Lab', italic: true },
@@ -49,9 +53,9 @@ export default function Nav() {
         </Link>
 
         {/* Right: desktop links + mobile controls */}
-        <div className="flex items-center gap-6 md:gap-10">
+        <div className="flex items-center gap-5 md:gap-8 xl:gap-10">
           {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-10 text-[11px] uppercase tracking-widest font-sans font-bold">
+          <div className="hidden md:flex items-center gap-7 xl:gap-10 text-[10px] xl:text-[11px] uppercase tracking-widest font-sans font-bold">
             {navLinks.map(link => (
               <Link
                 key={link.href}

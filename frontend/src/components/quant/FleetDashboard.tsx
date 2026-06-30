@@ -113,9 +113,9 @@ export function FleetDashboard() {
     <div className="space-y-6">
       {/* KPI strip */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Total Equity" value={totals ? fmtMoney(totals.equity) : "—"} />
+        <Stat label="Paper Equity" value={totals ? fmtMoney(totals.equity) : "—"} />
         <Stat
-          label="Total PnL"
+          label="Paper PnL"
           value={totals ? fmtPct(totals.pnl) : "—"}
           tone={totals ? (totals.pnl >= 0 ? "pos" : "neg") : undefined}
         />

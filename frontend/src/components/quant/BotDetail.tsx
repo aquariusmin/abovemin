@@ -130,12 +130,15 @@ export function BotDetail({ botId }: { botId: string }) {
           updated {fmtRelative(bot.updated_at)} ·{" "}
           <span className="text-white/50">{bot.id}</span>
         </p>
+        <p className="inline-flex border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-[9px] font-mono uppercase tracking-[0.16em] text-amber-200">
+          Paper trading only · simulated capital · no real-money performance
+        </p>
       </div>
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Equity" value={fmtMoney(bot.equity)} />
+        <Stat label="Paper Equity" value={fmtMoney(bot.equity)} />
         <Stat
-          label="PnL"
+          label="Paper PnL"
           value={fmtPct(bot.pnl_pct)}
           tone={up ? "pos" : "neg"}
         />

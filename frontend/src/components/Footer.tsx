@@ -30,6 +30,7 @@ export default function Footer() {
           <h5 className={`text-[10px] uppercase tracking-[0.2em] font-bold ${footerSubHeading}`}>Index</h5>
           <ul className={`text-[13px] space-y-3 font-semibold ${footerBody}`}>
             <li><Link href="/about" className="hover:text-accent transition-colors">About</Link></li>
+            <li><Link href="/portfolio" className="hover:text-accent transition-colors">Portfolio</Link></li>
             <li><Link href="/archive" className="hover:text-accent transition-colors">Archive</Link></li>
             <li><Link href="/shop" className="hover:text-accent transition-colors">Shop</Link></li>
             <li><Link href="/lab" className="hover:text-accent transition-colors italic">The Lab</Link></li>
@@ -39,8 +40,18 @@ export default function Footer() {
         <div className="space-y-6">
           <h5 className={`text-[10px] uppercase tracking-[0.2em] font-bold ${footerSubHeading}`}>Connect</h5>
           <p className={`text-[13px] font-semibold leading-relaxed ${footerBody}`}>
-            (메일) 준비중 <br />
-            <span className="mt-2 block hover:underline cursor-pointer">@sangmin__02</span>
+            <a href="mailto:aquariusmin01@naver.com" className="hover:text-accent transition-colors">
+              aquariusmin01@naver.com
+            </a>
+            <br />
+            <a
+              href="https://github.com/aquariusmin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block hover:text-accent transition-colors"
+            >
+              GitHub / aquariusmin
+            </a>
           </p>
         </div>
       </div>

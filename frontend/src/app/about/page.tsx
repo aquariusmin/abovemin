@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'phorage studio — 빛을 수집하고 세상을 분석하는 디지털 스튜디오.',
+  description: 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.',
 };
 
 export default function About() {
@@ -31,12 +31,17 @@ export default function About() {
             사진 아카이브와 소품샵을 운영하며, 퀀트와 데이터에 관심이 많아
             글로벌 시장을 관찰하고 분석하는 <span className="italic">Lab</span>을 함께 만들어가고 있습니다.
           </p>
+          <p>
+            국제통상학과 경영학을 공부하며 고객, 시장, 재무 데이터를 실제 의사결정으로 연결하는 분석을 지향합니다.
+            데이터 분석, 경제 연구, 재무 분석, 핀테크, 전략과 서비스 기획 프로젝트는
+            <Link href="/portfolio" className="ml-1 text-accent hover:underline">Portfolio</Link>에 정리했습니다.
+          </p>
         </section>
 
         {/* What I do */}
         <section className="space-y-8">
           <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">What I Do</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
             {[
               {
                 title: 'Archive',
@@ -49,8 +54,13 @@ export default function About() {
                 href: '/shop',
               },
               {
+                title: 'Portfolio',
+                desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.',
+                href: '/portfolio',
+              },
+              {
                 title: 'Lab',
-                desc: '글로벌 주식, 크립토, 원자재, 채권 시장을 실시간으로 관찰합니다.',
+                desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.',
                 href: '/lab',
               },
             ].map(item => (
@@ -76,7 +86,8 @@ export default function About() {
           <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">Connect</h3>
           <div className="font-sans text-sm text-gray-600 space-y-2">
             <p>Instagram — <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">@sangmin__02</a></p>
-            <p>Email — 준비중</p>
+            <p>Email — <a href="mailto:aquariusmin01@naver.com" className="text-accent hover:underline">aquariusmin01@naver.com</a></p>
+            <p>GitHub — <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">aquariusmin</a></p>
           </div>
         </section>
 

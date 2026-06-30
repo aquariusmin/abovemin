@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Lab — Quant Fleet',
-  description: '실시간 퀀트 트레이딩 봇 대시보드. 봇별 equity, PnL, 보유 종목, 90일 equity 추이.',
+  title: 'Lab — Paper-Trading Validation',
+  description: '실서버 페이퍼 트레이딩 검증 대시보드. 실자금 운용이나 투자 성과를 나타내지 않습니다.',
   other: { 'color-scheme': 'dark' },
 };
 
