@@ -29,6 +29,11 @@ export default function Nav() {
     { href: '/lab', label: 'Lab', italic: true },
   ];
 
+  const isActiveLink = (href: string) =>
+    href === '/portfolio'
+      ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/ko/portfolio')
+      : pathname?.startsWith(href);
+
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>
       <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-4 md:py-7 max-w-[1920px] mx-auto">
@@ -61,7 +66,7 @@ export default function Nav() {
                 key={link.href}
                 href={link.href}
                 className={`hover:opacity-50 transition-all ${link.italic ? 'italic' : ''} ${
-                  pathname?.startsWith(link.href)
+                  isActiveLink(link.href)
                     ? isLab && link.href === '/lab' ? 'text-accent-light' : 'text-black border-b-2 border-accent'
                     : link.href === '/lab' ? 'opacity-30 hover:opacity-100' : 'text-gray-400'
                 }`}
@@ -115,7 +120,7 @@ export default function Nav() {
               href={link.href}
               onClick={() => setMenuOpen(false)}
               className={`text-[13px] font-sans font-bold uppercase tracking-widest ${link.italic ? 'italic' : ''} ${
-                pathname?.startsWith(link.href) ? accentColor : isLab ? 'text-white/60' : 'text-gray-400'
+                isActiveLink(link.href) ? accentColor : isLab ? 'text-white/60' : 'text-gray-400'
               }`}
             >
               {link.label}

@@ -34,9 +34,18 @@ export default function PortfolioPage() {
       <div className="mx-auto max-w-[1400px] space-y-20 md:space-y-28">
         <header className="grid items-end gap-10 border-b border-black/5 pb-14 md:grid-cols-12 md:pb-20">
           <div className="space-y-7 md:col-span-8">
-            <p className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gray-400">
-              Professional Portfolio · Sangmin Lee
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gray-400">
+                Professional Portfolio · Sangmin Lee
+              </p>
+              <Link
+                href="/ko/portfolio"
+                hrefLang="ko"
+                className="font-sans text-[10px] font-bold tracking-[0.16em] text-gray-400 transition-colors hover:text-accent"
+              >
+                한국어
+              </Link>
+            </div>
             <h1 className="max-w-5xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
               From economic questions to{" "}
               <span className="text-accent">practical decisions.</span>

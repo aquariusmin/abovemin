@@ -13,6 +13,7 @@ export default async function sitemap() {
     { url: BASE, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1 },
     { url: `${BASE}/about`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
     { url: `${BASE}/portfolio`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${BASE}/ko/portfolio`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${BASE}/archive`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 },
     { url: `${BASE}/shop`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
     { url: `${BASE}/lab`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
@@ -32,12 +33,20 @@ export default async function sitemap() {
     priority: 0.8,
   }));
 
-  const portfolioPages = portfolioProjects.map(project => ({
-    url: `${BASE}/portfolio/${project.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
-  }));
+  const portfolioPages = portfolioProjects.flatMap(project => [
+    {
+      url: `${BASE}/portfolio/${project.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/ko/portfolio/${project.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+  ]);
 
   return [...staticPages, ...portfolioPages, ...albumPages, ...productPages];
 }
