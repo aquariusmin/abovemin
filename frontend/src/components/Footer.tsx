@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
 export default function Footer() {
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
-  const isPortfolioPrint = pathname === '/portfolio/print' || pathname === '/ko/portfolio/print';
+  const isPortfolioFocused = isPortfolioFocusedPath(pathname);
 
-  if (isPortfolioPrint) return null;
+  if (isPortfolioFocused) return null;
 
   const borderColor = isLab ? 'border-white/10' : 'border-black/5';
   const footerBg = isLab ? 'bg-[#1a1c1a]' : 'bg-[#F0EEEA]';

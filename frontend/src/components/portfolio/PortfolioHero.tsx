@@ -1,8 +1,20 @@
 import Link from "next/link";
 import type { EvidenceLocale } from "@/data/portfolioEvidence";
+import {
+  getPortfolioBasePath,
+  getPortfolioPrintPath,
+  type PortfolioMode,
+} from "@/data/portfolioRouting";
 
-export default function PortfolioHero({ locale }: { locale: EvidenceLocale }) {
+export default function PortfolioHero({
+  locale,
+  mode = "normal",
+}: {
+  locale: EvidenceLocale;
+  mode?: PortfolioMode;
+}) {
   const isKorean = locale === "ko";
+  const alternateLocale = isKorean ? "en" : "ko";
 
   return (
     <header className="grid gap-10 border-b border-black/5 pb-14 md:grid-cols-12 md:items-end md:pb-20">
@@ -31,10 +43,10 @@ export default function PortfolioHero({ locale }: { locale: EvidenceLocale }) {
           <Link href="#cases" className="bg-accent px-4 py-3 text-white transition-opacity hover:opacity-85">
             {isKorean ? "프로젝트 보기" : "View case studies"}
           </Link>
-          <Link href={isKorean ? "/portfolio" : "/ko/portfolio"} hrefLang={isKorean ? "en" : "ko"} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
+          <Link href={getPortfolioBasePath(alternateLocale, mode)} hrefLang={alternateLocale} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
             {isKorean ? "English" : "한국어"}
           </Link>
-          <Link href={isKorean ? "/ko/portfolio/print" : "/portfolio/print"} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
+          <Link href={getPortfolioPrintPath(locale, mode)} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
             {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
           </Link>
         </div>

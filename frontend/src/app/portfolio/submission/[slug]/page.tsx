@@ -13,12 +13,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const project = getPortfolioProject(slug);
   if (!project) notFound();
-  return { title: project.title, description: project.summary };
+  return {
+    title: `${project.title} — Submission View`,
+    description: project.summary,
+    robots: { index: false, follow: false },
+    alternates: { canonical: `/portfolio/${slug}` },
+  };
 }
 
-export default async function PortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PortfolioSubmissionCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = getPortfolioProject(slug);
   if (!project) notFound();
-  return <PortfolioCaseStudy project={project} projects={portfolioProjects} locale="en" />;
+  return <PortfolioCaseStudy project={project} projects={portfolioProjects} locale="en" mode="submission" />;
 }

@@ -33,7 +33,7 @@ body {
   font-family: var(--portfolio-font-sans);
 }
 
-body.portfolio-print-route > div {
+body.portfolio-focused-route > div {
   padding-top: 0;
 }
 
@@ -49,7 +49,7 @@ body.portfolio-print-route > div {
     margin: 12mm;
   }
 
-  body.portfolio-print-route {
+  body.portfolio-focused-route {
     background: #fff;
     color: #202020;
   }

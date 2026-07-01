@@ -2,10 +2,16 @@ import Link from "next/link";
 import type { PortfolioProject } from "@/data/portfolio";
 import { portfolioCardChips } from "@/data/portfolioEvidence";
 
-export default function ProjectCard({ project }: { project: PortfolioProject }) {
+export default function ProjectCard({
+  project,
+  basePath = "/portfolio",
+}: {
+  project: PortfolioProject;
+  basePath?: string;
+}) {
   return (
     <Link
-      href={`/portfolio/${project.slug}`}
+      href={`${basePath}/${project.slug}`}
       className="group flex h-full flex-col justify-between border border-black/5 bg-white/55 p-6 md:p-8 transition-all hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_20px_60px_-30px_rgba(74,93,78,0.35)]"
     >
       <div className="space-y-5">

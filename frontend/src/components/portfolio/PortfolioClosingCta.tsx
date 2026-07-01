@@ -1,7 +1,14 @@
 import Link from "next/link";
 import type { EvidenceLocale } from "@/data/portfolioEvidence";
+import { getPortfolioPrintPath, type PortfolioMode } from "@/data/portfolioRouting";
 
-export default function PortfolioClosingCta({ locale }: { locale: EvidenceLocale }) {
+export default function PortfolioClosingCta({
+  locale,
+  mode = "normal",
+}: {
+  locale: EvidenceLocale;
+  mode?: PortfolioMode;
+}) {
   const isKorean = locale === "ko";
 
   return (
@@ -22,8 +29,10 @@ export default function PortfolioClosingCta({ locale }: { locale: EvidenceLocale
       <div className="flex flex-col items-start gap-3 text-sm font-semibold md:col-span-5 md:items-end">
         <a className="text-accent hover:underline" href="mailto:aquariusmin01@naver.com">aquariusmin01@naver.com</a>
         <a className="text-accent hover:underline" href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer">github.com/aquariusmin</a>
-        <Link className="text-accent hover:underline" href="/about">{isKorean ? "소개 더 보기" : "More about me"} &rarr;</Link>
-        <Link className="text-accent hover:underline" href={isKorean ? "/ko/portfolio/print" : "/portfolio/print"}>{isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"} &rarr;</Link>
+        {mode === "normal" && (
+          <Link className="text-accent hover:underline" href="/about">{isKorean ? "소개 더 보기" : "More about me"} &rarr;</Link>
+        )}
+        <Link className="text-accent hover:underline" href={getPortfolioPrintPath(locale, mode)}>{isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"} &rarr;</Link>
       </div>
     </section>
   );

@@ -14,18 +14,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = getKoreanPortfolioProject(slug);
   if (!project) notFound();
   return {
-    title: `${project.title} · 한국어`,
+    title: `${project.title} — 제출용`,
     description: project.summary,
-    alternates: {
-      canonical: `/ko/portfolio/${slug}`,
-      languages: { en: `/portfolio/${slug}`, ko: `/ko/portfolio/${slug}` },
-    },
+    robots: { index: false, follow: false },
+    alternates: { canonical: `/ko/portfolio/${slug}` },
   };
 }
 
-export default async function KoreanPortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function KoreanPortfolioSubmissionCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = getKoreanPortfolioProject(slug);
   if (!project) notFound();
-  return <PortfolioCaseStudy project={project} projects={koreanPortfolioProjects} locale="ko" />;
+  return <PortfolioCaseStudy project={project} projects={koreanPortfolioProjects} locale="ko" mode="submission" />;
 }

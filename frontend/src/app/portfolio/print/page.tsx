@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function PortfolioPrintPage() {
-  return <PortfolioPrintContent locale="en" />;
+export default async function PortfolioPrintPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
+  return <PortfolioPrintContent locale="en" mode={from === "submission" ? "submission" : "normal"} />;
 }

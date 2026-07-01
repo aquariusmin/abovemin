@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function KoreanPortfolioPrintPage() {
-  return <PortfolioPrintContent locale="ko" />;
+export default async function KoreanPortfolioPrintPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
+  return <PortfolioPrintContent locale="ko" mode={from === "submission" ? "submission" : "normal"} />;
 }
