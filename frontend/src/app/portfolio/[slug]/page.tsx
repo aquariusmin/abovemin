@@ -43,7 +43,7 @@ export default async function PortfolioCasePage({
   const next = portfolioProjects[(currentIndex + 1) % portfolioProjects.length];
 
   return (
-    <main className="min-h-screen bg-surface px-4 py-10 font-serif text-[#222] sm:px-6 md:px-10 md:py-16">
+    <main className="portfolio-ui min-h-screen bg-surface px-4 py-10 font-sans text-[#222] sm:px-6 md:px-10 md:py-16">
       <article className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between gap-4">
           <Link

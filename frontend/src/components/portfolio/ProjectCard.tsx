@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PortfolioProject } from "@/data/portfolio";
+import { portfolioCardChips } from "@/data/portfolioEvidence";
 
 export default function ProjectCard({ project }: { project: PortfolioProject }) {
   return (
@@ -21,9 +22,6 @@ export default function ProjectCard({ project }: { project: PortfolioProject }) 
           <h2 className="text-2xl font-bold leading-tight tracking-tight text-[#222] transition-colors group-hover:text-accent">
             {project.title}
           </h2>
-          <p className="font-sans text-sm leading-relaxed text-gray-600">
-            {project.summary}
-          </p>
         </div>
 
         <div className="border-l-2 border-accent/25 pl-4">
@@ -34,14 +32,19 @@ export default function ProjectCard({ project }: { project: PortfolioProject }) 
             {project.question}
           </p>
         </div>
+
+        <div className="flex flex-wrap gap-2">
+          {portfolioCardChips[project.slug].map((chip) => (
+            <span key={chip.en} className="bg-surface-muted px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-gray-600">
+              {chip.en}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-black/5 pt-5 font-sans">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-          {project.period}
-        </span>
+      <div className="mt-8 flex items-center justify-end border-t border-black/5 pt-5">
         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
-          Read case &rarr;
+          View case study &rarr;
         </span>
       </div>
     </Link>

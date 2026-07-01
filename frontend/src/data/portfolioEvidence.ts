@@ -74,6 +74,91 @@ export const portfolioEvidenceOverview = [
   },
 ];
 
+export const portfolioEvidenceHighlights = [
+  {
+    evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
+    demonstrates: {
+      en: "Customer segmentation, explainable classification, and action-oriented retention planning.",
+      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 리텐션 전략 수립 역량을 보여줍니다.",
+    },
+    caution: {
+      en: "The 5.0 percentage-point churn reduction is a proposed target, not an achieved result.",
+      ko: "이탈률 5.0%p 감소는 실제 성과가 아니라 분석을 바탕으로 제안한 목표입니다.",
+    },
+  },
+  {
+    evidence: { en: "R-squared = 0.819", ko: "R² = 0.819" },
+    demonstrates: {
+      en: "Economic research using satellite data, public indicators, and regression analysis.",
+      ko: "위성 데이터와 공공 지표를 결합한 경제 연구 및 회귀분석 역량을 보여줍니다.",
+    },
+    caution: {
+      en: "This is explanatory fit in the reported simple model, not prediction accuracy or causal proof.",
+      ko: "보고된 단순 회귀모형의 설명력이며, 예측 정확도나 인과관계를 뜻하지 않습니다.",
+    },
+  },
+  {
+    evidence: { en: "2020–2024 financial-ratio review", ko: "2020–2024 재무비율 분석" },
+    demonstrates: {
+      en: "Financial statement analysis and comparison of DCF, APV, and relative valuation.",
+      ko: "재무제표 분석과 DCF·APV·상대가치평가를 비교하는 기업분석 역량을 보여줍니다.",
+    },
+    caution: {
+      en: "A conditional classroom analysis; valuation arithmetic requires audit before public use.",
+      ko: "수업·보고서 목적의 조건부 분석이며, 공개 활용 전 가치평가 산식 검토가 필요합니다.",
+    },
+  },
+  {
+    evidence: { en: "Live-server paper-trading architecture", ko: "라이브 서버 모의투자 아키텍처" },
+    demonstrates: {
+      en: "Broker abstraction, bot control, dashboards, logging, and operational validation.",
+      ko: "브로커 추상화, 봇 제어, 대시보드, 로그, 운영 검증을 아우르는 핀테크 시스템 설계 역량을 보여줍니다.",
+    },
+    caution: {
+      en: "Paper-trading validation only; no real-money operation or performance claim.",
+      ko: "모의투자 검증 단계이며, 실거래 운용이나 수익 성과를 주장하지 않습니다.",
+    },
+  },
+];
+
+export const portfolioCardChips: Record<string, LocalizedText[]> = {
+  "telecom-churn": [
+    { en: "7,043 records", ko: "7,043건" },
+    { en: "Contract & tenure EDA", ko: "계약·이용기간 EDA" },
+    { en: "7 models compared", ko: "7개 모형 비교" },
+  ],
+  "satellite-gdp": [
+    { en: "973 raw rows", ko: "원자료 973행" },
+    { en: "820 merged observations", ko: "병합 관측치 820개" },
+    { en: "Reported R² 0.819", ko: "보고된 R² 0.819" },
+  ],
+  "korean-air": [
+    { en: "2020–2024 ratios", ko: "2020–2024 재무비율" },
+    { en: "DCF · APV · Multiples", ko: "DCF · APV · 멀티플" },
+    { en: "WACC ≈ 2.8%", ko: "WACC 약 2.8%" },
+  ],
+  "quant-trading-fleet": [
+    { en: "Paper trading", ko: "모의투자" },
+    { en: "Broker abstraction", ko: "브로커 추상화" },
+    { en: "Dashboard & logs", ko: "대시보드·로그" },
+  ],
+  "financial-ai-model-study": [
+    { en: "4 assignments", ko: "4개 과제" },
+    { en: "PCA · SVR", ko: "PCA · SVR" },
+    { en: "ANN · DNN", ko: "ANN · DNN" },
+  ],
+  phorage: [
+    { en: "Pre-launch MVP", ko: "출시 전 MVP" },
+    { en: "Physical goods", ko: "실물 굿즈 제작" },
+    { en: "Commerce workflow", ko: "커머스 흐름 설계" },
+  ],
+  "blood-type-survey": [
+    { en: "101 responses", ko: "응답 101건" },
+    { en: "Chi-square tests", ko: "카이제곱 검정" },
+    { en: "Observed vs expected", ko: "관측·기대빈도 비교" },
+  ],
+};
+
 export const churnContractRates = [
   { label: { en: "Month-to-month", ko: "월 단위" }, value: 42.71 },
   { label: { en: "One year", ko: "1년" }, value: 11.27 },

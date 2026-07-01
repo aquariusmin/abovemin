@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cartStore';
 export default function Nav() {
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
+  const isPortfolioPrint = pathname === '/portfolio/print' || pathname === '/ko/portfolio/print';
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function Nav() {
     href === '/portfolio'
       ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/ko/portfolio')
       : pathname?.startsWith(href);
+
+  if (isPortfolioPrint) return null;
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>

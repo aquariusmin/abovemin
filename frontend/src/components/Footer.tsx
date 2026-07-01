@@ -6,6 +6,9 @@ import { usePathname } from 'next/navigation';
 export default function Footer() {
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
+  const isPortfolioPrint = pathname === '/portfolio/print' || pathname === '/ko/portfolio/print';
+
+  if (isPortfolioPrint) return null;
 
   const borderColor = isLab ? 'border-white/10' : 'border-black/5';
   const footerBg = isLab ? 'bg-[#1a1c1a]' : 'bg-[#F0EEEA]';
