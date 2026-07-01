@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ProjectEvidence from "@/components/portfolio/ProjectEvidence";
 import { getPortfolioProject, portfolioProjects } from "@/data/portfolio";
+
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return portfolioProjects.map((project) => ({ slug: project.slug }));
@@ -16,7 +19,7 @@ export async function generateMetadata({
   const project = getPortfolioProject(slug);
 
   if (!project) {
-    return { title: "Case Study Not Found" };
+    notFound();
   }
 
   return {
@@ -155,19 +158,10 @@ export default async function PortfolioCasePage({
             </ul>
           </CaseSection>
 
-          <CaseSection label="07 · Visual evidence" title="Visuals to add after verification">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {project.suggestedVisuals.map((visual) => (
-                <div key={visual} className="flex min-h-32 items-end border border-dashed border-accent/30 bg-accent/[0.025] p-5">
-                  <p className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                    Planned · {visual}
-                  </p>
-                </div>
-              ))}
+          <CaseSection label="07 · Visual evidence" title="Evidence, with boundaries">
+            <div id="evidence" className="scroll-mt-28">
+              <ProjectEvidence slug={project.slug} locale="en" />
             </div>
-            <p className="mt-4 font-sans text-xs leading-relaxed text-gray-400">
-              No project image or chart is shown until a verified, public-safe asset is available.
-            </p>
           </CaseSection>
         </div>
 

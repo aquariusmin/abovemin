@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import KoreanProjectCard from "@/components/portfolio/KoreanProjectCard";
+import PortfolioEvidenceMap from "@/components/portfolio/PortfolioEvidenceMap";
 import { koreanPortfolioProjects } from "@/data/portfolio.ko";
 
 export const metadata: Metadata = {
@@ -111,6 +112,8 @@ export default function KoreanPortfolioPage() {
             ))}
           </div>
         </section>
+
+        <PortfolioEvidenceMap locale="ko" />
 
         <section className="space-y-10" id="cases">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">

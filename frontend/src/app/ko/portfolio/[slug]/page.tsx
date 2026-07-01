@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ProjectEvidence from "@/components/portfolio/ProjectEvidence";
 import {
   getKoreanPortfolioProject,
   koreanPortfolioProjects,
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const project = getKoreanPortfolioProject(slug);
 
   if (!project) {
-    return { title: "프로젝트를 찾을 수 없습니다" };
+    notFound();
   }
 
   return {
@@ -170,19 +171,10 @@ export default async function KoreanPortfolioCasePage({
             </ul>
           </CaseSection>
 
-          <CaseSection label="07 · 시각 자료" title="검증 후 추가할 자료">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {project.suggestedVisuals.map((visual) => (
-                <div key={visual} className="flex min-h-32 items-end border border-dashed border-accent/30 bg-accent/[0.025] p-5">
-                  <p className="font-sans text-xs font-semibold tracking-[0.08em] text-gray-500">
-                    추가 예정 · {visual}
-                  </p>
-                </div>
-              ))}
+          <CaseSection label="07 · 시각적 근거" title="확인된 근거와 해석 범위">
+            <div id="evidence" className="scroll-mt-28">
+              <ProjectEvidence slug={project.slug} locale="ko" />
             </div>
-            <p className="mt-4 break-keep font-sans text-xs leading-relaxed text-gray-400">
-              검증을 마치고 공개해도 안전한 자료만 이미지나 차트로 추가할 예정입니다.
-            </p>
           </CaseSection>
         </div>
 
