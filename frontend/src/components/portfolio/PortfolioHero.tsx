@@ -25,17 +25,17 @@ export default function PortfolioHero({
         <div className="space-y-5">
           <h1 className="max-w-5xl break-keep text-4xl font-extrabold leading-[1.12] tracking-tight sm:text-5xl md:text-7xl">
             {isKorean
-              ? "경제·경영 지식과 데이터 분석을 바탕으로 모호한 문제를 실무적 인사이트로 전환합니다."
+              ? "데이터로 비즈니스 문제를 분석하고, 실제 의사결정에 쓸 수 있는 결론으로 연결합니다."
               : "Turning ambiguous questions into practical, evidence-led decisions."}
           </h1>
           <p className="max-w-3xl break-keep text-base font-semibold leading-relaxed text-accent md:text-xl">
             {isKorean
-              ? "경제·경영 지식과 데이터 분석을 바탕으로 비즈니스 문제를 구조화하고, 실무적 의사결정에 활용 가능한 인사이트를 만드는 것을 지향합니다."
+              ? "광운대학교 국제통상학부를 전공하고 경영학을 복수전공하며, 데이터 분석·금융·전략 분야의 실무를 준비하고 있습니다."
               : "Economics and business student turning data, financial research, and service thinking into practical decisions."}
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-gray-600 md:text-base">
             {isKorean
-              ? "광운대학교 국제통상학부를 전공하고 경영학을 복수전공하며, 고객 분석, 대체 데이터를 활용한 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 수행했습니다. 근거가 말해 주는 범위와 추가 검증이 필요한 지점을 구분해 전달합니다."
+              ? "고객 이탈 분석, 야간 위성 조도 기반 GDP 분석, 기업 재무분석, 모의투자 시스템, 서비스 MVP 기획을 진행했습니다. 각 프로젝트에서는 결과가 말해 주는 범위와 추가 검증이 필요한 지점을 구분해 정리했습니다."
               : "As an International Trade major and Business Administration double-major candidate, I have worked across customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning. I separate what the evidence supports from what still requires validation."}
           </p>
         </div>

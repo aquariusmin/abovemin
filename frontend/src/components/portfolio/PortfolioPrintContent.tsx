@@ -31,7 +31,7 @@ export default function PortfolioPrintContent({
           </div>
           <p className="mt-6 max-w-3xl break-keep text-lg font-semibold leading-relaxed text-accent">
             {isKorean
-              ? "경제·경영 지식과 데이터 분석을 바탕으로 비즈니스 문제를 구조화하고, 실무적 의사결정에 활용 가능한 인사이트를 만드는 것을 지향합니다."
+              ? "데이터로 비즈니스 문제를 분석하고, 실제 의사결정에 쓸 수 있는 결론으로 연결합니다."
               : "Economics and business student turning data, financial research, and service thinking into practical decisions."}
           </p>
           <p className="mt-3 max-w-3xl break-keep text-xs leading-relaxed text-gray-600">
@@ -84,7 +84,6 @@ export default function PortfolioPrintContent({
 
         <footer className="portfolio-print-section mt-8 border-t border-black/10 pt-4 text-[9px] leading-relaxed text-gray-500">
           <p>{isKorean ? "본 문서는 공개용 요약본이며, 전화번호와 미검증 성과를 포함하지 않습니다." : "This is a public-safe summary and excludes phone information and unverified outcome claims."}</p>
-          <p className="mt-1">{isKorean ? "TODO: 최종 디자인 PDF는 검토 완료 후 public/files/에 추가할 수 있습니다." : "TODO: A final designed PDF may be added under public/files/ after review."}</p>
         </footer>
       </article>
     </main>

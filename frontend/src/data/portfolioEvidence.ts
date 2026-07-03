@@ -69,7 +69,7 @@ export const portfolioEvidenceOverview = [
     status: "verified" as const,
     summary: {
       en: "Observed, expected, and chi-square values come from the 101-response workbook; p-value reporting remains pending.",
-      ko: "관측·기대빈도와 카이제곱 값은 101명 응답 workbook에서 확인했으며 p-value 보고는 보완이 필요합니다.",
+      ko: "관측·기대빈도와 카이제곱 값은 101명 응답 데이터에서 확인했으며 p-value 보고는 보완이 필요합니다.",
     },
   },
 ];
@@ -79,7 +79,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
     demonstrates: {
       en: "Customer segmentation, explainable classification, and action-oriented retention planning.",
-      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 고객 유지 전략 수립 역량을 보여줍니다.",
+      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 고객 유지 전략 수립까지 이어지는 과정입니다.",
     },
     caution: {
       en: "The 5.0 percentage-point churn reduction is a proposed target, not an achieved result.",
@@ -112,7 +112,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "Live-server paper-trading architecture", ko: "라이브 서버 모의투자 아키텍처" },
     demonstrates: {
       en: "Broker abstraction, bot control, dashboards, logging, and operational validation.",
-      ko: "브로커 추상화, 봇 제어, 대시보드, 로그, 운영 검증을 아우르는 핀테크 시스템 설계 역량을 보여줍니다.",
+      ko: "브로커 추상화, 봇 제어, 대시보드, 로그, 운영 검증을 아우르는 핀테크 시스템 설계 작업입니다.",
     },
     caution: {
       en: "Paper-trading validation only; no real-money operation or performance claim.",

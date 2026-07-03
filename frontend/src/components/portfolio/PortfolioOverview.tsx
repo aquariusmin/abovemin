@@ -49,7 +49,7 @@ export default function PortfolioOverview({
                 {isKorean ? "역량 요약" : "Capability summary"}
               </p>
               <h2 className="break-keep text-3xl font-bold tracking-tight md:text-4xl">
-                {isKorean ? "비즈니스 맥락을 근거로 검토합니다." : "Business context, tested through evidence."}
+                {isKorean ? "비즈니스 맥락을 근거로 검증합니다." : "Business context, tested through evidence."}
               </h2>
             </div>
             <p className="break-keep text-sm leading-relaxed text-gray-600 md:col-span-5">
