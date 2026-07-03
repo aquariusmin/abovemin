@@ -8,6 +8,7 @@
   --surface: #FAF9F6;
   --surface-dark: #1a1c1a;
   --surface-muted: #F0EEEA;
+  --portfolio-font-sans: Inter, Pretendard, SUIT, "Noto Sans KR", "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", Arial, sans-serif;
 }
 
 @theme inline {
@@ -25,6 +26,59 @@
 body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.portfolio-ui,
+.portfolio-ui :where(.font-serif, .font-sans) {
+  font-family: var(--portfolio-font-sans);
+}
+
+body.portfolio-focused-route > div {
+  padding-top: 0;
+}
+
+.portfolio-print-card,
+.portfolio-print-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body.portfolio-focused-route {
+    background: #fff;
+    color: #202020;
+  }
+
+  .portfolio-print-controls {
+    display: none !important;
+  }
+
+  .portfolio-print {
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .portfolio-print > article {
+    max-width: none;
+    padding: 0;
+  }
+
+  .portfolio-print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .portfolio-print * {
+    box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* 키보드 포커스 시 글로벌 링 스타일 */

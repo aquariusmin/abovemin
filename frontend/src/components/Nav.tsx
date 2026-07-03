@@ -4,13 +4,18 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
+import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
 export default function Nav() {
   const pathname = usePathname();
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
+  const isPortfolioFocused = isPortfolioFocusedPath(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const navBg = isLab ? 'bg-[#1a1c1a]/90' : 'bg-[#FAF9F6]/95';
   const borderColor = isLab ? 'border-white/10' : 'border-black/5';
@@ -20,10 +25,18 @@ export default function Nav() {
 
   const navLinks = [
     { href: '/about', label: 'About' },
+    { href: '/portfolio', label: 'Portfolio' },
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },
     { href: '/lab', label: 'Lab', italic: true },
   ];
+
+  const isActiveLink = (href: string) =>
+    href === '/portfolio'
+      ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/ko/portfolio')
+      : pathname?.startsWith(href);
+
+  if (isPortfolioFocused) return null;
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>
@@ -49,15 +62,15 @@ export default function Nav() {
         </Link>
 
         {/* Right: desktop links + mobile controls */}
-        <div className="flex items-center gap-6 md:gap-10">
+        <div className="flex items-center gap-5 md:gap-8 xl:gap-10">
           {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-10 text-[11px] uppercase tracking-widest font-sans font-bold">
+          <div className="hidden md:flex items-center gap-7 xl:gap-10 text-[10px] xl:text-[11px] uppercase tracking-widest font-sans font-bold">
             {navLinks.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`hover:opacity-50 transition-all ${link.italic ? 'italic' : ''} ${
-                  pathname?.startsWith(link.href)
+                  isActiveLink(link.href)
                     ? isLab && link.href === '/lab' ? 'text-accent-light' : 'text-black border-b-2 border-accent'
                     : link.href === '/lab' ? 'opacity-30 hover:opacity-100' : 'text-gray-400'
                 }`}
@@ -111,7 +124,7 @@ export default function Nav() {
               href={link.href}
               onClick={() => setMenuOpen(false)}
               className={`text-[13px] font-sans font-bold uppercase tracking-widest ${link.italic ? 'italic' : ''} ${
-                pathname?.startsWith(link.href) ? accentColor : isLab ? 'text-white/60' : 'text-gray-400'
+                isActiveLink(link.href) ? accentColor : isLab ? 'text-white/60' : 'text-gray-400'
               }`}
             >
               {link.label}
