@@ -190,20 +190,20 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
     period: "2025년~현재",
     role: "개인 프로젝트",
     summary:
-      "전략 봇, broker abstraction, 실행 데이터, 제어 기능, 로그와 모니터링 대시보드를 연결한 자동매매 검증 시스템을 구축하고 라이브 서버에서 paper trading으로 점검하고 있습니다.",
+      "전략 봇, 브로커 추상화 계층, 실행 데이터, 제어 기능, 로그와 모니터링 대시보드를 연결한 자동매매 검증 시스템을 구축하고 라이브 서버에서 모의투자(paper trading)로 점검하고 있습니다.",
     question:
       "개별 매매 규칙을 단독 스크립트가 아니라 운영자가 통제하고 관찰할 수 있는 서비스로 전환하려면 어떤 인프라가 필요할까?",
     evidence: [
       "KIS와 Binance/CCXT broker interface",
       "봇 상태, 전략 설정, 로그와 주문 실행 이력",
-      "라이브 서버 기반 paper-trading 검증",
+      "라이브 서버 기반 모의투자 검증",
     ],
     tools: ["Python", "FastAPI", "React", "TypeScript", "SQLite", "SQLAlchemy", "Docker"],
     process: [
       {
         title: "전략과 broker 로직 분리",
         description:
-          "거래소별 데이터와 주문 처리 차이를 분리하기 위해 broker abstraction을 설계했습니다.",
+          "거래소별 데이터와 주문 처리 차이를 분리하기 위해 브로커 추상화 계층을 설계했습니다.",
       },
       {
         title: "상태와 이력의 가시화",
@@ -218,7 +218,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       {
         title: "운영 검증",
         description:
-          "서비스를 컨테이너화하고 라이브 서버에서 paper trading 기반 운영 검증을 시작했습니다.",
+          "서비스를 컨테이너화하고 라이브 서버에서 모의투자 기반 운영 검증을 시작했습니다.",
       },
     ],
     insights: [
@@ -227,20 +227,20 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "이 프로젝트를 통해 금융 서비스 데이터가 생성·저장·모니터링·관리되는 구조를 구체화했습니다.",
     ],
     decisionValue:
-      "전략의 실행 과정을 관찰 가능한 형태로 만들고, 실거래를 고려하기 전에 paper trading 환경에서 체계적으로 검증할 수 있는 운영 기반을 구축했습니다.",
+      "전략의 실행 과정을 관찰 가능한 형태로 만들고, 실거래를 고려하기 전에 모의투자 환경에서 체계적으로 검증할 수 있는 운영 기반을 구축했습니다.",
     limitations: [
-      "정식 paper-trading 검증 보고서를 추가로 작성해야 합니다.",
+      "정식 모의투자 검증 보고서를 추가로 작성해야 합니다.",
       "가동시간, 주문 실패, 대사, 중복 주문, 재시작과 로그 기준을 명확히 정의해야 합니다.",
       "안정적인 시스템으로 표현하기 전 모든 전략과 broker mode를 처음부터 끝까지 검증해야 합니다.",
     ],
     suggestedVisuals: [
       "전략부터 대시보드까지의 시스템 구조",
-      "Paper Trading으로 표시한 익명화 대시보드",
+      "모의투자로 표시한 익명화 대시보드",
       "봇 상태 전환 다이어그램",
-      "Paper-trading 운영 검증표",
+      "모의투자 운영 검증표",
     ],
     caution:
-      "라이브 서버에서 진행하는 paper-trading 검증 단계입니다. 실거래 운영, 수익률, 승률, 수익성 또는 자본 증가를 주장하지 않습니다.",
+      "라이브 서버에서 진행하는 모의투자 검증 단계입니다. 실거래 운영, 수익률, 승률, 수익성 또는 자본 증가를 주장하지 않습니다.",
   },
   {
     slug: "financial-ai-model-study",
@@ -250,9 +250,9 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
     period: "2024년 가을학기",
     role: "개인 프로젝트 시리즈",
     summary:
-      "회귀, 차원축소, tree, support vector와 neural network 모형을 비교하며 복잡한 모형이 언제 일반화 성능 개선으로 이어지는지 학습한 프로젝트입니다.",
+      "회귀, 차원축소, 트리 기반, 서포트 벡터, 신경망 모형을 비교하며 복잡한 모형이 언제 일반화 성능 개선으로 이어지는지 학습한 프로젝트입니다.",
     question:
-      "전처리, 정규화, 모형 복잡도와 하이퍼파라미터는 validation과 test 성능에 어떤 영향을 줄까?",
+      "전처리, 정규화, 모형 복잡도와 하이퍼파라미터는 검증·테스트 성능에 어떤 영향을 줄까?",
     evidence: [
       "금융·공개 데이터를 활용한 4개 응용 과제",
       "학습, 검증, 테스트 결과 비교",
@@ -287,7 +287,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "더 깊은 DNN은 작은 ANN과 비교해 큰 개선을 보이지 않았습니다.",
     ],
     decisionValue:
-      "복잡한 방법이라는 이유만으로 선택하지 않고, validation 결과가 실제 개선을 뒷받침할 때만 추가 복잡도를 채택해야 한다는 기준을 확인했습니다.",
+      "복잡한 방법이라는 이유만으로 선택하지 않고, 검증 결과가 실제 개선을 뒷받침할 때만 추가 복잡도를 채택해야 한다는 기준을 확인했습니다.",
     limitations: [
       "원본 데이터와 데이터 사전을 복구해야 합니다.",
       "4개 과제를 재현 가능한 노트북으로 통합해야 합니다.",

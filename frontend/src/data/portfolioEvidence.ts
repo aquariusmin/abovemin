@@ -79,7 +79,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
     demonstrates: {
       en: "Customer segmentation, explainable classification, and action-oriented retention planning.",
-      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 리텐션 전략 수립 역량을 보여줍니다.",
+      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 고객 유지 전략 수립 역량을 보여줍니다.",
     },
     caution: {
       en: "The 5.0 percentage-point churn reduction is a proposed target, not an achieved result.",

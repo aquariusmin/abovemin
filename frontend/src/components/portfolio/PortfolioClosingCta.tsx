@@ -18,7 +18,7 @@ export default function PortfolioClosingCta({
           {isKorean ? "다음 대화" : "Continue the conversation"}
         </p>
         <h2 className="break-keep text-3xl font-bold tracking-tight md:text-4xl">
-          {isKorean ? "데이터와 비즈니스 맥락을 함께 읽는 역할을 찾고 있습니다." : "Looking for roles where evidence and business context belong together."}
+          {isKorean ? "데이터와 비즈니스 맥락을 함께 다루는 직무를 찾고 있습니다." : "Looking for roles where evidence and business context belong together."}
         </h2>
         <p className="max-w-2xl break-keep text-sm leading-relaxed text-gray-600">
           {isKorean

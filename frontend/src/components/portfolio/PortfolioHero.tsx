@@ -35,7 +35,7 @@ export default function PortfolioHero({
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-gray-600 md:text-base">
             {isKorean
-              ? "광운대학교 국제통상학부 전공·경영학 복수전공으로, 고객 분석, 대체 데이터를 활용한 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 수행했습니다. 근거가 말해 주는 범위와 추가 검증이 필요한 지점을 구분해 전달합니다."
+              ? "광운대학교 국제통상학부를 전공하고 경영학을 복수전공하며, 고객 분석, 대체 데이터를 활용한 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 수행했습니다. 근거가 말해 주는 범위와 추가 검증이 필요한 지점을 구분해 전달합니다."
               : "As an International Trade major and Business Administration double-major candidate, I have worked across customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning. I separate what the evidence supports from what still requires validation."}
           </p>
         </div>

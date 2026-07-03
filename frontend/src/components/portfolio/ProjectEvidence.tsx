@@ -259,7 +259,7 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
     : ["Strategy bots", "KIS · CCXT brokers", "Execution · state store", "FastAPI controls", "React monitoring"];
   const checklist = locale === "ko"
     ? [
-        ["라이브 서버 paper trading", "검증 진행 중"],
+        ["라이브 서버 모의투자", "검증 진행 중"],
         ["봇 상태·설정 제어", "구현"],
         ["실행 이력·운영 로그", "구현"],
         ["주문 실패·대사 기준", "정의 필요"],
@@ -284,7 +284,7 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
         source="Current FastAPI/React architecture and portfolio codebase"
         caption={
           locale === "ko"
-            ? "전략, broker abstraction, 실행 데이터, 제어 API와 모니터링의 연결을 보여줍니다. 구조가 구현되어 있다는 근거이며, 실거래 운영이나 수익률·승률·수익성을 증명하지 않습니다."
+            ? "전략, 브로커 추상화 계층, 실행 데이터, 제어 API와 모니터링의 연결을 보여줍니다. 구조가 구현되어 있다는 근거이며, 실거래 운영이나 수익률·승률·수익성을 증명하지 않습니다."
             : "The diagram shows the connection among strategies, broker abstraction, execution data, controls, and monitoring. It supports the implemented architecture; it does not evidence real-money operation, returns, win rate, or profitability."
         }
       >
@@ -294,7 +294,7 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
       <EvidenceFigure
         locale={locale}
         status="verified"
-        title={locale === "ko" ? "Paper-trading 운영 검증표" : "Paper-trading operational checklist"}
+        title={locale === "ko" ? "모의투자 운영 검증표" : "Paper-trading operational checklist"}
         source="Implemented controls plus documented validation gaps"
         caption={
           locale === "ko"
@@ -311,13 +311,13 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
         title={locale === "ko" ? "대시보드·실행 이력 화면" : "Dashboard and execution-history screenshots"}
         caption={
           locale === "ko"
-            ? "현재 화면에는 paper equity와 paper PnL 필드가 있어 맥락 없이 공개하면 실거래 성과로 오해될 수 있습니다. 민감값을 가리고 paper trading 표기를 유지한 공개용 화면이 준비되기 전에는 placeholder로 둡니다."
+            ? "현재 화면에는 모의투자 계좌 잔고와 손익(paper equity·PnL) 필드가 있어 맥락 없이 공개하면 실거래 성과로 오해될 수 있습니다. 민감값을 가리고 모의투자 표기를 유지한 공개용 화면이 준비되기 전에는 placeholder로 둡니다."
             : "The current interface includes paper-equity and paper-PnL fields that could be misread without context. Screenshots remain pending until a redacted, explicitly paper-trading-only export is prepared."
         }
       >
         <PendingEvidence
           label={locale === "ko" ? "공개용 redacted 화면 준비 후 추가" : "Public-safe redacted screenshots pending"}
-          detail={locale === "ko" ? "봇 이름·계좌 관련 값·성과 필드를 비식별화하고 paper-trading 고지를 화면 안에 포함해야 합니다." : "Anonymize bot and account fields, redact performance values, and keep the paper-trading disclaimer inside the image."}
+          detail={locale === "ko" ? "봇 이름·계좌 관련 값·성과 필드를 비식별화하고 모의투자 고지를 화면 안에 포함해야 합니다." : "Anonymize bot and account fields, redact performance values, and keep the paper-trading disclaimer inside the image."}
         />
       </EvidenceFigure>
     </div>
