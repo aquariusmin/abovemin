@@ -3,7 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { log } from '@/lib/logger';
-import { SETTINGS_CACHE_TAG } from '@/lib/supabase';
+import { SETTINGS_CACHE_TAG } from '@/lib/cache-tags';
 
 const ALLOWED_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'] as const;
 type AllowedKey = typeof ALLOWED_KEYS[number];
@@ -13,7 +13,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await getSupabaseAdmin()
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    log.error('admin_settings_config', error);
+    return NextResponse.json(
+      { error: 'Admin database is not configured' },
+      { status: 503 },
+    );
+  }
+
+  const { data, error } = await supabase
     .from('site_settings')
     .select('key, value');
 
@@ -48,7 +59,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'No valid keys' }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    log.error('admin_settings_config', error);
+    return NextResponse.json(
+      { error: 'Admin database is not configured' },
+      { status: 503 },
+    );
+  }
   const now = new Date().toISOString();
   for (const [key, value] of updates) {
     const { error } = await supabase

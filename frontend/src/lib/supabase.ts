@@ -1,13 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
+import { SETTINGS_CACHE_TAG } from './cache-tags';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(url, key);
-
-export const SETTINGS_CACHE_TAG = 'site-settings';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
