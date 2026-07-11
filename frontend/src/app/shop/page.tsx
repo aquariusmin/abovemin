@@ -25,7 +25,6 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [addedId, setAddedId] = useState<number | null>(null);
   const { addItem } = useCartStore();
 
@@ -68,8 +67,29 @@ export default function Shop() {
     });
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center bg-canvas">
-      <p className="eyebrow text-muted">Synchronizing phorage stock…</p>
+    <main className="min-h-screen bg-canvas px-4 sm:px-6 md:px-8 py-12 md:py-20">
+      <header className="max-w-[1400px] mx-auto mb-10 md:mb-16">
+        <p className="eyebrow text-muted mb-4">Shop Collection</p>
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] text-ink max-w-3xl">
+          Tangible light for your space.
+        </h1>
+        <div className="mt-8 md:mt-12 border-t border-hairline pt-6">
+          <span className="sr-only" role="status" aria-live="polite">상품을 불러오는 중입니다…</span>
+        </div>
+      </header>
+      {/* Skeleton masonry — reserves rhythm so content doesn't jump on load */}
+      <div
+        aria-hidden
+        className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto"
+      >
+        {[62, 78, 70, 84, 66, 74].map((h, i) => (
+          <div key={i} className="break-inside-avoid">
+            <div className="rounded-md bg-stone animate-pulse" style={{ height: `${h * 4}px` }} />
+            <div className="mt-4 h-3 w-16 rounded bg-stone animate-pulse" />
+            <div className="mt-2 h-4 w-2/3 rounded bg-stone animate-pulse" />
+          </div>
+        ))}
+      </div>
     </main>
   );
 
@@ -101,16 +121,28 @@ export default function Shop() {
 
           <label className="flex items-center gap-2 self-start md:self-auto">
             <span className="eyebrow text-muted">Sort</span>
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as typeof sortBy)}
-              aria-label="Sort products"
-              className="bg-transparent text-sm font-medium text-ink cursor-pointer focus:outline-none focus-visible:underline appearance-none"
-            >
-              <option value="newest">Newest</option>
-              <option value="price-asc">Price ↑</option>
-              <option value="price-desc">Price ↓</option>
-            </select>
+            <span className="relative inline-flex items-center">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                aria-label="Sort products"
+                className="appearance-none bg-transparent pr-6 text-sm font-medium text-ink cursor-pointer rounded-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <option value="newest">Newest</option>
+                <option value="price-asc">Price low → high</option>
+                <option value="price-desc">Price high → low</option>
+              </select>
+              <svg
+                aria-hidden
+                viewBox="0 0 12 12"
+                className="pointer-events-none absolute right-0 h-3 w-3 text-muted"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
           </label>
         </div>
       </header>
@@ -141,17 +173,11 @@ export default function Shop() {
             <MotionLink
               href={`/shop/${item.id}`}
               key={item.id}
-              className="break-inside-avoid group block"
+              className="break-inside-avoid group block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
               variants={itemVariants}
-              onMouseEnter={() => setHoveredId(item.id)}
-              onMouseLeave={() => setHoveredId(null)}
             >
               {/* Media */}
-              <div
-                className={`relative overflow-hidden rounded-md border bg-stone transition-colors duration-500 ${
-                  hoveredId === item.id ? 'border-accent' : 'border-border-light'
-                }`}
-              >
+              <div className="relative overflow-hidden rounded-md border border-border-light bg-stone transition-colors duration-500 group-hover:border-accent">
                 {item.tag && (
                   <span className="absolute top-3 right-3 z-10 rounded-[var(--radius-pill)] bg-ink px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-white">
                     {item.tag}
@@ -184,12 +210,12 @@ export default function Shop() {
                   onClick={(e) => handleAddToCart(e, item)}
                   disabled={!item.in_stock}
                   aria-label={item.in_stock ? `Add ${item.name} to cart` : `${item.name} out of stock`}
-                  className={`shrink-0 w-9 h-9 rounded-full border flex items-center justify-center text-sm font-medium transition-all ${
+                  className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     !item.in_stock
                       ? 'border-border-light text-muted cursor-not-allowed'
                       : addedId === item.id
                       ? 'bg-accent border-accent text-white'
-                      : 'border-hairline text-ink hover:border-accent hover:text-accent'
+                      : 'border-hairline text-ink hover:border-accent hover:text-accent hover:-translate-y-0.5 active:translate-y-0'
                   }`}
                 >
                   {!item.in_stock ? '—' : addedId === item.id ? '✓' : '+'}

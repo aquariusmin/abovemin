@@ -68,7 +68,7 @@ export default function PortfolioCaseStudy({
   const overviewPath = getPortfolioBasePath(locale, mode);
 
   return (
-    <main lang={isKorean ? "ko" : "en"} className="portfolio-ui min-h-screen bg-surface px-4 py-10 font-sans text-[#222] sm:px-6 md:px-10 md:py-16">
+    <main lang={isKorean ? "ko" : "en"} className="portfolio-ui min-h-screen bg-surface px-4 py-10 font-sans text-ink sm:px-6 md:px-10 md:py-16">
       <article className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link href={overviewPath} className={`text-[11px] font-semibold text-slate transition-colors hover:text-accent ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>
@@ -101,11 +101,11 @@ export default function PortfolioCaseStudy({
           </div>
           <div className="space-y-5">
             <h1 className="font-serif text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
-            <p className="max-w-3xl break-keep text-base leading-relaxed text-gray-600 md:text-lg">{project.summary}</p>
+            <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
-          <div className="grid gap-4 border-y border-hairline py-5 text-sm text-gray-600 sm:grid-cols-2">
-            <p><span className="font-bold text-[#222]">{copy.period}</span> · {project.period}</p>
-            <p><span className="font-bold text-[#222]">{copy.role}</span> · {project.role}</p>
+          <div className="grid gap-4 border-y border-hairline py-5 text-sm text-slate sm:grid-cols-2">
+            <p><span className="font-bold text-ink">{copy.period}</span> · {project.period}</p>
+            <p><span className="font-bold text-ink">{copy.role}</span> · {project.role}</p>
           </div>
         </header>
 
@@ -116,7 +116,7 @@ export default function PortfolioCaseStudy({
 
           <CaseSection label={copy.sections[1][0]} title={copy.sections[1][1]} isKorean={isKorean}>
             <div className="grid gap-4 md:grid-cols-3">
-              {project.evidence.map((item) => <div key={item} className="break-keep border border-border-light bg-white p-5 text-sm leading-relaxed text-gray-600">{item}</div>)}
+              {project.evidence.map((item) => <div key={item} className="break-keep border border-border-light bg-white p-5 text-sm leading-relaxed text-slate">{item}</div>)}
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               {project.tools.map((tool) => <span key={tool} className="bg-surface-muted px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate">{tool}</span>)}
@@ -129,7 +129,7 @@ export default function PortfolioCaseStudy({
                 <li key={step.title} className="grid gap-4 py-6 md:grid-cols-12 md:py-8">
                   <span className="font-mono text-xs text-accent md:col-span-1">{String(index + 1).padStart(2, "0")}</span>
                   <h3 className="text-lg font-bold md:col-span-3">{step.title}</h3>
-                  <p className="break-keep text-sm leading-relaxed text-gray-600 md:col-span-8">{step.description}</p>
+                  <p className="break-keep text-sm leading-relaxed text-slate md:col-span-8">{step.description}</p>
                 </li>
               ))}
             </ol>
@@ -137,7 +137,7 @@ export default function PortfolioCaseStudy({
 
           <CaseSection label={copy.sections[3][0]} title={copy.sections[3][1]} isKorean={isKorean}>
             <div className="grid gap-4 md:grid-cols-2">
-              {project.insights.map((insight) => <p key={insight} className="break-keep border border-border-light bg-white p-6 text-sm leading-relaxed text-gray-700">{insight}</p>)}
+              {project.insights.map((insight) => <p key={insight} className="break-keep border border-border-light bg-white p-6 text-sm leading-relaxed text-ink-body">{insight}</p>)}
             </div>
             {project.caution && <div className="mt-5 break-keep border border-amber-700/15 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-900"><span className="font-bold">{copy.boundary}</span> {project.caution}</div>}
           </CaseSection>
@@ -149,7 +149,7 @@ export default function PortfolioCaseStudy({
           <CaseSection label={copy.sections[5][0]} title={copy.sections[5][1]} isKorean={isKorean}>
             <ul className="grid gap-3 md:grid-cols-2">
               {project.limitations.map((limitation) => (
-                <li key={limitation} className="flex gap-3 border border-border-light bg-white p-5 text-sm leading-relaxed text-gray-600">
+                <li key={limitation} className="flex gap-3 border border-border-light bg-white p-5 text-sm leading-relaxed text-slate">
                   <span className="mt-1 text-accent">•</span><span className="break-keep">{limitation}</span>
                 </li>
               ))}

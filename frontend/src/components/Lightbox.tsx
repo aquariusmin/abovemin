@@ -2,7 +2,15 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { motion, useReducedMotion } from 'framer-motion';
 import { withWatermark } from '@/lib/cloudinary';
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+// Shared control affordance — high-contrast, ≥44px tap target, focus-safe.
+const CONTROL =
+  'flex h-11 w-11 items-center justify-center rounded-full text-white/70 ' +
+  'hover:text-white hover:bg-white/10 transition-colors z-10 text-3xl font-sans leading-none';
 
 interface Photo {
   id: number;
@@ -24,6 +32,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   const photo = photos[currentIndex];
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const reduce = useReducedMotion();
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); return; }
@@ -60,19 +69,23 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   }, [handleKeyDown]);
 
   return (
-    <div
+    <motion.div
       ref={dialogRef}
       className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={photo.title}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25, ease: EASE }}
     >
       {/* Close button */}
       <button
         ref={closeRef}
         onClick={onClose}
-        className="absolute top-4 right-4 md:top-6 md:right-6 text-white/50 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
+        className={`absolute top-3 right-3 md:top-5 md:right-5 ${CONTROL}`}
         aria-label="Close"
       >
         &times;
@@ -81,16 +94,20 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       {/* Prev */}
       <button
         onClick={(e) => { e.stopPropagation(); onPrev(); }}
-        className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
+        className={`absolute left-2 md:left-6 top-1/2 -translate-y-1/2 ${CONTROL}`}
         aria-label="Previous"
       >
         &lsaquo;
       </button>
 
       {/* Image */}
-      <div
+      <motion.div
         className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
+        initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+        animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.28, ease: EASE }}
       >
         <Image
           src={withWatermark(photo.src)}
@@ -105,21 +122,21 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
         {/* Caption */}
         <div className="mt-4 text-center">
-          <p className="text-white/85 text-sm font-serif font-medium tracking-tight">{photo.title}</p>
-          <p className="eyebrow text-white/45 mt-1.5">
+          <p className="text-white text-sm font-serif font-medium tracking-tight">{photo.title}</p>
+          <p className="eyebrow text-white/70 mt-1.5">
             {photo.location} &middot; {photo.year} &middot; {currentIndex + 1} / {photos.length}
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Next */}
       <button
         onClick={(e) => { e.stopPropagation(); onNext(); }}
-        className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-2xl md:text-3xl font-sans transition-colors z-10 p-2"
+        className={`absolute right-2 md:right-6 top-1/2 -translate-y-1/2 ${CONTROL}`}
         aria-label="Next"
       >
         &rsaquo;
       </button>
-    </div>
+    </motion.div>
   );
 }

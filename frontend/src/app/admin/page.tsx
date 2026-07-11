@@ -33,11 +33,11 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  pending:   'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-blue-100 text-blue-700',
-  shipped:   'bg-purple-100 text-purple-700',
-  delivered: 'bg-green-100 text-green-700',
-  cancelled: 'bg-gray-100 text-gray-500',
+  pending:   'bg-surface text-coral border border-coral-soft',
+  confirmed: 'bg-blue-wash text-action-blue border border-border-light',
+  shipped:   'bg-stone text-slate border border-border-light',
+  delivered: 'bg-green-wash text-accent border border-border-light',
+  cancelled: 'bg-surface-muted text-muted border border-border-light',
 };
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
@@ -64,9 +64,11 @@ export default function AdminPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [updating, setUpdating] = useState<number | null>(null);
+  const [updateError, setUpdateError] = useState<{ id: number; message: string } | null>(null);
 
   // Hero settings
   const [heroImage, setHeroImage] = useState('');
@@ -74,6 +76,7 @@ export default function AdminPage() {
   const [heroSubtitle, setHeroSubtitle] = useState('');
   const [heroSaving, setHeroSaving] = useState(false);
   const [heroSaved, setHeroSaved] = useState(false);
+  const [heroError, setHeroError] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -100,11 +103,18 @@ export default function AdminPage() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/orders');
-    if (res.status === 401) { setAuthed(false); return; }
-    const data = await res.json();
-    setOrders(Array.isArray(data) ? data : []);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      const res = await fetch('/api/admin/orders');
+      if (res.status === 401) { setAuthed(false); return; }
+      if (!res.ok) { setLoadError(true); return; }
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const fetchSettings = useCallback(async () => {
@@ -119,15 +129,25 @@ export default function AdminPage() {
 
   async function saveHero() {
     setHeroSaving(true);
-    const res = await fetch('/api/admin/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hero_image: heroImage, hero_title: heroTitle, hero_subtitle: heroSubtitle }),
-    });
-    setHeroSaving(false);
-    if (res.ok) {
-      setHeroSaved(true);
-      setTimeout(() => setHeroSaved(false), 2000);
+    setHeroError(false);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hero_image: heroImage, hero_title: heroTitle, hero_subtitle: heroSubtitle }),
+      });
+      if (res.ok) {
+        setHeroSaved(true);
+        setTimeout(() => setHeroSaved(false), 2000);
+      } else {
+        setHeroError(true);
+        setTimeout(() => setHeroError(false), 3000);
+      }
+    } catch {
+      setHeroError(true);
+      setTimeout(() => setHeroError(false), 3000);
+    } finally {
+      setHeroSaving(false);
     }
   }
 
@@ -140,15 +160,23 @@ export default function AdminPage() {
 
   async function updateStatus(orderId: number, newStatus: OrderStatus) {
     setUpdating(orderId);
-    const res = await fetch('/api/admin/orders', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: orderId, status: newStatus }),
-    });
-    if (res.ok) {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    setUpdateError(null);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, status: newStatus }),
+      });
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      } else {
+        setUpdateError({ id: orderId, message: '상태 변경에 실패했습니다. 다시 시도해 주세요.' });
+      }
+    } catch {
+      setUpdateError({ id: orderId, message: '네트워크 오류로 상태 변경에 실패했습니다.' });
+    } finally {
+      setUpdating(null);
     }
-    setUpdating(null);
   }
 
   async function cancelOrder(orderId: number) {
@@ -192,7 +220,7 @@ export default function AdminPage() {
               />
             </div>
             {pwError && (
-              <p id="admin-password-error" role="alert" className="text-[11px] text-red-500">
+              <p id="admin-password-error" role="alert" className="text-[11px] text-coral">
                 비밀번호가 틀렸습니다.
               </p>
             )}
@@ -223,13 +251,13 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={fetchOrders}
-              className="btn-outline text-[11px] uppercase tracking-widest"
+              className="btn-outline text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
             >
               Refresh
             </button>
             <button
               onClick={handleLogout}
-              className="text-[11px] uppercase tracking-widest text-slate hover:text-ink transition-colors"
+              className="text-[11px] uppercase tracking-widest text-slate hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-sm px-1"
             >
               Logout
             </button>
@@ -243,11 +271,16 @@ export default function AdminPage() {
             { label: '입금 대기', value: stats.pending, highlight: stats.pending > 0 },
             { label: '입금 확인', value: stats.confirmed },
             { label: '배송 중',   value: stats.shipped },
-            { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}` },
+            { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}`, full: true },
           ].map(s => (
-            <div key={s.label} className={`p-4 rounded-sm border ${s.highlight ? 'border-yellow-300 bg-yellow-50' : 'border-border-light bg-canvas'}`}>
+            <div
+              key={s.label}
+              className={`p-4 rounded-sm border ${s.full ? 'col-span-2 md:col-span-1' : ''} ${
+                s.highlight ? 'border-coral-soft bg-surface' : 'border-border-light bg-canvas'
+              }`}
+            >
               <p className="eyebrow text-muted mb-2">{s.label}</p>
-              <p className={`text-xl font-bold ${s.highlight ? 'text-yellow-600' : 'text-accent'}`}>{s.value}</p>
+              <p className={`font-serif text-2xl font-medium tracking-tight ${s.highlight ? 'text-coral' : 'text-accent'}`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -261,16 +294,17 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center gap-3">
               <span role="status" aria-live="polite" className="sr-only">
-                {heroSaved ? '저장되었습니다' : ''}
+                {heroSaved ? '저장되었습니다' : heroError ? '저장에 실패했습니다' : ''}
               </span>
+              {heroError && (
+                <span aria-hidden className="text-[11px] text-coral">저장 실패</span>
+              )}
               <button
                 onClick={saveHero}
                 disabled={heroSaving}
-                className={`px-5 py-2.5 rounded-[var(--radius-pill)] text-[11px] uppercase tracking-widest font-bold text-white transition-all ${
-                  heroSaved ? 'bg-green-600' : 'bg-ink hover:bg-black'
-                } disabled:opacity-50`}
+                className="btn-primary text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
               >
-                {heroSaving ? '저장 중...' : heroSaved ? '✓ 저장됨' : 'Save'}
+                {heroSaving ? '저장 중...' : heroSaved ? '저장됨' : 'Save'}
               </button>
             </div>
           </div>
@@ -329,7 +363,7 @@ export default function AdminPage() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setFilterStatus(s)}
-                className={`px-4 py-1.5 rounded-sm text-[11px] uppercase tracking-widest transition-colors ${
+                className={`px-4 py-1.5 rounded-sm text-[11px] uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
                   active
                     ? 'bg-ink text-white'
                     : 'border border-border-light text-slate hover:text-ink hover:border-ink'
@@ -345,6 +379,18 @@ export default function AdminPage() {
         {loading ? (
           <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted animate-pulse">
             Loading orders...
+          </div>
+        ) : loadError ? (
+          <div className="py-20 text-center space-y-4">
+            <p role="alert" className="text-[11px] uppercase tracking-widest text-coral">
+              주문을 불러오지 못했습니다.
+            </p>
+            <button
+              onClick={fetchOrders}
+              className="btn-outline text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            >
+              다시 시도
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted">
@@ -365,30 +411,36 @@ export default function AdminPage() {
                     type="button"
                     aria-expanded={isExpanded}
                     aria-controls={panelId}
-                    className="w-full flex items-center gap-4 px-5 py-4 text-left cursor-pointer hover:bg-surface transition-colors"
+                    className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 px-5 py-4 text-left cursor-pointer hover:bg-surface transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                   >
-                    <span className="text-[11px] text-muted font-mono w-12 flex-shrink-0">#{order.id}</span>
+                    {/* id + 상태 (모바일에서 한 줄, 데스크톱에서 인라인) */}
+                    <div className="flex items-center gap-3 sm:contents">
+                      <span className="text-[11px] text-muted font-mono w-12 flex-shrink-0">#{order.id}</span>
 
-                    <span className={`text-[9px] uppercase tracking-widest px-2 py-1 rounded-sm font-bold flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
-                      {STATUS_LABELS[order.status]}
-                    </span>
+                      <span className={`text-[9px] uppercase tracking-widest px-2 py-1 rounded-sm font-medium flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
+                        {STATUS_LABELS[order.status]}
+                      </span>
+
+                      <span aria-hidden className="text-muted text-xs ml-auto sm:hidden">{isExpanded ? '▲' : '▼'}</span>
+                    </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-ink truncate">{order.name}</p>
+                      <p className="text-sm font-medium text-ink truncate">{order.name}</p>
                       <p className="text-[11px] text-slate truncate">{order.email}</p>
                     </div>
 
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-accent">₩ {order.total_price.toLocaleString()}</p>
-                      <p className="text-[10px] text-muted">
-                        {new Date(order.created_at).toLocaleDateString('ko-KR', {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
-                      </p>
+                    <div className="flex items-center justify-between gap-3 sm:block sm:text-right flex-shrink-0">
+                      <div>
+                        <p className="text-sm font-medium text-accent">₩ {order.total_price.toLocaleString()}</p>
+                        <p className="text-[10px] text-muted">
+                          {new Date(order.created_at).toLocaleDateString('ko-KR', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <span aria-hidden className="text-muted text-xs ml-1 flex-shrink-0 hidden sm:inline">{isExpanded ? '▲' : '▼'}</span>
                     </div>
-
-                    <span aria-hidden className="text-muted text-xs ml-1 flex-shrink-0">{isExpanded ? '▲' : '▼'}</span>
                   </button>
 
                   {/* 펼침 상세 */}
@@ -406,7 +458,7 @@ export default function AdminPage() {
                             {order.items.map((item, i) => (
                               <div key={i} className="flex justify-between text-xs text-ink-body">
                                 <span>{item.name} ×{item.quantity}</span>
-                                <span className="text-accent font-bold">₩ {(item.price * item.quantity).toLocaleString()}</span>
+                                <span className="text-accent font-medium">₩ {(item.price * item.quantity).toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
@@ -414,24 +466,31 @@ export default function AdminPage() {
                       </div>
 
                       {/* 액션 버튼 */}
-                      <div className="flex gap-3 pt-3 border-t border-hairline">
-                        {next && nextLabel && (
-                          <button
-                            disabled={updating === order.id}
-                            onClick={() => updateStatus(order.id, next)}
-                            className="px-5 py-2.5 rounded-[var(--radius-pill)] bg-ink text-white text-[11px] uppercase tracking-widest font-bold hover:bg-black transition-all disabled:opacity-50"
-                          >
-                            {updating === order.id ? '처리 중...' : `→ ${nextLabel}`}
-                          </button>
-                        )}
-                        {order.status !== 'cancelled' && order.status !== 'delivered' && (
-                          <button
-                            disabled={updating === order.id}
-                            onClick={() => cancelOrder(order.id)}
-                            className="px-5 py-2.5 rounded-[var(--radius-pill)] border border-border-light text-slate text-[11px] uppercase tracking-widest hover:border-red-300 hover:text-red-500 transition-all disabled:opacity-50"
-                          >
-                            취소
-                          </button>
+                      <div className="pt-3 border-t border-hairline space-y-3">
+                        <div className="flex flex-wrap gap-3">
+                          {next && nextLabel && (
+                            <button
+                              disabled={updating === order.id}
+                              onClick={() => updateStatus(order.id, next)}
+                              className="btn-primary text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                            >
+                              {updating === order.id ? '처리 중...' : `→ ${nextLabel}`}
+                            </button>
+                          )}
+                          {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                            <button
+                              disabled={updating === order.id}
+                              onClick={() => cancelOrder(order.id)}
+                              className="btn-outline text-[11px] uppercase tracking-widest text-slate hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                            >
+                              취소
+                            </button>
+                          )}
+                        </div>
+                        {updateError?.id === order.id && (
+                          <p role="alert" className="text-[11px] text-coral">
+                            {updateError.message}
+                          </p>
                         )}
                       </div>
                     </div>

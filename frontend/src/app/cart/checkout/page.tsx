@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export default function CheckoutPage() {
   const router = useRouter();
+  const reduce = useReducedMotion();
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -86,10 +91,17 @@ export default function CheckoutPage() {
         className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8"
         aria-live="polite"
       >
-        <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-white text-xl mb-8">✓</div>
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-white text-2xl mb-8"
+        >
+          <span aria-hidden>✓</span>
+        </motion.div>
         <p className="eyebrow text-muted mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
-        <p className="text-[15px] text-ink-body mb-10">
+        <p className="text-[15px] text-ink-body mb-10 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
         <Link href="/shop" className="btn-primary">Continue Shopping</Link>
@@ -97,13 +109,18 @@ export default function CheckoutPage() {
     );
   }
 
-  const inputClass = "w-full rounded-md border border-hairline bg-surface px-4 py-3 text-sm text-ink-body focus:outline-none focus:border-accent transition-colors";
-  const labelClass = "block eyebrow text-muted mb-2";
+  const inputClass = "field-input";
+  const labelClass = "field-label";
   const errorClass = "mt-1.5 text-xs text-coral";
 
   return (
     <main className="min-h-screen bg-canvas px-4 md:px-8 py-12 md:py-20">
-      <div className="max-w-4xl mx-auto">
+      <motion.div
+        className="max-w-4xl mx-auto"
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE }}
+      >
 
         <header className="mb-10 border-b border-hairline pb-6">
           <Link href="/cart" className="link-underline text-sm text-slate">
@@ -227,10 +244,15 @@ export default function CheckoutPage() {
               <p className="eyebrow text-muted">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex justify-between items-start gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink-body leading-snug">{item.name}</p>
-                      <p className="text-xs text-muted mt-0.5">× {item.quantity}</p>
+                  <div key={item.id} className="flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="relative w-11 h-11 shrink-0 rounded-md overflow-hidden bg-canvas border border-border-light">
+                        <Image src={item.image_url} alt="" fill className="object-cover" sizes="44px" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-ink-body leading-snug truncate">{item.name}</p>
+                        <p className="text-xs text-muted mt-0.5">× {item.quantity}</p>
+                      </div>
                     </div>
                     <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩ {(item.price * item.quantity).toLocaleString()}</p>
                   </div>
@@ -247,7 +269,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </main>
   );
 }

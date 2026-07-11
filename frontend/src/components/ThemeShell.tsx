@@ -9,7 +9,7 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
 
-  const bgColor = isLab ? 'bg-[#1a1c1a]' : 'bg-canvas';
+  const bgColor = isLab ? 'bg-surface-dark' : 'bg-canvas';
   const textColor = isLab ? 'text-white' : 'text-ink-body';
 
   useEffect(() => {

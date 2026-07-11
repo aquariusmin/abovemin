@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabase, getProducts } from '@/lib/supabase';
 import AddToCartButton from '@/components/AddToCartButton';
+import Reveal from '@/components/motion/Reveal';
 
 export const revalidate = 60;
 
@@ -74,7 +75,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
 
         {/* Media */}
-        <div className="md:col-span-7 overflow-hidden rounded-lg border border-border-light bg-stone">
+        <Reveal className="md:col-span-7 overflow-hidden rounded-lg border border-border-light bg-stone" y={16}>
           <Image
             src={product.image_url}
             alt={product.name}
@@ -84,16 +85,22 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             className="w-full h-auto object-cover"
             priority
           />
-        </div>
+        </Reveal>
 
         {/* Info */}
-        <div className="md:col-span-5 space-y-6 md:space-y-8">
+        <Reveal className="md:col-span-5 space-y-6 md:space-y-8" delay={0.08} y={16}>
           <div className="space-y-4">
-            <p className="eyebrow text-muted">{product.category}</p>
-            <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink">
+            <div className="flex items-center gap-3">
+              <p className="eyebrow text-muted">{product.category}</p>
+              <span aria-hidden className="h-3 w-px bg-hairline" />
+              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted'}`}>
+                {product.in_stock ? 'In stock' : 'Sold out'}
+              </span>
+            </div>
+            <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink break-keep">
               {product.name}
             </h1>
-            <p className="text-2xl font-semibold text-accent">₩ {product.price.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-accent tabular-nums">₩ {product.price.toLocaleString()}</p>
           </div>
 
           <hr className="rule" />
@@ -101,7 +108,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           {product.description && (
             <div className="space-y-3">
               <p className="eyebrow text-muted">Story</p>
-              <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body">
+              <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
                 {product.description}
               </p>
             </div>
@@ -109,10 +116,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
           <AddToCartButton product={product} />
 
-          <Link href="/cart" className="link-underline block text-sm text-slate">
-            View Cart →
-          </Link>
-        </div>
+          <div className="flex items-center gap-5 pt-1">
+            <Link href="/cart" className="link-underline text-sm text-slate">
+              View Cart →
+            </Link>
+            <Link href="/shop" className="link-underline text-sm text-slate">
+              Continue browsing
+            </Link>
+          </div>
+        </Reveal>
       </section>
     </main>
   );

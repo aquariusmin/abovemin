@@ -20,7 +20,7 @@ export default function PortfolioClosingCta({
         <h2 className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
           {isKorean ? "데이터와 비즈니스 맥락을 함께 다루는 직무를 찾고 있습니다." : "Looking for roles where evidence and business context belong together."}
         </h2>
-        <p className="max-w-2xl break-keep text-sm leading-relaxed text-gray-600">
+        <p className="max-w-2xl break-keep text-sm leading-relaxed text-slate">
           {isKorean
             ? "데이터 분석, 금융·시장 리서치, 핀테크, 전략·BizOps, 서비스 기획 직무의 인턴십 및 신입 기회를 탐색하고 있습니다."
             : "Open to internship and entry-level opportunities across data analysis, financial and market research, fintech, strategy, BizOps, and service planning."}

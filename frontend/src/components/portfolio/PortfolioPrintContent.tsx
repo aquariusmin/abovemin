@@ -62,15 +62,15 @@ export default function PortfolioPrintContent({
                 </div>
                 <h3 className="mt-2 font-serif text-base font-bold leading-tight">{project.title}</h3>
                 <p className="mt-3 break-keep text-[10px] leading-relaxed text-gray-700">
-                  <span className="font-bold text-[#222]">{isKorean ? "질문 · " : "Question · "}</span>{project.question}
+                  <span className="font-bold text-ink">{isKorean ? "질문 · " : "Question · "}</span>{project.question}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {(portfolioCardChips[project.slug] ?? []).map((chip) => (
-                    <span key={chip.en} className="bg-[#F0EEEA] px-2 py-1 text-[8px] font-bold text-gray-600">{chip[locale]}</span>
+                    <span key={chip.en} className="bg-surface-muted px-2 py-1 text-[8px] font-bold text-gray-600">{chip[locale]}</span>
                   ))}
                 </div>
                 <p className="mt-3 break-keep text-[10px] leading-relaxed text-gray-600">
-                  <span className="font-bold text-[#222]">{isKorean ? "의사결정 가치 · " : "Decision value · "}</span>{project.decisionValue}
+                  <span className="font-bold text-ink">{isKorean ? "의사결정 가치 · " : "Decision value · "}</span>{project.decisionValue}
                 </p>
                 {project.caution && (
                   <p className="mt-3 break-keep border-l-2 border-amber-700/25 pl-2 text-[9px] leading-relaxed text-gray-500">
