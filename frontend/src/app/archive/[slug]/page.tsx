@@ -38,43 +38,38 @@ export default async function CollectionPage({
   const nextAlbum = albums[(currentIdx + 1) % albums.length];
 
   return (
-    <main className="px-4 sm:px-6 md:px-8 py-8 md:py-12 font-serif min-h-screen bg-[#FAF9F6]">
+    <main className="px-5 sm:px-6 md:px-10 py-10 md:py-16 min-h-screen bg-canvas text-ink-body">
 
-      {/* 헤더 */}
+      {/* Header */}
       <div className="max-w-[1400px] mx-auto mb-12 md:mb-16">
-        <Link
-          href="/archive"
-          className="text-[9px] uppercase tracking-widest text-gray-400 font-sans hover:text-accent transition-colors"
-        >
+        <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
           &larr; Archive
         </Link>
-        <div className="mt-8 border-b border-black/5 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-gray-400 mb-2">
-              {photos.length} pieces
-            </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#222]">
+        <div className="mt-8 border-b border-hairline pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-3">
+            <p className="eyebrow text-accent">{photos.length} pieces</p>
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-ink break-keep">
               {album.title}
-            </h2>
+            </h1>
           </div>
-          <div className="w-12 h-[2px] bg-accent opacity-50 md:mb-2" />
+          <div className="w-12 h-[2px] bg-accent md:mb-3" />
         </div>
       </div>
 
-      {/* 사진 그리드 + 라이트박스 */}
+      {/* Photo grid + lightbox */}
       <PhotoGrid photos={photos} />
 
-      {/* 하단 네비게이션 */}
-      <div className="max-w-[1400px] mx-auto mt-12 md:mt-20 pt-8 md:pt-10 border-t border-black/5 flex justify-between items-center">
-        <Link href="/archive" className="text-[10px] uppercase tracking-widest text-gray-400 font-sans hover:text-accent transition-colors">
-          &larr; All Collections
+      {/* Bottom nav */}
+      <div className="max-w-[1400px] mx-auto mt-14 md:mt-20 pt-8 md:pt-10 border-t border-hairline flex justify-between items-center gap-4">
+        <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
+          &larr; All collections
         </Link>
-        <Link href={`/archive/${nextAlbum.slug}`} className="text-[10px] uppercase tracking-widest text-gray-400 font-sans hover:text-accent transition-colors">
+        <Link href={`/archive/${nextAlbum.slug}`} className="eyebrow text-muted hover:text-accent transition-colors text-right">
           Next: {nextAlbum.title} &rarr;
         </Link>
       </div>
 
-      <div className="h-24" />
+      <div className="h-16 md:h-24" />
     </main>
   );
 }

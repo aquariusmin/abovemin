@@ -15,11 +15,10 @@ import {
 
 const REFRESH_MS = 60_000;
 
-const SECTION_LABEL =
-  "text-[9px] font-mono uppercase tracking-[0.3em] text-white/30";
-const STAT_BLOCK = "border border-white/8 bg-white/3 p-5 space-y-2";
+const SECTION_LABEL = "eyebrow text-white/40";
+const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
-  "text-[9px] font-mono uppercase tracking-widest text-white/30";
+  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
 
 // The list endpoint is the single source of truth; pulling the whole
 // fleet and filtering client-side keeps us off a second route and means
@@ -61,18 +60,18 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (error) {
     return (
-      <div className="border border-red-400/20 bg-red-400/5 p-6">
-        <p className={SECTION_LABEL}>── Error</p>
-        <p className="mt-2 font-mono text-[11px] text-red-400">{error}</p>
+      <div className="rounded-md border border-red-400/25 bg-red-400/[0.06] p-6">
+        <p className="eyebrow text-red-300/70">Error</p>
+        <p className="mt-2 font-mono text-[12px] text-red-400">{error}</p>
       </div>
     );
   }
 
   if (!bots) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 text-center">
-        <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest animate-pulse">
-          Loading...
+      <div className={`${CARD} p-12 text-center`}>
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/25 animate-pulse">
+          Loading…
         </p>
       </div>
     );
@@ -80,13 +79,13 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (!bot) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 space-y-4">
-        <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-          No bot with id <span className="text-white/70">{botId}</span>
+      <div className={`${CARD} p-12 space-y-4`}>
+        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-white/45">
+          No bot with id <span className="text-white/75">{botId}</span>
         </p>
         <Link
           href="/lab"
-          className="text-[10px] font-mono uppercase tracking-widest text-accent-light hover:text-white transition-colors"
+          className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent-light hover:text-white transition-colors"
         >
           ← back to fleet
         </Link>
@@ -101,20 +100,20 @@ export function BotDetail({ botId }: { botId: string }) {
       : null;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <div className="space-y-8">
+      <header className="space-y-4">
         <Link
           href="/lab"
-          className="inline-block text-[9px] font-mono uppercase tracking-widest text-white/40 hover:text-accent-light transition-colors"
+          className="inline-block text-[10px] font-mono uppercase tracking-[0.18em] text-white/40 hover:text-accent-light transition-colors"
         >
           ← fleet
         </Link>
         <div className="flex flex-wrap items-baseline gap-3">
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight font-mono">
+          <h1 className="font-serif text-3xl md:text-5xl font-medium text-white tracking-tight leading-[1.05]">
             {bot.bot_name}
           </h1>
           <span
-            className={`text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 ${
+            className={`rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 ${
               bot.market === "crypto"
                 ? "text-amber-300 bg-amber-300/10"
                 : "text-sky-300 bg-sky-300/10"
@@ -122,18 +121,18 @@ export function BotDetail({ botId }: { botId: string }) {
           >
             {bot.market}
           </span>
-          <span className="text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 text-white/40 bg-white/5">
+          <span className="rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 text-white/50 bg-white/5">
             {bot.strategy}
           </span>
         </div>
-        <p className="text-[10px] font-mono text-white/30">
+        <p className="text-[11px] font-mono text-white/35">
           updated {fmtRelative(bot.updated_at)} ·{" "}
-          <span className="text-white/50">{bot.id}</span>
+          <span className="text-white/55">{bot.id}</span>
         </p>
-        <p className="inline-flex border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-[9px] font-mono uppercase tracking-[0.16em] text-amber-200">
+        <p className="inline-flex rounded-md border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] text-amber-200">
           Paper trading only · simulated capital · no real-money performance
         </p>
-      </div>
+      </header>
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Paper Equity" value={fmtMoney(bot.equity)} />
@@ -155,22 +154,22 @@ export function BotDetail({ botId }: { botId: string }) {
         />
       </section>
 
-      <section className="border border-white/8 bg-white/2 p-4 md:p-6 space-y-3 md:space-y-4">
+      <section className={`${CARD} p-4 md:p-6 space-y-4`}>
         <h3 className={SECTION_LABEL}>
-          ── Equity Curve · last {points.length} points
+          Equity Curve · last {points.length} points
         </h3>
         <EquityChart points={points} positive={up} />
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="border border-white/8 bg-white/2 p-5 space-y-4">
+        <div className={`${CARD} p-5 space-y-4`}>
           <h3 className={SECTION_LABEL}>
-            ── Holdings · {bot.holdings ? Object.keys(bot.holdings).length : 0} symbol(s)
+            Holdings · {bot.holdings ? Object.keys(bot.holdings).length : 0} symbol(s)
           </h3>
           <HoldingsTable holdings={bot.holdings} equity={bot.equity} />
         </div>
-        <div className="border border-white/8 bg-white/2 p-5 space-y-3">
-          <h3 className={SECTION_LABEL}>── Recent Activity</h3>
+        <div className={`${CARD} p-5 space-y-3`}>
+          <h3 className={SECTION_LABEL}>Recent Activity</h3>
           <KV
             k="Total Fills"
             v={bot.fills_count !== null ? String(bot.fills_count) : "—"}
@@ -199,9 +198,9 @@ function Stat({
         ? "text-red-400"
         : "text-white";
   return (
-    <div className={STAT_BLOCK}>
+    <div className={`${CARD} p-5 space-y-2`}>
       <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-black tracking-tight font-mono ${color}`}>
+      <p className={`text-2xl font-bold tracking-tight font-mono ${color}`}>
         {value}
       </p>
     </div>
@@ -210,8 +209,8 @@ function Stat({
 
 function KV({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 text-[11px] font-mono">
-      <span className="text-white/30 uppercase tracking-widest text-[9px]">
+    <div className="flex items-baseline justify-between gap-3 text-[12px] font-mono">
+      <span className="text-white/40 uppercase tracking-[0.18em] text-[10px]">
         {k}
       </span>
       <span className="text-white/80 text-right break-all">{v}</span>

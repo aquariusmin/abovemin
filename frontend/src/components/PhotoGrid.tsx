@@ -18,14 +18,16 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
 
   return (
     <>
-      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6 max-w-[1400px] mx-auto">
+      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
         {photos.map((photo, i) => (
-          <div
+          <button
             key={photo.id}
-            className="break-inside-avoid group cursor-pointer"
+            type="button"
+            className="break-inside-avoid group block w-full text-left cursor-pointer"
             onClick={() => setLightboxIndex(i)}
+            aria-label={`${photo.title} 크게 보기`}
           >
-            <div className="relative overflow-hidden bg-gray-100">
+            <div className="relative overflow-hidden rounded-md bg-stone">
               <Image
                 src={withWatermark(photo.src)}
                 alt={photo.title}
@@ -35,17 +37,16 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
                 draggable={false}
               />
-              <div className="absolute inset-0 bg-accent/5 group-hover:bg-transparent transition-all duration-700" />
             </div>
-            <div className="mt-2 md:mt-3 font-sans">
-              <p className="text-[11px] font-semibold text-gray-700 group-hover:text-accent transition-colors">
+            <div className="mt-3">
+              <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
                 {photo.title}
               </p>
-              <p className="text-[9px] uppercase tracking-[0.15em] text-gray-400 mt-0.5">
+              <p className="eyebrow text-muted mt-1">
                 {photo.location} &middot; {photo.year}
               </p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

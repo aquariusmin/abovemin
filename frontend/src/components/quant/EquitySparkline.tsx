@@ -25,6 +25,8 @@ export function EquitySparkline({
       viewBox={`0 0 ${values.length - 1} 20`}
       preserveAspectRatio="none"
       className="w-20 h-5"
+      role="img"
+      aria-label={`Equity trend ${positive ? "up" : "down"}`}
     >
       <polyline
         fill="none"

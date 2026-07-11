@@ -17,13 +17,13 @@ export default function PortfolioHero({
   const alternateLocale = isKorean ? "en" : "ko";
 
   return (
-    <header className="grid gap-10 border-b border-black/5 pb-14 md:grid-cols-12 md:items-end md:pb-20">
+    <header className="grid gap-10 border-b border-hairline pb-14 md:grid-cols-12 md:items-end md:pb-20">
       <div className="space-y-7 md:col-span-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-400">
+        <p className="eyebrow text-slate">
           {isKorean ? "Professional Portfolio · 이상민" : "Professional Portfolio · Sangmin Lee"}
         </p>
         <div className="space-y-5">
-          <h1 className="max-w-5xl break-keep text-4xl font-extrabold leading-[1.12] tracking-tight sm:text-5xl md:text-7xl">
+          <h1 className="max-w-5xl break-keep font-serif text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl">
             {isKorean
               ? "데이터로 비즈니스 문제를 분석하고, 실제 의사결정에 쓸 수 있는 결론으로 연결합니다."
               : "Turning ambiguous questions into practical, evidence-led decisions."}
@@ -39,21 +39,21 @@ export default function PortfolioHero({
               : "As an International Trade major and Business Administration double-major candidate, I have worked across customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning. I separate what the evidence supports from what still requires validation."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 text-[10px] font-bold uppercase tracking-[0.14em]">
-          <Link href="#cases" className="bg-accent px-4 py-3 text-white transition-opacity hover:opacity-85">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="#cases" className="btn-primary">
             {isKorean ? "프로젝트 보기" : "View case studies"}
           </Link>
-          <Link href={getPortfolioBasePath(alternateLocale, mode)} hrefLang={alternateLocale} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
+          <Link href={getPortfolioBasePath(alternateLocale, mode)} hrefLang={alternateLocale} className="btn-outline">
             {isKorean ? "English" : "한국어"}
           </Link>
-          <Link href={getPortfolioPrintPath(locale, mode)} className="border border-black/10 px-4 py-3 text-gray-600 transition-colors hover:border-accent hover:text-accent">
+          <Link href={getPortfolioPrintPath(locale, mode)} className="btn-outline">
             {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
           </Link>
         </div>
       </div>
 
-      <div className="space-y-5 md:col-span-4 md:border-l md:border-black/5 md:pl-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400">
+      <div className="space-y-5 md:col-span-4 md:border-l md:border-hairline md:pl-8">
+        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
           {isKorean ? "문제 해결 흐름" : "Working method"}
         </p>
         <ol className="space-y-3 text-sm text-gray-700">

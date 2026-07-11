@@ -13,7 +13,7 @@ export function HoldingsTable({
 }) {
   if (!holdings || Object.keys(holdings).length === 0) {
     return (
-      <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest py-2">
+      <p className="text-[11px] font-mono text-white/45 uppercase tracking-[0.18em] py-2">
         No open positions — bot is flat
       </p>
     );
@@ -24,33 +24,33 @@ export function HoldingsTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full font-mono text-[11px]">
+      <table className="w-full font-mono text-[12px]">
         <thead>
-          <tr className="text-[9px] uppercase tracking-widest text-white/30 border-b border-white/8">
-            <th className="text-left py-2 font-bold">Symbol</th>
-            <th className="text-right py-2 font-bold">Qty</th>
-            <th className="text-right py-2 font-bold">Mark</th>
-            <th className="text-right py-2 font-bold">Value</th>
-            <th className="text-right py-2 font-bold">% Eq</th>
+          <tr className="text-[10px] uppercase tracking-[0.16em] text-white/40 border-b border-white/8">
+            <th scope="col" className="text-left py-2.5 font-bold">Symbol</th>
+            <th scope="col" className="text-right py-2.5 font-bold">Qty</th>
+            <th scope="col" className="text-right py-2.5 font-bold">Mark</th>
+            <th scope="col" className="text-right py-2.5 font-bold">Value</th>
+            <th scope="col" className="text-right py-2.5 font-bold">% Eq</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-white/[0.06]">
           {rows.map((r) => {
             const pct =
               r.value !== null && equity > 0 ? (r.value / equity) * 100 : null;
             return (
-              <tr key={r.symbol} className="hover:bg-white/3 transition-colors">
-                <td className="py-2 text-white/80">{r.symbol}</td>
-                <td className="py-2 text-right text-white/70">
+              <tr key={r.symbol} className="hover:bg-white/[0.03] transition-colors">
+                <td className="py-2.5 text-white/85">{r.symbol}</td>
+                <td className="py-2.5 text-right text-white/70">
                   {r.qty.toLocaleString("en-US", { maximumFractionDigits: 8 })}
                 </td>
-                <td className="py-2 text-right text-white/50">
+                <td className="py-2.5 text-right text-white/55">
                   {r.mark !== null ? fmtMoney(r.mark, 2) : "—"}
                 </td>
-                <td className="py-2 text-right text-white/80">
+                <td className="py-2.5 text-right text-white/85">
                   {r.value !== null ? fmtMoney(r.value, 2) : "—"}
                 </td>
-                <td className="py-2 text-right text-white/40">
+                <td className="py-2.5 text-right text-white/45">
                   {pct !== null ? `${pct.toFixed(1)}%` : "—"}
                 </td>
               </tr>

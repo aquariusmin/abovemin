@@ -45,10 +45,10 @@ export default function PortfolioOverview({
         <section className="space-y-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-end">
             <div className="space-y-4 md:col-span-7">
-              <p className={`text-[10px] font-bold text-gray-400 ${isKorean ? "tracking-[0.18em]" : "uppercase tracking-[0.35em]"}`}>
+              <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
                 {isKorean ? "역량 요약" : "Capability summary"}
               </p>
-              <h2 className="break-keep text-3xl font-bold tracking-tight md:text-4xl">
+              <h2 className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
                 {isKorean ? "비즈니스 맥락을 근거로 검증합니다." : "Business context, tested through evidence."}
               </h2>
             </div>
@@ -58,9 +58,9 @@ export default function PortfolioOverview({
                 : "My work begins with a decision question, selects evidence appropriate to that question, and finishes by separating supported findings from assumptions and next validation steps."}
             </p>
           </div>
-          <div className="grid gap-px overflow-hidden border border-black/5 bg-black/5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2 lg:grid-cols-4">
             {capabilities[locale].map((capability) => (
-              <article key={capability.title} className="space-y-3 bg-[#FAF9F6] p-6 md:p-7">
+              <article key={capability.title} className="space-y-3 bg-surface p-6 md:p-7">
                 <h3 className="text-lg font-bold text-accent">{capability.title}</h3>
                 <p className="break-keep text-sm leading-relaxed text-gray-600">{capability.body}</p>
               </article>
@@ -73,10 +73,10 @@ export default function PortfolioOverview({
         <section className="space-y-10" id="cases">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div className="space-y-4">
-              <p className={`text-[10px] font-bold text-gray-400 ${isKorean ? "tracking-[0.18em]" : "uppercase tracking-[0.35em]"}`}>
+              <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
-              <h2 className="break-keep text-3xl font-bold tracking-tight md:text-4xl">
+              <h2 className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
                 {isKorean ? "근거 중심으로 정리한 일곱 개의 사례입니다." : "Seven evidence-led case studies."}
               </h2>
             </div>

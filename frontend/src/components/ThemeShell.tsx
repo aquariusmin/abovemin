@@ -9,8 +9,8 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
 
-  const bgColor = isLab ? 'bg-[#1a1c1a]' : 'bg-[#FAF9F6]';
-  const textColor = isLab ? 'text-white' : 'text-[#222]';
+  const bgColor = isLab ? 'bg-[#1a1c1a]' : 'bg-canvas';
+  const textColor = isLab ? 'text-white' : 'text-ink-body';
 
   useEffect(() => {
     function blockContextMenu(e: MouseEvent) {

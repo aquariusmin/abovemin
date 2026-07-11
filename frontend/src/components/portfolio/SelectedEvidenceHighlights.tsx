@@ -5,10 +5,10 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
     <section className="space-y-9" aria-labelledby={`selected-evidence-${locale}`}>
       <div className="grid gap-5 md:grid-cols-12 md:items-end">
         <div className="space-y-4 md:col-span-7">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gray-400">
+          <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
             {locale === "ko" ? "선별 근거 하이라이트" : "Selected evidence highlights"}
           </p>
-          <h2 id={`selected-evidence-${locale}`} className="break-keep text-3xl font-bold tracking-tight md:text-4xl">
+          <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
             {locale === "ko" ? "근거가 보여주는 역량과 해석의 경계" : "What the evidence demonstrates—and where it stops."}
           </h2>
         </div>
@@ -19,13 +19,13 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
         </p>
       </div>
 
-      <div className="grid gap-px overflow-hidden border border-black/5 bg-black/5 md:grid-cols-2">
+      <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
         {portfolioEvidenceHighlights.map((item) => (
-          <article key={item.evidence.en} className="bg-[#FAF9F6] p-6 md:p-8">
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400">
+          <article key={item.evidence.en} className="bg-surface p-6 md:p-8">
+            <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
               {locale === "ko" ? "근거" : "Evidence"}
             </p>
-            <h3 className="mt-3 text-xl font-bold tracking-tight text-accent md:text-2xl">
+            <h3 className="mt-3 font-serif text-xl font-bold tracking-tight text-accent md:text-2xl">
               {item.evidence[locale]}
             </h3>
             <p className="mt-5 break-keep text-sm leading-relaxed text-gray-700">

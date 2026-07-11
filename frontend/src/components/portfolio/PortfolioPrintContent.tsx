@@ -21,8 +21,8 @@ export default function PortfolioPrintContent({
         <header className="portfolio-print-section border-b-2 border-accent pb-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-gray-400">Professional Portfolio</p>
-              <h1 className="mt-3 text-4xl font-extrabold tracking-tight">{isKorean ? "이상민" : "Sangmin Lee"}</h1>
+              <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-slate">Professional Portfolio</p>
+              <h1 className="mt-3 font-serif text-4xl font-extrabold tracking-tight">{isKorean ? "이상민" : "Sangmin Lee"}</h1>
             </div>
             <div className="text-right text-[11px] leading-relaxed text-gray-600">
               <p>aquariusmin01@naver.com</p>
@@ -50,22 +50,22 @@ export default function PortfolioPrintContent({
 
         <section className="mt-9">
           <div className="portfolio-print-section mb-5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-gray-400">{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
-            <h2 className="mt-2 text-2xl font-bold">{isKorean ? "일곱 개의 근거 중심 사례" : "Seven evidence-led cases"}</h2>
+            <p className={`text-[9px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold">{isKorean ? "일곱 개의 근거 중심 사례" : "Seven evidence-led cases"}</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {projects.map((project, index) => (
               <article key={project.slug} className={`portfolio-print-card border border-black/10 p-4 ${index === 4 ? "portfolio-print-page-break" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-accent">Case {project.number}</p>
-                  <p className="text-right text-[8px] font-semibold text-gray-400">{project.category}</p>
+                  <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-accent">Case {project.number}</p>
+                  <p className="text-right text-[8px] font-semibold text-slate">{project.category}</p>
                 </div>
-                <h3 className="mt-2 text-base font-bold leading-tight">{project.title}</h3>
+                <h3 className="mt-2 font-serif text-base font-bold leading-tight">{project.title}</h3>
                 <p className="mt-3 break-keep text-[10px] leading-relaxed text-gray-700">
                   <span className="font-bold text-[#222]">{isKorean ? "질문 · " : "Question · "}</span>{project.question}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {portfolioCardChips[project.slug].map((chip) => (
+                  {(portfolioCardChips[project.slug] ?? []).map((chip) => (
                     <span key={chip.en} className="bg-[#F0EEEA] px-2 py-1 text-[8px] font-bold text-gray-600">{chip[locale]}</span>
                   ))}
                 </div>

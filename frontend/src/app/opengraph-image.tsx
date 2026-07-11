@@ -16,16 +16,27 @@ export default function OgImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#FAF9F6',
-          fontFamily: 'serif',
+          background: '#ffffff',
+          fontFamily: 'sans-serif',
         }}
       >
         <div
           style={{
-            fontSize: 72,
-            fontWeight: 800,
+            fontSize: 22,
             color: '#4A5D4E',
-            letterSpacing: -2,
+            letterSpacing: 8,
+            textTransform: 'uppercase',
+            marginBottom: 28,
+          }}
+        >
+          phorage studio · Seoul
+        </div>
+        <div
+          style={{
+            fontSize: 96,
+            fontWeight: 600,
+            color: '#17171c',
+            letterSpacing: -3,
           }}
         >
           phorage
@@ -33,20 +44,19 @@ export default function OgImage() {
         <div
           style={{
             fontSize: 24,
-            color: '#999',
-            marginTop: 16,
-            letterSpacing: 4,
-            textTransform: 'uppercase',
+            color: '#75758a',
+            marginTop: 20,
+            letterSpacing: 1,
           }}
         >
           Collecting the Greenery
         </div>
         <div
           style={{
-            width: 60,
+            width: 64,
             height: 3,
             background: '#4A5D4E',
-            marginTop: 32,
+            marginTop: 36,
             borderRadius: 2,
           }}
         />
