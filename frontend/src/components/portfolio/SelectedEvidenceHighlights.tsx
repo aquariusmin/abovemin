@@ -12,7 +12,7 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
             {locale === "ko" ? "근거가 보여주는 역량과 해석의 경계" : "What the evidence demonstrates—and where it stops."}
           </h2>
         </div>
-        <p className="break-keep text-sm leading-relaxed text-gray-500 md:col-span-5">
+        <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
           {locale === "ko"
             ? "대표 근거를 역량과 연결하되, 성과·인과·실거래로 확대 해석할 수 없는 범위를 함께 표시했습니다. 자세한 과정은 아래 프로젝트 사례에서 확인할 수 있습니다."
             : "Each highlight connects source-backed evidence to a capability while keeping scope and validation boundaries visible. Project cards remain the route to the full cases."}
@@ -28,14 +28,14 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
             <h3 className="mt-3 font-serif text-xl font-bold tracking-tight text-accent md:text-2xl">
               {item.evidence[locale]}
             </h3>
-            <p className="mt-5 break-keep text-sm leading-relaxed text-gray-700">
-              <span className="font-bold text-[#222]">
+            <p className="mt-5 break-keep text-sm leading-relaxed text-ink-body">
+              <span className="font-bold text-ink">
                 {locale === "ko" ? "보여주는 역량 · " : "Demonstrates · "}
               </span>
               {item.demonstrates[locale]}
             </p>
-            <p className="mt-3 break-keep border-l-2 border-amber-700/20 pl-3 text-xs leading-relaxed text-gray-500">
-              <span className="font-bold text-gray-600">
+            <p className="mt-3 break-keep border-l-2 border-amber-700/20 pl-3 text-xs leading-relaxed text-slate">
+              <span className="font-bold text-slate">
                 {locale === "ko" ? "범위 · " : "Scope · "}
               </span>
               {item.caution[locale]}
