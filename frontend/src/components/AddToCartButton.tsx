@@ -24,20 +24,24 @@ export default function AddToCartButton({ product }: Props) {
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const accentBg = "bg-accent";
-
   return (
-    <div className="pt-6 flex space-x-4 items-center">
+    <div className="pt-2">
       <button
         onClick={handleAddToCart}
         disabled={!product.in_stock}
-        className={`flex-1 py-4 text-xs uppercase tracking-widest text-white rounded-sm font-sans font-bold shadow-md transition-all ${
-          !product.in_stock ? 'bg-gray-300 cursor-not-allowed' :
-          added ? 'bg-green-600' : accentBg + ' hover:opacity-90'
+        className={`w-full justify-center rounded-[var(--radius-pill)] px-6 py-4 text-sm font-medium tracking-[-0.01em] transition-all ${
+          !product.in_stock
+            ? 'bg-stone text-muted cursor-not-allowed'
+            : added
+            ? 'bg-accent text-white'
+            : 'bg-ink text-white hover:bg-black hover:-translate-y-px'
         }`}
       >
         {!product.in_stock ? 'Out of Stock' : added ? '✓ Added to Cart' : 'Add to Cart'}
       </button>
+      <span aria-live="polite" className="sr-only">
+        {added ? `${product.name} added to cart` : ''}
+      </span>
     </div>
   );
 }

@@ -6,88 +6,87 @@ export const metadata: Metadata = {
   description: 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.',
 };
 
+const WHAT_I_DO = [
+  { title: 'Archive', desc: '필름과 디지털로 담은 사진들을 앨범 단위로 정리합니다.', href: '/archive' },
+  { title: 'Shop', desc: '자연에서 영감 받은 포스터, 문구, 라이프스타일 소품을 소개합니다.', href: '/shop' },
+  { title: 'Portfolio', desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.', href: '/portfolio' },
+  { title: 'Lab', desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.', href: '/lab', italic: true },
+];
+
 export default function About() {
   return (
-    <main className="min-h-screen bg-surface text-[#333] px-4 sm:px-6 md:px-10 py-10 md:py-16 font-serif">
-      <div className="max-w-3xl mx-auto space-y-12 md:space-y-20">
+    <main className="min-h-screen bg-canvas text-ink-body px-5 sm:px-6 md:px-10 py-14 md:py-24">
+      <div className="max-w-3xl mx-auto space-y-16 md:space-y-24">
 
         {/* Hero */}
         <header className="space-y-6">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-sans">About</p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+          <p className="eyebrow text-accent">About</p>
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink break-keep">
             빛을 수집하고,<br />
             세상을 <span className="text-accent">분석</span>합니다.
-          </h2>
-          <div className="w-16 h-1 bg-accent" />
+          </h1>
+          <div className="w-16 h-[2px] bg-accent" />
         </header>
 
         {/* Story */}
-        <section className="space-y-6 font-sans text-sm md:text-[15px] text-gray-600 leading-relaxed">
+        <section className="space-y-6 text-base md:text-[17px] text-slate leading-relaxed break-keep">
           <p>
-            <strong className="text-[#222] font-serif text-lg">phorage</strong>는 photography와 forage의 합성어입니다.
-            무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록 — 일상 속에서 발견한 빛을 채집하고 기록합니다.
+            <strong className="font-serif text-lg text-ink font-medium">phorage</strong>는 photography와 forage의
+            합성어입니다. 무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록 — 일상 속에서 발견한 빛을 채집하고 기록합니다.
           </p>
           <p>
-            사진 아카이브와 소품샵을 운영하며, 퀀트와 데이터에 관심이 많아
-            글로벌 시장을 관찰하고 분석하는 <span className="italic">Lab</span>을 함께 만들어가고 있습니다.
+            사진 아카이브와 소품샵을 운영하며, 퀀트와 데이터에 관심이 많아 글로벌 시장을 관찰하고 분석하는{' '}
+            <span className="italic">Lab</span>을 함께 만들어가고 있습니다.
           </p>
           <p>
             국제통상학과 경영학을 공부하며 고객, 시장, 재무 데이터를 실제 의사결정으로 연결하는 분석을 지향합니다.
             데이터 분석, 경제 연구, 재무 분석, 핀테크, 전략과 서비스 기획 프로젝트는
-            <Link href="/portfolio" className="ml-1 text-accent hover:underline">Portfolio</Link>에 정리했습니다.
+            <Link href="/portfolio" className="ml-1 link-underline text-accent">Portfolio</Link>에 정리했습니다.
           </p>
         </section>
 
         {/* What I do */}
         <section className="space-y-8">
-          <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">What I Do</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-            {[
-              {
-                title: 'Archive',
-                desc: '필름과 디지털로 담은 사진들을 앨범 단위로 정리합니다.',
-                href: '/archive',
-              },
-              {
-                title: 'Shop',
-                desc: '자연에서 영감 받은 포스터, 문구, 라이프스타일 소품을 소개합니다.',
-                href: '/shop',
-              },
-              {
-                title: 'Portfolio',
-                desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.',
-                href: '/portfolio',
-              },
-              {
-                title: 'Lab',
-                desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.',
-                href: '/lab',
-              },
-            ].map(item => (
+          <h2 className="eyebrow text-muted">What I do</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+            {WHAT_I_DO.map(item => (
               <Link
                 key={item.title}
                 href={item.href}
-                className="block border border-black/5 p-4 md:p-6 space-y-3 hover:border-accent/30 transition-colors group"
+                className="card-hair group p-6 md:p-7 flex flex-col gap-3 hover:-translate-y-0.5"
               >
-                <h4 className="font-serif text-lg font-bold group-hover:text-accent transition-colors">
+                <h3 className={`font-serif text-xl font-medium text-ink group-hover:text-accent transition-colors ${item.italic ? 'italic' : ''}`}>
                   {item.title}
-                </h4>
-                <p className="font-sans text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-                <span className="text-[9px] uppercase tracking-widest text-gray-300 font-sans group-hover:text-accent transition-colors">
-                  Explore &rarr;
-                </span>
+                </h3>
+                <p className="text-sm text-slate leading-relaxed break-keep flex-1">{item.desc}</p>
+                <span className="eyebrow text-muted group-hover:text-accent transition-colors">Explore →</span>
               </Link>
             ))}
           </div>
         </section>
 
         {/* Contact */}
-        <section className="space-y-6 border-t border-black/5 pt-8 md:pt-12">
-          <h3 className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-sans">Connect</h3>
-          <div className="font-sans text-sm text-gray-600 space-y-2">
-            <p>Instagram — <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">@sangmin__02</a></p>
-            <p>Email — <a href="mailto:aquariusmin01@naver.com" className="text-accent hover:underline">aquariusmin01@naver.com</a></p>
-            <p>GitHub — <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">aquariusmin</a></p>
+        <section className="space-y-6 border-t border-hairline pt-10 md:pt-12">
+          <h2 className="eyebrow text-muted">Connect</h2>
+          <div className="text-base text-ink-body space-y-3">
+            <p>
+              Instagram —{' '}
+              <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
+                @sangmin__02
+              </a>
+            </p>
+            <p>
+              Email —{' '}
+              <a href="mailto:aquariusmin01@naver.com" className="link-underline text-accent">
+                aquariusmin01@naver.com
+              </a>
+            </p>
+            <p>
+              GitHub —{' '}
+              <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
+                aquariusmin
+              </a>
+            </p>
           </div>
         </section>
 

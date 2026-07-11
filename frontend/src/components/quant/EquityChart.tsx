@@ -25,7 +25,7 @@ export function EquityChart({
   if (points.length < 2) {
     return (
       <div className="h-64 grid place-items-center">
-        <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest">
+        <p className="text-[10px] font-mono text-white/25 uppercase tracking-[0.2em]">
           No equity history yet
         </p>
       </div>
@@ -34,7 +34,13 @@ export function EquityChart({
   const stroke = positive ? "#34d399" : "#f87171";
   const gradStart = positive ? "#34d399" : "#f87171";
   return (
-    <div className="h-64 md:h-80 w-full">
+    <div
+      className="h-64 md:h-80 w-full"
+      role="img"
+      aria-label={`Equity curve over ${points.length} points, trending ${
+        positive ? "up" : "down"
+      }`}
+    >
       <ResponsiveContainer>
         <AreaChart
           data={points}
@@ -85,8 +91,8 @@ export function EquityChart({
             }
             contentStyle={{
               backgroundColor: "rgba(26,28,26,0.96)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 0,
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 6,
               color: "rgba(255,255,255,0.9)",
               fontFamily: "monospace",
               fontSize: 11,

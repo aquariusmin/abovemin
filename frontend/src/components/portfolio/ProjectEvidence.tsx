@@ -140,7 +140,7 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
         >
           <div className="grid min-h-44 place-items-center border border-accent/15 bg-accent/[0.035] text-center">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-gray-400">Reported R-squared</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate">Reported R-squared</p>
               <p className="mt-3 text-6xl font-bold tracking-tight text-accent">0.819</p>
               <p className="mt-3 font-sans text-xs text-gray-500">N = 791 in the reported simple-model output</p>
             </div>
@@ -495,7 +495,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] border-collapse font-sans text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-[10px] uppercase tracking-[0.13em] text-gray-400">
+              <tr className="border-b border-black/10 text-left font-mono text-[10px] uppercase tracking-[0.13em] text-slate">
                 <th className="px-3 py-3">{locale === "ko" ? "MBTI 차원" : "MBTI dimension"}</th>
                 <th className="px-3 py-3">χ²</th>
                 <th className="px-3 py-3">{locale === "ko" ? "최소 기대빈도" : "Minimum expected"}</th>
@@ -530,7 +530,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] border-collapse font-sans text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-[10px] uppercase tracking-[0.13em] text-gray-400">
+              <tr className="border-b border-black/10 text-left font-mono text-[10px] uppercase tracking-[0.13em] text-slate">
                 <th className="px-3 py-3">{locale === "ko" ? "혈액형" : "Blood type"}</th>
                 <th className="px-3 py-3">T · {locale === "ko" ? "관측" : "observed"}</th>
                 <th className="px-3 py-3">T · {locale === "ko" ? "기대" : "expected"}</th>
@@ -696,7 +696,7 @@ function MetricCards({ metrics }: { metrics: string[][] }) {
     <div className="grid gap-px bg-black/5 sm:grid-cols-2">
       {metrics.map(([label, value]) => (
         <div key={label} className="bg-white/80 p-5">
-          <p className="font-sans text-[9px] font-bold uppercase tracking-[0.13em] text-gray-400">{label}</p>
+          <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.13em] text-slate">{label}</p>
           <p className="mt-2 font-mono text-xl font-bold text-accent">{value}</p>
         </div>
       ))}

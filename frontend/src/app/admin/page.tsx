@@ -171,24 +171,35 @@ export default function AdminPage() {
   // ── 로그인 화면 ──
   if (!authed) {
     return (
-      <main className="min-h-screen bg-[#FAF9F6] flex items-center justify-center font-serif">
-        <div className="w-full max-w-sm px-8">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-2 font-sans text-center">phorage</p>
-          <h2 className="text-2xl font-light italic text-center text-[#333] mb-10">Admin</h2>
+      <main className="min-h-screen bg-canvas flex items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          <p className="eyebrow text-muted mb-3 text-center">phorage</p>
+          <h2 className="font-serif text-3xl font-medium tracking-tight text-center text-ink mb-10">Admin</h2>
           <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="password"
-              value={pw}
-              onChange={e => { setPw(e.target.value); setPwError(false); }}
-              placeholder="Password"
-              className="w-full border border-gray-200 px-4 py-3 text-sm font-sans focus:outline-none focus:border-accent transition-colors"
-              autoFocus
-            />
-            {pwError && <p className="text-[10px] text-red-400 font-sans">비밀번호가 틀렸습니다.</p>}
+            <div>
+              <label htmlFor="admin-password" className="sr-only">Password</label>
+              <input
+                id="admin-password"
+                type="password"
+                value={pw}
+                onChange={e => { setPw(e.target.value); setPwError(false); }}
+                placeholder="Password"
+                autoComplete="current-password"
+                aria-invalid={pwError}
+                aria-describedby={pwError ? 'admin-password-error' : undefined}
+                className="w-full rounded-sm border border-border-light px-4 py-3 text-sm focus:outline-none focus:border-accent transition-colors"
+                autoFocus
+              />
+            </div>
+            {pwError && (
+              <p id="admin-password-error" role="alert" className="text-[11px] text-red-500">
+                비밀번호가 틀렸습니다.
+              </p>
+            )}
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full py-3 bg-accent text-white text-[10px] uppercase tracking-widest font-sans font-bold disabled:opacity-50"
+              className="btn-primary w-full disabled:opacity-50"
             >
               {loginLoading ? '...' : 'Enter'}
             </button>
@@ -200,25 +211,25 @@ export default function AdminPage() {
 
   // ── 어드민 대시보드 ──
   return (
-    <main className="min-h-screen bg-[#FAF9F6] font-sans px-4 md:px-8 py-8">
+    <main className="min-h-screen bg-canvas font-sans px-4 md:px-8 py-8">
       <div className="max-w-5xl mx-auto">
 
         {/* 헤더 */}
-        <div className="flex justify-between items-center mb-8 border-b border-black/5 pb-6">
+        <div className="flex justify-between items-center mb-8 border-b border-hairline pb-6">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-1">phorage studio</p>
-            <h1 className="text-2xl font-serif font-light italic text-[#333]">Order Management</h1>
+            <p className="eyebrow text-muted mb-1.5">phorage studio</p>
+            <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-tight text-ink">Order Management</h1>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={fetchOrders}
-              className="px-4 py-2 text-[10px] uppercase tracking-widest border border-gray-200 text-gray-500 hover:border-accent hover:text-accent transition-colors"
+              className="btn-outline text-[11px] uppercase tracking-widest"
             >
               Refresh
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-[10px] uppercase tracking-widest text-gray-300 hover:text-gray-500 transition-colors"
+              className="text-[11px] uppercase tracking-widest text-slate hover:text-ink transition-colors"
             >
               Logout
             </button>
@@ -234,36 +245,41 @@ export default function AdminPage() {
             { label: '배송 중',   value: stats.shipped },
             { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}` },
           ].map(s => (
-            <div key={s.label} className={`p-4 border ${s.highlight ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
-              <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">{s.label}</p>
+            <div key={s.label} className={`p-4 rounded-sm border ${s.highlight ? 'border-yellow-300 bg-yellow-50' : 'border-border-light bg-canvas'}`}>
+              <p className="eyebrow text-muted mb-2">{s.label}</p>
               <p className={`text-xl font-bold ${s.highlight ? 'text-yellow-600' : 'text-accent'}`}>{s.value}</p>
             </div>
           ))}
         </div>
 
         {/* 히어로 설정 */}
-        <div className="mb-8 border border-gray-100 bg-white p-4 md:p-6 space-y-4">
-          <div className="flex justify-between items-center">
+        <div className="mb-8 rounded-sm border border-border-light bg-canvas p-4 md:p-6 space-y-4">
+          <div className="flex justify-between items-center gap-4">
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Homepage Hero</p>
-              <p className="text-sm font-serif italic text-[#333]">히어로 이미지 &amp; 텍스트 관리</p>
+              <p className="eyebrow text-muted mb-1">Homepage Hero</p>
+              <p className="font-serif text-base font-medium tracking-tight text-ink">히어로 이미지 &amp; 텍스트 관리</p>
             </div>
-            <button
-              onClick={saveHero}
-              disabled={heroSaving}
-              className={`px-5 py-2 text-[10px] uppercase tracking-widest font-bold transition-all ${
-                heroSaved ? 'bg-green-600 text-white' :
-                'bg-accent text-white hover:opacity-90'
-              } disabled:opacity-50`}
-            >
-              {heroSaving ? '저장 중...' : heroSaved ? '✓ 저장됨' : 'Save'}
-            </button>
+            <div className="flex items-center gap-3">
+              <span role="status" aria-live="polite" className="sr-only">
+                {heroSaved ? '저장되었습니다' : ''}
+              </span>
+              <button
+                onClick={saveHero}
+                disabled={heroSaving}
+                className={`px-5 py-2.5 rounded-[var(--radius-pill)] text-[11px] uppercase tracking-widest font-bold text-white transition-all ${
+                  heroSaved ? 'bg-green-600' : 'bg-ink hover:bg-black'
+                } disabled:opacity-50`}
+              >
+                {heroSaving ? '저장 중...' : heroSaved ? '✓ 저장됨' : 'Save'}
+              </button>
+            </div>
           </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">이미지 URL (Cloudinary or Unsplash)</label>
+              <label htmlFor="hero-image" className="block eyebrow text-muted mb-1.5">이미지 URL (Cloudinary or Unsplash)</label>
               <input
-                className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
+                id="hero-image"
+                className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
                 value={heroImage}
                 onChange={e => setHeroImage(e.target.value)}
                 placeholder="https://res.cloudinary.com/..."
@@ -271,18 +287,20 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">타이틀</label>
+                <label htmlFor="hero-title" className="block eyebrow text-muted mb-1.5">타이틀</label>
                 <input
-                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  id="hero-title"
+                  className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                   value={heroTitle}
                   onChange={e => setHeroTitle(e.target.value)}
                   placeholder="Collecting the Greenery"
                 />
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1">서브타이틀</label>
+                <label htmlFor="hero-subtitle" className="block eyebrow text-muted mb-1.5">서브타이틀</label>
                 <input
-                  className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  id="hero-subtitle"
+                  className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                   value={heroSubtitle}
                   onChange={e => setHeroSubtitle(e.target.value)}
                   placeholder="무심코 지나친 숲의 색깔..."
@@ -291,8 +309,8 @@ export default function AdminPage() {
             </div>
             {heroImage && /^https:\/\/.+/.test(heroImage) && (
               <div className="mt-2">
-                <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">미리보기</p>
-                <div className="aspect-[16/6] bg-gray-100 relative overflow-hidden rounded-sm">
+                <p className="eyebrow text-muted mb-2">미리보기</p>
+                <div className="aspect-[16/6] bg-surface relative overflow-hidden rounded-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={heroImage} alt="Hero preview" className="w-full h-full object-cover" />
                 </div>
@@ -302,29 +320,34 @@ export default function AdminPage() {
         </div>
 
         {/* 상태 필터 */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {(['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-4 py-1.5 text-[10px] uppercase tracking-widest transition-all ${
-                filterStatus === s
-                  ? 'bg-accent text-white'
-                  : 'border border-gray-200 text-gray-400 hover:text-accent hover:border-accent'
-              }`}
-            >
-              {s === 'all' ? `전체 (${orders.length})` : `${STATUS_LABELS[s]} (${orders.filter(o => o.status === s).length})`}
-            </button>
-          ))}
+        <div className="flex gap-2 mb-6 flex-wrap" role="group" aria-label="주문 상태 필터">
+          {(['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const).map(s => {
+            const active = filterStatus === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilterStatus(s)}
+                className={`px-4 py-1.5 rounded-sm text-[11px] uppercase tracking-widest transition-colors ${
+                  active
+                    ? 'bg-ink text-white'
+                    : 'border border-border-light text-slate hover:text-ink hover:border-ink'
+                }`}
+              >
+                {s === 'all' ? `전체 (${orders.length})` : `${STATUS_LABELS[s]} (${orders.filter(o => o.status === s).length})`}
+              </button>
+            );
+          })}
         </div>
 
         {/* 주문 목록 */}
         {loading ? (
-          <div className="py-20 text-center text-[10px] uppercase tracking-widest text-gray-300 animate-pulse">
+          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted animate-pulse">
             Loading orders...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-[10px] uppercase tracking-widest text-gray-300">
+          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted">
             No orders found.
           </div>
         ) : (
@@ -333,51 +356,55 @@ export default function AdminPage() {
               const isExpanded = expandedId === order.id;
               const next = NEXT_STATUS[order.status];
               const nextLabel = NEXT_STATUS_LABEL[order.status];
+              const panelId = `order-panel-${order.id}`;
 
               return (
-                <div key={order.id} className="border border-gray-100 bg-white">
+                <div key={order.id} className="rounded-sm border border-border-light bg-canvas">
                   {/* 요약 행 */}
-                  <div
-                    className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={panelId}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left cursor-pointer hover:bg-surface transition-colors"
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                   >
-                    <span className="text-[11px] text-gray-400 font-mono w-12 flex-shrink-0">#{order.id}</span>
+                    <span className="text-[11px] text-muted font-mono w-12 flex-shrink-0">#{order.id}</span>
 
                     <span className={`text-[9px] uppercase tracking-widest px-2 py-1 rounded-sm font-bold flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
                       {STATUS_LABELS[order.status]}
                     </span>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-800 truncate">{order.name}</p>
-                      <p className="text-[10px] text-gray-400 truncate">{order.email}</p>
+                      <p className="text-sm font-bold text-ink truncate">{order.name}</p>
+                      <p className="text-[11px] text-slate truncate">{order.email}</p>
                     </div>
 
                     <div className="text-right flex-shrink-0">
                       <p className="text-sm font-bold text-accent">₩ {order.total_price.toLocaleString()}</p>
-                      <p className="text-[9px] text-gray-400">
+                      <p className="text-[10px] text-muted">
                         {new Date(order.created_at).toLocaleDateString('ko-KR', {
                           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                         })}
                       </p>
                     </div>
 
-                    <span className="text-gray-300 text-xs ml-1 flex-shrink-0">{isExpanded ? '▲' : '▼'}</span>
-                  </div>
+                    <span aria-hidden className="text-muted text-xs ml-1 flex-shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                  </button>
 
                   {/* 펼침 상세 */}
                   {isExpanded && (
-                    <div className="border-t border-gray-100 px-5 py-5 space-y-5">
+                    <div id={panelId} className="border-t border-border-light px-5 py-5 space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                        <div className="space-y-2 text-gray-700">
-                          <p><span className="text-[9px] uppercase tracking-widest text-gray-400 inline-block w-16">연락처</span>{order.phone || '-'}</p>
-                          <p><span className="text-[9px] uppercase tracking-widest text-gray-400 inline-block w-16">주소</span>{order.address}</p>
-                          {order.note && <p><span className="text-[9px] uppercase tracking-widest text-gray-400 inline-block w-16">메모</span>{order.note}</p>}
+                        <div className="space-y-2 text-ink-body">
+                          <p><span className="eyebrow text-muted inline-block w-16">연락처</span>{order.phone || '-'}</p>
+                          <p><span className="eyebrow text-muted inline-block w-16">주소</span>{order.address}</p>
+                          {order.note && <p><span className="eyebrow text-muted inline-block w-16">메모</span>{order.note}</p>}
                         </div>
                         <div>
-                          <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-2">주문 상품</p>
+                          <p className="eyebrow text-muted mb-2">주문 상품</p>
                           <div className="space-y-1">
                             {order.items.map((item, i) => (
-                              <div key={i} className="flex justify-between text-xs text-gray-700">
+                              <div key={i} className="flex justify-between text-xs text-ink-body">
                                 <span>{item.name} ×{item.quantity}</span>
                                 <span className="text-accent font-bold">₩ {(item.price * item.quantity).toLocaleString()}</span>
                               </div>
@@ -387,12 +414,12 @@ export default function AdminPage() {
                       </div>
 
                       {/* 액션 버튼 */}
-                      <div className="flex gap-3 pt-3 border-t border-gray-50">
+                      <div className="flex gap-3 pt-3 border-t border-hairline">
                         {next && nextLabel && (
                           <button
                             disabled={updating === order.id}
                             onClick={() => updateStatus(order.id, next)}
-                            className="px-5 py-2 bg-accent text-white text-[10px] uppercase tracking-widest font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                            className="px-5 py-2.5 rounded-[var(--radius-pill)] bg-ink text-white text-[11px] uppercase tracking-widest font-bold hover:bg-black transition-all disabled:opacity-50"
                           >
                             {updating === order.id ? '처리 중...' : `→ ${nextLabel}`}
                           </button>
@@ -401,7 +428,7 @@ export default function AdminPage() {
                           <button
                             disabled={updating === order.id}
                             onClick={() => cancelOrder(order.id)}
-                            className="px-5 py-2 border border-gray-200 text-gray-400 text-[10px] uppercase tracking-widest hover:border-red-300 hover:text-red-400 transition-all disabled:opacity-50"
+                            className="px-5 py-2.5 rounded-[var(--radius-pill)] border border-border-light text-slate text-[11px] uppercase tracking-widest hover:border-red-300 hover:text-red-500 transition-all disabled:opacity-50"
                           >
                             취소
                           </button>

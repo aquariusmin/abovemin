@@ -19,13 +19,11 @@ const REFRESH_MS = 60_000;
 type SortKey = "equity" | "pnl_pct" | "updated_at" | "bot_name";
 
 // Centralised reused class strings — keeps the JSX legible and the
-// dark/mono palette consistent with the rest of /lab.
-const SECTION_LABEL =
-  "text-[9px] font-mono uppercase tracking-[0.3em] text-white/30";
-const STAT_BLOCK =
-  "border border-white/8 bg-white/3 p-5 space-y-2";
+// dark palette consistent with the rest of /lab.
+const SECTION_LABEL = "eyebrow text-white/40";
+const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
-  "text-[9px] font-mono uppercase tracking-widest text-white/30";
+  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
 
 export function FleetDashboard() {
   const [bots, setBots] = useState<FleetBot[] | null>(null);
@@ -90,9 +88,9 @@ export function FleetDashboard() {
 
   if (error) {
     return (
-      <div className="border border-red-400/20 bg-red-400/5 p-6">
-        <p className={SECTION_LABEL}>── Error</p>
-        <p className="mt-2 font-mono text-[11px] text-red-400">
+      <div className="rounded-md border border-red-400/25 bg-red-400/[0.06] p-6">
+        <p className="eyebrow text-red-300/70">Error</p>
+        <p className="mt-2 font-mono text-[12px] text-red-400">
           Failed to load fleet: {error}
         </p>
       </div>
@@ -101,16 +99,16 @@ export function FleetDashboard() {
 
   if (!bots) {
     return (
-      <div className="border border-white/8 bg-white/2 p-12 text-center">
-        <p className="text-[9px] font-mono text-white/20 uppercase tracking-widest animate-pulse">
-          Loading fleet data...
+      <div className={`${CARD} p-12 text-center`}>
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/25 animate-pulse">
+          Loading fleet data…
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* KPI strip */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Paper Equity" value={totals ? fmtMoney(totals.equity) : "—"} />
@@ -128,41 +126,46 @@ export function FleetDashboard() {
 
       {/* Filter + sort row */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex gap-1">
-          {(["all", "crypto", "stock"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMarketFilter(m)}
-              className={`px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest transition-all ${
-                marketFilter === m
-                  ? "bg-accent text-white"
-                  : "border border-white/10 text-white/40 hover:text-white/70"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        <div className="flex gap-1.5" role="group" aria-label="Filter by market">
+          {(["all", "crypto", "stock"] as const).map((m) => {
+            const active = marketFilter === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setMarketFilter(m)}
+                className={`rounded-md px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.18em] transition-colors ${
+                  active
+                    ? "bg-accent-light/90 text-[#0e1410]"
+                    : "border border-white/10 text-white/45 hover:text-white/80 hover:border-white/25"
+                }`}
+              >
+                {m}
+              </button>
+            );
+          })}
         </div>
-        <span className="text-[9px] font-mono uppercase tracking-widest text-white/25">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/30">
           auto-refresh · {REFRESH_MS / 1000}s
         </span>
       </div>
 
       {/* Fleet table */}
       <section className="space-y-4">
-        <h3 className={SECTION_LABEL}>── Fleet · {filtered.length} bot(s)</h3>
-        <div className="border border-white/8 bg-white/2 overflow-x-auto">
-          <table className="w-full font-mono text-[11px]">
+        <h3 className={SECTION_LABEL}>Fleet · {filtered.length} bot(s)</h3>
+        <div className={`${CARD} overflow-x-auto`}>
+          <table className="w-full font-mono text-[12px]">
             <thead>
-              <tr className="text-[9px] uppercase tracking-widest text-white/30 border-b border-white/8">
-                <Th onClick={() => toggleSort("bot_name")} active={sortKey === "bot_name"} dir={sortDir}>
+              <tr className="text-[10px] uppercase tracking-[0.16em] text-white/40 border-b border-white/8">
+                <Th sortKey="bot_name" sortState={sortKey} dir={sortDir} onSort={toggleSort}>
                   Bot
                 </Th>
                 <Th>Mkt</Th>
-                <Th onClick={() => toggleSort("equity")} active={sortKey === "equity"} dir={sortDir} align="right">
+                <Th sortKey="equity" sortState={sortKey} dir={sortDir} onSort={toggleSort} align="right">
                   Equity
                 </Th>
-                <Th onClick={() => toggleSort("pnl_pct")} active={sortKey === "pnl_pct"} dir={sortDir} align="right">
+                <Th sortKey="pnl_pct" sortState={sortKey} dir={sortDir} onSort={toggleSort} align="right">
                   PnL
                 </Th>
                 <Th align="right">Pos</Th>
@@ -170,31 +173,31 @@ export function FleetDashboard() {
                 <Th align="right">Fil</Th>
                 <Th>Last Fill</Th>
                 <Th>Trend</Th>
-                <Th onClick={() => toggleSort("updated_at")} active={sortKey === "updated_at"} dir={sortDir} align="right">
+                <Th sortKey="updated_at" sortState={sortKey} dir={sortDir} onSort={toggleSort} align="right">
                   Updated
                 </Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-white/[0.06]">
               {filtered.map((b) => {
                 const points = parseEquityCurve(b.equity_curve);
                 const up = (b.pnl_pct ?? 0) >= 0;
                 return (
                   <tr
                     key={b.id}
-                    className="hover:bg-white/4 transition-colors"
+                    className="hover:bg-white/[0.03] transition-colors"
                   >
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3">
                       <Link
                         href={`/lab/bot/${encodeURIComponent(b.id)}`}
-                        className="text-white/80 hover:text-accent-light transition-colors"
+                        className="text-white/85 hover:text-accent-light transition-colors"
                       >
                         {b.bot_name}
                       </Link>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3">
                       <span
-                        className={`text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 ${
+                        className={`rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 ${
                           b.market === "crypto"
                             ? "text-amber-300 bg-amber-300/10"
                             : "text-sky-300 bg-sky-300/10"
@@ -203,12 +206,12 @@ export function FleetDashboard() {
                         {b.market}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right text-white/80">
+                    <td className="px-3 py-3 text-right text-white/85">
                       {fmtMoney(b.equity)}
                     </td>
-                    <td className="px-3 py-2.5 text-right">
+                    <td className="px-3 py-3 text-right">
                       <span
-                        className={`px-1.5 py-0.5 font-bold ${
+                        className={`rounded px-1.5 py-0.5 font-bold ${
                           up
                             ? "text-emerald-400 bg-emerald-400/10"
                             : "text-red-400 bg-red-400/10"
@@ -217,24 +220,24 @@ export function FleetDashboard() {
                         {fmtPct(b.pnl_pct)}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right text-white/40">
+                    <td className="px-3 py-3 text-right text-white/45">
                       {b.position_pct === null
                         ? "—"
                         : `${Math.round(b.position_pct)}%`}
                     </td>
-                    <td className="px-3 py-2.5 text-right text-white/40">
+                    <td className="px-3 py-3 text-right text-white/45">
                       {b.holdings_count ?? "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-right text-white/40">
+                    <td className="px-3 py-3 text-right text-white/45">
                       {b.fills_count ?? "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-white/40 text-[10px] truncate max-w-[180px]">
+                    <td className="px-3 py-3 text-white/45 text-[11px] truncate max-w-[180px]">
                       {b.last_fill ?? "—"}
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3">
                       <EquitySparkline points={points} positive={up} />
                     </td>
-                    <td className="px-3 py-2.5 text-right text-white/30 text-[10px] whitespace-nowrap">
+                    <td className="px-3 py-3 text-right text-white/35 text-[11px] whitespace-nowrap">
                       {fmtRelative(b.updated_at)}
                     </td>
                   </tr>
@@ -244,7 +247,7 @@ export function FleetDashboard() {
                 <tr>
                   <td
                     colSpan={10}
-                    className="px-3 py-8 text-center text-[10px] font-mono text-white/30 uppercase tracking-widest"
+                    className="px-3 py-10 text-center text-[11px] font-mono text-white/35 uppercase tracking-[0.18em]"
                   >
                     No bots match this filter
                   </td>
@@ -274,9 +277,9 @@ function Stat({
         ? "text-red-400"
         : "text-white";
   return (
-    <div className={STAT_BLOCK}>
+    <div className={`${CARD} p-5 space-y-2`}>
       <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-black tracking-tight font-mono ${valueColor}`}>
+      <p className={`text-2xl font-bold tracking-tight font-mono ${valueColor}`}>
         {value}
       </p>
     </div>
@@ -285,23 +288,53 @@ function Stat({
 
 function Th({
   children,
-  onClick,
-  active,
+  sortKey,
+  sortState,
   dir,
+  onSort,
   align,
 }: {
   children: React.ReactNode;
-  onClick?: () => void;
-  active?: boolean;
+  sortKey?: SortKey;
+  sortState?: SortKey;
   dir?: "asc" | "desc";
+  onSort?: (k: SortKey) => void;
   align?: "right";
 }) {
+  const sortable = Boolean(sortKey && onSort);
+  const active = sortable && sortState === sortKey;
+  const ariaSort: React.AriaAttributes["aria-sort"] = active
+    ? dir === "desc"
+      ? "descending"
+      : "ascending"
+    : sortable
+      ? "none"
+      : undefined;
+  const activate = () => {
+    if (sortKey && onSort) onSort(sortKey);
+  };
   return (
     <th
-      onClick={onClick}
-      className={`px-3 py-2 font-bold ${
+      scope="col"
+      aria-sort={ariaSort}
+      role={sortable ? "button" : undefined}
+      tabIndex={sortable ? 0 : undefined}
+      onClick={sortable ? activate : undefined}
+      onKeyDown={
+        sortable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                activate();
+              }
+            }
+          : undefined
+      }
+      className={`px-3 py-2.5 font-bold ${
         align === "right" ? "text-right" : "text-left"
-      } ${onClick ? "cursor-pointer select-none hover:text-white/60" : ""}`}
+      } ${sortable ? "cursor-pointer select-none hover:text-white/70" : ""} ${
+        active ? "text-white/70" : ""
+      }`}
     >
       <span className="inline-flex items-center gap-1">
         {children}

@@ -27,20 +27,20 @@ export default function EvidenceFigure({
   children: ReactNode;
 }) {
   return (
-    <figure className="overflow-hidden border border-black/5 bg-white/45">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-black/5 px-5 py-4 md:px-6">
-        <h3 className="break-keep text-lg font-bold tracking-tight">{title}</h3>
+    <figure className="overflow-hidden border border-border-light bg-white">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline px-5 py-4 md:px-6">
+        <h3 className="break-keep font-serif text-lg font-bold tracking-tight">{title}</h3>
         <span
-          className={`border px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.14em] ${statusStyles[status]}`}
+          className={`border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${statusStyles[status]}`}
         >
           {evidenceStatusLabels[status][locale]}
         </span>
       </div>
       <div className="p-5 md:p-6">{children}</div>
-      <figcaption className="space-y-2 border-t border-black/5 bg-surface-muted/45 px-5 py-4 font-sans text-xs leading-relaxed text-gray-500 md:px-6">
+      <figcaption className="space-y-2 border-t border-hairline bg-surface-muted/45 px-5 py-4 font-sans text-xs leading-relaxed text-gray-500 md:px-6">
         <p className="break-keep">{caption}</p>
         {source && (
-          <p className="break-keep text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400">
+          <p className="break-keep font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">
             {locale === "ko" ? "근거" : "Source"} · {source}
           </p>
         )}

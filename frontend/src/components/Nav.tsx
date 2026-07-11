@@ -17,11 +17,16 @@ export default function Nav() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const navBg = isLab ? 'bg-[#1a1c1a]/90' : 'bg-[#FAF9F6]/95';
-  const borderColor = isLab ? 'border-white/10' : 'border-black/5';
-  const accentColor = isLab ? 'text-accent-light' : 'text-accent';
   const cartCount = useCartStore(state => state.totalCount());
   const displayCount = mounted ? cartCount : 0;
+
+  // Surface-aware palette: light editorial canvas vs. dark lab shell.
+  const shell = isLab
+    ? 'bg-[#1a1c1a]/85 border-white/10'
+    : 'bg-white/80 border-hairline/60';
+  const logoColor = isLab ? 'text-white' : 'text-ink';
+  const idleLink = isLab ? 'text-white/45' : 'text-muted';
+  const activeLink = isLab ? 'text-accent-light' : 'text-ink';
 
   const navLinks = [
     { href: '/about', label: 'About' },
@@ -38,74 +43,74 @@ export default function Nav() {
 
   if (isPortfolioFocused) return null;
 
-  return (
-    <nav className={`fixed top-0 left-0 w-full z-50 font-serif border-b ${borderColor} ${navBg} backdrop-blur-md transition-all`}>
-      <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-4 md:py-7 max-w-[1920px] mx-auto">
+  const cartBadge = (className: string) => (
+    <Link href="/cart" className={`relative ${className}`} onClick={() => setMenuOpen(false)}>
+      <span className={`eyebrow tracking-[0.18em] ${pathname === '/cart' ? activeLink : idleLink} hover:opacity-60 transition-opacity`}>
+        Bag
+      </span>
+      {displayCount > 0 && (
+        <span className="absolute -top-2.5 -right-3.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-white text-[9px] font-mono flex items-center justify-center">
+          {displayCount}
+        </span>
+      )}
+    </Link>
+  );
 
-        {/* Left: tagline (desktop) / logo (mobile) */}
+  return (
+    <nav className={`fixed top-0 left-0 w-full z-50 border-b ${shell} backdrop-blur-xl transition-colors duration-500`}>
+      <div className="relative flex items-center justify-between px-5 sm:px-6 md:px-10 py-4 md:py-6 max-w-[1920px] mx-auto">
+
+        {/* Left: locale/city marker (desktop) · wordmark (mobile) */}
         <div className="flex items-center">
           <Link href="/" className="md:hidden" onClick={() => setMenuOpen(false)}>
-            <h1 className={`text-lg font-bold tracking-tighter ${accentColor} transition-colors`}>
+            <span className={`font-serif text-lg font-semibold tracking-tight ${logoColor} transition-colors`}>
               phorage
-            </h1>
+            </span>
           </Link>
-          <span className="text-[10px] tracking-[0.2em] uppercase opacity-50 font-sans hidden md:block italic">
-            Seoul / 2026
+          <span className={`eyebrow hidden md:block ${isLab ? 'text-white/35' : 'text-muted'}`}>
+            Seoul · 2026
           </span>
         </div>
 
-        {/* Center: logo (desktop only) */}
-        <Link href="/" className="hidden md:flex absolute left-1/2 -translate-x-1/2" onClick={() => setMenuOpen(false)}>
-          <h1 className={`text-2xl font-bold tracking-tighter ${accentColor} transition-colors`}>
+        {/* Center: wordmark (desktop) */}
+        <Link
+          href="/"
+          className="hidden md:flex absolute left-1/2 -translate-x-1/2"
+          onClick={() => setMenuOpen(false)}
+        >
+          <span className={`font-serif text-2xl font-semibold tracking-tight ${logoColor} transition-colors`}>
             phorage
-          </h1>
+          </span>
         </Link>
 
-        {/* Right: desktop links + mobile controls */}
-        <div className="flex items-center gap-5 md:gap-8 xl:gap-10">
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-7 xl:gap-10 text-[10px] xl:text-[11px] uppercase tracking-widest font-sans font-bold">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`hover:opacity-50 transition-all ${link.italic ? 'italic' : ''} ${
-                  isActiveLink(link.href)
-                    ? isLab && link.href === '/lab' ? 'text-accent-light' : 'text-black border-b-2 border-accent'
-                    : link.href === '/lab' ? 'opacity-30 hover:opacity-100' : 'text-gray-400'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/cart" className="relative">
-              <span className={`text-[11px] ${pathname === '/cart' ? (isLab ? 'text-accent-light' : 'text-black') : 'text-gray-400'} hover:opacity-50 transition-all`}>
-                Bag
-              </span>
-              {displayCount > 0 && (
-                <span className="absolute -top-2 -right-3 w-4 h-4 rounded-full bg-accent text-white text-[8px] flex items-center justify-center font-bold">
-                  {displayCount}
-                </span>
-              )}
-            </Link>
+        {/* Right: desktop nav + mobile controls */}
+        <div className="flex items-center gap-6 md:gap-8">
+          <div className="hidden md:flex items-center gap-7 xl:gap-9">
+            {navLinks.map(link => {
+              const active = isActiveLink(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`eyebrow tracking-[0.18em] transition-opacity hover:opacity-60 ${link.italic ? 'italic' : ''} ${
+                    active ? activeLink : idleLink
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            {cartBadge('')}
           </div>
 
-          {/* Mobile: cart + hamburger */}
           <div className="flex md:hidden items-center gap-5">
-            <Link href="/cart" className="relative" onClick={() => setMenuOpen(false)}>
-              <span className={`text-[11px] font-sans font-bold uppercase tracking-widest ${pathname === '/cart' ? accentColor : 'text-gray-400'}`}>
-                Bag
-              </span>
-              {displayCount > 0 && (
-                <span className="absolute -top-2 -right-3 w-4 h-4 rounded-full bg-accent text-white text-[8px] flex items-center justify-center font-bold">
-                  {displayCount}
-                </span>
-              )}
-            </Link>
+            {cartBadge('')}
             <button
               onClick={() => setMenuOpen(prev => !prev)}
-              className={`flex flex-col gap-[5px] p-2 ${isLab ? 'text-white' : 'text-[#333]'}`}
+              className={`flex flex-col gap-[5px] p-2 -mr-2 ${isLab ? 'text-white' : 'text-ink'}`}
               aria-label="Toggle menu"
+              aria-expanded={menuOpen}
             >
               <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
               <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
@@ -115,21 +120,25 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Mobile dropdown menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-64' : 'max-h-0'}`}>
-        <div className={`border-t ${borderColor} px-6 py-6 flex flex-col gap-6`}>
-          {navLinks.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className={`text-[13px] font-sans font-bold uppercase tracking-widest ${link.italic ? 'italic' : ''} ${
-                isActiveLink(link.href) ? accentColor : isLab ? 'text-white/60' : 'text-gray-400'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+      {/* Mobile dropdown */}
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}>
+        <div className={`border-t ${isLab ? 'border-white/10' : 'border-hairline/60'} px-6 py-6 flex flex-col gap-6`}>
+          {navLinks.map(link => {
+            const active = isActiveLink(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                aria-current={active ? 'page' : undefined}
+                className={`eyebrow text-xs tracking-[0.2em] ${link.italic ? 'italic' : ''} ${
+                  active ? activeLink : idleLink
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

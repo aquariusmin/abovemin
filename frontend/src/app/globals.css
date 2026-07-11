@@ -1,37 +1,229 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   phorage design system — derived from DESIGN.md (Cohere-style editorial system)
+   White editorial canvas · deep-green / navy dark bands · near-black pill CTAs ·
+   coral editorial accents · thin rules · monumental grotesk display type.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --accent: #4A5D4E;
-  --accent-light: #6B8E6B;
-  --surface: #FAF9F6;
-  --surface-dark: #1a1c1a;
-  --surface-muted: #F0EEEA;
-  --portfolio-font-sans: Inter, Pretendard, SUIT, "Noto Sans KR", "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", Arial, sans-serif;
+  /* Surface & background */
+  --background: #ffffff;      /* dominant canvas */
+  --canvas: #ffffff;
+  --surface: #faf9f6;         /* warm off-white section */
+  --surface-muted: #f0eeea;
+  --stone: #eeece7;           /* soft stone cards / CTA blocks */
+  --green-wash: #edfce9;      /* pale green section backdrop */
+  --blue-wash: #f1f5ff;       /* pale blue CTA surface */
+  --card-border: #f2f2f2;
+  --surface-dark: #1a1c1a;    /* lab shell */
+
+  /* Brand & accent */
+  --accent: #4a5d4e;          /* phorage sage — primary brand accent on light */
+  --accent-light: #6b8e6b;
+  --green-deep: #003c33;      /* deep enterprise green — dark product bands */
+  --navy: #071829;            /* dark navy band */
+  --ink: #17171c;             /* near-black — primary pill CTAs, dark UI */
+  --coral: #ff7759;           /* editorial taxonomy accent */
+  --coral-soft: #ffad9b;
+  --action-blue: #1863dc;     /* editorial links / pagination */
+
+  /* Text & rules */
+  --foreground: #17171c;
+  --ink-body: #212121;        /* body text */
+  --muted: #93939f;           /* muted slate — metadata, de-emphasis */
+  --slate: #75758a;
+  --hairline: #d9d9dd;        /* standard list/section rule */
+  --border-light: #e5e7eb;
+
+  /* Type stacks — Latin webfonts with Korean system-font fallbacks (kept light) */
+  --font-display-stack: var(--font-display), "Apple SD Gothic Neo", Pretendard, SUIT,
+    "Noto Sans KR", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-body-stack: var(--font-body), Pretendard, "Apple SD Gothic Neo", SUIT,
+    "Noto Sans KR", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-stack: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo,
+    "Liberation Mono", monospace;
+
+  --portfolio-font-sans: var(--font-body-stack);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-canvas: var(--canvas);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-dark: var(--surface-dark);
+  --color-stone: var(--stone);
+  --color-green-wash: var(--green-wash);
+  --color-blue-wash: var(--blue-wash);
+  --color-card-border: var(--card-border);
+
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
-  --color-surface: var(--surface);
-  --color-surface-dark: var(--surface-dark);
-  --color-surface-muted: var(--surface-muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-green-deep: var(--green-deep);
+  --color-navy: var(--navy);
+  --color-ink: var(--ink);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-action-blue: var(--action-blue);
+
+  --color-ink-body: var(--ink-body);
+  --color-muted: var(--muted);
+  --color-slate: var(--slate);
+  --color-hairline: var(--hairline);
+  --color-border-light: var(--border-light);
+
+  /* font-serif is repurposed across the app as the DISPLAY voice */
+  --font-serif: var(--font-display-stack);
+  --font-sans: var(--font-body-stack);
+  --font-mono: var(--font-mono-stack);
+  --font-display: var(--font-display-stack);
+
+  /* Radius scale (DESIGN.md) */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 32px;
 }
 
 body {
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink-body);
+  font-family: var(--font-body-stack);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* `font-serif`, `font-sans`, `font-mono`, `font-display` utilities are generated
+   from the @theme font tokens above. Headings control their own tracking via
+   Tailwind's `tracking-*` utilities. */
 
 .portfolio-ui,
 .portfolio-ui :where(.font-serif, .font-sans) {
-  font-family: var(--portfolio-font-sans);
+  font-family: var(--font-body-stack);
 }
+.portfolio-ui :where(.font-serif) {
+  font-family: var(--font-display-stack);
+}
+
+/* ── Design-system utility classes ──────────────────────────────────────── */
+
+/* Uppercase mono technical label (eyebrow / category / system marker) */
+.eyebrow {
+  font-family: var(--font-mono-stack);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Thin section rule */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+/* Near-black pill CTA — primary action on light surfaces */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+.btn-primary:hover { background: #000; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* Outlined pill — filters, taxonomy, lightweight actions */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.btn-outline:hover { border-color: var(--ink); }
+.btn-outline[data-active="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* Underlined text link — companion / secondary action */
+.link-underline {
+  position: relative;
+  font-weight: 500;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: opacity 0.2s ease;
+}
+.link-underline:hover { opacity: 0.6; }
+
+/* Coral editorial taxonomy chip (blog/archive categories) */
+.chip-coral {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--coral-soft);
+  background: color-mix(in srgb, var(--coral) 6%, transparent);
+  color: var(--coral);
+  font-family: var(--font-mono-stack);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.chip-coral[data-active="true"] {
+  background: var(--coral);
+  color: #fff;
+  border-color: var(--coral);
+}
+
+/* Hairline-bordered card — flat, no drop shadow (DESIGN.md elevation) */
+.card-hair {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+.card-hair:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Full-width dark product band (deep green / navy) */
+.band-dark {
+  background: var(--green-deep);
+  color: #fff;
+}
+.band-navy {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* ── Print (portfolio) — preserved ──────────────────────────────────────── */
 
 body.portfolio-focused-route > div {
   padding-top: 0;
@@ -81,13 +273,53 @@ body.portfolio-focused-route > div {
   }
 }
 
-/* 키보드 포커스 시 글로벌 링 스타일 */
+/* Keyboard focus ring */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* 이미지 다운로드 방지 */
+/* Skip-to-content link — visible only when focused */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transform: translateY(-150%);
+  transition: transform 0.2s ease;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline-offset: 2px;
+}
+
+/* Smooth in-page anchor scrolling (respects reduced-motion below) */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Honour users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Prevent casual image download / drag */
 img {
   -webkit-user-select: none;
   user-select: none;
