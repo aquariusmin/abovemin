@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAlbums, getAlbumWithPhotos } from '@/lib/supabase';
 import PhotoGrid from '@/components/PhotoGrid';
+import Reveal from '@/components/motion/Reveal';
 
 export const revalidate = 0;
 
@@ -41,7 +42,7 @@ export default async function CollectionPage({
     <main className="px-5 sm:px-6 md:px-10 py-10 md:py-16 min-h-screen bg-canvas text-ink-body">
 
       {/* Header */}
-      <div className="max-w-[1400px] mx-auto mb-12 md:mb-16">
+      <Reveal as="header" className="max-w-[1400px] mx-auto mb-12 md:mb-16" y={16}>
         <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
           &larr; Archive
         </Link>
@@ -54,20 +55,20 @@ export default async function CollectionPage({
           </div>
           <div className="w-12 h-[2px] bg-accent md:mb-3" />
         </div>
-      </div>
+      </Reveal>
 
       {/* Photo grid + lightbox */}
       <PhotoGrid photos={photos} />
 
       {/* Bottom nav */}
-      <div className="max-w-[1400px] mx-auto mt-14 md:mt-20 pt-8 md:pt-10 border-t border-hairline flex justify-between items-center gap-4">
+      <Reveal className="max-w-[1400px] mx-auto mt-14 md:mt-20 pt-8 md:pt-10 border-t border-hairline flex justify-between items-center gap-4" y={16}>
         <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
           &larr; All collections
         </Link>
         <Link href={`/archive/${nextAlbum.slug}`} className="eyebrow text-muted hover:text-accent transition-colors text-right">
           Next: {nextAlbum.title} &rarr;
         </Link>
-      </div>
+      </Reveal>
 
       <div className="h-16 md:h-24" />
     </main>

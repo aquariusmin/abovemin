@@ -28,7 +28,7 @@ export default function Footer() {
             <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-white">
               phorage
             </h2>
-            <p className="text-sm leading-relaxed text-white/50 max-w-xs break-keep">
+            <p className="text-sm leading-relaxed text-white/70 max-w-xs break-keep">
               빛을 수집하고 세상을 분석합니다. 어제와 오늘의 경계에서 발견한
               가장 정직하고 따뜻한 기록들.
             </p>
@@ -38,7 +38,7 @@ export default function Footer() {
 
           {/* Index */}
           <nav className="md:col-span-2 space-y-5" aria-label="Footer">
-            <h3 className="eyebrow text-white/35">Index</h3>
+            <h3 className="eyebrow text-white/60">Index</h3>
             <ul className="space-y-3 text-sm">
               {NAV.map(item => (
                 <li key={item.href}>
@@ -55,7 +55,7 @@ export default function Footer() {
 
           {/* Connect */}
           <div className="md:col-span-3 space-y-5">
-            <h3 className="eyebrow text-white/35">Connect</h3>
+            <h3 className="eyebrow text-white/60">Connect</h3>
             <ul className="space-y-3 text-sm">
               <li>
                 <a href="mailto:aquariusmin01@naver.com" className="link-underline text-white/70 hover:text-white">
@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-3 eyebrow text-white/35">
+        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-3 eyebrow text-white/60">
           <span>&copy; 2026 phorage studio</span>
           <span>Digital studio · Seoul</span>
         </div>
