@@ -37,7 +37,7 @@ export default function EvidenceFigure({
         </span>
       </div>
       <div className="p-5 md:p-6">{children}</div>
-      <figcaption className="space-y-2 border-t border-hairline bg-surface-muted/45 px-5 py-4 font-sans text-xs leading-relaxed text-gray-500 md:px-6">
+      <figcaption className="space-y-2 border-t border-hairline bg-surface-muted/45 px-5 py-4 font-sans text-xs leading-relaxed text-slate md:px-6">
         <p className="break-keep">{caption}</p>
         {source && (
           <p className="break-keep font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">

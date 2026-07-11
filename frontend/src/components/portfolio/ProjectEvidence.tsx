@@ -142,7 +142,7 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate">Reported R-squared</p>
               <p className="mt-3 text-6xl font-bold tracking-tight text-accent">0.819</p>
-              <p className="mt-3 font-sans text-xs text-gray-500">N = 791 in the reported simple-model output</p>
+              <p className="mt-3 font-sans text-xs text-slate">N = 791 in the reported simple-model output</p>
             </div>
           </div>
         </EvidenceFigure>
@@ -166,7 +166,7 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
             ].map(([value, label]) => (
               <div key={value} className="bg-white/80 p-6 text-center">
                 <p className="text-4xl font-bold text-accent">{value}</p>
-                <p className="mt-2 break-keep font-sans text-xs text-gray-500">{label}</p>
+                <p className="mt-2 break-keep font-sans text-xs text-slate">{label}</p>
               </div>
             ))}
           </div>
@@ -228,7 +228,7 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
           ].map(([method, interpretation]) => (
             <div key={method} className="min-h-40 bg-white/80 p-6">
               <p className="font-mono text-xs font-bold tracking-[0.18em] text-accent">{method}</p>
-              <p className="mt-5 break-keep font-sans text-sm leading-relaxed text-gray-600">{interpretation}</p>
+              <p className="mt-5 break-keep font-sans text-sm leading-relaxed text-slate">{interpretation}</p>
             </div>
           ))}
         </div>
@@ -402,13 +402,13 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
           <div className="grid gap-px bg-black/5 sm:grid-cols-2">
             <div className="bg-white/80 p-6">
               <p className="font-mono text-xs font-bold tracking-[0.16em] text-accent">ANN</p>
-              <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-gray-600">
+              <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
                 {locale === "ko" ? "은닉층 1개 · 비교 기준 모형" : "One hidden layer · comparison baseline"}
               </p>
             </div>
             <div className="bg-white/80 p-6">
               <p className="font-mono text-xs font-bold tracking-[0.16em] text-accent">DNN</p>
-              <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-gray-600">
+              <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
                 {locale === "ko" ? "은닉층 3개 · 추가 복잡도의 개선 제한" : "Three hidden layers · limited gain from added complexity"}
               </p>
             </div>
@@ -508,7 +508,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
                   <td className="px-3 py-4 font-bold">{row.dimension}</td>
                   <td className="px-3 py-4 font-mono">{row.statistic.toFixed(4)}</td>
                   <td className="px-3 py-4 font-mono">{row.minimumExpected.toFixed(3)}</td>
-                  <td className="px-3 py-4 text-gray-500">{locale === "ko" ? "p-value 재확인 필요" : "p-value check pending"}</td>
+                  <td className="px-3 py-4 text-slate">{locale === "ko" ? "p-value 재확인 필요" : "p-value check pending"}</td>
                 </tr>
               ))}
             </tbody>
@@ -543,9 +543,9 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
                 <tr key={row.bloodType}>
                   <td className="px-3 py-4 font-bold">{row.bloodType}</td>
                   <td className="px-3 py-4 font-mono">{row.observedT}</td>
-                  <td className="px-3 py-4 font-mono text-gray-500">{row.expectedT.toFixed(3)}</td>
+                  <td className="px-3 py-4 font-mono text-slate">{row.expectedT.toFixed(3)}</td>
                   <td className="px-3 py-4 font-mono">{row.observedF}</td>
-                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-bold text-amber-800" : "text-gray-500"}`}>
+                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-bold text-amber-800" : "text-slate"}`}>
                     {row.expectedF.toFixed(3)}
                   </td>
                 </tr>
@@ -574,8 +574,8 @@ function HorizontalBars({
       {items.map((item) => (
         <div key={item.label} className="space-y-2">
           <div className="flex items-end justify-between gap-4 font-sans text-xs">
-            <span className="font-semibold text-gray-600">{item.label}</span>
-            <span className="font-mono text-gray-500">
+            <span className="font-semibold text-slate">{item.label}</span>
+            <span className="font-mono text-slate">
               {valueFormatter ? valueFormatter(item.value) : item.value.toFixed(2)}{valueSuffix}
               {item.detail ? ` · ${item.detail}` : ""}
             </span>
@@ -603,7 +603,7 @@ function FlowDiagram({ items, compact = false }: { items: string[]; compact?: bo
       {items.map((item, index) => (
         <div key={item} className="contents">
           <div className="grid min-h-24 place-items-center border border-accent/15 bg-accent/[0.035] p-4 text-center">
-            <span className="break-keep font-sans text-sm font-semibold leading-relaxed text-gray-700">{item}</span>
+            <span className="break-keep font-sans text-sm font-semibold leading-relaxed text-ink-body">{item}</span>
           </div>
           {index < items.length - 1 && (
             <span className={`hidden items-center justify-center text-accent ${arrowVisibility}`} aria-hidden="true">→</span>
@@ -631,7 +631,7 @@ function ProfitabilityTrend() {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-4 font-sans text-[10px] text-gray-500">
+      <div className="flex flex-wrap gap-4 font-sans text-[10px] text-slate">
         {series.map((item) => (
           <span key={item.label} className="flex items-center gap-2">
             <span className="h-0.5 w-5" style={{ backgroundColor: item.color }} />{item.label}
@@ -677,7 +677,7 @@ function Checklist({ rows, locale }: { rows: string[][]; locale: EvidenceLocale 
         const isPending = /pending|필요/i.test(status);
         return (
           <li key={item} className="flex items-center justify-between gap-4 bg-white/80 p-4 font-sans text-sm">
-            <span className="break-keep text-gray-700">{item}</span>
+            <span className="break-keep text-ink-body">{item}</span>
             <span className={`shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] ${isPending ? "text-amber-800" : "text-accent"}`}>
               {status}
             </span>
