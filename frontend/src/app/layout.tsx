@@ -1,29 +1,30 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Fraunces } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
 
-// Display voice — grotesk with tight, carved cadence (DESIGN.md display stack).
-const display = Space_Grotesk({
+// Display voice — warm editorial variable serif with optical sizing + italics.
+// Feeds --font-display, which the display/serif stacks in globals.css resolve.
+const display = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
   variable: '--font-display',
   display: 'swap',
 });
 
-// Body / UI voice.
-const body = Inter({
+// Body / UI voice — clean modern sans.
+const body = Geist({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
 });
 
-// Technical / mono labels.
-const mono = JetBrains_Mono({
+// Technical / mono labels (quant Lab dashboards).
+const mono = Geist_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
   variable: '--font-mono',
   display: 'swap',
 });
