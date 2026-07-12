@@ -104,12 +104,12 @@ export default function CheckoutPage() {
         <p className="text-[15px] text-ink-body mb-10 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
-        <Link href="/shop" className="btn-primary glass-btn">Continue Shopping</Link>
+        <Link href="/shop" className="btn-primary">Continue Shopping</Link>
       </main>
     );
   }
 
-  const inputClass = "glass-input w-full px-4 py-3 text-[15px] leading-normal text-ink-body placeholder:text-muted transition-[box-shadow,border-color] focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 aria-invalid:border-coral aria-invalid:focus:ring-coral/20";
+  const inputClass = "field-input";
   const labelClass = "field-label";
   const errorClass = "mt-1.5 text-xs text-coral";
 
@@ -232,7 +232,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="btn-primary glass-btn w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Processing…' : 'Place Order'}
             </button>
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
 
           {/* Order summary */}
           <div className="md:col-span-5">
-            <div className="glass rounded-2xl p-6 space-y-6">
+            <div className="rounded-lg bg-stone p-6 space-y-6">
               <p className="eyebrow text-muted">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (

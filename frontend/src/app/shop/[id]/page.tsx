@@ -75,7 +75,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
 
         {/* Media */}
-        <Reveal className="md:col-span-7 glass overflow-hidden rounded-lg" y={16}>
+        <Reveal className="md:col-span-7 overflow-hidden rounded-lg border border-border-light bg-stone" y={16}>
           <Image
             src={product.image_url}
             alt={product.name}
