@@ -54,7 +54,7 @@ export default function About() {
               <Reveal key={item.title} className="h-full" delay={i * 0.06} y={16}>
                 <Link
                   href={item.href}
-                  className="glass glass-interactive group h-full p-6 md:p-7 flex flex-col gap-3"
+                  className="card-hair group h-full p-6 md:p-7 flex flex-col gap-3 hover:-translate-y-0.5"
                 >
                   <h3 className={`font-serif text-xl font-medium text-ink group-hover:text-accent transition-colors ${item.italic ? 'italic' : ''}`}>
                     {item.title}

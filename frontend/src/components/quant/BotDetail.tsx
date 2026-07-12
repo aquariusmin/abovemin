@@ -16,7 +16,7 @@ import {
 const REFRESH_MS = 60_000;
 
 const SECTION_LABEL = "eyebrow text-white/40";
-const CARD = "glass rounded-2xl";
+const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
   "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
 
@@ -60,7 +60,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (error) {
     return (
-      <div className="glass rounded-2xl border-red-400/25 p-6">
+      <div className="rounded-md border border-red-400/25 bg-red-400/[0.06] p-6">
         <p className="eyebrow text-red-300/70">Error</p>
         <p className="mt-2 font-mono text-[12px] text-red-400">{error}</p>
       </div>

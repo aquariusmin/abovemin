@@ -21,6 +21,9 @@ export default function Nav() {
   const displayCount = mounted ? cartCount : 0;
 
   // Surface-aware palette: light editorial canvas vs. dark lab shell.
+  const shell = isLab
+    ? 'bg-surface-dark/85 border-white/10'
+    : 'bg-white/80 border-hairline/60';
   const logoColor = isLab ? 'text-white' : 'text-ink';
   const idleLink = isLab ? 'text-white/45' : 'text-muted';
   const activeLink = isLab ? 'text-accent-light' : 'text-ink';
@@ -57,12 +60,11 @@ export default function Nav() {
   );
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 px-3 sm:px-4 md:px-6 pt-3 md:pt-4">
-      <div className="glass max-w-[1920px] mx-auto rounded-[1.75rem] overflow-hidden">
+    <nav className={`fixed top-0 left-0 w-full z-50 border-b ${shell} backdrop-blur-xl transition-colors duration-500`}>
       {/* 3-column flex: equal-width outer zones keep the wordmark optically
           centered while reserving real space, so nothing can overlap. Desktop
           nav appears at lg; below that we fall back to the hamburger. */}
-      <div className="flex items-center gap-4 px-5 sm:px-6 md:px-10 py-4 md:py-6">
+      <div className="flex items-center gap-4 px-5 sm:px-6 md:px-10 py-4 md:py-6 max-w-[1920px] mx-auto">
 
         {/* Left: wordmark (mobile/tablet) · locale marker (desktop) */}
         <div className="flex-1 min-w-0 flex items-center justify-start">
@@ -152,7 +154,6 @@ export default function Nav() {
             );
           })}
         </div>
-      </div>
       </div>
     </nav>
   );

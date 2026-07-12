@@ -40,11 +40,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Pin the Turbopack workspace root to silence the multi-lockfile inference warning.
-  turbopack: { root: __dirname },
   images: {
-    // Allow quality 90 in addition to the Next 16 default of 75 (used by the hero).
-    qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),
       new URL('https://images.unsplash.com/**'),
