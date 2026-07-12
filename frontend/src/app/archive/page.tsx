@@ -40,7 +40,7 @@ export default async function Archive() {
       {albumsWithCount.length > 0 ? (
         <ArchiveGrid albums={albumsWithCount} />
       ) : (
-        <p className="max-w-[1400px] mx-auto text-center text-sm text-muted py-20 border border-dashed border-hairline rounded-md">
+        <p className="glass max-w-[1400px] mx-auto text-center text-sm text-muted py-20">
           아직 공개된 컬렉션이 없습니다.
         </p>
       )}

@@ -80,7 +80,7 @@ export default function HomeContent({
     // reducedMotion="user" makes framer honour the OS "reduce motion" setting,
     // dropping transforms while leaving content fully visible.
     <MotionConfig reducedMotion="user">
-      <main className="bg-canvas text-ink-body">
+      <main className="text-ink-body">
 
         {/* ── Hero: text and image share the first screen ──────────────────── */}
         <section className="px-5 sm:px-6 md:px-10 pt-8 md:pt-14 pb-14 md:pb-20">
@@ -107,7 +107,7 @@ export default function HomeContent({
               variants={mediaReveal}
               className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-center"
             >
-              <div className="rounded-lg bg-stone p-2.5 sm:p-3">
+              <div className="glass rounded-lg p-2.5 sm:p-3">
                 <div className="group relative w-full aspect-[4/5] sm:aspect-[3/2] lg:aspect-[4/5] max-h-[74vh] overflow-hidden rounded-md">
                   <Image
                     src={cloudinary(heroImage, { width: 1200 })}
@@ -128,7 +128,7 @@ export default function HomeContent({
                 {heroSubtitle}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <Link href="/archive" className="btn-primary">
+                <Link href="/archive" className="btn-primary glass-btn">
                   Explore the archive
                 </Link>
                 <Link href="/shop" className="link-underline text-ink text-sm">
@@ -185,7 +185,7 @@ export default function HomeContent({
                   주인장이 엄선한 이달의 소품
                 </h2>
               </div>
-              <Link href="/shop" className="btn-outline">Explore all</Link>
+              <Link href="/shop" className="btn-outline glass-btn">Explore all</Link>
             </motion.div>
 
             {featured.length > 0 ? (
