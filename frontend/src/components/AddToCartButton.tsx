@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCartStore } from '@/store/cartStore';
 
 interface Props {
@@ -16,13 +16,19 @@ interface Props {
 export default function AddToCartButton({ product }: Props) {
   const { addItem } = useCartStore();
   const [added, setAdded] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAddToCart = () => {
     if (!product.in_stock) return;
     addItem({ id: product.id, name: product.name, price: product.price, image_url: product.image_url });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setAdded(false), 1500);
   };
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
 
   // Shares the visual language of `.btn-primary` (near-black pill, hover lift +
   // shadow) but carries three states, so the state styles live here.

@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { supabase, getProducts } from '@/lib/supabase';
+import { getProducts, getProductById } from '@/lib/supabase';
 import AddToCartButton from '@/components/AddToCartButton';
 import Reveal from '@/components/motion/Reveal';
 
@@ -14,17 +14,20 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data: product } = await supabase
-    .from('products')
-    .select('name, description')
-    .eq('id', Number(id))
-    .single();
+  const product = await getProductById(Number(id));
 
   if (!product) return { title: 'Product Not Found' };
 
+  const description = product.description || `${product.name} — phorage shop`;
   return {
     title: product.name,
-    description: product.description || `${product.name} — phorage shop`,
+    description,
+    alternates: { canonical: `/shop/${id}` },
+    openGraph: {
+      title: product.name,
+      description,
+      ...(product.image_url ? { images: [{ url: product.image_url }] } : {}),
+    },
   };
 }
 
@@ -33,12 +36,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const numId = Number(id);
   if (!Number.isInteger(numId) || numId <= 0) notFound();
 
-  const { data: product } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', numId)
-    .single();
-
+  const product = await getProductById(numId);
   if (!product) notFound();
 
   const jsonLd = {

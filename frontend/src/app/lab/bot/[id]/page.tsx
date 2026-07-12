@@ -1,8 +1,6 @@
 import { BotDetail } from "@/components/quant/BotDetail";
 import Reveal from "@/components/motion/Reveal";
 
-export const dynamic = "force-dynamic";
-
 export default async function BotPage({
   params,
 }: {

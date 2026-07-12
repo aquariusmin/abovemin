@@ -54,18 +54,24 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     }
   }, [onClose, onPrev, onNext]);
 
+  // Mount-only: lock scroll, capture/restore focus. Must NOT depend on
+  // handleKeyDown, or focus would be yanked back to Close on every navigation.
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
     document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
     // Move focus into the dialog on open.
     closeRef.current?.focus();
     return () => {
       document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
       // Restore focus to the element that opened the lightbox.
       previouslyFocused?.focus?.();
     };
+  }, []);
+
+  // Keydown listener re-binds when handlers change, without stealing focus.
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
   return (

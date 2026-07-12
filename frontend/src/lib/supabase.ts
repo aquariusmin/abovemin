@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
@@ -49,16 +50,33 @@ export async function getAlbums(): Promise<Album[]> {
   return data ?? [];
 }
 
-export async function getAlbumWithPhotos(slug: string): Promise<{ album: Album; photos: Photo[] } | null> {
-  const [{ data: album, error: aErr }, { data: photos, error: pErr }] = await Promise.all([
-    supabase.from('albums').select('*').eq('slug', slug).single(),
-    supabase.from('photos').select('*').eq('album_slug', slug).order('sort_order'),
+// Albums with their photo counts in TWO queries (not N+1): fetch every photo's
+// album_slug once and tally in JS. `cache()` dedups within a single request.
+export const getAlbumsWithCounts = cache(async (): Promise<Array<Album & { photo_count: number }>> => {
+  const [{ data: albums, error: aErr }, { data: photos, error: pErr }] = await Promise.all([
+    supabase.from('albums').select('*').order('sort_order'),
+    supabase.from('photos').select('album_slug'),
   ]);
-  if (aErr) log.warn('getAlbumWithPhotos.album', aErr);
-  if (pErr) log.warn('getAlbumWithPhotos.photos', pErr);
-  if (!album) return null;
-  return { album, photos: photos ?? [] };
-}
+  if (aErr) { log.error('getAlbumsWithCounts.albums', aErr); throw aErr; }
+  if (pErr) log.warn('getAlbumsWithCounts.photos', pErr);
+  const counts: Record<string, number> = {};
+  for (const p of photos ?? []) counts[p.album_slug] = (counts[p.album_slug] ?? 0) + 1;
+  return (albums ?? []).map(a => ({ ...a, photo_count: counts[a.slug] ?? 0 }));
+});
+
+// Wrapped in cache() so generateMetadata + the page body share one query per request.
+export const getAlbumWithPhotos = cache(
+  async (slug: string): Promise<{ album: Album; photos: Photo[] } | null> => {
+    const [{ data: album, error: aErr }, { data: photos, error: pErr }] = await Promise.all([
+      supabase.from('albums').select('*').eq('slug', slug).single(),
+      supabase.from('photos').select('*').eq('album_slug', slug).order('sort_order'),
+    ]);
+    if (aErr) log.warn('getAlbumWithPhotos.album', aErr);
+    if (pErr) log.warn('getAlbumWithPhotos.photos', pErr);
+    if (!album) return null;
+    return { album, photos: photos ?? [] };
+  },
+);
 
 export const getSiteSettings = unstable_cache(
   async (): Promise<Record<string, string>> => {
@@ -77,6 +95,14 @@ export async function getProducts(): Promise<Product[]> {
   if (error) { log.error('getProducts', error); throw error; }
   return data ?? [];
 }
+
+// Single product by id. Wrapped in cache() so generateMetadata + the page body
+// share one query per request instead of fetching the same product twice.
+export const getProductById = cache(async (id: number): Promise<Product | null> => {
+  const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+  if (error) return null;
+  return data;
+});
 
 export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
   const { data, error } = await supabase

@@ -81,17 +81,22 @@ export default function AdminPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginLoading(true);
-    const res = await fetch('/api/admin/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw }),
-    });
-    setLoginLoading(false);
-    if (res.ok) {
-      setAuthed(true);
-      setPwError(false);
-    } else {
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (res.ok) {
+        setAuthed(true);
+        setPwError(false);
+      } else {
+        setPwError(true);
+      }
+    } catch {
       setPwError(true);
+    } finally {
+      setLoginLoading(false);
     }
   }
 

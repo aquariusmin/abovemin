@@ -55,6 +55,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
                 draggable={false}
+                priority={i === 0}
               />
             </div>
             <div className="mt-3">

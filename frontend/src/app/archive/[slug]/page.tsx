@@ -10,9 +10,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const result = await getAlbumWithPhotos(slug);
   if (!result) return { title: 'Collection Not Found' };
+  const description = `${result.album.title} — ${result.photos.length} pieces in this collection.`;
   return {
     title: result.album.title,
-    description: `${result.album.title} — ${result.photos.length} pieces in this collection.`,
+    description,
+    alternates: { canonical: `/archive/${slug}` },
+    openGraph: {
+      title: result.album.title,
+      description,
+      ...(result.album.cover ? { images: [{ url: result.album.cover }] } : {}),
+    },
   };
 }
 
