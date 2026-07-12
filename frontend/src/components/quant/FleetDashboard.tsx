@@ -313,33 +313,33 @@ function Th({
   const activate = () => {
     if (sortKey && onSort) onSort(sortKey);
   };
+  // Keep the <th> as a native columnheader (so scope + aria-sort are honored)
+  // and put the click/keyboard behavior on a nested <button> for sortable cols.
+  const inner = (
+    <span className="inline-flex items-center gap-1">
+      {children}
+      {active && <span aria-hidden>{dir === "desc" ? "↓" : "↑"}</span>}
+    </span>
+  );
   return (
     <th
       scope="col"
       aria-sort={ariaSort}
-      role={sortable ? "button" : undefined}
-      tabIndex={sortable ? 0 : undefined}
-      onClick={sortable ? activate : undefined}
-      onKeyDown={
-        sortable
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                activate();
-              }
-            }
-          : undefined
-      }
       className={`px-3 py-2.5 font-bold ${
         align === "right" ? "text-right" : "text-left"
-      } ${sortable ? "cursor-pointer select-none hover:text-white/70" : ""} ${
-        active ? "text-white/70" : ""
-      }`}
+      } ${active ? "text-white/70" : ""}`}
     >
-      <span className="inline-flex items-center gap-1">
-        {children}
-        {active && <span aria-hidden>{dir === "desc" ? "↓" : "↑"}</span>}
-      </span>
+      {sortable ? (
+        <button
+          type="button"
+          onClick={activate}
+          className="inline-flex items-center gap-1 font-bold cursor-pointer select-none hover:text-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {inner}
+        </button>
+      ) : (
+        inner
+      )}
     </th>
   );
 }

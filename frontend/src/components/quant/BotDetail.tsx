@@ -20,9 +20,8 @@ const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
   "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
 
-// The list endpoint is the single source of truth; pulling the whole
-// fleet and filtering client-side keeps us off a second route and means
-// the detail view stays in sync with the list whenever it refreshes.
+// Scope the fetch to this bot (?id=) so we don't download every bot's full
+// equity_curve to render one detail view. Same endpoint, still returns an array.
 export function BotDetail({ botId }: { botId: string }) {
   const [bots, setBots] = useState<FleetBot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +30,7 @@ export function BotDetail({ botId }: { botId: string }) {
     let cancelled = false;
     const fetchRows = async () => {
       try {
-        const res = await fetch("/api/market/quant-fleet");
+        const res = await fetch(`/api/market/quant-fleet?id=${encodeURIComponent(botId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: FleetBot[] = await res.json();
         if (cancelled) return;
@@ -47,7 +46,7 @@ export function BotDetail({ botId }: { botId: string }) {
       cancelled = true;
       clearInterval(id);
     };
-  }, []);
+  }, [botId]);
 
   const bot = useMemo(
     () => bots?.find((b) => b.id === botId) ?? null,
