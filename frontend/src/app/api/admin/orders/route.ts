@@ -8,7 +8,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await getSupabaseAdmin()
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (err) {
+    log.error('admin_orders_config', err);
+    return NextResponse.json(
+      { error: 'Admin database is not configured' },
+      { status: 503 },
+    );
+  }
+
+  const { data, error } = await supabase
     .from('orders')
     .select('*')
     .order('created_at', { ascending: false });
@@ -36,7 +47,18 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Invalid params' }, { status: 400 });
   }
 
-  const { error } = await getSupabaseAdmin().from('orders').update({ status }).eq('id', id);
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (err) {
+    log.error('admin_orders_config', err);
+    return NextResponse.json(
+      { error: 'Admin database is not configured' },
+      { status: 503 },
+    );
+  }
+
+  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
   if (error) {
     log.error('admin_orders_update', error);
     return NextResponse.json({ error: 'DB error' }, { status: 500 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -27,14 +27,20 @@ export default function Shop() {
 
   const [addedId, setAddedId] = useState<number | null>(null);
   const { addItem } = useCartStore();
+  const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAddToCart = (e: React.MouseEvent, item: Product) => {
     e.preventDefault();
     if (!item.in_stock) return;
     addItem({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
     setAddedId(item.id);
-    setTimeout(() => setAddedId(null), 1500);
+    if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+    addedTimerRef.current = setTimeout(() => setAddedId(null), 1500);
   };
+
+  useEffect(() => () => {
+    if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+  }, []);
 
   useEffect(() => {
     import('@/lib/supabase').then(({ getProducts }) =>

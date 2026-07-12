@@ -1,8 +1,6 @@
 import { FleetDashboard } from "@/components/quant/FleetDashboard";
 import Reveal from "@/components/motion/Reveal";
 
-export const dynamic = "force-dynamic";
-
 export default function Lab() {
   return (
     <main className="min-h-screen bg-surface-dark pt-32 pb-20 px-6 md:px-10">

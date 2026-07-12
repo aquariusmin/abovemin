@@ -26,7 +26,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
 
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 md:gap-6 max-w-[1400px] mx-auto [&>a]:mb-5 md:[&>a]:mb-6">
-      {albums.map(album => (
+      {albums.map((album, i) => (
         <MotionLink
           key={album.slug}
           href={`/archive/${album.slug}`}
@@ -45,6 +45,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
+                priority={i === 0}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/45" />
 

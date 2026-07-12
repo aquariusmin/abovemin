@@ -51,7 +51,16 @@ export async function POST(request: Request) {
   }
   const { name, email, phone, address, note, items } = parsed.data;
 
-  const supabase = getSupabaseAdmin();
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    log.error('orders.config', error);
+    return NextResponse.json(
+      { error: 'Admin database is not configured' },
+      { status: 503 },
+    );
+  }
 
   // 서버에서 상품 정보 재조회하여 가격/재고 검증 — 클라이언트 값 절대 신뢰 금지.
   const productIds = [...new Set(items.map(i => i.id))];

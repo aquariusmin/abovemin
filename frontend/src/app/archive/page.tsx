@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAlbums, supabase } from '@/lib/supabase';
+import { getAlbumsWithCounts } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ArchiveGrid from '@/components/archive/ArchiveGrid';
 
@@ -11,18 +11,7 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function Archive() {
-  const albums = await getAlbums();
-
-  const counts = await Promise.all(
-    albums.map(a =>
-      supabase.from('photos').select('id', { count: 'exact', head: true }).eq('album_slug', a.slug)
-    )
-  );
-
-  const albumsWithCount = albums.map((a, i) => ({
-    ...a,
-    photo_count: counts[i].count ?? 0,
-  }));
+  const albumsWithCount = await getAlbumsWithCounts();
 
   return (
     <main className="px-5 sm:px-6 md:px-10 py-14 md:py-24 min-h-screen bg-canvas text-ink-body">
