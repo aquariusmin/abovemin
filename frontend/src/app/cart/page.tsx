@@ -30,7 +30,7 @@ export default function CartPage() {
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-        <Link href="/shop" className="btn-primary">Explore the shop</Link>
+        <Link href="/shop" className="btn-primary glass-btn">Explore the shop</Link>
         <Link href="/archive" className="link-underline text-ink text-sm">Browse the archive</Link>
       </div>
     </main>
@@ -67,7 +67,7 @@ export default function CartPage() {
                 {/* Image */}
                 <Link
                   href={`/shop/${item.id}`}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-md bg-stone border border-border-light overflow-hidden shrink-0 relative transition-colors hover:border-accent"
+                  className="w-20 h-20 md:w-24 md:h-24 glass rounded-xl overflow-hidden shrink-0 relative transition-colors hover:border-accent"
                 >
                   <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="96px" />
                 </Link>
@@ -138,14 +138,14 @@ export default function CartPage() {
             </button>
           )}
 
-          <div className="w-full md:w-auto rounded-lg bg-stone p-6 md:min-w-[280px]">
+          <div className="glass rounded-2xl w-full md:w-auto p-6 md:min-w-[280px]">
             <div className="flex items-baseline justify-between mb-5">
               <span className="eyebrow text-muted">Total</span>
               <span className="text-2xl font-semibold text-ink tabular-nums" aria-live="polite">
                 ₩ {totalPrice().toLocaleString()}
               </span>
             </div>
-            <Link href="/cart/checkout" className="btn-primary w-full">
+            <Link href="/cart/checkout" className="btn-primary glass-btn w-full">
               Checkout
             </Link>
           </div>

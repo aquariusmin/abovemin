@@ -24,7 +24,8 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <body className={`${bgColor} ${textColor} ${isPortfolioFocused ? 'portfolio-focused-route' : ''} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
+    <body className={`${bgColor} ${textColor} ${isLab ? 'theme-lab' : ''} ${isPortfolioFocused ? 'portfolio-focused-route' : ''} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
+      <div className="ambient" aria-hidden />
       {children}
     </body>
   );

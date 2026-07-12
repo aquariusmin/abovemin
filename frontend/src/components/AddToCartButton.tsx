@@ -27,7 +27,7 @@ export default function AddToCartButton({ product }: Props) {
   // Shares the visual language of `.btn-primary` (near-black pill, hover lift +
   // shadow) but carries three states, so the state styles live here.
   const base =
-    'inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] px-6 py-4 text-sm font-medium tracking-[-0.01em] transition-[transform,background-color,box-shadow] duration-200';
+    'glass-btn inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] px-6 py-4 text-sm font-medium tracking-[-0.01em] transition-[transform,background-color,box-shadow] duration-200';
   const stateClass = !product.in_stock
     ? 'bg-stone text-muted cursor-not-allowed'
     : added

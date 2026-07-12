@@ -200,7 +200,7 @@ export default function AdminPage() {
   if (!authed) {
     return (
       <main className="min-h-screen bg-canvas flex items-center justify-center px-6">
-        <div className="w-full max-w-sm">
+        <div className="glass rounded-[1.5rem] w-full max-w-sm p-8 md:p-10">
           <p className="eyebrow text-muted mb-3 text-center">phorage</p>
           <h2 className="font-serif text-3xl font-medium tracking-tight text-center text-ink mb-10">Admin</h2>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -215,7 +215,7 @@ export default function AdminPage() {
                 autoComplete="current-password"
                 aria-invalid={pwError}
                 aria-describedby={pwError ? 'admin-password-error' : undefined}
-                className="w-full rounded-sm border border-border-light px-4 py-3 text-sm focus:outline-none focus:border-accent transition-colors"
+                className="w-full glass-input px-4 py-3 text-sm focus:outline-none focus:border-accent transition-colors"
                 autoFocus
               />
             </div>
@@ -227,7 +227,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={loginLoading}
-              className="btn-primary w-full disabled:opacity-50"
+              className="btn-primary glass-btn w-full disabled:opacity-50"
             >
               {loginLoading ? '...' : 'Enter'}
             </button>
@@ -251,7 +251,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={fetchOrders}
-              className="btn-outline text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="btn-outline glass-btn text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
             >
               Refresh
             </button>
@@ -275,8 +275,8 @@ export default function AdminPage() {
           ].map(s => (
             <div
               key={s.label}
-              className={`p-4 rounded-sm border ${s.full ? 'col-span-2 md:col-span-1' : ''} ${
-                s.highlight ? 'border-coral-soft bg-surface' : 'border-border-light bg-canvas'
+              className={`p-4 rounded-2xl ${s.full ? 'col-span-2 md:col-span-1' : ''} ${
+                s.highlight ? 'border border-coral-soft bg-surface' : 'glass'
               }`}
             >
               <p className="eyebrow text-muted mb-2">{s.label}</p>
@@ -286,7 +286,7 @@ export default function AdminPage() {
         </div>
 
         {/* 히어로 설정 */}
-        <div className="mb-8 rounded-sm border border-border-light bg-canvas p-4 md:p-6 space-y-4">
+        <div className="mb-8 glass rounded-2xl p-4 md:p-6 space-y-4">
           <div className="flex justify-between items-center gap-4">
             <div>
               <p className="eyebrow text-muted mb-1">Homepage Hero</p>
@@ -302,7 +302,7 @@ export default function AdminPage() {
               <button
                 onClick={saveHero}
                 disabled={heroSaving}
-                className="btn-primary text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                className="btn-primary glass-btn text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
               >
                 {heroSaving ? '저장 중...' : heroSaved ? '저장됨' : 'Save'}
               </button>
@@ -313,7 +313,7 @@ export default function AdminPage() {
               <label htmlFor="hero-image" className="block eyebrow text-muted mb-1.5">이미지 URL (Cloudinary or Unsplash)</label>
               <input
                 id="hero-image"
-                className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
+                className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
                 value={heroImage}
                 onChange={e => setHeroImage(e.target.value)}
                 placeholder="https://res.cloudinary.com/..."
@@ -324,7 +324,7 @@ export default function AdminPage() {
                 <label htmlFor="hero-title" className="block eyebrow text-muted mb-1.5">타이틀</label>
                 <input
                   id="hero-title"
-                  className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                   value={heroTitle}
                   onChange={e => setHeroTitle(e.target.value)}
                   placeholder="Collecting the Greenery"
@@ -334,7 +334,7 @@ export default function AdminPage() {
                 <label htmlFor="hero-subtitle" className="block eyebrow text-muted mb-1.5">서브타이틀</label>
                 <input
                   id="hero-subtitle"
-                  className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
+                  className="w-full glass-input px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                   value={heroSubtitle}
                   onChange={e => setHeroSubtitle(e.target.value)}
                   placeholder="무심코 지나친 숲의 색깔..."
@@ -366,7 +366,7 @@ export default function AdminPage() {
                 className={`px-4 py-1.5 rounded-sm text-[11px] uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
                   active
                     ? 'bg-ink text-white'
-                    : 'border border-border-light text-slate hover:text-ink hover:border-ink'
+                    : 'glass text-slate hover:text-ink'
                 }`}
               >
                 {s === 'all' ? `전체 (${orders.length})` : `${STATUS_LABELS[s]} (${orders.filter(o => o.status === s).length})`}
@@ -387,7 +387,7 @@ export default function AdminPage() {
             </p>
             <button
               onClick={fetchOrders}
-              className="btn-outline text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="btn-outline glass-btn text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
             >
               다시 시도
             </button>
@@ -405,7 +405,7 @@ export default function AdminPage() {
               const panelId = `order-panel-${order.id}`;
 
               return (
-                <div key={order.id} className="rounded-sm border border-border-light bg-canvas">
+                <div key={order.id} className="glass rounded-2xl">
                   {/* 요약 행 */}
                   <button
                     type="button"
@@ -472,7 +472,7 @@ export default function AdminPage() {
                             <button
                               disabled={updating === order.id}
                               onClick={() => updateStatus(order.id, next)}
-                              className="btn-primary text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                              className="btn-primary glass-btn text-[11px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
                             >
                               {updating === order.id ? '처리 중...' : `→ ${nextLabel}`}
                             </button>
@@ -481,7 +481,7 @@ export default function AdminPage() {
                             <button
                               disabled={updating === order.id}
                               onClick={() => cancelOrder(order.id)}
-                              className="btn-outline text-[11px] uppercase tracking-widest text-slate hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                              className="btn-outline glass-btn text-[11px] uppercase tracking-widest text-slate hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
                             >
                               취소
                             </button>

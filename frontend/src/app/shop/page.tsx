@@ -177,7 +177,7 @@ export default function Shop() {
               variants={itemVariants}
             >
               {/* Media */}
-              <div className="relative overflow-hidden rounded-md border border-border-light bg-stone transition-colors duration-500 group-hover:border-accent">
+              <div className="glass glass-interactive relative overflow-hidden rounded-md">
                 {item.tag && (
                   <span className="absolute top-3 right-3 z-10 rounded-[var(--radius-pill)] bg-ink px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-white">
                     {item.tag}
