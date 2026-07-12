@@ -23,10 +23,15 @@ const WATERMARK = 'l_text:Arial_18_bold:phorage,o_40,co_white,g_south_east,x_20,
 export function cloudinary(url: string, { width = 1600, watermark = false }: OptimizeOptions = {}): string {
   if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
 
-  const parts = [`f_auto`, `q_auto`, `c_limit`, `w_${width}`, `dpr_auto`];
-  if (watermark) parts.push(WATERMARK);
+  // 리사이즈/최적화를 먼저 적용한 뒤, 워터마크는 "체이닝된 별도 변환"으로 얹는다.
+  // 원본이 25MP를 넘는 카메라 사진(예: 42MP)의 경우, 오버레이(l_text)를 같은
+  // 변환에 묶으면 Cloudinary가 원본 전체를 디코딩하다 25MP 한도(무료 플랜)에
+  // 걸려 400을 반환한다. 먼저 w_N으로 줄이면 오버레이는 작은 이미지에만 적용돼
+  // 한도에 걸리지 않는다.
+  const optimize = [`f_auto`, `q_auto`, `c_limit`, `w_${width}`, `dpr_auto`].join(',');
+  const transform = watermark ? `${optimize}/${WATERMARK}` : optimize;
 
-  return url.replace('/upload/', `/upload/${parts.join(',')}/`);
+  return url.replace('/upload/', `/upload/${transform}/`);
 }
 
 /**
