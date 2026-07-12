@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Lightbox from './Lightbox';
-import { withWatermark } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -48,7 +48,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
           >
             <div className="relative overflow-hidden rounded-md bg-stone">
               <Image
-                src={withWatermark(photo.src)}
+                src={cloudinary(photo.src, { watermark: true, width: 800 })}
                 alt={photo.title}
                 width={0}
                 height={0}

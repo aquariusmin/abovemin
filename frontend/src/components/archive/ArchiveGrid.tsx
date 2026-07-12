@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { cloudinary } from '@/lib/cloudinary';
 import { motion, useReducedMotion } from 'framer-motion';
 
 const MotionLink = motion.create(Link);
@@ -38,7 +39,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
           {album.cover && (
             <div className="relative overflow-hidden rounded-lg">
               <Image
-                src={album.cover}
+                src={cloudinary(album.cover, { width: 800 })}
                 alt={album.title}
                 width={0}
                 height={0}

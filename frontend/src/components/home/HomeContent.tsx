@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, MotionConfig, type Variants } from 'framer-motion';
+import { cloudinary } from '@/lib/cloudinary';
 
 const MotionLink = motion.create(Link);
 
@@ -109,7 +110,7 @@ export default function HomeContent({
               <div className="rounded-lg bg-stone p-2.5 sm:p-3">
                 <div className="group relative w-full aspect-[4/5] sm:aspect-[3/2] lg:aspect-[4/5] max-h-[74vh] overflow-hidden rounded-md">
                   <Image
-                    src={heroImage}
+                    src={cloudinary(heroImage, { width: 1200 })}
                     fill
                     quality={90}
                     className="object-contain object-center transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
@@ -205,7 +206,7 @@ export default function HomeContent({
                     <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
                       {item.image_url ? (
                         <Image
-                          src={item.image_url}
+                          src={cloudinary(item.image_url, { width: 600 })}
                           alt={item.name}
                           fill={false}
                           width={600}

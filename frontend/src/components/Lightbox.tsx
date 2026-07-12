@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
-import { withWatermark } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -110,7 +110,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         transition={{ duration: 0.28, ease: EASE }}
       >
         <Image
-          src={withWatermark(photo.src)}
+          src={cloudinary(photo.src, { watermark: true, width: 1800 })}
           alt={photo.title}
           width={0}
           height={0}
