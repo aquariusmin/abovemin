@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = getKoreanPortfolioProject(slug);
   if (!project) notFound();
   return {
-    title: `${project.title} — 제출용`,
+    title: `${project.title} · 한국어`,
     description: project.summary,
     robots: { index: false, follow: false },
     alternates: { canonical: `/ko/portfolio/${slug}` },

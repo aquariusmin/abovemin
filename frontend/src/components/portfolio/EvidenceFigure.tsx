@@ -8,7 +8,6 @@ import {
 const statusStyles: Record<EvidenceStatus, string> = {
   verified: "border-accent/20 bg-accent/[0.06] text-accent",
   reported: "border-sky-700/15 bg-sky-50 text-sky-900",
-  pending: "border-amber-700/15 bg-amber-50 text-amber-900",
 };
 
 export default function EvidenceFigure({
@@ -46,24 +45,5 @@ export default function EvidenceFigure({
         )}
       </figcaption>
     </figure>
-  );
-}
-
-export function PendingEvidence({
-  label,
-  detail,
-}: {
-  label: string;
-  detail: string;
-}) {
-  return (
-    <div className="flex min-h-36 flex-col justify-end border border-dashed border-amber-800/25 bg-amber-50/55 p-5">
-      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-amber-900/70">
-        {label}
-      </p>
-      <p className="mt-2 break-keep font-sans text-sm leading-relaxed text-amber-950/75">
-        {detail}
-      </p>
-    </div>
   );
 }

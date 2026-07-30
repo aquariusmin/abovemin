@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PortfolioOverview from "@/components/portfolio/PortfolioOverview";
 
 export const metadata: Metadata = {
-  title: "포트폴리오 — 제출용",
-  description: "이상민의 포트폴리오와 일곱 개의 근거 중심 프로젝트를 보여주는 제출용 화면입니다.",
+  title: "포트폴리오",
+  description: "경제·경영 지식과 데이터 분석을 바탕으로 비즈니스 문제를 구조화하고 실무적 인사이트로 연결하는 이상민의 포트폴리오입니다.",
   robots: { index: false, follow: false },
   alternates: { canonical: "/ko/portfolio" },
 };

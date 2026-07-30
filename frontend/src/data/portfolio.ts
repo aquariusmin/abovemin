@@ -5,8 +5,10 @@ export type PortfolioProject = {
   category: string;
   period: string;
   role: string;
+  sourceUrl?: string;
   summary: string;
   question: string;
+  storyArc?: [string, string, string, string];
   evidence: string[];
   tools: string[];
   process: Array<{ title: string; description: string }>;
@@ -25,6 +27,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Customer Analytics · Strategy",
     period: "Summer 2025",
     role: "Individual project · KW-Corporation university virtual-company program",
+    sourceUrl: "https://github.com/aquariusmin/kw-corp-churn-strategy-analysis",
     summary:
       "Analyzed 7,043 telecom customer records and used explainable classification models to identify churn-risk segments and propose targeted retention actions.",
     question:
@@ -86,6 +89,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Economics · Alternative Data",
     period: "Spring 2025",
     role: "Individual project",
+    sourceUrl: "https://github.com/aquariusmin/Satellite-GDP-Insight",
     summary:
       "Combined VIIRS night-light and World Bank indicators to examine whether satellite-observed brightness can complement conventional measures of national economic activity.",
     question:
@@ -146,6 +150,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Financial Research · Strategy",
     period: "Spring 2025",
     role: "Individual project",
+    sourceUrl: "https://github.com/aquariusmin/koreanair_equity_research",
     summary:
       "Evaluated Korean Air through macroeconomic, industry, financial-ratio, and multiple valuation frameworks, focusing on model conflict under uncertain FCF assumptions.",
     question:
@@ -206,6 +211,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Fintech · Service Operations",
     period: "2025-Present",
     role: "Individual project",
+    sourceUrl: "https://github.com/aquariusmin/quant_trading_fleet",
     summary:
       "Built a live-server paper-trading system connecting strategy bots, broker abstractions, persistent execution data, controls, logging, and a monitoring dashboard.",
     question:
@@ -266,6 +272,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Applied Analytics · Model Selection",
     period: "Fall 2024",
     role: "Individual project series",
+    sourceUrl: "https://github.com/aquariusmin/financial-ai-model-study",
     summary:
       "Compared regression, dimensionality-reduction, tree, support-vector, and neural-network approaches to understand when model complexity improves generalization.",
     question:
@@ -324,6 +331,7 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "Service Planning · MVP",
     period: "2025-Present",
     role: "Individual project",
+    sourceUrl: "https://github.com/aquariusmin/abovemin",
     summary:
       "Developed a pre-launch photography-goods MVP covering brand concept, physical product production, customer journey, commerce workflows, and administration.",
     question:

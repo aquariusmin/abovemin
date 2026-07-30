@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import PortfolioOverview from "@/components/portfolio/PortfolioOverview";
 
 export const metadata: Metadata = {
-  title: "Portfolio — Submission View",
-  description: "A focused submission view of Sangmin Lee's portfolio and seven evidence-led case studies.",
+  title: "Portfolio",
+  description:
+    "Sangmin Lee's portfolio across data analysis, economics, financial research, fintech, strategy, BizOps, and service planning.",
   robots: { index: false, follow: false },
   alternates: { canonical: "/portfolio" },
 };

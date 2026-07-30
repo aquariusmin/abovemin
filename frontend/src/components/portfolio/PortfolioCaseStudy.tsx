@@ -14,14 +14,25 @@ const labels = {
     back: "Portfolio",
     period: "Period",
     role: "Role",
+    source: "Source",
+    story: {
+      label: "Quick read",
+      title: "The through-line of the work.",
+      items: [
+        ["Open", "The starting question"],
+        ["Build", "What I checked"],
+        ["Turn", "What changed my view"],
+        ["Close", "Where I draw the line"],
+      ],
+    },
     sections: [
-      ["01 · Business / research question", "The question"],
-      ["02 · Evidence", "What the analysis used"],
-      ["03 · Analysis", "How the work progressed"],
-      ["04 · Interpretation", "Main insight"],
-      ["05 · Practical decision", "Decision value"],
-      ["06 · Validation", "Limitations and next checks"],
-      ["07 · Visual evidence", "Evidence, with boundaries"],
+      ["01 · Start", "The question I began with"],
+      ["02 · Material", "The data and evidence"],
+      ["03 · Work", "How I worked through it"],
+      ["04 · Takeaway", "What the numbers suggested"],
+      ["05 · Use", "Where this helps"],
+      ["06 · Boundary", "What still needs checking"],
+      ["07 · Figures", "Tables and figures"],
     ],
     boundary: "Important boundary:",
     previous: "Previous case",
@@ -32,14 +43,25 @@ const labels = {
     back: "포트폴리오",
     period: "기간",
     role: "역할",
+    source: "원본",
+    story: {
+      label: "프로젝트 흐름",
+      title: "먼저 흐름을 잡으면 이렇습니다.",
+      items: [
+        ["질문", "처음 잡은 문제"],
+        ["근거", "확인한 자료"],
+        ["판단", "생각이 정리된 부분"],
+        ["범위", "아직 선을 그은 부분"],
+      ],
+    },
     sections: [
-      ["01 · 비즈니스·연구 질문", "무엇을 확인하려 했는가"],
-      ["02 · 근거와 데이터", "어떤 자료를 사용했는가"],
-      ["03 · 분석 과정", "어떻게 분석하고 구현했는가"],
-      ["04 · 해석", "무엇을 알 수 있었는가"],
-      ["05 · 실무적 시사점", "어떤 판단에 활용할 수 있는가"],
-      ["06 · 추가 검증", "한계와 다음 과제"],
-      ["07 · 시각적 근거", "확인된 근거와 해석 범위"],
+      ["01 · 시작", "처음 잡은 질문"],
+      ["02 · 근거", "제가 확인한 자료"],
+      ["03 · 전개", "분석은 이렇게 진행했습니다"],
+      ["04 · 결론", "숫자에서 읽은 것"],
+      ["05 · 적용", "어디에 활용할 수 있나"],
+      ["06 · 경계", "아직 단정하지 않는 부분"],
+      ["07 · 근거 화면", "표와 그래프로 확인하기"],
     ],
     boundary: "해석 시 유의사항:",
     previous: "이전 프로젝트",
@@ -72,7 +94,7 @@ export default function PortfolioCaseStudy({
       <article className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link href={overviewPath} className={`text-[11px] font-semibold text-slate transition-colors hover:text-accent ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>
-            &larr; {mode === "submission" && !isKorean ? "Submission " : ""}{mode === "submission" && isKorean ? "제출용 " : ""}{copy.back}
+            &larr; {copy.back}
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             {mode === "submission" && (
@@ -103,13 +125,23 @@ export default function PortfolioCaseStudy({
             <h1 className="font-serif text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
             <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
-          <div className="grid gap-4 border-y border-hairline py-5 text-sm text-slate sm:grid-cols-2">
-            <p><span className="font-bold text-ink">{copy.period}</span> · {project.period}</p>
-            <p><span className="font-bold text-ink">{copy.role}</span> · {project.role}</p>
+          <div className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${project.sourceUrl ? "sm:grid-cols-2 lg:grid-cols-[minmax(9rem,0.8fr)_minmax(24rem,1.8fr)_minmax(10rem,1fr)]" : "sm:grid-cols-2"}`}>
+            <p className="break-keep"><span className="font-bold text-ink">{copy.period}</span> · {project.period}</p>
+            <p className="break-keep"><span className="font-bold text-ink">{copy.role}</span> · {project.role}</p>
+            {project.sourceUrl && (
+              <p className="break-keep">
+                <span className="font-bold text-ink">{copy.source}</span> ·{" "}
+                <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
+                  {isKorean ? "GitHub 저장소" : "GitHub repository"}
+                </a>
+              </p>
+            )}
           </div>
         </header>
 
         <div className="space-y-16 py-14 md:space-y-24 md:py-20">
+          <StoryArc project={project} copy={copy} isKorean={isKorean} />
+
           <CaseSection label={copy.sections[0][0]} title={copy.sections[0][1]} isKorean={isKorean}>
             <p className="break-keep border-l-4 border-accent bg-surface px-6 py-7 font-serif text-xl font-semibold leading-relaxed md:px-8 md:py-9 md:text-2xl">{project.question}</p>
           </CaseSection>
@@ -173,6 +205,65 @@ export default function PortfolioCaseStudy({
         </nav>
       </article>
     </main>
+  );
+}
+
+function StoryArc({
+  project,
+  copy,
+  isKorean,
+}: {
+  project: PortfolioProject;
+  copy: typeof labels.en | typeof labels.ko;
+  isKorean: boolean;
+}) {
+  const storyBodies = project.storyArc;
+  const processFlow = project.process.map((step) => step.title).join(isKorean ? " → " : " -> ");
+  const arcItems = [
+    {
+      label: copy.story.items[0][0],
+      title: copy.story.items[0][1],
+      body: storyBodies?.[0] ?? project.question,
+    },
+    {
+      label: copy.story.items[1][0],
+      title: copy.story.items[1][1],
+      body: storyBodies?.[1] ?? (isKorean
+        ? `${project.evidence[0]}를 먼저 확인하고, ${processFlow} 순서로 풀었습니다.`
+        : `I started with ${project.evidence[0]} and moved through ${processFlow}.`),
+    },
+    {
+      label: copy.story.items[2][0],
+      title: copy.story.items[2][1],
+      body: storyBodies?.[2] ?? project.insights[0],
+    },
+    {
+      label: copy.story.items[3][0],
+      title: copy.story.items[3][1],
+      body: storyBodies?.[3] ?? project.caution ?? project.limitations[0],
+    },
+  ];
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-2">
+        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
+          {copy.story.label}
+        </p>
+        <h2 className="break-keep font-serif text-3xl font-bold tracking-tight">{copy.story.title}</h2>
+      </div>
+      <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
+        {arcItems.map((item) => (
+          <article key={item.label} className="bg-white p-5 md:p-6">
+            <p className={`text-[10px] font-semibold text-accent ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.18em]"}`}>
+              {item.label}
+            </p>
+            <h3 className="mt-3 break-keep text-lg font-bold text-ink">{item.title}</h3>
+            <p className="mt-3 break-keep text-sm leading-relaxed text-slate">{item.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

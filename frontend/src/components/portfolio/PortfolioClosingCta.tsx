@@ -15,15 +15,15 @@ export default function PortfolioClosingCta({
     <section className="grid gap-8 border-y border-hairline py-12 md:grid-cols-12 md:items-center md:py-16">
       <div className="space-y-4 md:col-span-7">
         <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
-          {isKorean ? "다음 대화" : "Continue the conversation"}
+          {isKorean ? "연락" : "Continue the conversation"}
         </p>
         <h2 className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
-          {isKorean ? "데이터와 비즈니스 맥락을 함께 다루는 직무를 찾고 있습니다." : "Looking for roles where evidence and business context belong together."}
+          {isKorean ? "숫자를 읽고, 바로 써먹을 수 있는 판단으로 옮기는 일을 하고 싶습니다." : "I want to work where numbers have to become clear next steps."}
         </h2>
         <p className="max-w-2xl break-keep text-sm leading-relaxed text-slate">
           {isKorean
-            ? "데이터 분석, 금융·시장 리서치, 핀테크, 전략·BizOps, 서비스 기획 직무의 인턴십 및 신입 기회를 탐색하고 있습니다."
-            : "Open to internship and entry-level opportunities across data analysis, financial and market research, fintech, strategy, BizOps, and service planning."}
+            ? "데이터 분석, 금융·시장 리서치, 핀테크, 전략·BizOps, 서비스 기획과 가까운 인턴십 및 신입 기회를 탐색하고 있습니다."
+            : "Open to internship and entry-level roles near data analysis, financial and market research, fintech, strategy, BizOps, and service planning."}
         </p>
       </div>
       <div className="flex flex-col items-start gap-3 text-sm font-semibold md:col-span-5 md:items-end">

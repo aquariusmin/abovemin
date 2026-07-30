@@ -1,11 +1,10 @@
 export type EvidenceLocale = "en" | "ko";
 export type LocalizedText = Record<EvidenceLocale, string>;
-export type EvidenceStatus = "verified" | "reported" | "pending";
+export type EvidenceStatus = "verified" | "reported";
 
 export const evidenceStatusLabels: Record<EvidenceStatus, LocalizedText> = {
   verified: { en: "Verified source", ko: "원자료 확인" },
   reported: { en: "Reported evidence", ko: "보고서 근거" },
-  pending: { en: "Pending verification", ko: "추가 검증 필요" },
 };
 
 export const portfolioEvidenceOverview = [
@@ -14,8 +13,8 @@ export const portfolioEvidenceOverview = [
     title: "Telecom Customer Churn Analysis",
     status: "verified" as const,
     summary: {
-      en: "Contract and tenure patterns are derived directly from the 7,043-row workbook; model and SHAP exports remain pending.",
-      ko: "계약 유형과 이용 기간 패턴은 7,043행 원자료에서 직접 계산했으며, 모형·SHAP 결과는 재현 후 추가합니다.",
+      en: "Contract and tenure patterns are derived directly from the 7,043-row CSV; model scores are kept as reported text.",
+      ko: "계약 유형과 이용 기간 패턴은 7,043행 원자료에서 직접 계산했고, 모형 수치는 보고값으로만 다룹니다.",
     },
   },
   {
@@ -59,8 +58,8 @@ export const portfolioEvidenceOverview = [
     title: "Phorage Brand and Commerce MVP",
     status: "verified" as const,
     summary: {
-      en: "The customer and operator flows follow implemented routes; product photography remains pending public-safe export.",
-      ko: "고객·운영 흐름은 구현된 경로를 따르며, 제품 사진은 공개 가능한 원본 확인 후 추가합니다.",
+      en: "The customer and operator flows follow implemented routes and are presented as a pre-launch MVP.",
+      ko: "고객·운영 흐름은 구현된 경로를 기준으로 정리했고, 공개 출시 전 MVP로만 표현합니다.",
     },
   },
   {
@@ -68,8 +67,8 @@ export const portfolioEvidenceOverview = [
     title: "Blood Type and Personality Survey Study",
     status: "verified" as const,
     summary: {
-      en: "Observed, expected, and chi-square values come from the 101-response workbook; p-value reporting remains pending.",
-      ko: "관측·기대빈도와 카이제곱 값은 101명 응답 데이터에서 확인했으며 p-value 보고는 보완이 필요합니다.",
+      en: "Observed, expected, and chi-square values come from the 101-response workbook, with scope kept narrow.",
+      ko: "관측·기대빈도와 카이제곱 값은 101명 응답 데이터에서 확인했고, 결론의 범위는 좁게 잡았습니다.",
     },
   },
 ];

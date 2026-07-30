@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = getPortfolioProject(slug);
   if (!project) notFound();
   return {
-    title: `${project.title} — Submission View`,
+    title: project.title,
     description: project.summary,
     robots: { index: false, follow: false },
     alternates: { canonical: `/portfolio/${slug}` },

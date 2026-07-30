@@ -6,16 +6,16 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
       <div className="grid gap-5 md:grid-cols-12 md:items-end">
         <div className="space-y-4 md:col-span-7">
           <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
-            {locale === "ko" ? "선별 근거 하이라이트" : "Selected evidence highlights"}
+            {locale === "ko" ? "대표 근거" : "Selected evidence highlights"}
           </p>
           <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
-            {locale === "ko" ? "근거가 보여주는 역량과 해석의 경계" : "What the evidence demonstrates—and where it stops."}
+            {locale === "ko" ? "숫자는 보여주고, 해석 범위는 같이 둡니다." : "Key numbers, with the caveats kept close."}
           </h2>
         </div>
         <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
           {locale === "ko"
-            ? "대표 근거를 역량과 연결하되, 성과·인과·실거래로 확대 해석할 수 없는 범위를 함께 표시했습니다. 자세한 과정은 아래 프로젝트 사례에서 확인할 수 있습니다."
-            : "Each highlight connects source-backed evidence to a capability while keeping scope and validation boundaries visible. Project cards remain the route to the full cases."}
+            ? "눈에 띄는 수치일수록 어디서 나온 값인지, 아직 말할 수 없는 부분은 무엇인지 같이 붙였습니다. 자세한 과정은 아래 프로젝트별 사례에 나눠 적었습니다."
+            : "When a number could sound like an outcome claim, I spell out where it came from and what it does not prove. The full cases below carry the detail."}
         </p>
       </div>
 
@@ -30,13 +30,13 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
             </h3>
             <p className="mt-5 break-keep text-sm leading-relaxed text-ink-body">
               <span className="font-bold text-ink">
-                {locale === "ko" ? "보여주는 역량 · " : "Demonstrates · "}
+                {locale === "ko" ? "다룬 일 · " : "What I worked on · "}
               </span>
               {item.demonstrates[locale]}
             </p>
             <p className="mt-3 break-keep border-l-2 border-amber-700/20 pl-3 text-xs leading-relaxed text-slate">
               <span className="font-bold text-slate">
-                {locale === "ko" ? "범위 · " : "Scope · "}
+                {locale === "ko" ? "주의할 점 · " : "Caveat · "}
               </span>
               {item.caution[locale]}
             </p>

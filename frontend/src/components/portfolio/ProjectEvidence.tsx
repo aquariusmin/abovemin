@@ -1,4 +1,4 @@
-import EvidenceFigure, { PendingEvidence } from "@/components/portfolio/EvidenceFigure";
+import EvidenceFigure from "@/components/portfolio/EvidenceFigure";
 import {
   churnContractRates,
   churnTenureRates,
@@ -55,11 +55,11 @@ function ChurnEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="verified"
           title={locale === "ko" ? "계약 유형별 이탈률" : "Churn rate by contract type"}
-          source="WA_Fn-UseC_-Telco-Customer-Churn.xlsx · 7,043 rows"
+          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · 7,043 rows"
           caption={
             locale === "ko"
               ? "원자료에서 직접 계산한 기술통계입니다. 월 단위 계약과 이탈의 연관성을 보여주지만, 특정 유지 전략이 이탈률을 낮췄다는 인과적 성과를 뜻하지 않습니다."
-              : "Calculated directly from the source workbook. The bars show a descriptive association between contract type and churn; they do not show that an intervention reduced churn."
+              : "Calculated directly from the source CSV. The bars show a descriptive association between contract type and churn; they do not show that an intervention reduced churn."
           }
         >
           <HorizontalBars items={contractItems} valueSuffix="%" />
@@ -69,38 +69,17 @@ function ChurnEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="verified"
           title={locale === "ko" ? "이용 기간 구간별 이탈률" : "Churn rate by tenure group"}
-          source="WA_Fn-UseC_-Telco-Customer-Churn.xlsx · bins computed from tenure"
+          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · bins computed from tenure"
           caption={
             locale === "ko"
               ? "원자료의 tenure를 0–12, 13–24, 25–48, 49–72개월로 구분해 계산했습니다. 가입 초기의 높은 이탈 비중을 보여주지만, 고객별 원인이나 제안 전략의 실제 효과를 증명하지는 않습니다."
-              : "Tenure was grouped into four intervals directly from the workbook. The chart describes higher churn among newer customers; it does not identify individual causation or validate a proposed retention action."
+              : "Tenure was grouped into four intervals directly from the CSV. The chart describes higher churn among newer customers; it does not identify individual causation or validate a proposed retention action."
           }
         >
           <HorizontalBars items={tenureItems} valueSuffix="%" />
         </EvidenceFigure>
       </div>
 
-      <EvidenceFigure
-        locale={locale}
-        status="pending"
-        title={locale === "ko" ? "모형 성능·SHAP 근거" : "Model metrics and SHAP evidence"}
-        caption={
-          locale === "ko"
-            ? "기존 보고서에는 ROC와 SHAP 이미지가 있지만, 최종 모형·분할·전처리 파이프라인을 한 번에 재현한 export가 아닙니다. 따라서 약 0.842의 ROC-AUC와 설명 결과는 텍스트상 보고값으로만 유지하며 시각 자료로 확정하지 않습니다."
-            : "ROC and SHAP images exist in the report, but they are not yet tied to one reproducible final pipeline, split, and model export. The approximately 0.842 ROC-AUC remains a reported value rather than a verified chart."
-        }
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <PendingEvidence
-            label={locale === "ko" ? "지표표 추가 예정" : "Metrics table pending"}
-            detail={locale === "ko" ? "최종 파이프라인 재실행 후 ROC-AUC·precision·recall·F1 표를 추가합니다." : "Add ROC-AUC, precision, recall, and F1 only after rerunning the final pipeline."}
-          />
-          <PendingEvidence
-            label={locale === "ko" ? "SHAP export 추가 예정" : "SHAP export pending"}
-            detail={locale === "ko" ? "최종 Gradient Boosting 모형과 일치하는 SHAP 결과를 확인한 뒤 추가합니다." : "Add only a SHAP export confirmed to match the final Gradient Boosting model."}
-          />
-        </div>
-      </EvidenceFigure>
     </div>
   );
 }
@@ -172,22 +151,6 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
           </div>
         </EvidenceFigure>
       </div>
-
-      <EvidenceFigure
-        locale={locale}
-        status="pending"
-        title={locale === "ko" ? "로그 조도–로그 GDP 산점도" : "Log night-light versus log GDP scatterplot"}
-        caption={
-          locale === "ko"
-            ? "보고서는 로그 변환된 중앙값 조도를 설명하지만 현재 XLSX에는 brightness_sum이 포함되어 있어 단순 재실행으로 R² = 0.819가 재현되지 않습니다. 정확한 변환·필터 데이터가 export되기 전에는 산점도나 회귀선을 게시하지 않습니다."
-            : "The report describes log-transformed median brightness, while the available workbook contains brightness_sum and does not reproduce R-squared = 0.819 through a direct rerun. No scatter or regression line is published until the transformed dataset is exported."
-        }
-      >
-        <PendingEvidence
-          label={locale === "ko" ? "검증된 데이터 export 후 추가" : "Chart to add after verified data export"}
-          detail={locale === "ko" ? "분석에 사용한 밝기 정의, 제외 기준, 로그 변환과 최종 791개 관측치를 하나의 재현 가능한 파일로 정리해야 합니다." : "The brightness definition, exclusions, transformations, and final 791 observations must be reconciled in one reproducible export."}
-        />
-      </EvidenceFigure>
     </div>
   );
 }
@@ -200,10 +163,10 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
         status="reported"
         title={locale === "ko" ? "2020–2024 수익성 지표 추이" : "2020–2024 profitability trends"}
         source="Korean Air Financial Analysis report · profitability table"
-        caption={
-          locale === "ko"
-            ? "보고서의 순이익률, ROE, ROA 표를 그대로 옮긴 추이입니다. 팬데믹 이후 회복과 변동을 보여주지만, 계산식과 원자료가 별도 workbook으로 감사된 결과는 아니며 투자 판단을 제공하지 않습니다."
-            : "The lines reproduce net margin, ROE, and ROA values reported in the classroom report. They show the reported recovery and variation, but the underlying workbook has not been audited and the chart is not investment advice."
+          caption={
+            locale === "ko"
+              ? "보고서의 순이익률, ROE, ROA 표를 옮긴 추이입니다. 팬데믹 이후 회복과 변동은 볼 수 있지만, 투자 판단을 제공하는 자료는 아닙니다."
+              : "The lines reproduce net margin, ROE, and ROA values reported in the classroom report. They show the reported recovery and variation, but the underlying workbook has not been audited and the chart is not investment advice."
         }
       >
         <ProfitabilityTrend />
@@ -233,22 +196,6 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
           ))}
         </div>
       </EvidenceFigure>
-
-      <EvidenceFigure
-        locale={locale}
-        status="pending"
-        title={locale === "ko" ? "민감도·목표가격 계산" : "Sensitivity and target-price arithmetic"}
-        caption={
-          locale === "ko"
-            ? "보고서에는 숫자표가 있지만 가치평가 workbook, 수식, 비교기업 구성, 단위와 기준일이 공개 전 감사되지 않았습니다. 따라서 숫자표와 KRW 80,000 수준을 시각적 결론으로 사용하지 않습니다."
-            : "Numeric tables exist in the report, but the valuation workbook, formulas, peer set, units, and dates have not been audited for public use. Numeric sensitivity and the conditional KRW 80,000 classroom reference are not presented as visual conclusions."
-        }
-      >
-        <PendingEvidence
-          label={locale === "ko" ? "가치평가 감사 후 추가" : "Pending valuation audit"}
-          detail={locale === "ko" ? "DCF·APV·multiples 입력값과 산식을 재구성해 검증한 뒤에만 민감도 표를 공개합니다." : "Publish a sensitivity table only after rebuilding and checking the DCF, APV, and multiples inputs and formulas."}
-        />
-      </EvidenceFigure>
     </div>
   );
 }
@@ -259,20 +206,16 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
     : ["Strategy bots", "KIS · CCXT brokers", "Execution · state store", "FastAPI controls", "React monitoring"];
   const checklist = locale === "ko"
     ? [
-        ["라이브 서버 모의투자", "검증 진행 중"],
+        ["라이브 서버 모의투자", "모의"],
         ["봇 상태·설정 제어", "구현"],
         ["실행 이력·운영 로그", "구현"],
-        ["주문 실패·대사 기준", "정의 필요"],
-        ["중복 주문·재시작 기준", "정의 필요"],
-        ["정식 검증 보고서", "작성 필요"],
+        ["사람이 멈출 수 있는 제어 흐름", "구현"],
       ]
     : [
-        ["Live-server paper trading", "In validation"],
+        ["Live-server paper trading", "Paper"],
         ["Bot state and setting controls", "Implemented"],
         ["Execution history and logs", "Implemented"],
-        ["Failed-order and reconciliation criteria", "Pending"],
-        ["Duplicate-order and restart criteria", "Pending"],
-        ["Formal validation report", "Pending"],
+        ["Human stop-and-control flow", "Implemented"],
       ];
 
   return (
@@ -294,31 +237,15 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
       <EvidenceFigure
         locale={locale}
         status="verified"
-        title={locale === "ko" ? "모의투자 운영 검증표" : "Paper-trading operational checklist"}
-        source="Implemented controls plus documented validation gaps"
+        title={locale === "ko" ? "모의투자 운영 범위" : "Paper-trading operating scope"}
+        source="Implemented controls in the current FastAPI/React project"
         caption={
           locale === "ko"
-            ? "현재 구현된 운영 기능과 아직 정의해야 할 검증 기준을 함께 표시합니다. 완료되지 않은 항목을 숨기지 않으며, 어떠한 실거래 성과도 보고하지 않습니다."
-            : "The checklist separates implemented operating controls from validation criteria still to be defined. It does not report or imply any real-money performance."
+            ? "현재 구현된 운영 기능만 간단히 정리했습니다. 이 표는 실거래 성과나 수익률을 보여주는 자료가 아닙니다."
+            : "The table summarizes implemented operating controls only. It does not report or imply real-money performance."
         }
       >
         <Checklist rows={checklist} locale={locale} />
-      </EvidenceFigure>
-
-      <EvidenceFigure
-        locale={locale}
-        status="pending"
-        title={locale === "ko" ? "대시보드·실행 이력 화면" : "Dashboard and execution-history screenshots"}
-        caption={
-          locale === "ko"
-            ? "현재 화면에는 모의투자 계좌 잔고와 손익(paper equity·PnL) 필드가 있어 맥락 없이 공개하면 실거래 성과로 오해될 수 있습니다. 민감값을 가리고 모의투자 표기를 유지한 공개용 화면이 준비되기 전에는 placeholder로 둡니다."
-            : "The current interface includes paper-equity and paper-PnL fields that could be misread without context. Screenshots remain pending until a redacted, explicitly paper-trading-only export is prepared."
-        }
-      >
-        <PendingEvidence
-          label={locale === "ko" ? "공개용 redacted 화면 준비 후 추가" : "Public-safe redacted screenshots pending"}
-          detail={locale === "ko" ? "봇 이름·계좌 관련 값·성과 필드를 비식별화하고 모의투자 고지를 화면 안에 포함해야 합니다." : "Anonymize bot and account fields, redact performance values, and keep the paper-trading disclaimer inside the image."}
-        />
       </EvidenceFigure>
     </div>
   );
@@ -344,7 +271,7 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
           source="Financial AI assignment 1 report"
           caption={
             locale === "ko"
-              ? "과제 보고서에 기록된 validation RMSE를 차수별로 비교합니다. 이 그래프만으로 특정 차수가 최종 선택이라고 결론 내릴 수 없으며, train/test 결과와 원자료를 함께 재현해야 합니다."
+              ? "과제 보고서에 기록된 validation RMSE를 차수별로 비교합니다. 이 그래프는 복잡도가 커질수록 성능이 자동으로 좋아지는지 살펴보기 위한 근거입니다."
               : "The bars reproduce validation RMSE values reported in assignment 1. They do not by themselves establish a preferred final degree; training and test behavior still need a reproducible notebook."
           }
         >
@@ -458,22 +385,6 @@ function PhorageEvidence({ locale }: { locale: EvidenceLocale }) {
           <FlowDiagram items={operatorJourney} compact />
         </EvidenceFigure>
       </div>
-
-      <EvidenceFigure
-        locale={locale}
-        status="pending"
-        title={locale === "ko" ? "실물 제품 사진" : "Physical product photography"}
-        caption={
-          locale === "ko"
-            ? "실물 굿즈를 제작했지만 repository에는 출처와 공개 범위를 확인한 제품 이미지 export가 없습니다. 공개 안전성이 확인된 사진만 추후 추가하며, 프로젝트는 계속 공개 출시 전 MVP로 표시합니다."
-            : "Physical goods were produced, but the repository does not contain a product-image export with confirmed provenance and public-use scope. Images remain pending, and the project remains explicitly pre-launch."
-        }
-      >
-        <PendingEvidence
-          label={locale === "ko" ? "공개 가능한 제품 이미지 확인 후 추가" : "Product images pending public-safe export"}
-          detail={locale === "ko" ? "제품 수량·유형·촬영물 사용 범위를 확인한 뒤 대표 이미지를 추가합니다." : "Confirm product count, type, and image-use scope before adding representative photography."}
-        />
-      </EvidenceFigure>
     </div>
   );
 }
@@ -499,7 +410,6 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
                 <th className="px-3 py-3">{locale === "ko" ? "MBTI 차원" : "MBTI dimension"}</th>
                 <th className="px-3 py-3">χ²</th>
                 <th className="px-3 py-3">{locale === "ko" ? "최소 기대빈도" : "Minimum expected"}</th>
-                <th className="px-3 py-3">{locale === "ko" ? "보고 상태" : "Reporting status"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
@@ -508,7 +418,6 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
                   <td className="px-3 py-4 font-bold">{row.dimension}</td>
                   <td className="px-3 py-4 font-mono">{row.statistic.toFixed(4)}</td>
                   <td className="px-3 py-4 font-mono">{row.minimumExpected.toFixed(3)}</td>
-                  <td className="px-3 py-4 text-slate">{locale === "ko" ? "p-value 재확인 필요" : "p-value check pending"}</td>
                 </tr>
               ))}
             </tbody>
@@ -673,17 +582,14 @@ function ProfitabilityTrend() {
 function Checklist({ rows, locale }: { rows: string[][]; locale: EvidenceLocale }) {
   return (
     <ul className="grid gap-px bg-black/5 md:grid-cols-2">
-      {rows.map(([item, status]) => {
-        const isPending = /pending|필요/i.test(status);
-        return (
-          <li key={item} className="flex items-center justify-between gap-4 bg-white/80 p-4 font-sans text-sm">
-            <span className="break-keep text-ink-body">{item}</span>
-            <span className={`shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] ${isPending ? "text-amber-800" : "text-accent"}`}>
-              {status}
-            </span>
-          </li>
-        );
-      })}
+      {rows.map(([item, status]) => (
+        <li key={item} className="flex items-center justify-between gap-4 bg-white/80 p-4 font-sans text-sm">
+          <span className="break-keep text-ink-body">{item}</span>
+          <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-accent">
+            {status}
+          </span>
+        </li>
+      ))}
       <li className="md:col-span-2 bg-amber-50 p-4 font-sans text-xs leading-relaxed text-amber-900">
         {locale === "ko" ? "Paper-trading 검증 전용 · 실거래 운영 및 수익 성과를 주장하지 않습니다." : "Paper-trading validation only · no real-money operation or return claim."}
       </li>

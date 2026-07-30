@@ -21,24 +21,32 @@ export default function PortfolioHero({
     <Reveal as="header" className="grid gap-10 border-b border-hairline pb-14 md:grid-cols-12 md:items-end md:pb-20" y={16}>
       <div className="space-y-7 md:col-span-8">
         <p className="eyebrow text-slate">
-          {isKorean ? "Professional Portfolio · 이상민" : "Professional Portfolio · Sangmin Lee"}
+          {isKorean ? "포트폴리오 · 이상민" : "Portfolio · Sangmin Lee"}
         </p>
         <div className="space-y-5">
           <h1 className="max-w-5xl break-keep font-serif text-4xl font-medium leading-[1.05] tracking-tight text-ink sm:text-5xl md:text-7xl">
             {isKorean
-              ? "데이터로 비즈니스 문제를 분석하고, 실제 의사결정에 쓸 수 있는 결론으로 연결합니다."
-              : "Turning ambiguous questions into practical, evidence-led decisions."}
+              ? "데이터를 보고, 시장 맥락을 붙여, 다음 판단까지 정리합니다."
+              : "I connect data with business context, then turn it into a next step."}
           </h1>
           <p className="max-w-3xl break-keep text-base font-medium leading-relaxed text-accent md:text-xl">
             {isKorean
-              ? "광운대학교 국제통상학부를 전공하고 경영학을 복수전공하며, 데이터 분석·금융·전략 분야의 실무를 준비하고 있습니다."
-              : "Economics and business student turning data, financial research, and service thinking into practical decisions."}
+              ? "광운대학교 국제통상학부에서 국제통상을 전공하고 경영학을 복수전공하고 있습니다. 데이터 분석, 금융·시장 리서치, 서비스 기획이 만나는 일을 준비하고 있습니다."
+              : "International Trade major and Business Administration double-major candidate, preparing for work across analytics, financial research, and service planning."}
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-slate md:text-base">
             {isKorean
-              ? "고객 이탈 분석, 야간 위성 조도 기반 GDP 분석, 기업 재무분석, 모의투자 시스템, 서비스 MVP 기획을 진행했습니다. 각 프로젝트에서는 결과가 말해 주는 범위와 추가 검증이 필요한 지점을 구분해 정리했습니다."
-              : "As an International Trade major and Business Administration double-major candidate, I have worked across customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning. I separate what the evidence supports from what still requires validation."}
+              ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 모의투자 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
+              : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a paper-trading system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
           </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-slate">
+            <a className="link-underline transition-colors hover:text-accent" href="mailto:aquariusmin01@naver.com">
+              aquariusmin01@naver.com
+            </a>
+            <a className="link-underline transition-colors hover:text-accent" href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer">
+              github.com/aquariusmin
+            </a>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <Link href="#cases" className="btn-primary">
@@ -62,8 +70,8 @@ export default function PortfolioHero({
         </p>
         <ol className="space-y-3 text-sm text-slate">
           {(isKorean
-            ? ["비즈니스·연구 질문", "근거와 데이터", "분석", "해석", "실무적 의사결정"]
-            : ["Business question", "Evidence", "Analysis", "Interpretation", "Practical decision"]
+            ? ["질문 정리", "데이터 확인", "분석·모델링", "해석 범위", "다음 판단"]
+            : ["Frame the question", "Check the data", "Analyze / model", "Set boundaries", "Recommend next steps"]
           ).map((step, index) => (
             <li key={step} className="flex items-center gap-3">
               <span className="w-5 font-mono text-[10px] text-accent">{String(index + 1).padStart(2, "0")}</span>

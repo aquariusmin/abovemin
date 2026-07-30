@@ -1,7 +1,7 @@
 import { koreanPortfolioProjects } from "@/data/portfolio.ko";
 import { portfolioProjects } from "@/data/portfolio";
 import { portfolioCardChips, type EvidenceLocale } from "@/data/portfolioEvidence";
-import type { PortfolioMode } from "@/data/portfolioRouting";
+import { getPortfolioBasePath, type PortfolioMode } from "@/data/portfolioRouting";
 import PrintControls from "@/components/portfolio/PrintControls";
 
 export default function PortfolioPrintContent({
@@ -13,6 +13,8 @@ export default function PortfolioPrintContent({
 }) {
   const isKorean = locale === "ko";
   const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
+  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, mode)}`;
+  const githubUrl = "https://github.com/aquariusmin";
 
   return (
     <main lang={isKorean ? "ko" : "en"} className="portfolio-ui portfolio-print bg-white text-[#202020]">
@@ -21,23 +23,26 @@ export default function PortfolioPrintContent({
         <header className="portfolio-print-section border-b-2 border-accent pb-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-slate">Professional Portfolio</p>
+              <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-slate">
+                Professional Portfolio
+              </p>
               <h1 className="mt-3 font-serif text-4xl font-extrabold tracking-tight">{isKorean ? "이상민" : "Sangmin Lee"}</h1>
             </div>
-            <div className="text-right text-[11px] leading-relaxed text-gray-600">
-              <p>aquariusmin01@naver.com</p>
-              <p>github.com/aquariusmin</p>
+            <div className="max-w-[92mm] text-right text-[11px] leading-relaxed text-gray-600">
+              <p><span className="font-bold text-ink">{isKorean ? "메일" : "Email"}</span> · aquariusmin01@naver.com</p>
+              <p><span className="font-bold text-ink">GitHub</span> · {githubUrl}</p>
+              <p><span className="font-bold text-ink">{isKorean ? "웹 포트폴리오" : "Portfolio page"}</span> · {portfolioUrl}</p>
             </div>
           </div>
           <p className="mt-6 max-w-3xl break-keep text-lg font-semibold leading-relaxed text-accent">
             {isKorean
-              ? "데이터로 비즈니스 문제를 분석하고, 실제 의사결정에 쓸 수 있는 결론으로 연결합니다."
-              : "Economics and business student turning data, financial research, and service thinking into practical decisions."}
+              ? "데이터를 보고, 시장 맥락을 붙여, 다음 판단까지 정리합니다."
+              : "International Trade major and Business Administration double-major candidate, preparing for work across analytics, financial research, and service planning."}
           </p>
           <p className="mt-3 max-w-3xl break-keep text-xs leading-relaxed text-gray-600">
             {isKorean
-              ? "고객 분석, 대체 데이터 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 질문 → 근거 → 분석 → 해석 → 의사결정의 흐름으로 정리했습니다."
-              : "Customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning—structured from question to evidence, analysis, interpretation, and decision value."}
+              ? "고객 분석, 대체 데이터 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 다루며 수치의 출처와 해석 범위를 함께 기록했습니다."
+              : "The work spans customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning, with claim boundaries stated beside the numbers."}
           </p>
         </header>
 
@@ -51,7 +56,7 @@ export default function PortfolioPrintContent({
         <section className="mt-9">
           <div className="portfolio-print-section mb-5">
             <p className={`text-[9px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
-            <h2 className="mt-2 font-serif text-2xl font-bold">{isKorean ? "일곱 개의 근거 중심 사례" : "Seven evidence-led cases"}</h2>
+            <h2 className="mt-2 font-serif text-2xl font-bold">{isKorean ? "지금 보여줄 수 있는 일곱 가지 작업" : "Seven projects I can discuss in detail"}</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {projects.map((project, index) => (
@@ -84,6 +89,7 @@ export default function PortfolioPrintContent({
 
         <footer className="portfolio-print-section mt-8 border-t border-black/10 pt-4 text-[9px] leading-relaxed text-gray-500">
           <p>{isKorean ? "본 문서는 공개용 요약본이며, 전화번호와 미검증 성과를 포함하지 않습니다." : "This is a public-safe summary and excludes phone information and unverified outcome claims."}</p>
+          <p className="mt-1">{isKorean ? "웹에서 프로젝트 상세와 원본 저장소 링크를 함께 확인할 수 있습니다." : "The web portfolio includes detailed cases and links to the source repositories."}</p>
         </footer>
       </article>
     </main>
