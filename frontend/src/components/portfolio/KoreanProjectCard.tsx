@@ -4,7 +4,7 @@ import { portfolioCardChips } from "@/data/portfolioEvidence";
 
 export default function KoreanProjectCard({
   project,
-  basePath = "/ko/portfolio",
+  basePath = "/portfolio",
 }: {
   project: PortfolioProject;
   basePath?: string;

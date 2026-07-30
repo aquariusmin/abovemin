@@ -1,8 +1,9 @@
 export type PortfolioMode = "normal" | "submission";
 export type PortfolioLocale = "en" | "ko";
 
+// Korean is the default locale and lives at the unprefixed path; English sits under /en.
 export function getPortfolioBasePath(locale: PortfolioLocale, mode: PortfolioMode) {
-  const localePrefix = locale === "ko" ? "/ko" : "";
+  const localePrefix = locale === "en" ? "/en" : "";
   return `${localePrefix}/portfolio${mode === "submission" ? "/submission" : ""}`;
 }
 
@@ -15,18 +16,16 @@ export function getPortfolioCasePath(
 }
 
 export function getPortfolioPrintPath(locale: PortfolioLocale, mode: PortfolioMode) {
-  const path = locale === "ko" ? "/ko/portfolio/print" : "/portfolio/print";
+  const path = locale === "en" ? "/en/portfolio/print" : "/portfolio/print";
   return mode === "submission" ? `${path}?from=submission` : path;
 }
 
 export function isPortfolioFocusedPath(pathname?: string | null) {
+  if (!pathname) return false;
+  const path = pathname.startsWith("/en/") ? pathname.slice(3) : pathname;
   return (
-    pathname === "/portfolio/print" ||
-    pathname === "/ko/portfolio/print" ||
-    pathname === "/portfolio/submission" ||
-    pathname?.startsWith("/portfolio/submission/") ||
-    pathname === "/ko/portfolio/submission" ||
-    pathname?.startsWith("/ko/portfolio/submission/") ||
-    false
+    path === "/portfolio/print" ||
+    path === "/portfolio/submission" ||
+    path.startsWith("/portfolio/submission/")
   );
 }

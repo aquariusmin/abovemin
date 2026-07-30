@@ -163,10 +163,10 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
         status="reported"
         title={locale === "ko" ? "2020–2024 수익성 지표 추이" : "2020–2024 profitability trends"}
         source="Korean Air Financial Analysis report · profitability table"
-          caption={
-            locale === "ko"
-              ? "보고서의 순이익률, ROE, ROA 표를 옮긴 추이입니다. 팬데믹 이후 회복과 변동은 볼 수 있지만, 투자 판단을 제공하는 자료는 아닙니다."
-              : "The lines reproduce net margin, ROE, and ROA values reported in the classroom report. They show the reported recovery and variation, but the underlying workbook has not been audited and the chart is not investment advice."
+        caption={
+          locale === "ko"
+            ? "보고서의 순이익률, ROE, ROA 표를 옮긴 추이입니다. 팬데믹 이후 회복과 변동은 볼 수 있지만, 투자 판단을 제공하는 자료는 아닙니다."
+            : "The lines reproduce net margin, ROE, and ROA values reported in the classroom report. They show the reported recovery and variation, but the underlying workbook has not been audited and the chart is not investment advice."
         }
       >
         <ProfitabilityTrend />

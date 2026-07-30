@@ -41,7 +41,7 @@ export default function Nav() {
 
   const isActiveLink = (href: string) =>
     href === '/portfolio'
-      ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/ko/portfolio')
+      ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/en/portfolio')
       : pathname?.startsWith(href);
 
   if (isPortfolioFocused) return null;

@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
-import { getKoreanPortfolioProject, koreanPortfolioProjects } from "@/data/portfolio.ko";
+import { getPortfolioProject, portfolioProjects } from "@/data/portfolio";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return koreanPortfolioProjects.map((project) => ({ slug: project.slug }));
+  return portfolioProjects.map((project) => ({ slug: project.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getKoreanPortfolioProject(slug);
+  const project = getPortfolioProject(slug);
   if (!project) notFound();
   return {
-    title: project.title,
+    title: `${project.title} · English`,
     description: project.summary,
     alternates: {
-      canonical: `/portfolio/${slug}`,
+      canonical: `/en/portfolio/${slug}`,
       languages: {
         ko: `/portfolio/${slug}`,
         en: `/en/portfolio/${slug}`,
@@ -27,9 +27,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function PortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EnglishPortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = getKoreanPortfolioProject(slug);
+  const project = getPortfolioProject(slug);
   if (!project) notFound();
-  return <PortfolioCaseStudy project={project} projects={koreanPortfolioProjects} locale="ko" />;
+  return <PortfolioCaseStudy project={project} projects={portfolioProjects} locale="en" />;
 }

@@ -1,5 +1,6 @@
 import { koreanPortfolioProjects } from "@/data/portfolio.ko";
 import { portfolioProjects } from "@/data/portfolio";
+import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import { portfolioCardChips, type EvidenceLocale } from "@/data/portfolioEvidence";
 import { getPortfolioBasePath, type PortfolioMode } from "@/data/portfolioRouting";
 import PrintControls from "@/components/portfolio/PrintControls";
@@ -13,7 +14,7 @@ export default function PortfolioPrintContent({
 }) {
   const isKorean = locale === "ko";
   const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
-  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, mode)}`;
+  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, "submission")}`;
   const githubUrl = "https://github.com/aquariusmin";
 
   return (
@@ -47,10 +48,9 @@ export default function PortfolioPrintContent({
         </header>
 
         <section className="portfolio-print-section mt-7 grid grid-cols-2 gap-px border border-black/10 bg-black/10 sm:grid-cols-4">
-          {(isKorean
-            ? ["경제·시장 분석", "비즈니스·재무", "데이터·리서치", "실행·커뮤니케이션"]
-            : ["Economics & Markets", "Business & Finance", "Data & Research", "Execution & Communication"]
-          ).map((item) => <p key={item} className="bg-white p-3 text-[10px] font-bold text-accent">{item}</p>)}
+          {portfolioCapabilities[locale].map((capability) => (
+            <p key={capability.title} className="bg-white p-3 text-[10px] font-bold text-accent">{capability.title}</p>
+          ))}
         </section>
 
         <section className="mt-9">
