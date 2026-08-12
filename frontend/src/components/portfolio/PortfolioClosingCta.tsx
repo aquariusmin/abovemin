@@ -16,7 +16,7 @@ export default function PortfolioClosingCta({
     // tonal shift in an otherwise white case-study page.
     <section className="card-cream my-12 grid gap-8 px-6 py-10 md:my-16 md:grid-cols-12 md:items-center md:px-12 md:py-14">
       <div className="space-y-4 md:col-span-7">
-        <p className={`text-[11px] text-forest ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>
+        <p className={`text-[11px] font-semibold text-forest ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
           {isKorean ? "연락" : "Continue the conversation"}
         </p>
         <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight text-forest-deep md:text-4xl">

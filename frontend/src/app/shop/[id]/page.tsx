@@ -57,9 +57,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   return (
     <main className="min-h-screen bg-canvas px-4 sm:px-6 md:px-8 py-12 md:py-20">
+      {/* `JSON.stringify` does not escape `<`, and the contents of a <script>
+          element are not HTML-parsed — the browser just scans for the closing
+          tag. A product name containing "</script>" would therefore end this
+          element early and let the rest of the field render as markup. Rewriting
+          every "<" as its JSON unicode escape parses back to exactly the same
+          object while removing the only sequence that can end the element. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
       {/* Back link */}

@@ -197,7 +197,7 @@ export function FleetDashboard() {
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`rounded text-[10px] uppercase tracking-[0.14em] font-medium px-1.5 py-0.5 ${
+                        className={`rounded text-[10px] uppercase tracking-[0.14em] font-semibold px-1.5 py-0.5 ${
                           b.market === "crypto"
                             ? "text-cream bg-cream/10"
                             : "text-cream/60 bg-white/[0.07]"
@@ -211,7 +211,7 @@ export function FleetDashboard() {
                     </td>
                     <td className="px-3 py-3 text-right">
                       <span
-                        className={`rounded px-1.5 py-0.5 font-medium ${
+                        className={`rounded px-1.5 py-0.5 font-semibold ${
                           up
                             ? "text-moss bg-moss/10"
                             : "text-brick-light bg-brick-light/10"
@@ -279,7 +279,7 @@ function Stat({
   return (
     <div className={`${CARD} p-5 space-y-2`}>
       <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-medium tracking-tight font-mono ${valueColor}`}>
+      <p className={`text-2xl font-semibold tracking-tight font-mono ${valueColor}`}>
         {value}
       </p>
     </div>
@@ -325,7 +325,7 @@ function Th({
     <th
       scope="col"
       aria-sort={ariaSort}
-      className={`px-3 py-2.5 font-medium ${
+      className={`px-3 py-2.5 font-semibold ${
         align === "right" ? "text-right" : "text-left"
       } ${active ? "text-white/70" : ""}`}
     >
@@ -333,7 +333,7 @@ function Th({
         <button
           type="button"
           onClick={activate}
-          className="inline-flex items-center gap-1 font-medium cursor-pointer select-none hover:text-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="inline-flex items-center gap-1 font-semibold cursor-pointer select-none hover:text-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {inner}
         </button>

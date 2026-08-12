@@ -247,7 +247,7 @@ function StoryArc({
   return (
     <section className="space-y-6">
       <div className="space-y-2">
-        <p className={`text-[11px] text-slate ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>
+        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
           {copy.story.label}
         </p>
         <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{copy.story.title}</h2>
@@ -255,7 +255,7 @@ function StoryArc({
       <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
         {arcItems.map((item) => (
           <article key={item.label} className="bg-white p-5 md:p-6">
-            <p className={`text-[10px] text-accent ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.18em]"}`}>
+            <p className={`text-[10px] font-semibold text-accent ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.18em]"}`}>
               {item.label}
             </p>
             <h3 className="mt-3 break-keep text-lg font-semibold text-ink">{item.title}</h3>
@@ -271,7 +271,7 @@ function CaseSection({ label, title, children, isKorean }: { label: string; titl
   return (
     <section>
       <div className="mb-7 space-y-2">
-        <p className={`text-[11px] text-slate ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>{label}</p>
+        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{label}</p>
         <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{title}</h2>
       </div>
       {children}

@@ -199,7 +199,7 @@ function Stat({
   return (
     <div className={`${CARD} p-5 space-y-2`}>
       <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-medium tracking-tight font-mono ${color}`}>
+      <p className={`text-2xl font-semibold tracking-tight font-mono ${color}`}>
         {value}
       </p>
     </div>

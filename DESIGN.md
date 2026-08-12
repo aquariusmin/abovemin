@@ -87,16 +87,9 @@ Directional colour on the Lab's dark shell uses `trend.up` = moss and `trend.dow
 
 **Korean is served by exactly one webfont family, deliberately.** Google's Korean faces ship ~2,500 glyphs across unicode-range subsets, so each additional family costs roughly 150–330 KB on a Korean page. Plex Sans KR therefore does both display and body duty, and Fraunces stays Latin-only so it never pulls a Korean download.
 
-**Weights are loaded sparingly, and the ceiling differs by family:**
+**400 / 500 / 600 are loaded, for every family — and 600 is the ceiling.** Ask for `font-bold` (700) or heavier and there is no face to match, so the browser synthesises one: smeared strokes, worst on Hangul and on the 9–12px mono labels where it shows most. Those classes therefore appear nowhere in the app.
 
-| Family | Loaded | Heaviest class |
-|---|---|---|
-| Fraunces · IBM Plex Sans · Plex Sans KR | 400 / 500 / 600 | `font-semibold` |
-| IBM Plex Mono | 400 / 500 | `font-medium` |
-
-Ask for a weight above the ceiling and there is no face to match, so the browser synthesises one — smeared strokes, worst on Hangul and on the 9–12px mono labels where it shows most. `font-bold` (700) and `font-extrabold` (800) therefore appear nowhere in the app.
-
-Watch the mono ceiling on a class string that serves both locales: the Korean/English label pattern (`isKorean ? "tracking-[0.14em]" : "font-mono uppercase …"`) renders sans in one branch and mono in the other, so the weight belongs *inside* each branch — `font-semibold` for the Korean side, `font-medium` for the mono side — not shared in front of the ternary.
+Mono carries 600 even though the weight budget is otherwise tight. Measured cost: +32 KB on disk across five unicode-range subsets, of which a page downloads only `latin` — against the 150–330 KB a Korean weight would add. It earns that by carrying every emphasised mono label: table headers, status chips, stat values, the Lab's entire data surface.
 
 **The portfolio surface opts out of the display voice entirely** (`.portfolio-ui` maps `font-serif` to the body stack). Fraunces beside Plex Sans KR works everywhere the two alternate by *section* — but the portfolio mixes them inside a line, because the Korean edition keeps project titles in English ("Korean Air Financial Analysis" a line below 재무비율) and evidence labels run "DCF · APV · 멀티플". At that distance a Latin serif against Hangul reads as two typefaces that met by accident, so that surface sets everything in IBM Plex — one superfamily, Latin and Hangul drawn to a shared skeleton, at no extra webfont cost.
 

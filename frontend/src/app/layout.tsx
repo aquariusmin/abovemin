@@ -45,9 +45,14 @@ const korean = IBM_Plex_Sans_KR({
   display: 'swap',
 });
 
+// 600 is worth its bytes even though the weight budget is otherwise tight.
+// Measured: +32 KB on disk across five unicode-range subsets, of which a page
+// actually downloads only `latin` — against the 150–330 KB a Korean weight
+// would cost. It earns that by carrying every emphasised mono label: table
+// headers, status chips, stat values, the Lab's whole data surface.
 const mono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   variable: '--font-mono',
   display: 'swap',
 });
