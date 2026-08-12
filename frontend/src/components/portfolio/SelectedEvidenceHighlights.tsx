@@ -5,7 +5,7 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
     <section className="space-y-9" aria-labelledby={`selected-evidence-${locale}`}>
       <div className="grid gap-5 md:grid-cols-12 md:items-end">
         <div className="space-y-4 md:col-span-7">
-          <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
+          <p className={`text-[11px] text-slate ${locale === "ko" ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>
             {locale === "ko" ? "대표 근거" : "Selected evidence highlights"}
           </p>
           <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-semibold tracking-tight md:text-4xl">
@@ -22,7 +22,7 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
       <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
         {portfolioEvidenceHighlights.map((item) => (
           <article key={item.evidence.en} className="bg-surface p-6 md:p-8">
-            <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
+            <p className={`text-[11px] text-slate ${locale === "ko" ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>
               {locale === "ko" ? "근거" : "Evidence"}
             </p>
             <h3 className="mt-3 font-serif text-xl font-semibold tracking-tight text-accent md:text-2xl">

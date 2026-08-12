@@ -24,10 +24,10 @@ export default function PortfolioPrintContent({
         <header className="portfolio-print-section border-b-2 border-accent pb-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-slate">
+              <p className="font-mono text-[9px] font-medium uppercase tracking-[0.2em] text-slate">
                 Professional Portfolio
               </p>
-              <h1 className="mt-3 font-serif text-4xl font-extrabold tracking-tight">{isKorean ? "이상민" : "Sangmin Lee"}</h1>
+              <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight">{isKorean ? "이상민" : "Sangmin Lee"}</h1>
             </div>
             <div className="max-w-[92mm] text-right text-[11px] leading-relaxed text-slate">
               <p><span className="font-semibold text-ink">{isKorean ? "메일" : "Email"}</span> · aquariusmin01@naver.com</p>
@@ -55,14 +55,14 @@ export default function PortfolioPrintContent({
 
         <section className="mt-9">
           <div className="portfolio-print-section mb-5">
-            <p className={`text-[9px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
+            <p className={`text-[9px] text-slate ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
             <h2 className="mt-2 font-serif text-2xl font-semibold">{isKorean ? "지금 보여줄 수 있는 일곱 가지 작업" : "Seven projects I can discuss in detail"}</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {projects.map((project, index) => (
               <article key={project.slug} className={`portfolio-print-card border border-black/10 p-4 ${index === 4 ? "portfolio-print-page-break" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-accent">Case {project.number}</p>
+                  <p className="font-mono text-[9px] font-medium uppercase tracking-[0.15em] text-accent">Case {project.number}</p>
                   <p className="text-right text-[8px] font-semibold text-slate">{project.category}</p>
                 </div>
                 <h3 className="mt-2 font-serif text-base font-semibold leading-tight">{project.title}</h3>

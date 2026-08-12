@@ -191,7 +191,7 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
             ["Multiples", locale === "ko" ? "상대적으로 더 긍정적인 시장 비교" : "More positive relative market comparison"],
           ].map(([method, interpretation]) => (
             <div key={method} className="min-h-40 bg-white/80 p-6">
-              <p className="font-mono text-xs font-semibold tracking-[0.18em] text-accent">{method}</p>
+              <p className="font-mono text-xs font-medium tracking-[0.18em] text-accent">{method}</p>
               <p className="mt-5 break-keep font-sans text-sm leading-relaxed text-slate">{interpretation}</p>
             </div>
           ))}
@@ -329,13 +329,13 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
         >
           <div className="grid gap-px bg-border sm:grid-cols-2">
             <div className="bg-white/80 p-6">
-              <p className="font-mono text-xs font-semibold tracking-[0.16em] text-accent">ANN</p>
+              <p className="font-mono text-xs font-medium tracking-[0.16em] text-accent">ANN</p>
               <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
                 {locale === "ko" ? "은닉층 1개 · 비교 기준 모형" : "One hidden layer · comparison baseline"}
               </p>
             </div>
             <div className="bg-white/80 p-6">
-              <p className="font-mono text-xs font-semibold tracking-[0.16em] text-accent">DNN</p>
+              <p className="font-mono text-xs font-medium tracking-[0.16em] text-accent">DNN</p>
               <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
                 {locale === "ko" ? "은닉층 3개 · 추가 복잡도의 개선 제한" : "Three hidden layers · limited gain from added complexity"}
               </p>
@@ -455,7 +455,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
                   <td className="px-3 py-4 font-mono">{row.observedT}</td>
                   <td className="px-3 py-4 font-mono text-slate">{row.expectedT.toFixed(3)}</td>
                   <td className="px-3 py-4 font-mono">{row.observedF}</td>
-                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-semibold text-brick" : "text-slate"}`}>
+                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-medium text-brick" : "text-slate"}`}>
                     {row.expectedF.toFixed(3)}
                   </td>
                 </tr>
@@ -603,8 +603,8 @@ function MetricCards({ metrics }: { metrics: string[][] }) {
     <div className="grid gap-px bg-border sm:grid-cols-2">
       {metrics.map(([label, value]) => (
         <div key={label} className="bg-white/80 p-5">
-          <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.13em] text-slate">{label}</p>
-          <p className="mt-2 font-mono text-xl font-semibold text-accent">{value}</p>
+          <p className="font-mono text-[9px] font-medium uppercase tracking-[0.13em] text-slate">{label}</p>
+          <p className="mt-2 font-mono text-xl font-medium text-accent">{value}</p>
         </div>
       ))}
     </div>

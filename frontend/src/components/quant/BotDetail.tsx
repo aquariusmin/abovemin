@@ -112,7 +112,7 @@ export function BotDetail({ botId }: { botId: string }) {
             {bot.bot_name}
           </h1>
           <span
-            className={`rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 ${
+            className={`rounded text-[10px] uppercase tracking-[0.14em] font-semibold px-1.5 py-0.5 ${
               bot.market === "crypto"
                 ? "text-cream bg-cream/10"
                 : "text-cream/60 bg-white/[0.07]"
@@ -120,7 +120,7 @@ export function BotDetail({ botId }: { botId: string }) {
           >
             {bot.market}
           </span>
-          <span className="rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 text-white/50 bg-white/5">
+          <span className="rounded text-[10px] uppercase tracking-[0.14em] font-semibold px-1.5 py-0.5 text-white/50 bg-white/5">
             {bot.strategy}
           </span>
         </div>
@@ -199,7 +199,7 @@ function Stat({
   return (
     <div className={`${CARD} p-5 space-y-2`}>
       <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-bold tracking-tight font-mono ${color}`}>
+      <p className={`text-2xl font-medium tracking-tight font-mono ${color}`}>
         {value}
       </p>
     </div>

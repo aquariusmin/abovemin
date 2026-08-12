@@ -33,7 +33,7 @@ export default function EvidenceFigure({
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline px-5 py-4 md:px-6">
         <h3 className="break-keep font-serif text-lg font-semibold tracking-tight">{title}</h3>
         <span
-          className={`border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${statusStyles[status]}`}
+          className={`border px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em] ${statusStyles[status]}`}
         >
           {evidenceStatusLabels[status][locale]}
         </span>
@@ -42,7 +42,7 @@ export default function EvidenceFigure({
       <figcaption className="space-y-2 border-t border-hairline bg-surface-muted/45 px-5 py-4 font-sans text-xs leading-relaxed text-slate md:px-6">
         <p className="break-keep">{caption}</p>
         {source && (
-          <p className="break-keep font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">
+          <p className="break-keep font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-slate">
             {locale === "ko" ? "근거" : "Source"} · {source}
           </p>
         )}

@@ -27,11 +27,11 @@ export function HoldingsTable({
       <table className="w-full font-mono text-[12px]">
         <thead>
           <tr className="text-[10px] uppercase tracking-[0.16em] text-white/65 border-b border-white/8">
-            <th scope="col" className="text-left py-2.5 font-bold">Symbol</th>
-            <th scope="col" className="text-right py-2.5 font-bold">Qty</th>
-            <th scope="col" className="text-right py-2.5 font-bold">Mark</th>
-            <th scope="col" className="text-right py-2.5 font-bold">Value</th>
-            <th scope="col" className="text-right py-2.5 font-bold">% Eq</th>
+            <th scope="col" className="text-left py-2.5 font-medium">Symbol</th>
+            <th scope="col" className="text-right py-2.5 font-medium">Qty</th>
+            <th scope="col" className="text-right py-2.5 font-medium">Mark</th>
+            <th scope="col" className="text-right py-2.5 font-medium">Value</th>
+            <th scope="col" className="text-right py-2.5 font-medium">% Eq</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/[0.06]">

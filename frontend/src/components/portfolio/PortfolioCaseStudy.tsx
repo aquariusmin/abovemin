@@ -122,7 +122,7 @@ export default function PortfolioCaseStudy({
             <span className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>{project.category}</span>
           </div>
           <div className="space-y-5">
-            <h1 className="font-serif text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
+            <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
             <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
           <div className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${project.sourceUrl ? "sm:grid-cols-2 lg:grid-cols-[minmax(9rem,0.8fr)_minmax(24rem,1.8fr)_minmax(10rem,1fr)]" : "sm:grid-cols-2"}`}>
@@ -247,7 +247,7 @@ function StoryArc({
   return (
     <section className="space-y-6">
       <div className="space-y-2">
-        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
+        <p className={`text-[11px] text-slate ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>
           {copy.story.label}
         </p>
         <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{copy.story.title}</h2>
@@ -255,7 +255,7 @@ function StoryArc({
       <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
         {arcItems.map((item) => (
           <article key={item.label} className="bg-white p-5 md:p-6">
-            <p className={`text-[10px] font-semibold text-accent ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.18em]"}`}>
+            <p className={`text-[10px] text-accent ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.18em]"}`}>
               {item.label}
             </p>
             <h3 className="mt-3 break-keep text-lg font-semibold text-ink">{item.title}</h3>
@@ -271,7 +271,7 @@ function CaseSection({ label, title, children, isKorean }: { label: string; titl
   return (
     <section>
       <div className="mb-7 space-y-2">
-        <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{label}</p>
+        <p className={`text-[11px] text-slate ${isKorean ? "font-semibold tracking-[0.14em]" : "font-mono font-medium uppercase tracking-[0.2em]"}`}>{label}</p>
         <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{title}</h2>
       </div>
       {children}
