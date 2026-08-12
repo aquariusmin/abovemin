@@ -1,4 +1,5 @@
 import { getFeaturedProducts, getSiteSettings } from '@/lib/supabase';
+import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
 
 export const revalidate = 60;
@@ -22,9 +23,16 @@ export default async function Home() {
   const titleHead = heroTitle.split(' ').slice(0, -1).join(' ');
   const titleTail = heroTitle.split(' ').slice(-1).join(' ');
 
+  // The hero frame is built from the photograph's own proportions, so it never
+  // crops it and never has filler space left over. Read here rather than in the
+  // client component: it is one cached server request, and shipping the ratio
+  // with the HTML means the frame is reserved before the image loads.
+  const heroAspect = (await cloudinaryAspect(heroImage)) ?? DEFAULT_ASPECT;
+
   return (
     <HomeContent
       heroImage={heroImage}
+      heroAspect={heroAspect}
       titleHead={titleHead}
       titleTail={titleTail}
       heroSubtitle={heroSubtitle}

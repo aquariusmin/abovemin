@@ -50,7 +50,7 @@ export default async function CollectionPage({
 
       {/* Header */}
       <Reveal as="header" className="max-w-[1400px] mx-auto mb-12 md:mb-16" y={16}>
-        <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
+        <Link href="/archive" className="eyebrow text-muted-foreground hover:text-accent transition-colors">
           &larr; Archive
         </Link>
         <div className="mt-8 border-b border-hairline pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -69,10 +69,10 @@ export default async function CollectionPage({
 
       {/* Bottom nav */}
       <Reveal className="max-w-[1400px] mx-auto mt-14 md:mt-20 pt-8 md:pt-10 border-t border-hairline flex justify-between items-center gap-4" y={16}>
-        <Link href="/archive" className="eyebrow text-muted hover:text-accent transition-colors">
+        <Link href="/archive" className="eyebrow text-muted-foreground hover:text-accent transition-colors">
           &larr; All collections
         </Link>
-        <Link href={`/archive/${nextAlbum.slug}`} className="eyebrow text-muted hover:text-accent transition-colors text-right">
+        <Link href={`/archive/${nextAlbum.slug}`} className="eyebrow text-muted-foreground hover:text-accent transition-colors text-right">
           Next: {nextAlbum.title} &rarr;
         </Link>
       </Reveal>

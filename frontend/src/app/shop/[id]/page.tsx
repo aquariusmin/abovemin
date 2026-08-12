@@ -57,9 +57,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   return (
     <main className="min-h-screen bg-canvas px-4 sm:px-6 md:px-8 py-12 md:py-20">
+      {/* `JSON.stringify` does not escape `<`, and the contents of a <script>
+          element are not HTML-parsed — the browser just scans for the closing
+          tag. A product name containing "</script>" would therefore end this
+          element early and let the rest of the field render as markup. Rewriting
+          every "<" as its JSON unicode escape parses back to exactly the same
+          object while removing the only sequence that can end the element. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
       {/* Back link */}
@@ -89,23 +95,23 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <Reveal className="md:col-span-5 space-y-6 md:space-y-8" delay={0.08} y={16}>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <p className="eyebrow text-muted">{product.category}</p>
+              <p className="eyebrow text-muted-foreground">{product.category}</p>
               <span aria-hidden className="h-3 w-px bg-hairline" />
-              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted'}`}>
+              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted-foreground'}`}>
                 {product.in_stock ? 'In stock' : 'Sold out'}
               </span>
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink break-keep">
               {product.name}
             </h1>
-            <p className="text-2xl font-semibold text-accent tabular-nums">₩ {product.price.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-accent tabular-nums">₩&nbsp;{product.price.toLocaleString()}</p>
           </div>
 
           <hr className="rule" />
 
           {product.description && (
             <div className="space-y-3">
-              <p className="eyebrow text-muted">Story</p>
+              <p className="eyebrow text-muted-foreground">Story</p>
               <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
                 {product.description}
               </p>

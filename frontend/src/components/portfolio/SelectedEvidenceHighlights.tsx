@@ -8,7 +8,7 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
           <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
             {locale === "ko" ? "대표 근거" : "Selected evidence highlights"}
           </p>
-          <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-bold tracking-tight md:text-4xl">
+          <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-semibold tracking-tight md:text-4xl">
             {locale === "ko" ? "숫자는 보여주고, 해석 범위는 같이 둡니다." : "Key numbers, with the caveats kept close."}
           </h2>
         </div>
@@ -25,18 +25,18 @@ export default function SelectedEvidenceHighlights({ locale }: { locale: Evidenc
             <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
               {locale === "ko" ? "근거" : "Evidence"}
             </p>
-            <h3 className="mt-3 font-serif text-xl font-bold tracking-tight text-accent md:text-2xl">
+            <h3 className="mt-3 font-serif text-xl font-semibold tracking-tight text-accent md:text-2xl">
               {item.evidence[locale]}
             </h3>
             <p className="mt-5 break-keep text-sm leading-relaxed text-ink-body">
-              <span className="font-bold text-ink">
-                {locale === "ko" ? "다룬 일 · " : "What I worked on · "}
+              <span className="font-semibold text-ink">
+                {locale === "ko" ? "다룬 일 · " : "What I worked on · "}
               </span>
               {item.demonstrates[locale]}
             </p>
-            <p className="mt-3 break-keep border-l-2 border-amber-700/20 pl-3 text-xs leading-relaxed text-slate">
-              <span className="font-bold text-slate">
-                {locale === "ko" ? "주의할 점 · " : "Caveat · "}
+            <p className="mt-3 break-keep border-l-2 border-brick/30 pl-3 text-xs leading-relaxed text-slate">
+              <span className="font-semibold text-slate">
+                {locale === "ko" ? "주의할 점 · " : "Caveat · "}
               </span>
               {item.caution[locale]}
             </p>

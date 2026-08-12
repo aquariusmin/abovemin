@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { palette } from '@/lib/palette';
 
 export const runtime = 'nodejs';
 export const alt = 'phorage studio';
@@ -16,14 +17,18 @@ export default function OgImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#ffffff',
+          background: palette.background,
           fontFamily: 'sans-serif',
         }}
       >
+        {/* Forest band anchoring the top edge, capped with a lime hairline */}
+        <div style={{ display: 'flex', position: 'absolute', top: 0, left: 0, right: 0, height: 14, background: palette.forest }} />
+        <div style={{ display: 'flex', position: 'absolute', top: 14, left: 0, right: 0, height: 4, background: palette.moss }} />
+
         <div
           style={{
             fontSize: 22,
-            color: '#4A5D4E',
+            color: palette.fern,
             letterSpacing: 8,
             textTransform: 'uppercase',
             marginBottom: 28,
@@ -35,7 +40,7 @@ export default function OgImage() {
           style={{
             fontSize: 96,
             fontWeight: 600,
-            color: '#17171c',
+            color: palette.ink,
             letterSpacing: -3,
           }}
         >
@@ -44,7 +49,7 @@ export default function OgImage() {
         <div
           style={{
             fontSize: 24,
-            color: '#75758a',
+            color: palette.slate,
             marginTop: 20,
             letterSpacing: 1,
           }}
@@ -53,11 +58,23 @@ export default function OgImage() {
         </div>
         <div
           style={{
-            width: 64,
-            height: 3,
-            background: '#4A5D4E',
+            display: 'flex',
+            width: 120,
+            height: 4,
+            background: palette.moss,
             marginTop: 36,
             borderRadius: 2,
+          }}
+        />
+        <div
+          style={{
+            display: 'flex',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 56,
+            background: palette.cream,
           }}
         />
       </div>

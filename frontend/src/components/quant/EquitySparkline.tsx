@@ -1,6 +1,7 @@
 "use client";
 
 import type { EquityPoint } from "@/lib/quant";
+import { trend } from "@/lib/palette";
 
 // Tiny inline SVG sparkline. Matches the existing FleetGrid style
 // (polyline, no axes, no animation) so the table feels native to the
@@ -13,13 +14,13 @@ export function EquitySparkline({
   positive: boolean;
 }) {
   if (points.length < 2) {
-    return <span className="text-[9px] font-mono text-white/20">—</span>;
+    return <span className="text-[9px] font-mono text-white/55">—</span>;
   }
   const values = points.map((p) => p.equity);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  const stroke = positive ? "#34d399" : "#f87171";
+  const stroke = positive ? trend.up : trend.down;
   return (
     <svg
       viewBox={`0 0 ${values.length - 1} 20`}

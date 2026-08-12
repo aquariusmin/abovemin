@@ -77,7 +77,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   return (
     <motion.div
       ref={dialogRef}
-      className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+      className="fixed inset-0 z-[100] bg-forest-black/95 flex items-center justify-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -130,7 +130,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         <div className="mt-4 text-center">
           <p className="text-white text-sm font-serif font-medium tracking-tight">{photo.title}</p>
           <p className="eyebrow text-white/70 mt-1.5">
-            {photo.location} &middot; {photo.year} &middot; {currentIndex + 1} / {photos.length}
+            {photo.location}&nbsp;&middot; {photo.year}&nbsp;&middot; {currentIndex + 1} / {photos.length}
           </p>
         </div>
       </motion.div>

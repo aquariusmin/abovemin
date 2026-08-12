@@ -23,7 +23,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
   if (photos.length === 0) {
     return (
       <div className="max-w-[1400px] mx-auto border border-hairline rounded-lg py-20 md:py-28 px-6 text-center">
-        <p className="eyebrow text-muted">No pieces yet</p>
+        <p className="eyebrow text-muted-foreground">No pieces yet</p>
         <p className="mt-3 text-base text-slate break-keep">
           이 컬렉션에는 아직 공개된 사진이 없습니다.
         </p>
@@ -62,8 +62,8 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
               <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
                 {photo.title}
               </p>
-              <p className="eyebrow text-muted mt-1">
-                {photo.location} &middot; {photo.year}
+              <p className="eyebrow text-muted-foreground mt-1">
+                {photo.location}&nbsp;&middot; {photo.year}
               </p>
             </div>
           </motion.button>

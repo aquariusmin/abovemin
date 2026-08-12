@@ -6,26 +6,12 @@ import SelectedEvidenceHighlights from "@/components/portfolio/SelectedEvidenceH
 import Reveal from "@/components/motion/Reveal";
 import { koreanPortfolioProjects } from "@/data/portfolio.ko";
 import { portfolioProjects } from "@/data/portfolio";
+import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import {
   getPortfolioBasePath,
   type PortfolioLocale,
   type PortfolioMode,
 } from "@/data/portfolioRouting";
-
-const capabilities = {
-  en: [
-    { title: "Markets", body: "International trade, macro context, alternative data, and country or industry screening." },
-    { title: "Finance", body: "Financial statements, valuation logic, sensitivity checks, and assumption audits." },
-    { title: "Analytics", body: "Python, statistics, regression, classification, explainable AI, and survey analysis." },
-    { title: "Execution", body: "Dashboards, reports, MVP flows, operating checks, and clear next-step recommendations." },
-  ],
-  ko: [
-    { title: "시장", body: "국제무역, 거시경제 맥락, 대체 데이터, 국가·산업 스크리닝을 연결합니다." },
-    { title: "재무", body: "재무제표, 가치평가 논리, 민감도, 가정 점검에 관심을 두고 봅니다." },
-    { title: "분석", body: "Python, 통계, 회귀, 분류, 설명 가능한 AI와 설문 분석을 활용합니다." },
-    { title: "실행", body: "대시보드, 보고서, MVP 흐름, 운영 점검과 다음 액션까지 정리합니다." },
-  ],
-};
 
 export default function PortfolioOverview({
   locale,
@@ -46,7 +32,7 @@ export default function PortfolioOverview({
         <section className="space-y-10">
           <Reveal className="grid gap-6 md:grid-cols-12 md:items-end" y={16}>
             <div className="space-y-4 md:col-span-7">
-              <p className="eyebrow text-slate">
+              <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
                 {isKorean ? "제가 일하는 방식" : "How I work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
@@ -60,7 +46,7 @@ export default function PortfolioOverview({
             </p>
           </Reveal>
           <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2 lg:grid-cols-4">
-            {capabilities[locale].map((capability, i) => (
+            {portfolioCapabilities[locale].map((capability, i) => (
               <Reveal
                 as="article"
                 key={capability.title}
@@ -80,14 +66,14 @@ export default function PortfolioOverview({
         <section className="space-y-10" id="cases">
           <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end" y={16}>
             <div className="space-y-4">
-              <p className="eyebrow text-slate">
+              <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
                 {isKorean ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다." : "Seven projects I can walk through in detail."}
               </h2>
             </div>
-            <p className="max-w-md break-keep text-sm leading-relaxed text-muted">
+            <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
               {isKorean
                 ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
                 : "Each project explains why I started it, what I checked, and where the conclusion should stop."}

@@ -23,7 +23,7 @@ export default async function sitemap() {
     { url: BASE, lastModified: now, changeFrequency: 'weekly' as const, priority: 1 },
     { url: `${BASE}/about`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
     { url: `${BASE}/portfolio`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${BASE}/ko/portfolio`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${BASE}/en/portfolio`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${BASE}/archive`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.8 },
     { url: `${BASE}/shop`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.9 },
     { url: `${BASE}/lab`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.6 },
@@ -51,7 +51,7 @@ export default async function sitemap() {
       priority: 0.8,
     },
     {
-      url: `${BASE}/ko/portfolio/${project.slug}`,
+      url: `${BASE}/en/portfolio/${project.slug}`,
       lastModified: now,
       changeFrequency: 'monthly' as const,
       priority: 0.8,

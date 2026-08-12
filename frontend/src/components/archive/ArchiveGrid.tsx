@@ -47,15 +47,17 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
                 className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
                 priority={i === 0}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/45" />
+              {/* Forest-black scrim rather than neutral black — keeps the
+                  photography warm and ties the overlay to the palette. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-forest-black/70 via-forest-black/15 to-transparent transition-opacity duration-500 group-hover:from-forest-black/55" />
 
               <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
-                <p className="eyebrow text-white/70 mb-2">{album.photo_count} pieces</p>
-                <h2 className="font-serif text-xl md:text-2xl font-medium tracking-tight text-white">
+                <p className="eyebrow text-moss mb-2">{album.photo_count} pieces</p>
+                <h2 className="font-serif text-xl md:text-2xl font-medium tracking-tight text-cream">
                   {album.title}
                 </h2>
-                <span className="mt-3 eyebrow text-white/85 translate-y-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  View collection →
+                <span className="mt-3 label-ko text-cream/85 translate-y-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  컬렉션 보기 →
                 </span>
               </div>
             </div>

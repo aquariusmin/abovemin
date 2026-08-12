@@ -1,29 +1,58 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import {
+  Fraunces,
+  IBM_Plex_Sans,
+  IBM_Plex_Sans_KR,
+  IBM_Plex_Mono,
+} from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
 
-// Display voice — grotesk with tight, carved cadence (DESIGN.md display stack).
-const display = Space_Grotesk({
+/* Type system — see DESIGN.md § Typography.
+
+   Display  Fraunces (Latin only) — old-style serif with a little optical wonk.
+   Everything else  IBM Plex Sans · Sans KR · Mono — one designed superfamily.
+
+   Korean is served by exactly ONE webfont family, deliberately. Google's Korean
+   faces ship ~2,500 glyphs split across unicode-range subsets, so each family
+   added costs roughly 150–330 KB on a Korean page. Plex Sans KR therefore does
+   both display and body duty; Fraunces stays Latin-only and never triggers a
+   Korean download. Korean headlines set in Plex Sans KR 600 sit beside Latin
+   headlines in Fraunces — the two voices alternate by section, not inside a
+   line, which is where a mixed pairing would actually show. */
+
+const display = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-display',
   display: 'swap',
 });
 
-// Body / UI voice.
-const body = Inter({
+const body = IBM_Plex_Sans({
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
   variable: '--font-body',
   display: 'swap',
 });
 
-// Technical / mono labels.
-const mono = JetBrains_Mono({
+// The single Korean face — resolves Korean glyphs for both type stacks.
+const korean = IBM_Plex_Sans_KR({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
+  variable: '--font-korean',
+  display: 'swap',
+});
+
+// 600 is worth its bytes even though the weight budget is otherwise tight.
+// Measured: +32 KB on disk across five unicode-range subsets, of which a page
+// actually downloads only `latin` — against the 150–330 KB a Korean weight
+// would cost. It earns that by carrying every emphasised mono label: table
+// headers, status chips, stat values, the Lab's whole data surface.
+const mono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
   variable: '--font-mono',
   display: 'swap',
 });
@@ -54,7 +83,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html
+      lang="ko"
+      className={`${display.variable} ${body.variable} ${korean.variable} ${mono.variable}`}
+    >
       <ThemeShell>
         <a href="#main-content" className="skip-link">본문 바로가기</a>
         <Nav />

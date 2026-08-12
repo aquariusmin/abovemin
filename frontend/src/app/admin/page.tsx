@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
+import { cloudinary } from '@/lib/cloudinary';
 
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -33,11 +34,13 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  pending:   'bg-surface text-coral border border-coral-soft',
-  confirmed: 'bg-blue-wash text-action-blue border border-border-light',
-  shipped:   'bg-stone text-slate border border-border-light',
-  delivered: 'bg-green-wash text-accent border border-border-light',
-  cancelled: 'bg-surface-muted text-muted border border-border-light',
+  // Escalating weight through the fulfilment ramp: clay alert → cream → moss →
+  // solid forest for the terminal success state.
+  pending:   'bg-brick/[0.08] text-brick border border-brick-soft',
+  confirmed: 'bg-cream text-secondary-foreground border border-cream-deep',
+  shipped:   'bg-moss-wash text-forest border border-moss/50',
+  delivered: 'bg-forest text-primary-foreground border border-forest',
+  cancelled: 'bg-muted text-muted-foreground border border-border',
 };
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
@@ -206,7 +209,7 @@ export default function AdminPage() {
     return (
       <main className="min-h-screen bg-canvas flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
-          <p className="eyebrow text-muted mb-3 text-center">phorage</p>
+          <p className="eyebrow text-muted-foreground mb-3 text-center">phorage</p>
           <h2 className="font-serif text-3xl font-medium tracking-tight text-center text-ink mb-10">Admin</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -225,7 +228,7 @@ export default function AdminPage() {
               />
             </div>
             {pwError && (
-              <p id="admin-password-error" role="alert" className="text-[11px] text-coral">
+              <p id="admin-password-error" role="alert" className="text-[11px] text-brick">
                 비밀번호가 틀렸습니다.
               </p>
             )}
@@ -250,7 +253,7 @@ export default function AdminPage() {
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-8 border-b border-hairline pb-6">
           <div>
-            <p className="eyebrow text-muted mb-1.5">phorage studio</p>
+            <p className="eyebrow text-muted-foreground mb-1.5">phorage studio</p>
             <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-tight text-ink">Order Management</h1>
           </div>
           <div className="flex items-center gap-3">
@@ -276,16 +279,16 @@ export default function AdminPage() {
             { label: '입금 대기', value: stats.pending, highlight: stats.pending > 0 },
             { label: '입금 확인', value: stats.confirmed },
             { label: '배송 중',   value: stats.shipped },
-            { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}`, full: true },
+            { label: '총 매출',   value: `₩ ${stats.revenue.toLocaleString()}`, full: true },
           ].map(s => (
             <div
               key={s.label}
               className={`p-4 rounded-sm border ${s.full ? 'col-span-2 md:col-span-1' : ''} ${
-                s.highlight ? 'border-coral-soft bg-surface' : 'border-border-light bg-canvas'
+                s.highlight ? 'border-brick-soft bg-surface' : 'border-border-light bg-canvas'
               }`}
             >
-              <p className="eyebrow text-muted mb-2">{s.label}</p>
-              <p className={`font-serif text-2xl font-medium tracking-tight ${s.highlight ? 'text-coral' : 'text-accent'}`}>{s.value}</p>
+              <p className="label-ko text-muted-foreground mb-2">{s.label}</p>
+              <p className={`font-serif text-2xl font-medium tracking-tight ${s.highlight ? 'text-brick' : 'text-accent'}`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -294,7 +297,7 @@ export default function AdminPage() {
         <div className="mb-8 rounded-sm border border-border-light bg-canvas p-4 md:p-6 space-y-4">
           <div className="flex justify-between items-center gap-4">
             <div>
-              <p className="eyebrow text-muted mb-1">Homepage Hero</p>
+              <p className="eyebrow text-muted-foreground mb-1">Homepage Hero</p>
               <p className="font-serif text-base font-medium tracking-tight text-ink">히어로 이미지 &amp; 텍스트 관리</p>
             </div>
             <div className="flex items-center gap-3">
@@ -302,7 +305,7 @@ export default function AdminPage() {
                 {heroSaved ? '저장되었습니다' : heroError ? '저장에 실패했습니다' : ''}
               </span>
               {heroError && (
-                <span aria-hidden className="text-[11px] text-coral">저장 실패</span>
+                <span aria-hidden className="text-[11px] text-brick">저장 실패</span>
               )}
               <button
                 onClick={saveHero}
@@ -315,7 +318,7 @@ export default function AdminPage() {
           </div>
           <div className="space-y-3">
             <div>
-              <label htmlFor="hero-image" className="block eyebrow text-muted mb-1.5">이미지 URL (Cloudinary or Unsplash)</label>
+              <label htmlFor="hero-image" className="block label-ko text-muted-foreground mb-1.5">이미지 URL (Cloudinary or Unsplash)</label>
               <input
                 id="hero-image"
                 className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
@@ -326,7 +329,7 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="hero-title" className="block eyebrow text-muted mb-1.5">타이틀</label>
+                <label htmlFor="hero-title" className="block label-ko text-muted-foreground mb-1.5">타이틀</label>
                 <input
                   id="hero-title"
                   className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
@@ -336,7 +339,7 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label htmlFor="hero-subtitle" className="block eyebrow text-muted mb-1.5">서브타이틀</label>
+                <label htmlFor="hero-subtitle" className="block label-ko text-muted-foreground mb-1.5">서브타이틀</label>
                 <input
                   id="hero-subtitle"
                   className="w-full rounded-sm border border-border-light px-4 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
@@ -348,11 +351,19 @@ export default function AdminPage() {
             </div>
             {heroImage && /^https:\/\/.+/.test(heroImage) && (
               <div className="mt-2">
-                <p className="eyebrow text-muted mb-2">미리보기</p>
-                <div className="aspect-[16/6] bg-surface relative overflow-hidden rounded-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={heroImage} alt="Hero preview" className="w-full h-full object-cover" />
-                </div>
+                <p className="label-ko text-muted-foreground mb-2">
+                  미리보기 <span className="text-[11px]">— 홈에서도 이 비율 그대로 실립니다</span>
+                </p>
+                {/* No fixed ratio and no object-cover: the home hero builds its
+                    frame from the photo's own proportions, so a preview that
+                    imposed a 16:6 banner was previewing a crop the home page
+                    never makes. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cloudinary(heroImage, { width: 800 })}
+                  alt="Hero preview"
+                  className="block h-auto w-full max-w-md rounded-sm bg-surface"
+                />
               </div>
             )}
           </div>
@@ -382,12 +393,12 @@ export default function AdminPage() {
 
         {/* 주문 목록 */}
         {loading ? (
-          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted animate-pulse">
+          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted-foreground animate-pulse">
             Loading orders...
           </div>
         ) : loadError ? (
           <div className="py-20 text-center space-y-4">
-            <p role="alert" className="text-[11px] uppercase tracking-widest text-coral">
+            <p role="alert" className="text-[11px] uppercase tracking-widest text-brick">
               주문을 불러오지 못했습니다.
             </p>
             <button
@@ -398,7 +409,7 @@ export default function AdminPage() {
             </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted">
+          <div className="py-20 text-center text-[11px] uppercase tracking-widest text-muted-foreground">
             No orders found.
           </div>
         ) : (
@@ -421,13 +432,13 @@ export default function AdminPage() {
                   >
                     {/* id + 상태 (모바일에서 한 줄, 데스크톱에서 인라인) */}
                     <div className="flex items-center gap-3 sm:contents">
-                      <span className="text-[11px] text-muted font-mono w-12 flex-shrink-0">#{order.id}</span>
+                      <span className="text-[11px] text-muted-foreground font-mono w-12 flex-shrink-0">#{order.id}</span>
 
                       <span className={`text-[9px] uppercase tracking-widest px-2 py-1 rounded-sm font-medium flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
                         {STATUS_LABELS[order.status]}
                       </span>
 
-                      <span aria-hidden className="text-muted text-xs ml-auto sm:hidden">{isExpanded ? '▲' : '▼'}</span>
+                      <span aria-hidden className="text-muted-foreground text-xs ml-auto sm:hidden">{isExpanded ? '▲' : '▼'}</span>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -437,14 +448,14 @@ export default function AdminPage() {
 
                     <div className="flex items-center justify-between gap-3 sm:block sm:text-right flex-shrink-0">
                       <div>
-                        <p className="text-sm font-medium text-accent">₩ {order.total_price.toLocaleString()}</p>
-                        <p className="text-[10px] text-muted">
+                        <p className="text-sm font-medium text-accent">₩&nbsp;{order.total_price.toLocaleString()}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString('ko-KR', {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                           })}
                         </p>
                       </div>
-                      <span aria-hidden className="text-muted text-xs ml-1 flex-shrink-0 hidden sm:inline">{isExpanded ? '▲' : '▼'}</span>
+                      <span aria-hidden className="text-muted-foreground text-xs ml-1 flex-shrink-0 hidden sm:inline">{isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </button>
 
@@ -453,17 +464,17 @@ export default function AdminPage() {
                     <div id={panelId} className="border-t border-border-light px-5 py-5 space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                         <div className="space-y-2 text-ink-body">
-                          <p><span className="eyebrow text-muted inline-block w-16">연락처</span>{order.phone || '-'}</p>
-                          <p><span className="eyebrow text-muted inline-block w-16">주소</span>{order.address}</p>
-                          {order.note && <p><span className="eyebrow text-muted inline-block w-16">메모</span>{order.note}</p>}
+                          <p><span className="label-ko text-muted-foreground inline-block w-16">연락처</span>{order.phone || '-'}</p>
+                          <p><span className="label-ko text-muted-foreground inline-block w-16">주소</span>{order.address}</p>
+                          {order.note && <p><span className="label-ko text-muted-foreground inline-block w-16">메모</span>{order.note}</p>}
                         </div>
                         <div>
-                          <p className="eyebrow text-muted mb-2">주문 상품</p>
+                          <p className="label-ko text-muted-foreground mb-2">주문 상품</p>
                           <div className="space-y-1">
                             {order.items.map((item, i) => (
                               <div key={i} className="flex justify-between text-xs text-ink-body">
                                 <span>{item.name} ×{item.quantity}</span>
-                                <span className="text-accent font-medium">₩ {(item.price * item.quantity).toLocaleString()}</span>
+                                <span className="text-accent font-medium">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
@@ -486,14 +497,14 @@ export default function AdminPage() {
                             <button
                               disabled={updating === order.id}
                               onClick={() => cancelOrder(order.id)}
-                              className="btn-outline text-[11px] uppercase tracking-widest text-slate hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+                              className="btn-outline text-[11px] uppercase tracking-widest text-slate hover:text-brick focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
                             >
                               취소
                             </button>
                           )}
                         </div>
                         {updateError?.id === order.id && (
-                          <p role="alert" className="text-[11px] text-coral">
+                          <p role="alert" className="text-[11px] text-brick">
                             {updateError.message}
                           </p>
                         )}

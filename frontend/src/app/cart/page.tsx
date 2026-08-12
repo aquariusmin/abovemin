@@ -24,13 +24,13 @@ export default function CartPage() {
 
   if (items.length === 0) return (
     <main className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8 py-24">
-      <p className="eyebrow text-muted mb-4">Cart</p>
+      <p className="eyebrow text-muted-foreground mb-4">Cart</p>
       <p className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</p>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-        <Link href="/shop" className="btn-primary">Explore the shop</Link>
+        <Link href="/shop" className="btn-primary">소품 보러 가기</Link>
         <Link href="/archive" className="link-underline text-ink text-sm">Browse the archive</Link>
       </div>
     </main>
@@ -47,7 +47,7 @@ export default function CartPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE }}
         >
-          <p className="eyebrow text-muted mb-3">Your Cart · {items.length} {items.length === 1 ? 'item' : 'items'}</p>
+          <p className="eyebrow text-muted-foreground mb-3">Your Cart · {items.length} {items.length === 1 ? 'item' : 'items'}</p>
           <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">Ready to collect?</h1>
         </motion.header>
 
@@ -77,7 +77,7 @@ export default function CartPage() {
                   <Link href={`/shop/${item.id}`} className="text-[15px] font-medium text-ink-body leading-snug hover:text-accent transition-colors">
                     {item.name}
                   </Link>
-                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">₩ {item.price.toLocaleString()}</p>
+                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">₩&nbsp;{item.price.toLocaleString()}</p>
                 </div>
 
                 {/* Quantity */}
@@ -103,11 +103,11 @@ export default function CartPage() {
                 {/* Line subtotal + remove */}
                 <div className="text-right min-w-[88px] order-4 sm:order-none ml-auto sm:ml-0">
                   <p className="text-sm font-semibold text-ink-body tabular-nums">
-                    ₩ {(item.price * item.quantity).toLocaleString()}
+                    ₩&nbsp;{(item.price * item.quantity).toLocaleString()}
                   </p>
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="eyebrow text-muted hover:text-coral transition-colors"
+                    className="eyebrow text-muted-foreground hover:text-brick transition-colors"
                   >
                     Remove
                   </button>
@@ -122,17 +122,17 @@ export default function CartPage() {
           {confirmingClear ? (
             <span className="flex items-center gap-3 text-sm text-slate">
               모두 비울까요?
-              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="eyebrow text-coral hover:opacity-70 transition-opacity">
+              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="eyebrow text-brick hover:opacity-70 transition-opacity">
                 Yes, clear
               </button>
-              <button onClick={() => setConfirmingClear(false)} className="eyebrow text-muted hover:text-ink transition-colors">
+              <button onClick={() => setConfirmingClear(false)} className="eyebrow text-muted-foreground hover:text-ink transition-colors">
                 Cancel
               </button>
             </span>
           ) : (
             <button
               onClick={() => setConfirmingClear(true)}
-              className="eyebrow text-muted hover:text-slate transition-colors"
+              className="eyebrow text-muted-foreground hover:text-slate transition-colors"
             >
               Clear All
             </button>
@@ -140,9 +140,9 @@ export default function CartPage() {
 
           <div className="w-full md:w-auto rounded-lg bg-stone p-6 md:min-w-[280px]">
             <div className="flex items-baseline justify-between mb-5">
-              <span className="eyebrow text-muted">Total</span>
+              <span className="eyebrow text-muted-foreground">Total</span>
               <span className="text-2xl font-semibold text-ink tabular-nums" aria-live="polite">
-                ₩ {totalPrice().toLocaleString()}
+                ₩&nbsp;{totalPrice().toLocaleString()}
               </span>
             </div>
             <Link href="/cart/checkout" className="btn-primary w-full">

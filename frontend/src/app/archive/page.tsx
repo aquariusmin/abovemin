@@ -18,18 +18,18 @@ export default async function Archive() {
 
       <Reveal className="max-w-[1400px] mx-auto mb-14 md:mb-20" y={16}>
         <header className="space-y-6">
-          <p className="eyebrow text-accent">The Archive</p>
+          <p className="eyebrow eyebrow-marked text-primary">The Archive</p>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink max-w-[16ch]">
             Yesterday&rsquo;s light,<br className="hidden sm:block" /> collected today.
           </h1>
-          <div className="rule max-w-[1400px]" />
+          <div className="rule-accent max-w-[1400px]" />
         </header>
       </Reveal>
 
       {albumsWithCount.length > 0 ? (
         <ArchiveGrid albums={albumsWithCount} />
       ) : (
-        <p className="max-w-[1400px] mx-auto text-center text-sm text-muted py-20 border border-dashed border-hairline rounded-md">
+        <p className="max-w-[1400px] mx-auto text-center text-sm text-muted-foreground py-20 border border-dashed border-hairline rounded-lg">
           아직 공개된 컬렉션이 없습니다.
         </p>
       )}

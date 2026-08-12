@@ -8,10 +8,14 @@ export const metadata: Metadata = {
 };
 
 const WHAT_I_DO = [
-  { title: 'Archive', desc: '필름과 디지털로 담은 사진들을 앨범 단위로 정리합니다.', href: '/archive' },
-  { title: 'Shop', desc: '자연에서 영감 받은 포스터, 문구, 라이프스타일 소품을 소개합니다.', href: '/shop' },
-  { title: 'Portfolio', desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.', href: '/portfolio' },
-  { title: 'Lab', desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.', href: '/lab', italic: true },
+  { title: 'Archive', href: '/archive', action: '사진 보기',
+    desc: '필름과 디지털로 담은 사진들을 앨범 단위로 정리합니다.' },
+  { title: 'Shop', href: '/shop', action: '소품 보기',
+    desc: '자연에서 영감 받은 포스터, 문구, 라이프스타일 소품을 소개합니다.' },
+  { title: 'Portfolio', href: '/portfolio', action: '프로젝트 보기',
+    desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.' },
+  { title: 'Lab', href: '/lab', action: '대시보드 보기', italic: true,
+    desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.' },
 ];
 
 export default function About() {
@@ -21,12 +25,17 @@ export default function About() {
 
         {/* Hero */}
         <Reveal as="header" className="space-y-6" y={16}>
-          <p className="eyebrow text-accent">About</p>
+          <p className="eyebrow eyebrow-marked text-primary">About</p>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink break-keep">
             빛을 수집하고,<br />
-            세상을 <span className="text-accent">분석</span>합니다.
+            세상을{' '}
+            <span className="relative inline-block">
+              <span aria-hidden className="absolute inset-x-0 bottom-[0.08em] h-[0.28em] rounded-full bg-moss/45" />
+              <span className="relative text-primary">분석</span>
+            </span>
+            합니다.
           </h1>
-          <div className="w-16 h-[2px] bg-accent" />
+          <div className="rule-accent w-24" />
         </Reveal>
 
         {/* Story */}
@@ -42,13 +51,13 @@ export default function About() {
           <p>
             국제통상학과 경영학을 공부하며 고객, 시장, 재무 데이터를 실제 의사결정으로 연결하는 분석을 지향합니다.
             데이터 분석, 경제 연구, 재무 분석, 핀테크, 전략과 서비스 기획 프로젝트는
-            <Link href="/portfolio" className="ml-1 link-underline text-accent">Portfolio</Link>에 정리했습니다.
+            <Link href="/portfolio" className="ml-1 link-leaf">Portfolio</Link>에 정리했습니다.
           </p>
         </Reveal>
 
         {/* What I do */}
         <section className="space-y-8">
-          <Reveal as="header"><h2 className="eyebrow text-muted">What I do</h2></Reveal>
+          <Reveal as="header"><h2 className="eyebrow text-muted-foreground">What I do</h2></Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
             {WHAT_I_DO.map((item, i) => (
               <Reveal key={item.title} className="h-full" delay={i * 0.06} y={16}>
@@ -60,7 +69,9 @@ export default function About() {
                     {item.title}
                   </h3>
                   <p className="text-sm text-slate leading-relaxed break-keep flex-1">{item.desc}</p>
-                  <span className="eyebrow text-muted group-hover:text-accent transition-colors">Explore →</span>
+                  <span className="text-[13px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                    {item.action} <span aria-hidden>→</span>
+                  </span>
                 </Link>
               </Reveal>
             ))}
@@ -69,23 +80,23 @@ export default function About() {
 
         {/* Contact */}
         <Reveal as="section" className="space-y-6 border-t border-hairline pt-10 md:pt-12">
-          <h2 className="eyebrow text-muted">Connect</h2>
+          <h2 className="eyebrow text-muted-foreground">Connect</h2>
           <div className="text-base text-ink-body space-y-3">
             <p>
               Instagram —{' '}
-              <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
+              <a href="https://instagram.com/sangmin__02" target="_blank" rel="noopener noreferrer" className="link-leaf">
                 @sangmin__02
               </a>
             </p>
             <p>
               Email —{' '}
-              <a href="mailto:aquariusmin01@naver.com" className="link-underline text-accent">
+              <a href="mailto:aquariusmin01@naver.com" className="link-leaf">
                 aquariusmin01@naver.com
               </a>
             </p>
             <p>
               GitHub —{' '}
-              <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
+              <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="link-leaf">
                 aquariusmin
               </a>
             </p>

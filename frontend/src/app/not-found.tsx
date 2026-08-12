@@ -9,7 +9,7 @@ export default function NotFound() {
           페이지를 찾을 수 없습니다.
         </h1>
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/" className="btn-primary">Go home</Link>
+          <Link href="/" className="btn-primary">홈으로 가기</Link>
           <Link href="/archive" className="btn-outline">Archive</Link>
           <Link href="/shop" className="btn-outline">Shop</Link>
         </div>

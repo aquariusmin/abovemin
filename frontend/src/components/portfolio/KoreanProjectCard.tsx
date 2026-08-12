@@ -4,7 +4,7 @@ import { portfolioCardChips } from "@/data/portfolioEvidence";
 
 export default function KoreanProjectCard({
   project,
-  basePath = "/ko/portfolio",
+  basePath = "/portfolio",
 }: {
   project: PortfolioProject;
   basePath?: string;
@@ -25,7 +25,7 @@ export default function KoreanProjectCard({
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-serif text-2xl font-bold leading-tight tracking-tight text-ink transition-colors group-hover:text-accent">
+          <h3 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-ink transition-colors group-hover:text-accent">
             {project.title}
           </h3>
         </div>

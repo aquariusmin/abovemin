@@ -19,7 +19,7 @@ export default function PrintControls({
         &larr; {isKorean ? "포트폴리오로 돌아가기" : "Back to portfolio"}
       </Link>
       <button type="button" onClick={() => window.print()} className="btn-primary">
-        {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
+        {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
       </button>
     </div>
   );

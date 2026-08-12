@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import type { EquityPoint } from "@/lib/quant";
+import { trend } from "@/lib/palette";
 
 // Full-size equity curve used on the bot-detail page. Styling mirrors
 // /lab's existing chart section (grid stroke alpha, monospace ticks,
@@ -25,14 +26,14 @@ export function EquityChart({
   if (points.length < 2) {
     return (
       <div className="h-64 grid place-items-center">
-        <p className="text-[10px] font-mono text-white/25 uppercase tracking-[0.2em]">
+        <p className="text-[10px] font-mono text-white/55 uppercase tracking-[0.2em]">
           No equity history yet
         </p>
       </div>
     );
   }
-  const stroke = positive ? "#34d399" : "#f87171";
-  const gradStart = positive ? "#34d399" : "#f87171";
+  const stroke = positive ? trend.up : trend.down;
+  const gradStart = stroke;
   return (
     <div
       className="h-64 md:h-80 w-full"
@@ -52,12 +53,12 @@ export function EquityChart({
               <stop offset="95%" stopColor={gradStart} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.10)" />
           <XAxis
             dataKey="ts"
             tick={{
               fontSize: 9,
-              fill: "rgba(255,255,255,0.25)",
+              fill: "rgba(255,255,255,0.55)",
               fontFamily: "monospace",
             }}
             tickLine={false}
@@ -73,7 +74,7 @@ export function EquityChart({
           <YAxis
             tick={{
               fontSize: 9,
-              fill: "rgba(255,255,255,0.25)",
+              fill: "rgba(255,255,255,0.55)",
               fontFamily: "monospace",
             }}
             tickLine={false}
@@ -90,8 +91,8 @@ export function EquityChart({
               `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
             }
             contentStyle={{
-              backgroundColor: "rgba(26,28,26,0.96)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              backgroundColor: "rgba(22,35,26,0.96)",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 6,
               color: "rgba(255,255,255,0.9)",
               fontFamily: "monospace",
