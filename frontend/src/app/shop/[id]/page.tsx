@@ -89,23 +89,23 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <Reveal className="md:col-span-5 space-y-6 md:space-y-8" delay={0.08} y={16}>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <p className="eyebrow text-muted">{product.category}</p>
+              <p className="eyebrow text-muted-foreground">{product.category}</p>
               <span aria-hidden className="h-3 w-px bg-hairline" />
-              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted'}`}>
+              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted-foreground'}`}>
                 {product.in_stock ? 'In stock' : 'Sold out'}
               </span>
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink break-keep">
               {product.name}
             </h1>
-            <p className="text-2xl font-semibold text-accent tabular-nums">₩ {product.price.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-accent tabular-nums">₩&nbsp;{product.price.toLocaleString()}</p>
           </div>
 
           <hr className="rule" />
 
           {product.description && (
             <div className="space-y-3">
-              <p className="eyebrow text-muted">Story</p>
+              <p className="eyebrow text-muted-foreground">Story</p>
               <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
                 {product.description}
               </p>

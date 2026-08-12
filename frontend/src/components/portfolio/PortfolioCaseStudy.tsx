@@ -26,13 +26,13 @@ const labels = {
       ],
     },
     sections: [
-      ["01 · Start", "The question I began with"],
-      ["02 · Material", "The data and evidence"],
-      ["03 · Work", "How I worked through it"],
-      ["04 · Takeaway", "What the numbers suggested"],
-      ["05 · Use", "Where this helps"],
-      ["06 · Boundary", "What still needs checking"],
-      ["07 · Figures", "Tables and figures"],
+      ["01 · Start", "The question I began with"],
+      ["02 · Material", "The data and evidence"],
+      ["03 · Work", "How I worked through it"],
+      ["04 · Takeaway", "What the numbers suggested"],
+      ["05 · Use", "Where this helps"],
+      ["06 · Boundary", "What still needs checking"],
+      ["07 · Figures", "Tables and figures"],
     ],
     boundary: "Important boundary:",
     previous: "Previous case",
@@ -55,18 +55,18 @@ const labels = {
       ],
     },
     sections: [
-      ["01 · 시작", "처음 잡은 질문"],
-      ["02 · 근거", "제가 확인한 자료"],
-      ["03 · 전개", "분석은 이렇게 진행했습니다"],
-      ["04 · 결론", "숫자에서 읽은 것"],
-      ["05 · 적용", "어디에 활용할 수 있나"],
-      ["06 · 경계", "아직 단정하지 않는 부분"],
-      ["07 · 근거 화면", "표와 그래프로 확인하기"],
+      ["01 · 시작", "처음 잡은 질문"],
+      ["02 · 근거", "제가 확인한 자료"],
+      ["03 · 전개", "분석은 이렇게 진행했습니다"],
+      ["04 · 결론", "숫자에서 읽은 것"],
+      ["05 · 적용", "어디에 활용할 수 있나"],
+      ["06 · 경계", "아직 단정하지 않는 부분"],
+      ["07 · 근거 화면", "표와 그래프로 확인하기"],
     ],
     boundary: "해석 시 유의사항:",
     previous: "이전 프로젝트",
     next: "다음 프로젝트",
-    print: "인쇄 · PDF로 저장",
+    print: "인쇄 · PDF로 저장",
   },
 } as const;
 
@@ -126,11 +126,11 @@ export default function PortfolioCaseStudy({
             <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
           <div className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${project.sourceUrl ? "sm:grid-cols-2 lg:grid-cols-[minmax(9rem,0.8fr)_minmax(24rem,1.8fr)_minmax(10rem,1fr)]" : "sm:grid-cols-2"}`}>
-            <p className="break-keep"><span className="font-bold text-ink">{copy.period}</span> · {project.period}</p>
-            <p className="break-keep"><span className="font-bold text-ink">{copy.role}</span> · {project.role}</p>
+            <p className="break-keep"><span className="font-semibold text-ink">{copy.period}</span> · {project.period}</p>
+            <p className="break-keep"><span className="font-semibold text-ink">{copy.role}</span> · {project.role}</p>
             {project.sourceUrl && (
               <p className="break-keep">
-                <span className="font-bold text-ink">{copy.source}</span> ·{" "}
+                <span className="font-semibold text-ink">{copy.source}</span> ·{" "}
                 <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
                   {isKorean ? "GitHub 저장소" : "GitHub repository"}
                 </a>
@@ -160,7 +160,7 @@ export default function PortfolioCaseStudy({
               {project.process.map((step, index) => (
                 <li key={step.title} className="grid gap-4 py-6 md:grid-cols-12 md:py-8">
                   <span className="font-mono text-xs text-accent md:col-span-1">{String(index + 1).padStart(2, "0")}</span>
-                  <h3 className="text-lg font-bold md:col-span-3">{step.title}</h3>
+                  <h3 className="text-lg font-semibold md:col-span-3">{step.title}</h3>
                   <p className="break-keep text-sm leading-relaxed text-slate md:col-span-8">{step.description}</p>
                 </li>
               ))}
@@ -171,7 +171,7 @@ export default function PortfolioCaseStudy({
             <div className="grid gap-4 md:grid-cols-2">
               {project.insights.map((insight) => <p key={insight} className="break-keep border border-border-light bg-white p-6 text-sm leading-relaxed text-ink-body">{insight}</p>)}
             </div>
-            {project.caution && <div className="mt-5 break-keep border border-amber-700/15 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-900"><span className="font-bold">{copy.boundary}</span> {project.caution}</div>}
+            {project.caution && <div className="mt-5 break-keep border border-brick/20 bg-brick/[0.05] px-5 py-4 text-sm leading-relaxed text-brick"><span className="font-semibold">{copy.boundary}</span> {project.caution}</div>}
           </CaseSection>
 
           <CaseSection label={copy.sections[4][0]} title={copy.sections[4][1]} isKorean={isKorean}>
@@ -196,11 +196,11 @@ export default function PortfolioCaseStudy({
         <nav aria-label={isKorean ? "프로젝트 이동" : "Case study navigation"} className="grid gap-px border-y border-hairline bg-hairline sm:grid-cols-2">
           <Link href={getPortfolioCasePath(locale, mode, previous.slug)} className="group bg-surface p-6 transition-colors hover:bg-white md:p-8">
             <span className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>{copy.previous}</span>
-            <p className="mt-3 font-serif text-lg font-bold transition-colors group-hover:text-accent">&larr; {previous.title}</p>
+            <p className="mt-3 font-serif text-lg font-semibold transition-colors group-hover:text-accent">&larr; {previous.title}</p>
           </Link>
           <Link href={getPortfolioCasePath(locale, mode, next.slug)} className="group bg-surface p-6 text-right transition-colors hover:bg-white md:p-8">
             <span className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>{copy.next}</span>
-            <p className="mt-3 font-serif text-lg font-bold transition-colors group-hover:text-accent">{next.title} &rarr;</p>
+            <p className="mt-3 font-serif text-lg font-semibold transition-colors group-hover:text-accent">{next.title} &rarr;</p>
           </Link>
         </nav>
       </article>
@@ -250,7 +250,7 @@ function StoryArc({
         <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
           {copy.story.label}
         </p>
-        <h2 className="break-keep font-serif text-3xl font-bold tracking-tight">{copy.story.title}</h2>
+        <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{copy.story.title}</h2>
       </div>
       <div className="grid gap-px overflow-hidden border border-hairline bg-hairline md:grid-cols-2">
         {arcItems.map((item) => (
@@ -258,7 +258,7 @@ function StoryArc({
             <p className={`text-[10px] font-semibold text-accent ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.18em]"}`}>
               {item.label}
             </p>
-            <h3 className="mt-3 break-keep text-lg font-bold text-ink">{item.title}</h3>
+            <h3 className="mt-3 break-keep text-lg font-semibold text-ink">{item.title}</h3>
             <p className="mt-3 break-keep text-sm leading-relaxed text-slate">{item.body}</p>
           </article>
         ))}
@@ -272,7 +272,7 @@ function CaseSection({ label, title, children, isKorean }: { label: string; titl
     <section>
       <div className="mb-7 space-y-2">
         <p className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{label}</p>
-        <h2 className="break-keep font-serif text-3xl font-bold tracking-tight">{title}</h2>
+        <h2 className="break-keep font-serif text-3xl font-semibold tracking-tight">{title}</h2>
       </div>
       {children}
     </section>

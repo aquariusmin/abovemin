@@ -1,219 +1,272 @@
 ## Overview
 
-Cohere's current web presence feels like a sober enterprise AI command center with editorial restraint. The home page opens on a huge typographic declaration over a white canvas, then uses photography, dark product mockups, trust logos, and generous empty space to make AI infrastructure feel controlled rather than speculative. Product pages invert the tone into deep green-black or dark navy bands, while blog and research pages move toward publishing-system clarity: large filters, thin rules, dense lists, and pale technical backgrounds.
+phorage runs on **Forest Editorial** — a botanical, warm-neutral design system built on the [shadcn/ui](https://github.com/shadcn-ui/ui) token architecture. The structure is shadcn's: semantic role tokens (`--background`, `--primary`, `--muted`, `--destructive`, `--ring`, …), a single `--radius` that derives the whole corner ramp, an `@theme inline` bridge into Tailwind v4 utilities, and component recipes that live in `@layer components` so markup utilities always win.
 
-What makes the system distinctive is the mix of austere black-and-white UI with bursts of tactile brand imagery. The site avoids decorative chrome in the normal interface; color arrives through photography, abstract 3D media, coral blog taxonomy chips, blue research links, and dark product environments. Cards are rounded but not cute. Type is large, tight, and almost monospaced in spirit, creating a research-lab cadence across marketing, product, and editorial surfaces.
+The surface treatment is not shadcn's neutral grey. The palette is five colours pulled from a forest: deep canopy green, fern, lime, parchment cream, and clay red. Every neutral is warm or green-tinted, so nothing on the page reads as cold grey. Pages alternate a paper canvas, cream chapter bands, and one deep-forest closing band, with photography carrying most of the saturation.
 
 **Key Characteristics:**
-- Monumental display headlines with very tight line height and negative tracking.
-- White editorial canvases interrupted by deep green, dark navy, and image-led CTA bands.
-- Rounded media cards and product cards, usually 8px to 22px.
-- Pill CTAs in near-black or white, with most secondary actions rendered as underlined text links.
-- Trust-logo strips with monochrome partner marks and very wide vertical spacing.
-- Agent-console mockups using dark panels, small status chips, and product integration badges.
-- Blog and research surfaces with prominent taxonomy chips, long rule-separated lists, and search fields.
+- Warm paper canvas (`#fcfaf4`) as the default surface — never pure white, never grey.
+- Cream bands mark chapter breaks; a single forest band closes the page.
+- Forest-green pill CTAs, not near-black — the brand colour does the primary action.
+- Lime is the accent-of-record: active nav underline, section eyebrow tick, hero underlay, positive Lab metrics.
+- Monumental grotesk display type with tight tracking, over restrained 14–17px body copy.
+- Flat, bordered cards (`shadow-xs`, 1px warm border) that lift on hover — no heavy drop shadows.
+- A whisper of SVG paper grain on large flat bands.
 
 ## Colors
 
-### Brand & Accent
+### Brand Palette
 
-- **Cohere Black** (`#000000`): Announcement bar, highest-contrast text, and the global brand anchor.
-- **Near-Black Primary** (`#17171c`): Primary CTA buttons, dark footer, and deep UI cards.
-- **Deep Enterprise Green** (`#003c33`): Product hero bands for North and Command-style dark sections.
-- **Dark Navy** (`#071829`): Financial-services and security-oriented solution bands.
-- **Action Blue** (`#1863dc`): Editorial links, pagination, and secondary action emphasis.
-- **Coral** (`#ff7759`): Blog category chips, taxonomy outlines, and warm product markers.
-- **Soft Coral** (`#ffad9b`): Pale chip borders and segmented article-label details.
+The five source colours. Everything else is derived from them.
 
-### Surface & Background
+| Token | Value | Role |
+|---|---|---|
+| `--forest` | `#386641` | Primary actions, brand ink, active states, chart series 1 |
+| `--fern` | `#6a994e` | Primary hover, focus ring (`--ring`), chart series 2 |
+| `--moss` | `#a7c957` | Lime accent — markers, underlines, positive metrics on dark |
+| `--cream` | `#f2e8cf` | Secondary surface, section bands, image matting |
+| `--brick` | `#bc4749` | Destructive, error, editorial taxonomy, caveat callouts |
 
-- **Canvas White** (`#ffffff`): Dominant page background and form/card surface.
-- **Soft Stone** (`#eeece7`): Product cards, testimonial placeholders, and warm neutral surface blocks.
-- **Pale Green Wash** (`#edfce9`): North page section backdrop behind stacked dark capability panels.
-- **Pale Blue Wash** (`#f1f5ff`): Blog CTA surface behind abstract 3D imagery.
-- **Card Border** (`#f2f2f2`): Softest card containment line.
+### Tonal Extensions
 
-### Text & Rules
+- `--forest-deep` (`#24402c`): Deep product / CTA bands.
+- `--forest-black` (`#16231a`): Lab shell, footer, deepest surface.
+- `--moss-wash` (`#eef4dc`): Palest lime section wash and verified-evidence chips.
+- `--cream-deep` (`#e8dcbb`): Pressed cream, border-on-cream.
+- `--brick-soft` (`#e0a8a6`): Brick chip borders.
+- `--brick-light` (`#d76668`): Brick lifted for legibility on dark surfaces.
 
-- **Ink** (`#212121`): Default body text and most link text on light backgrounds.
-- **Muted Slate** (`#93939f`): Footer links, dates, metadata, and de-emphasized labels.
-- **Slate** (`#75758a`): Research separators and tertiary text.
-- **Hairline** (`#d9d9dd`): Standard list rules and section dividers.
-- **Border Light** (`#e5e7eb`): Secondary divider and utility rule.
+### Semantic Roles (shadcn)
 
-### Semantic
+| Token | Light | Dark (`.dark`) |
+|---|---|---|
+| `--background` | `#fcfaf4` | `#16231a` |
+| `--foreground` | `#1f2a1e` | `#f1f3ec` |
+| `--card` / `--popover` | `#ffffff` | `#1d2b21` |
+| `--primary` | `--forest` | `--moss` |
+| `--primary-foreground` | `#f5efe0` | `#16231a` |
+| `--secondary` | `--cream` | `#24332a` |
+| `--secondary-foreground` | `#2a4a32` | `#e8eedd` |
+| `--muted` | `#f1ede0` | `#223028` |
+| `--muted-foreground` | `#67715d` | `#94a189` |
+| `--accent` | `--forest` | `--moss` |
+| `--destructive` | `--brick` | `#d76668` |
+| `--border` | `#e2decd` | `#2c3b31` |
+| `--input` | `#dcd7c4` | `#34453a` |
+| `--ring` | `--fern` | `--moss` |
 
-- **Focus Blue** (`#4c6ee6`): Keyboard focus and ring color.
-- **Form Focus Violet** (`#9b60aa`): Focus border for text inputs.
-- **Error Red** (`#b30000`): Extracted ring/shadow color associated with validation-like states.
+**Documented deviation from stock shadcn:** `--accent` is the brand green rather than a pale hover wash. `text-accent` reads as "brand" throughout this app. Hover surfaces use `--muted` or `--secondary` instead.
 
-### Gradient System
+### Legacy Aliases
 
-Cohere does not use gradients as a generic UI fill. Gradients and color fields are media-led: abstract 3D hero imagery, deep blue open-science particle fields, red-orange product video posters, and dark green-to-black product environments. Keep UI surfaces flat; reserve gradient richness for large media panels and CTA image bands.
+The codebase already speaks a set of older names; they are re-pointed at the new palette rather than churned out of the markup. Prefer the semantic roles above in new code.
+
+`--canvas` → background · `--surface` (`#f7f2e3`) → warm section · `--surface-muted` → muted · `--surface-dark` → forest-black · `--stone` → cream · `--green-wash` / `--blue-wash` → moss-wash · `--hairline` / `--border-light` / `--card-border` → border · `--ink` → foreground · `--ink-body` (`#2e3a2c`) → body copy · `--slate` (`#57624f`) → secondary body copy · `--accent-light` → fern · `--green-deep` → forest-deep · `--navy` → forest-black.
+
+### Data Visualization
+
+`--chart-1` … `--chart-5` run forest → fern → moss → brick → `#8b7a4f` (tan). `src/lib/palette.ts` mirrors the palette as literal hex for the places that cannot read a CSS variable: Recharts `stroke`/`fill` props, inline SVG charts, and the Satori-rendered OG image. Keep the two in sync.
+
+Directional colour on the Lab's dark shell uses `trend.up` = moss and `trend.down` = `#d76668`. Categorical market chips deliberately avoid those two so a chip never reads as a P&L signal.
+
+### Contrast Notes
+
+- Moss (`#a7c957`) never carries text on a light surface — it is a highlight, an underlay, or dark-surface text only.
+- `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 11px eyebrows stay legible.
+- Forest and brick both clear 5:1 on canvas and are safe for body-size links.
 
 ## Typography
 
 ### Font Family
 
-- **Display**: `CohereText`, falling back to `Space Grotesk`, `Inter`, `ui-sans-serif`, and `system-ui`.
-- **Body/UI**: `Unica77 Cohere Web`, falling back to `Inter`, `Arial`, `ui-sans-serif`, and `system-ui`.
-- **Technical labels**: `CohereMono`, falling back to `Arial`, `ui-sans-serif`, and `system-ui`.
-- **Icons**: Cohere uses custom icon fonts and thin-line geometric illustrations.
+- **Display**: `Fraunces` — an old-style serif with a little optical wonk. **Latin only.**
+- **Body/UI**: `IBM Plex Sans`, with `IBM Plex Sans KR` resolving every Hangul glyph.
+- **Technical labels**: `IBM Plex Mono`.
+
+`font-serif` in markup means "the display voice", not a CSS generic — it resolves to `--font-display-stack`.
+
+**Korean is served by exactly one webfont family, deliberately.** Google's Korean faces ship ~2,500 glyphs across unicode-range subsets, so each additional family costs roughly 150–330 KB on a Korean page. Plex Sans KR therefore does both display and body duty, and Fraunces stays Latin-only so it never pulls a Korean download.
+
+**Only 400 / 500 / 600 are loaded** — for every family. `font-bold` (700) has no face to match and the browser synthesises one, which smears Hangul in particular. Cap emphasis at `font-semibold`.
+
+**The portfolio surface opts out of the display voice entirely** (`.portfolio-ui` maps `font-serif` to the body stack). Fraunces beside Plex Sans KR works everywhere the two alternate by *section* — but the portfolio mixes them inside a line, because the Korean edition keeps project titles in English ("Korean Air Financial Analysis" a line below 재무비율) and evidence labels run "DCF · APV · 멀티플". At that distance a Latin serif against Hangul reads as two typefaces that met by accident, so that surface sets everything in IBM Plex — one superfamily, Latin and Hangul drawn to a shared skeleton, at no extra webfont cost.
 
 ### Hierarchy
 
-| Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
-|---|---|---:|---:|---:|---:|---|
-| Hero Display | CohereText | 96px | 400 | 1.00 | -1.92px | Home page declaration scale. |
-| Product Display | CohereText | 72px | 400 | 1.00 | -1.44px | Product and research hero headlines. |
-| Section Display | Unica77 | 60px | 400 | 1.00 | -1.2px | Large product-page headings. |
-| Section Heading | Unica77 | 48px | 400 | 1.20 | -0.48px | Split hero and CTA headings. |
-| Card Heading | Unica77 | 32px | 400 | 1.20 | -0.32px | Feature card and list section titles. |
-| Feature Heading | Unica77 | 24px | 400 | 1.30 | 0 | Cards, filters, and article titles. |
-| Body Large | Unica77 | 18px | 400 | 1.40 | 0 | Lead text and larger paragraphs. |
-| Body | Unica77 | 16px | 400 | 1.50 | 0 | Default copy and link text. |
-| Button | Unica77 | 14px | 500 | 1.71 | 0 | Compact CTA labels. |
-| Caption | Unica77 | 14px | 400 | 1.40 | 0 | Metadata and small explanatory text. |
-| Mono Label | CohereMono | 14px | 400 | 1.40 | 0.28px | Uppercase technical labels. |
-| Micro | Unica77 | 12px | 400 | 1.40 | 0 | Footer, nav microcopy, and small links. |
+| Role | Font | Size | Weight | Line Height | Tracking |
+|---|---|---:|---:|---:|---:|
+| Hero Display | Display | `clamp(1.9rem, 7cqw, 4.25rem)` | 500 | 1.05 | tight |
+| Section Display | Display | 44–48px | 500 | 1.10 | tight |
+| Section Heading | Display | 32–36px | 500 | 1.15 | tight |
+| Card Heading | Display | 20–24px | 500 | 1.25 | tight |
+| Body Large | Body | 17–18px | 400 | 1.65 | 0 |
+| Body | Body | 15–16px | 400 | 1.6 | 0 |
+| Button | Body | 14px | 500 | 1 | -0.01em |
+| Caption | Body | 13px | 400 | 1.5 | 0 |
+| Eyebrow (`.eyebrow`) | Mono | 11px | 500 | 1.4 | 0.24em, uppercase |
 
 ### Principles
 
-- Use massive type sparingly; Cohere pages often have one oversized headline and then settle into restrained 16px-24px UI copy.
-- Keep display type tight. Hero copy should feel compact and carved, not airy.
-- Avoid heavy bold weights. Size, spacing, and surface contrast do most of the hierarchy work.
-- Use uppercase mono labels for category and system markers, especially on product and research pages.
-- Editorial pages can use coral chips and blue links, but the base typography remains black and measured.
+- One oversized headline per page; everything after it settles into 15–18px copy.
+- Uppercase mono eyebrows open sections. Use `.eyebrow-marked` to prefix one with a forest→lime tick.
+- Avoid heavy bold — and note it is not merely a preference: 700 is not loaded (see § Font Family). Size, surface contrast, and spacing carry the hierarchy.
+
+### Line Breaking
+
+Korean is the primary language of this site, so the wrapping rules are set once on `body` and inherited, not sprinkled per element:
+
+| Property | Value | Why |
+|---|---|---|
+| `word-break` | `keep-all` | A browser's default breaks Hangul between *any two syllables*, so "포트폴리오" splits as "포트폴 / 리오". `keep-all` moves every break onto a space — how Korean is actually typeset. |
+| `overflow-wrap` | `break-word` | The escape hatch: a long unbroken token (URL, 이메일, spaceless 문장) wraps instead of overflowing its box. |
+| `text-wrap` | `balance` on `h1`–`h4`, `pretty` on `p`/`li`/`figcaption` | Headlines get even line lengths instead of one orphan word; body copy only guards its last line. Both are `@layer base` + `:where()`, so any `text-*` utility overrides them. |
+
+Two things CSS cannot decide, so the markup does:
+
+- **Glue a separator to the word before it.** Put U+00A0 (`&nbsp;`) *before* a `·` separator and a normal space after it, so a line can never open with a dangling `·`. Same for prices (`₩&nbsp;12,000`) — the currency mark never strands itself at a line end.
+- **`<br>` is for a break you want at *every* width.** A hard break inside admin-editable or translated copy turns into a three-line rag as soon as the string changes; reach for `text-balance` and a `max-w-[Nch]` cap instead.
+
+`break-keep` in markup is therefore redundant — harmless where it already exists, unnecessary in new code.
 
 ## Layout
 
 ### Spacing System
 
-The system uses an 8px base with many one-off alignment values: `2px`, `6px`, `8px`, `10px`, `12px`, `16px`, `20px`, `22px`, `24px`, `28px`, `32px`, `36px`, `40px`, `56px`, `60px`, `64px`, and `80px`.
-
-Large sections rely on dramatic vertical breathing room. The home page places a trust-logo strip far below the hero media. Product pages often hold dark panels inside fields of empty white space, then transition to dense forms or footers only near the end.
+8px base. Sections breathe at `py-16 md:py-28`; page gutters run `px-5 sm:px-6 md:px-10`. Content containers cap at `max-w-[1400px]` for grids and `max-w-3xl` for prose.
 
 ### Grid & Container
 
-- Global nav uses a three-zone layout: logo left, menu centered, sign-in/CTA right.
-- Home hero is centered text above a two-card media composition: a wide product mockup card beside a narrower photography card.
-- Feature sections commonly use 3-column cards on desktop.
-- Product pages alternate centered hero blocks, trust-logo strips, large single-feature bands, and 2- or 3-column card grids.
-- Research pages use full-width lists with date and chip columns instead of decorative cards.
-- Forms use two-column input rows inside a rounded white card on dark or stone section backgrounds.
+- Nav is a three-zone flex: wordmark centre, links right, and an empty left zone that still reserves width so the centring holds (hamburger below `lg`). Labels, wordmark, and gaps are fluid — 11→14px between 1024 and ~1600, because five labels plus the wordmark only just fit at `lg` and look undersized on a wide monitor.
+- Home hero is a single photographic stage — one full-width frame with the eyebrow, headline, subtitle, and CTAs laid over its lower band.
+- Card grids run 4 columns at `lg`, 2 at `sm`, 1 below.
+- Photo surfaces (Archive, Shop) use CSS multi-column masonry with `break-inside-avoid`.
 
-### Whitespace Philosophy
+### Rhythm
 
-Cohere uses whitespace as a trust signal. Large empty intervals separate the brand claim, customer proof, product proof, and CTA. Dense content appears only where it serves the information architecture: research paper rows, blog card grids, and contact form fields.
+Pages alternate surfaces rather than stacking cards on one background: paper canvas → cream band → paper canvas → forest band → forest-black footer. The tonal shift is what separates chapters; rules and borders are secondary.
 
 ## Elevation & Depth
 
-Cohere is mostly flat. Depth comes from surface alternation, media contrast, rounded corners, and thin borders rather than drop shadows.
+Mostly flat. Depth comes from surface alternation, warm borders, and hover lift.
 
 | Level | Treatment | Use |
 |---|---|---|
-| Flat | No shadow, white or dark field | Hero copy, research lists, editorial surfaces |
-| Bordered | 1px `#d9d9dd`, `#e5e7eb`, or dark translucent rules | Research rows, forms, pale cards, footer inputs |
-| Media Lift | Rounded image or video over contrasting section color | Hero photo cards, product videos, CTA imagery |
-| Dark Product Field | Deep green or navy full-width band | Command, North, financial services, security sections |
+| Flat | No shadow, canvas or band fill | Hero copy, prose, list surfaces |
+| Bordered | 1px `--border` + `shadow-xs` | Cards, inputs, outline buttons |
+| Hover lift | `translateY(-2px to -4px)` + tinted forest shadow | Interactive cards, pill CTAs |
+| Media | Cream matting around a rounded image | Product and album cards |
+| Photographic stage | Frame cut to the photo's own ratio, scrim ramp over the lower band | Home hero |
+| Band | Cream, moss-wash, forest-deep, or forest-black full-bleed | Chapter breaks, CTAs, footer |
 
 ## Shapes
 
 ### Radius Scale
 
-| Token | Value | Role |
-|---|---:|---|
-| `xs` | 4px | Small images, search fields, article thumbnails, utility elements |
-| `sm` | 8px | Blog chips, cards, small media, dialogs |
-| `md` | 16px | Medium product cards and grouped blocks |
-| `lg` | 22px | Signature media-card and soft placeholder radius |
-| `xl` | 30px | Research/topic filter pills |
-| `pill` | 32px | Primary CTA buttons |
-| `full` | 9999px | Round status elements and fully pill-shaped controls |
+Derived from a single `--radius: 1rem`, following shadcn's ramp formula.
+
+| Token | Multiplier | Value | Role |
+|---|---|---:|---|
+| `--radius-xs` | ×0.4 | 6px | Micro elements |
+| `--radius-sm` | ×0.6 | 10px | Chips, small controls, skip link |
+| `--radius-md` | ×0.8 | 13px | Inputs, small media |
+| `--radius-lg` | ×1.0 | 16px | Cards, album and product media |
+| `--radius-xl` | ×1.4 | 22px | Large media frames |
+| `--radius-2xl` | ×1.8 | 29px | Full-bleed CTA panels |
+| `--radius-pill` | — | 9999px | All buttons, chips, badges |
+
+Buttons and chips are true pills — the one place the system diverges from shadcn's `rounded-md` controls, because the organic voice wants soft ends.
 
 ### Image Treatment
 
-Images are not decorative backdrops for text except in CTA bands. Most imagery sits as rounded cards with visible corners: product videos, enterprise photography, article thumbnails, and abstract 3D renders. The dominant radii are 8px and 22px.
+Images sit as rounded cards, not background fills. Album covers carry a forest-black scrim (not neutral black) so overlaid text stays warm.
+
+**Nothing on this site is cropped to fit a frame — the frame accommodates the photograph.** `cloudinary()` deliberately offers no `c_fill`; it only resizes.
+
+The home hero is where that rule has to work hardest, because the image is admin-configurable and arrives in any orientation. **The frame is built from the photograph's proportions**, not the reverse:
+
+1. `cloudinaryAspect()` reads the delivered width÷height on the server — `fl_getinfo` chained *after* the delivery transform, so the number already accounts for EXIF rotation and `c_limit`. Cached for a day; falls back to `DEFAULT_ASPECT` (3:2) for a non-Cloudinary URL.
+2. The frame takes that ratio (`aspect-ratio`) and caps its width at `min(1400px, ratio × 76vh)`.
+
+Box and picture being the same shape removes both failure modes at once: nothing is cropped, and there is no leftover strip to fill with matting, blur, or anything else. A portrait photo narrows the frame into a centred column rather than being cropped or letterboxed; the warm canvas around it is page, not filler. Passing the ratio in the HTML also reserves the box before the image loads, so the hero contributes no layout shift.
+
+Copy is laid over the lower band from `md` up — cream and moss on `.scrim-hero`, with the moss CTA pill of the closing forest band — and sits *below* the photo in ink on canvas at phone widths, where a landscape shot is far too short to carry it. Hero type scales in `cqw` off a `@container` on the frame, so it fits a narrow portrait frame and a wide panorama alike. The admin hero preview renders the photo at its own ratio too, so what is previewed is what ships.
 
 ## Components
 
-### **`button-primary`**
+All recipes live in `src/app/globals.css` inside `@layer components`. Tailwind v4 orders `theme, base, components, utilities`, so any utility in the markup (`bg-moss`, `text-[11px]`) still overrides the recipe. Never write these unlayered — unlayered rules beat utilities and make the class un-tunable.
 
-Near-black or white pill CTA, depending on surface contrast. Uses 14px-16px Unica77, 12px 24px padding, and a 32px pill radius. This is the primary action style for "Request a demo", "Submit", and hero CTAs.
+### **`.btn-primary`**
 
-### **`button-secondary`**
+Forest pill, cream label, `shadow-xs`. Hovers to fern with a 1px lift and a forest-tinted shadow. The single highest-priority action on a light surface. On a dark band, override with `bg-moss text-forest-black`.
 
-Text-only action link, usually underlined or rule-aligned, with no filled background. Used for "Explore products", "Try the Playground", newsletter signup, and secondary hero actions.
+### **`.btn-secondary`**
 
-### **`button-pill-outline`**
+Cream pill with deep-green label. The companion action that still needs a filled surface.
 
-Outlined pill control with transparent fill, 1px dark border, and 30px radius. Used for research filters, topic tags, and lightweight taxonomy controls.
+### **`.btn-outline`**
 
-### **`announcement-bar`**
+White pill, 1px warm border, `shadow-xs`. Filters and taxonomy. `data-active="true"` inverts it to solid forest.
 
-Full-width black strip above the nav, 36px tall, centered microcopy with an underlined "Learn more" link and a close control at the far right.
+### **`.btn-ghost`** / **`.btn-destructive`**
 
-### **`hero-photo-card`**
+Unfilled lowest-emphasis action; clay pill for destructive confirmations.
 
-Rounded media card used in the home hero and solution pages. It combines photography or abstract imagery with an overlaid dark agent-console module. Radius is usually 22px on large cards and 8px on smaller thumbnails.
+### **`.link-underline`** / **`.link-leaf`**
 
-### **`agent-console-card`**
+`.link-underline` is a 1px current-colour rule that fades on hover — the neutral secondary action. `.link-leaf` is the prose link: forest text over a 2px lime underline that grows to a highlighter sweep on hover.
 
-Dark product mockup panel showing agent names, status chips, integration badges, prompt fields, and generated response cards. Background is near-black, text is white or muted, and small accent chips use product colors.
+### **`.eyebrow`** / **`.eyebrow-marked`**
 
-### **`trust-logo-strip`**
+Uppercase mono section marker at 11px / 0.24em. The `-marked` variant prefixes a 20px forest→lime gradient tick.
 
-Centered copy above a row of monochrome customer logos. It is intentionally quiet: no cards, no borders, just large horizontal spacing and black or white logos depending on the background.
+### **`.rule`** / **`.rule-accent`**
 
-### **`capability-card`**
+`.rule` is the 1px hairline. `.rule-accent` is a 2px bar fading forest → fern → moss → transparent, used to close a page header.
 
-Content block with thin-line geometric illustration, 24px heading, body copy, and a text link. On light backgrounds, cards often have only a top rule or a subtle image/card relationship rather than full boxing.
+### **`.card-hair`** / **`.card-cream`**
 
-### **`dark-feature-band`**
+`.card-hair` is the shadcn card: white, 1px border, `shadow-xs`, lifting to a forest-tinted shadow on hover. `.card-cream` is its warm sibling for use inside white sections.
 
-Deep green or navy full-width section used for product capabilities, security claims, and feature breakdowns. Text turns white; cards use darker translucent surfaces, pale borders, and abstract line illustrations.
+### **`.chip`** / **`.chip-leaf`** / **`.chip-brick`** / **`.badge-solid`**
 
-### **`product-card`**
+Mono uppercase pills. Neutral, forest-on-moss-wash, clay editorial (with an `data-active` inverted state), and a solid forest badge for overlaying media.
 
-Warm stone card used for product/model summaries. Typically 3-column on desktop, with 8px radius, generous padding, a small pill button, a divider line, and checkmark bullet rows.
+### **`.field-label`** / **`.field-input`**
 
-### **`blog-filter-chip`**
+shadcn field behaviour: 1px `--input` border, `--radius-md`, and a 3px `--ring/40` focus halo. `aria-invalid="true"` swaps border and halo to clay.
 
-Large coral taxonomy chip used on the blog index. Active chips invert to coral fill with dark text; inactive chips use coral outline and pale fill. Typography is oversized relative to typical filters, making the taxonomy a hero-level control.
+### **`.band-cream`** / **`.band-wash`** / **`.band-dark`** / **`.band-navy`**
 
-### **`research-table`**
+Full-width section fills: parchment, palest lime, forest-deep, forest-black.
 
-Rule-separated publication list with title left, topic pills centered, and date right. Rows are tall, white, and border-driven; filters above use many compact outlined pills.
+### **`.scrim-hero`**
 
-### **`contact-form-card`**
+Forest-black gradient ramp — 92% alpha at the baseline, clear by the top quarter — laid over an arbitrary photograph so overlaid copy keeps its contrast without dimming the whole picture. Pair with cream/moss text; never with ink.
 
-Rounded white form panel set against dark green or warm stone sections. Inputs are rectangular with thin gray borders, 12px-16px padding, and compact labels/placeholders. Submit uses the same near-black pill style as primary CTAs.
+### **`.texture-grain`**
 
-### **`footer-newsletter`**
-
-Dark footer subscription block with coral "AI moves fast" label, white headline, muted legal microcopy, a single-line email field, and arrow submit marker. Footer columns use white section labels and muted links.
+Inline-SVG `feTurbulence` noise at 50% opacity, `mix-blend-mode: multiply`, painted behind content via a `z-index: -1` pseudo-element inside an isolated stacking context. No network request, CSP-safe, and suppressed in print. Use on large flat bands only — never on text-dense surfaces.
 
 ## Do's and Don'ts
 
 ### Do
 
-- Use white canvas as the default surface; introduce dark green or navy as full-width product bands.
-- Keep primary CTAs pill-shaped and near-black on light surfaces.
-- Use 22px radius on major media cards and placeholders.
-- Use coral for editorial taxonomy and small warm accents, not as the main CTA system.
-- Use monochrome trust logos with wide spacing.
-- Use thin-line geometric illustrations for research and capability icons.
-- Let photography and product mockups carry color, while the UI shell stays restrained.
+- Use the paper canvas as the default; introduce cream and forest as full-width bands.
+- Let forest be the primary action colour — it is the brand doing the work.
+- Reserve moss for accents: markers, underlines, active states, positive metrics on dark.
+- Use brick for destructive states, errors, and analytical caveats.
+- Keep buttons and chips pill-shaped and cards at `--radius-lg`.
+- Put new component recipes in `@layer components`.
+- Mirror any new chart colour into `src/lib/palette.ts`.
 
 ### Don't
 
-- Do not turn coral or blue into broad decorative surface colors.
-- Do not add heavy drop shadows to cards.
-- Do not make every section card-based; Cohere often uses unframed rows, rules, and open space.
-- Do not use rounded cards below 8px for major media.
-- Do not replace the display/body type split with one generic sans-serif voice.
-- Do not render undocumented interaction variants in documentation or previews.
-- Do not use saturated gradients as normal UI backgrounds; keep gradients media-led.
+- Do not set moss as text on a light surface — it fails contrast.
+- Do not reintroduce stock Tailwind palette colours (`gray-500`, `amber-300`, `emerald-400`). Everything maps to the five.
+- Do not use pure white or pure black as a surface; the system has no cold neutrals.
+- Do not add heavy drop shadows — depth comes from surface alternation and hover lift.
+- Do not make every section card-based; unframed rows and tonal bands carry most of the structure.
+- Do not let the Lab's directional colours (moss up / clay down) leak into categorical chips.
 
 ## Responsive Behavior
 
@@ -221,35 +274,33 @@ Dark footer subscription block with coral "AI moves fast" label, white headline,
 
 | Name | Width | Key Changes |
 |---|---:|---|
-| Small Mobile | <425px | Single-column cards, compact nav, reduced hero headline scale |
-| Mobile | 425-640px | Hero media stacks, card grids become one column, form rows stack |
-| Large Mobile | 640-768px | Wider one-column layouts with larger media cards |
-| Tablet | 768-1024px | Two-column cards begin, nav spacing tightens |
-| Desktop | 1024-1440px | Full nav, 3-column card grids, split hero compositions |
-| Large Desktop | 1440-2560px | Wide containers and large empty vertical intervals |
+| Mobile | <640px | Single-column everything, hamburger nav, hero stacks headline over media |
+| Large Mobile | 640–768px | Two-column masonry begins, wider gutters |
+| Tablet | 768–1024px | Two-column card grids, portfolio grid engages 12 columns |
+| Desktop | 1024–1440px | Full horizontal nav at `lg`, 3–4 column grids, split hero |
+| Large Desktop | >1440px | Containers cap at 1400px; vertical intervals grow |
 
 ### Touch Targets
 
-Primary CTAs and pills meet comfortable touch sizing through 12px-24px padding and pill radii. Research filter chips and blog category chips are larger than standard tags, making dense taxonomy surfaces usable on touch devices.
+Pill CTAs use 12–24px padding; the shop's add-to-cart control is a 40px circle. Filter chips are larger than typical tags so dense taxonomy stays usable on touch.
 
 ### Collapsing Strategy
 
-- Nav collapses from full horizontal links to a compact mobile menu.
-- Hero media moves from split cards to stacked cards.
-- Product and capability grids collapse from 3 columns to 2 and then 1.
-- Form fields collapse from paired rows to a single column.
-- Research rows preserve their rule-separated structure but stack metadata below titles on smaller widths.
+- Nav collapses to a hamburger dropdown below `lg`.
+- Hero moves from side-by-side to stacked, media below the headline.
+- Card grids step 4 → 2 → 1; masonry columns step 3 → 2 → 1.
+- The portfolio hero's method sidebar drops its left border and stacks underneath.
 
 ## Iteration Guide
 
-1. Start from a white canvas or a full-width dark green/navy band; avoid mid-tone page backgrounds unless the screenshot shows a specific CTA/form section.
-2. Use `button-primary` for the single highest-priority action and `button-secondary` for the companion action.
-3. Use `hero-photo-card` or `agent-console-card` when a page needs visual energy; avoid invented dashboard data.
-4. For editorial pages, combine `blog-filter-chip`, `button-pill-outline`, and `research-table` instead of generic marketing cards.
-5. Keep component examples structurally honest: placeholder product frames are better than invented product content.
+1. Start from the paper canvas. Reach for a band (`.band-cream`, `.band-dark`) when a section is a new chapter, not just a new block.
+2. One `.btn-primary` per view; everything else is `.btn-outline` or `.link-underline`.
+3. Open sections with `.eyebrow-marked`, close page headers with `.rule-accent`.
+4. Use semantic role tokens (`bg-primary`, `text-muted-foreground`, `border-border`) in new markup; the legacy aliases exist for the existing surface area, not for new code.
+5. When a colour cannot come from CSS (SVG props, OG images), import it from `src/lib/palette.ts` rather than hardcoding hex.
 
 ## Known Gaps
 
-- Exact proprietary font files are not bundled; use the documented fallbacks when implementing externally.
-- Mobile screenshots were not regenerated in this public update, so mobile behavior is documented from the desktop system and existing responsive patterns.
-- Some live pages lazy-load content blocks late; blank testimonial placeholders are documented as placeholder skeleton surfaces rather than filled testimonial cards.
+- The `.dark` token block is defined and correct but not yet wired to a toggle — the Lab shell still styles its dark surfaces with explicit `text-cream/…` utilities rather than tokens. Migrating `/lab` onto `.dark` is the natural next step.
+- Korean webfonts are not bundled; the stacks fall back to system Korean faces.
+- The portfolio print stylesheet is preserved from the previous system and has not been re-toned to the new palette beyond replacing stock greys.

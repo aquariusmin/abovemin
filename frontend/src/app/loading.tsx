@@ -7,7 +7,7 @@ export default function Loading() {
     >
       <div className="text-center space-y-4">
         <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="eyebrow text-muted" aria-hidden="true">Loading…</p>
+        <p className="eyebrow text-muted-foreground" aria-hidden="true">Loading…</p>
         <span className="sr-only">Loading, please wait.</span>
       </div>
     </div>

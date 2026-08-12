@@ -6,8 +6,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 
-const MotionLink = motion.create(Link);
-
 interface Product {
   id: number;
   name: string;
@@ -33,14 +31,19 @@ export default function ShopCatalog({ products, loadError }: { products: Product
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
   const [addedId, setAddedId] = useState<number | null>(null);
+  // One page-level live region instead of one per card, so a screen reader
+  // announces the addition once rather than re-reading every card.
+  const [announcement, setAnnouncement] = useState('');
   const { addItem } = useCartStore();
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleAddToCart = (e: React.MouseEvent, item: Product) => {
-    e.preventDefault();
+  // The button is no longer inside the product link, so there is nothing to
+  // preventDefault — a plain click handler is enough.
+  const handleAddToCart = (item: Product) => {
     if (!item.in_stock) return;
     addItem({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
     setAddedId(item.id);
+    setAnnouncement(`${item.name} 장바구니에 담았습니다.`);
     if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
     addedTimerRef.current = setTimeout(() => setAddedId(null), 1500);
   };
@@ -59,9 +62,11 @@ export default function ShopCatalog({ products, loadError }: { products: Product
 
   return (
     <>
+      <span aria-live="polite" className="sr-only">{announcement}</span>
+
       {/* Page header */}
       <header className="max-w-[1400px] mx-auto mb-10 md:mb-16">
-        <p className="eyebrow text-muted mb-4">Shop Collection</p>
+        <p className="eyebrow eyebrow-marked text-primary mb-4">Shop Collection</p>
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] text-ink max-w-3xl">
           Tangible light for your space.
         </h1>
@@ -83,7 +88,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
           </div>
 
           <label className="flex items-center gap-2 self-start md:self-auto">
-            <span className="eyebrow text-muted">Sort</span>
+            <span className="eyebrow text-muted-foreground">Sort</span>
             <span className="relative inline-flex items-center">
               <select
                 value={sortBy}
@@ -98,7 +103,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               <svg
                 aria-hidden
                 viewBox="0 0 12 12"
-                className="pointer-events-none absolute right-0 h-3 w-3 text-muted"
+                className="pointer-events-none absolute right-0 h-3 w-3 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
@@ -113,12 +118,12 @@ export default function ShopCatalog({ products, loadError }: { products: Product
       {/* Empty / error state */}
       {loadError ? (
         <div className="max-w-[1400px] mx-auto py-20 text-center">
-          <p className="eyebrow text-muted mb-3">Error</p>
+          <p className="eyebrow text-muted-foreground mb-3">Error</p>
           <p className="text-lg text-ink-body">상품을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
         </div>
       ) : products.length === 0 ? (
         <div className="max-w-[1400px] mx-auto py-20 text-center">
-          <p className="eyebrow text-muted mb-3">No stock</p>
+          <p className="eyebrow text-muted-foreground mb-3">No stock</p>
           <p className="text-lg text-ink-body">아직 준비된 소품이 없어요. 곧 새로운 컬렉션으로 찾아올게요.</p>
         </div>
       ) : filtered.length === 0 ? (
@@ -133,16 +138,21 @@ export default function ShopCatalog({ products, loadError }: { products: Product
           variants={containerVariants}
         >
           {filtered.map((item, i) => (
-            <MotionLink
-              href={`/shop/${item.id}`}
+            // The card is a plain container, not an <a>. The product link
+            // stretches over the whole card via `.card-link`, and the add-to-cart
+            // button sits above that overlay — so the two controls are siblings
+            // rather than a <button> nested inside an <a>.
+            <motion.div
               key={item.id}
-              className="break-inside-avoid group block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+              className="break-inside-avoid card-surface group has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring rounded-md"
               variants={itemVariants}
             >
               {/* Media */}
-              <div className="relative overflow-hidden rounded-md border border-border-light bg-stone transition-colors duration-500 group-hover:border-accent">
+              <div className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary">
+                {/* Sits above the stretched link but must not swallow its
+                    clicks, hence pointer-events-none. */}
                 {item.tag && (
-                  <span className="absolute top-3 right-3 z-10 rounded-[var(--radius-pill)] bg-ink px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-white">
+                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20">
                     {item.tag}
                   </span>
                 )}
@@ -161,34 +171,35 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               {/* Info */}
               <div className="mt-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="eyebrow text-muted mb-1.5">{item.category}</p>
-                  <p className="text-[15px] font-medium text-ink-body leading-snug group-hover:text-accent transition-colors">
-                    {item.name}
-                  </p>
-                  <p className="mt-1.5 text-sm font-semibold text-accent">
-                    ₩ {item.price.toLocaleString()}
+                  <p className="eyebrow text-muted-foreground mb-1.5">{item.category}</p>
+                  <h2 className="text-[15px] font-medium text-ink-body leading-snug group-hover:text-primary transition-colors">
+                    <Link href={`/shop/${item.id}`} className="card-link outline-none">
+                      {item.name}
+                    </Link>
+                  </h2>
+                  <p className="mt-1.5 text-sm font-semibold text-primary">
+                    ₩&nbsp;{item.price.toLocaleString()}
                   </p>
                 </div>
 
                 <button
-                  onClick={(e) => handleAddToCart(e, item)}
+                  onClick={() => handleAddToCart(item)}
                   disabled={!item.in_stock}
-                  aria-label={item.in_stock ? `Add ${item.name} to cart` : `${item.name} out of stock`}
-                  className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  aria-label={
+                    item.in_stock ? `${item.name} 장바구니에 담기` : `${item.name} 품절`
+                  }
+                  className={`relative z-10 shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                     !item.in_stock
-                      ? 'border-border-light text-muted cursor-not-allowed'
+                      ? 'border-border-light text-muted-foreground cursor-not-allowed'
                       : addedId === item.id
-                      ? 'bg-accent border-accent text-white'
-                      : 'border-hairline text-ink hover:border-accent hover:text-accent hover:-translate-y-0.5 active:translate-y-0'
+                      ? 'bg-primary border-primary text-primary-foreground'
+                      : 'border-border text-forest hover:border-primary hover:bg-moss-wash hover:-translate-y-0.5 active:translate-y-0'
                   }`}
                 >
                   {!item.in_stock ? '—' : addedId === item.id ? '✓' : '+'}
                 </button>
               </div>
-              <span aria-live="polite" className="sr-only">
-                {addedId === item.id ? `${item.name} added to cart` : ''}
-              </span>
-            </MotionLink>
+            </motion.div>
           ))}
         </motion.div>
       )}

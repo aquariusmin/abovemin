@@ -5,9 +5,12 @@ import {
   type EvidenceStatus,
 } from "@/data/portfolioEvidence";
 
+// Forest = independently reproduced; cream = quoted from the source as-is.
+// Two warm neighbours rather than a green/blue split, so the pair reads as one
+// scale of confidence instead of two unrelated categories.
 const statusStyles: Record<EvidenceStatus, string> = {
-  verified: "border-accent/20 bg-accent/[0.06] text-accent",
-  reported: "border-sky-700/15 bg-sky-50 text-sky-900",
+  verified: "border-primary/25 bg-moss-wash text-primary",
+  reported: "border-cream-deep bg-cream/70 text-secondary-foreground",
 };
 
 export default function EvidenceFigure({
@@ -28,7 +31,7 @@ export default function EvidenceFigure({
   return (
     <figure className="overflow-hidden border border-border-light bg-white">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline px-5 py-4 md:px-6">
-        <h3 className="break-keep font-serif text-lg font-bold tracking-tight">{title}</h3>
+        <h3 className="break-keep font-serif text-lg font-semibold tracking-tight">{title}</h3>
         <span
           className={`border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${statusStyles[status]}`}
         >
@@ -40,7 +43,7 @@ export default function EvidenceFigure({
         <p className="break-keep">{caption}</p>
         {source && (
           <p className="break-keep font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">
-            {locale === "ko" ? "근거" : "Source"} · {source}
+            {locale === "ko" ? "근거" : "Source"} · {source}
           </p>
         )}
       </figcaption>

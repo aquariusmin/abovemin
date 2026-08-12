@@ -1,56 +1,189 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   phorage design system — derived from DESIGN.md (Cohere-style editorial system)
-   White editorial canvas · deep-green / navy dark bands · near-black pill CTAs ·
-   coral editorial accents · thin rules · monumental grotesk display type.
+   phorage design system — "Forest Editorial"
+
+   Architecture: shadcn/ui token model (semantic role tokens + `@theme inline`
+   bridge + component recipes). Palette: a five-colour botanical set.
+
+     forest  #386641   deep canopy green — primary actions, brand ink
+     fern    #6A994E   mid green        — hover, focus ring, secondary green
+     moss    #A7C957   lime highlight   — accents, markers, dark-surface text
+     cream   #F2E8CF   warm parchment   — secondary surfaces, section bands
+     brick   #BC4749   clay red         — destructive, editorial taxonomy
+
+   Neutrals are all warm/green-tinted so nothing in the UI reads as cold grey.
+   Canvas is a paper tint of `cream`, ink is a near-black pulled toward forest.
+
+   Deviation from stock shadcn, deliberate: `--accent` is the brand green rather
+   than a pale hover wash. `text-accent` reads as "brand" throughout this app;
+   hover surfaces use `--muted` / `--secondary` instead.
    ========================================================================== */
 
 :root {
-  /* Surface & background */
-  --background: #ffffff;      /* dominant canvas */
-  --canvas: #ffffff;
-  --surface: #faf9f6;         /* warm off-white section */
-  --surface-muted: #f0eeea;
-  --stone: #eeece7;           /* soft stone cards / CTA blocks */
-  --green-wash: #edfce9;      /* pale green section backdrop */
-  --blue-wash: #f1f5ff;       /* pale blue CTA surface */
-  --card-border: #f2f2f2;
-  --surface-dark: #1a1c1a;    /* lab shell */
+  /* ── Brand palette ─────────────────────────────────────────────────────── */
+  --forest: #386641;
+  --fern: #6a994e;
+  --moss: #a7c957;
+  --cream: #f2e8cf;
+  --brick: #bc4749;
 
-  /* Brand & accent */
-  --accent: #4a5d4e;          /* phorage sage — primary brand accent on light */
-  --accent-light: #6b8e6b;
-  --green-deep: #003c33;      /* deep enterprise green — dark product bands */
-  --navy: #071829;            /* dark navy band */
-  --ink: #17171c;             /* near-black — primary pill CTAs, dark UI */
-  --coral: #ff7759;           /* editorial taxonomy accent */
-  --coral-soft: #ffad9b;
-  --action-blue: #1863dc;     /* editorial links / pagination */
+  /* Tonal extensions of the five, for washes and dark bands */
+  --forest-deep: #24402c;   /* dark product / CTA bands */
+  --forest-black: #16231a;  /* lab shell, deepest surface */
+  --moss-wash: #eef4dc;     /* palest lime section wash */
+  --cream-deep: #e8dcbb;    /* cream pressed / border-on-cream */
+  --brick-soft: #e0a8a6;    /* brick chip borders */
+  --brick-light: #d76668;   /* brick lifted for legibility on dark surfaces */
 
-  /* Text & rules */
-  --foreground: #17171c;
-  --ink-body: #212121;        /* body text */
-  --muted: #93939f;           /* muted slate — metadata, de-emphasis */
-  --slate: #75758a;
-  --hairline: #d9d9dd;        /* standard list/section rule */
-  --border-light: #e5e7eb;
+  /* ── shadcn semantic roles ─────────────────────────────────────────────── */
+  --radius: 1rem;
 
-  /* Type stacks — Latin webfonts with Korean system-font fallbacks (kept light) */
-  --font-display-stack: var(--font-display), "Apple SD Gothic Neo", Pretendard, SUIT,
-    "Noto Sans KR", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
-  --font-body-stack: var(--font-body), Pretendard, "Apple SD Gothic Neo", SUIT,
-    "Noto Sans KR", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
-  --font-mono-stack: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo,
-    "Liberation Mono", monospace;
+  --background: #fcfaf4;
+  --foreground: #1f2a1e;
 
-  --portfolio-font-sans: var(--font-body-stack);
+  --card: #ffffff;
+  --card-foreground: #1f2a1e;
+
+  --popover: #ffffff;
+  --popover-foreground: #1f2a1e;
+
+  --primary: var(--forest);
+  --primary-foreground: #f5efe0;
+
+  --secondary: var(--cream);
+  --secondary-foreground: #2a4a32;
+
+  --muted: #f1ede0;
+  --muted-foreground: #67715d;
+
+  --accent: var(--forest);
+  --accent-foreground: #f5efe0;
+
+  --destructive: var(--brick);
+  --destructive-foreground: #fdf6f2;
+
+  --border: #e2decd;
+  --input: #dcd7c4;
+  --ring: var(--fern);
+
+  /* Data-viz ramp — canopy to clay, readable on light and dark */
+  --chart-1: var(--forest);
+  --chart-2: var(--fern);
+  --chart-3: var(--moss);
+  --chart-4: var(--brick);
+  --chart-5: #8b7a4f;
+
+  /* ── Legacy aliases ────────────────────────────────────────────────────── */
+  /* Names this codebase already speaks, re-pointed at the new palette. Prefer
+     the semantic roles above in new markup. */
+  --canvas: var(--background);
+  --surface: #f7f2e3;          /* warm section surface, between canvas & cream */
+  --surface-muted: var(--muted);
+  --surface-dark: var(--forest-black);
+  --stone: var(--cream);       /* image matting / placeholder fill */
+  --green-wash: var(--moss-wash);
+  --blue-wash: var(--moss-wash);
+  --card-border: #ebe7d9;
+  --border-light: #ebe7d9;
+  --hairline: var(--border);
+
+  --accent-light: var(--fern);
+  --green-deep: var(--forest-deep);
+  --navy: var(--forest-black);
+  --ink: var(--foreground);
+  --ink-body: #2e3a2c;
+  --slate: #57624f;            /* secondary body copy */
+
+  /* ── Type stacks ───────────────────────────────────────────────────────────
+     Each stack pairs a Latin face with a real Korean face, so a mixed line
+     resolves per-glyph into two fonts chosen to sit together — not into a
+     webfont beside whatever Korean face the OS happens to ship. System faces
+     stay at the end as a last resort only. */
+  --font-display-stack: var(--font-display), var(--font-korean),
+    "Apple SD Gothic Neo", "Malgun Gothic", ui-serif, Georgia, serif;
+  --font-body-stack: var(--font-body), var(--font-korean), Pretendard,
+    "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-stack: var(--font-mono), var(--font-korean), ui-monospace,
+    "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+}
+
+/* Dark surfaces (the Lab shell). Available as a `.dark` scope for any block
+   that needs the full token set inverted onto forest-black. */
+.dark {
+  --background: var(--forest-black);
+  --foreground: #f1f3ec;
+  --card: #1d2b21;
+  --card-foreground: #f1f3ec;
+  --popover: #1d2b21;
+  --popover-foreground: #f1f3ec;
+  --primary: var(--moss);
+  --primary-foreground: #16231a;
+  --secondary: #24332a;
+  --secondary-foreground: #e8eedd;
+  --muted: #223028;
+  --muted-foreground: #94a189;
+  --accent: var(--moss);
+  --accent-foreground: #16231a;
+  --destructive: #d76668;
+  --border: #2c3b31;
+  --input: #34453a;
+  --ring: var(--moss);
+
+  --canvas: var(--background);
+  --surface: #1d2b21;
+  --surface-muted: #223028;
+  --stone: #24332a;
+  --card-border: #2c3b31;
+  --border-light: #2c3b31;
+  --hairline: var(--border);
+  --ink: var(--foreground);
+  --ink-body: #e4e9dc;
+  --slate: #b3bda9;
 }
 
 @theme inline {
+  /* Palette (raw) */
+  --color-forest: var(--forest);
+  --color-fern: var(--fern);
+  --color-moss: var(--moss);
+  --color-cream: var(--cream);
+  --color-brick: var(--brick);
+  --color-brick-soft: var(--brick-soft);
+  --color-brick-light: var(--brick-light);
+  --color-forest-deep: var(--forest-deep);
+  --color-forest-black: var(--forest-black);
+  --color-moss-wash: var(--moss-wash);
+  --color-cream-deep: var(--cream-deep);
+
+  /* Semantic roles */
   --color-background: var(--background);
-  --color-canvas: var(--canvas);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Legacy aliases */
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-surface-dark: var(--surface-dark);
@@ -58,21 +191,14 @@
   --color-green-wash: var(--green-wash);
   --color-blue-wash: var(--blue-wash);
   --color-card-border: var(--card-border);
-
-  --color-accent: var(--accent);
+  --color-border-light: var(--border-light);
+  --color-hairline: var(--hairline);
   --color-accent-light: var(--accent-light);
   --color-green-deep: var(--green-deep);
   --color-navy: var(--navy);
   --color-ink: var(--ink);
-  --color-coral: var(--coral);
-  --color-coral-soft: var(--coral-soft);
-  --color-action-blue: var(--action-blue);
-
   --color-ink-body: var(--ink-body);
-  --color-muted: var(--muted);
   --color-slate: var(--slate);
-  --color-hairline: var(--hairline);
-  --color-border-light: var(--border-light);
 
   /* font-serif is repurposed across the app as the DISPLAY voice */
   --font-serif: var(--font-display-stack);
@@ -80,35 +206,92 @@
   --font-mono: var(--font-mono-stack);
   --font-display: var(--font-display-stack);
 
-  /* Radius scale (DESIGN.md) */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 30px;
-  --radius-pill: 32px;
+  /* Radius scale — shadcn's derived ramp off a single `--radius` (16px).
+     xs 6 · sm 10 · md 13 · lg 16 · xl 22 · 2xl 29 · 3xl 35 */
+  --radius-xs: calc(var(--radius) * 0.4);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-pill: 9999px;
 }
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
 
 body {
   color: var(--ink-body);
   font-family: var(--font-body-stack);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+
+  /* ── Korean line breaking, applied once for the whole app ────────────────
+     A browser's default `word-break: normal` treats every Hangul syllable as
+     a break opportunity, so "포트폴리오" happily splits into "포트폴/리오" at
+     the end of a line. `keep-all` moves every break onto a space — the way
+     Korean is actually typeset — and `break-word` is the escape hatch so a
+     long unbroken token (URL, 이메일 주소, a spaceless 문장) still wraps
+     instead of overflowing its box.
+
+     Set here rather than sprinkled as `break-keep` per element: both
+     properties inherit, and a `break-*` utility in the markup still wins
+     locally, because a rule matching the element beats an inherited value. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+
+  /* `pretty` guards the last line of a wrapped block, so copy never ends on a
+     single orphan word. Set here rather than on a list of prose tags because
+     `text-wrap-style` inherits, and plenty of copy on this site is not in a
+     <p> at all — the portfolio in particular carries whole sentences in
+     <span> and <div> (flow-diagram cells, evidence captions, chips). */
+  text-wrap: pretty;
 }
 
-/* `font-serif`, `font-sans`, `font-mono`, `font-display` utilities are generated
-   from the @theme font tokens above. Headings control their own tracking via
-   Tailwind's `tracking-*` utilities. */
+@layer base {
+  /* Headlines get the stronger treatment: `balance` evens out line lengths so
+     a display line never drops one orphan word. It matches the element
+     directly, which beats the inherited `pretty` above — an inherited value
+     always loses to a rule that matches. `:where()` keeps specificity at zero,
+     so any `text-*` utility in the markup still wins. */
+  :where(h1, h2, h3, h4) {
+    text-wrap: balance;
+  }
+}
 
+::selection {
+  background: color-mix(in srgb, var(--moss) 55%, transparent);
+  color: var(--foreground);
+}
+
+/* The portfolio is a document surface, and the one place where the app's type
+   pairing breaks down. Elsewhere the two voices alternate by section, so a
+   Fraunces headline never has to sit beside Hangul. Here they share a line
+   constantly: the Korean edition keeps its project titles in English
+   ("Korean Air Financial Analysis" a line below 재무비율), and evidence labels
+   run "DCF · APV · 멀티플". An old-style Latin serif touching Plex Sans KR at
+   that distance reads as two typefaces that met by accident.
+
+   So this surface drops the display voice and sets everything in IBM Plex:
+   Sans for Latin, Sans KR for Hangul — one superfamily drawn to a shared
+   skeleton, so a mixed line looks drawn rather than assembled. Hierarchy comes
+   from size and weight, which is what a case-study document wants anyway, and
+   it costs no extra webfont: both faces are already loaded. */
 .portfolio-ui,
 .portfolio-ui :where(.font-serif, .font-sans) {
   font-family: var(--font-body-stack);
 }
-.portfolio-ui :where(.font-serif) {
-  font-family: var(--font-display-stack);
-}
 
-/* ── Design-system utility classes ──────────────────────────────────────── */
+/* ── Component recipes ─────────────────────────────────────────────────────
+   Everything below lives in `@layer components` on purpose: Tailwind v4 orders
+   `theme, base, components, utilities`, so a utility in the markup
+   (`bg-moss`, `text-[11px]`, `rounded-none`) still overrides the recipe.
+   Unlayered rules would win over utilities and make these classes un-tunable.
+   ======================================================================== */
+
+@layer components {
+
+/* ── Typographic marks ─────────────────────────────────────────────────── */
 
 /* Uppercase mono technical label (eyebrow / category / system marker) */
 .eyebrow {
@@ -120,59 +303,157 @@ body {
   font-weight: 500;
 }
 
+/* Korean counterpart to `.eyebrow`. Hangul has no letter case, and its square
+   advance width visibly falls apart at 0.24em tracking, so this drops the
+   uppercase transform, pulls tracking back to near-normal, and uses the body
+   face rather than mono. Use it wherever a micro-label renders Korean. */
+.label-ko {
+  font-family: var(--font-body-stack);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+/* Eyebrow with a lime tick in front — used to open a section */
+.eyebrow-marked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.eyebrow-marked::before {
+  content: "";
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--forest), var(--moss));
+}
+
 /* Thin section rule */
 .rule {
   border: 0;
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--border);
 }
 
-/* Near-black pill CTA — primary action on light surfaces */
-.btn-primary {
+/* Section rule that fades canopy → lime → nothing */
+.rule-accent {
+  border: 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--forest) 0%,
+    var(--fern) 28%,
+    var(--moss) 52%,
+    transparent 100%
+  );
+}
+
+/* ── Buttons — shadcn variants, phorage geometry (pill CTAs) ───────────── */
+
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.btn-ghost,
+.btn-destructive {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  white-space: nowrap;
   border-radius: var(--radius-pill);
-  background: var(--ink);
-  color: #fff;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.01em;
-  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-outline:disabled,
+.btn-ghost:disabled,
+.btn-destructive:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Forest pill — the single highest-priority action on a light surface */
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--forest-black) 12%, transparent);
 }
 .btn-primary:hover {
-  background: #000;
+  background: var(--fern);
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--forest) 75%, transparent);
 }
-.btn-primary:active { transform: translateY(0); box-shadow: none; }
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Cream pill — companion action that still needs a filled surface */
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.btn-secondary:hover {
+  background: var(--cream-deep);
+  transform: translateY(-1px);
+}
+.btn-secondary:active { transform: translateY(0); }
 
 /* Outlined pill — filters, taxonomy, lightweight actions */
 .btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--hairline);
-  background: transparent;
-  color: var(--ink);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
   font-size: 0.8125rem;
-  font-weight: 500;
-  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease,
-    transform 0.2s ease;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--forest-black) 5%, transparent);
 }
-.btn-outline:hover { border-color: var(--ink); transform: translateY(-1px); }
+.btn-outline:hover {
+  border-color: color-mix(in srgb, var(--forest) 40%, var(--border));
+  background: var(--muted);
+  transform: translateY(-1px);
+}
 .btn-outline:active { transform: translateY(0); }
 .btn-outline[data-active="true"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: none;
 }
+.btn-outline[data-active="true"]:hover {
+  background: var(--fern);
+  border-color: var(--fern);
+}
+
+/* Unfilled action — lowest emphasis */
+.btn-ghost {
+  padding: 0.625rem 1rem;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+}
+.btn-ghost:hover { background: var(--muted); }
+
+/* Clay pill — destructive confirmations */
+.btn-destructive {
+  padding: 0.75rem 1.5rem;
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+.btn-destructive:hover {
+  background: color-mix(in srgb, var(--brick) 88%, var(--forest-black));
+  transform: translateY(-1px);
+}
+.btn-destructive:active { transform: translateY(0); }
 
 /* Underlined text link — companion / secondary action */
 .link-underline {
@@ -183,40 +464,36 @@ body {
   background-size: 100% 1px;
   background-repeat: no-repeat;
   background-position: 0 100%;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
 }
-.link-underline:hover { opacity: 0.6; }
+.link-underline:hover { opacity: 0.65; }
 
-/* Coral editorial taxonomy chip (blog/archive categories) */
-.chip-coral {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.875rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--coral-soft);
-  background: color-mix(in srgb, var(--coral) 6%, transparent);
-  color: var(--coral);
-  font-family: var(--font-mono-stack);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+/* Inline prose link — lime underline that thickens on hover */
+.link-leaf {
+  color: var(--primary);
   font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  text-decoration: none;
+  background-image: linear-gradient(var(--moss), var(--moss));
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.25s ease, color 0.2s ease;
 }
-.chip-coral[data-active="true"] {
-  background: var(--coral);
-  color: #fff;
-  border-color: var(--coral);
+.link-leaf:hover {
+  color: var(--fern);
+  background-size: 100% 0.6em;
 }
 
-/* Neutral technical chip — metadata tags / categories (non-editorial voice) */
+/* ── Chips & badges ────────────────────────────────────────────────────── */
+
+/* Neutral technical chip — metadata tags / categories */
 .chip {
   display: inline-flex;
   align-items: center;
   padding: 0.3125rem 0.75rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--hairline);
-  background: transparent;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--card);
   color: var(--slate);
   font-family: var(--font-mono-stack);
   font-size: 0.6875rem;
@@ -227,7 +504,60 @@ body {
   white-space: nowrap;
 }
 
-/* ── Form fields — shared input / select / textarea surface ──────────────── */
+/* Brick editorial taxonomy chip (archive / blog categories) */
+.chip-brick {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--brick-soft);
+  background: color-mix(in srgb, var(--brick) 7%, transparent);
+  color: var(--brick);
+  font-family: var(--font-mono-stack);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.chip-brick[data-active="true"] {
+  background: var(--brick);
+  color: var(--destructive-foreground);
+  border-color: var(--brick);
+}
+
+/* Forest chip — brand-side counterpart to `.chip-brick` */
+.chip-leaf {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--forest) 22%, transparent);
+  background: var(--moss-wash);
+  color: var(--forest);
+  font-family: var(--font-mono-stack);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Solid pill badge over media (tags, "New", stock markers) */
+.badge-solid {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--forest-deep);
+  color: var(--primary-foreground);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Form fields ───────────────────────────────────────────────────────── */
+
 .field-label {
   display: block;
   margin-bottom: 0.5rem;
@@ -239,52 +569,130 @@ body {
 .field-input {
   width: 100%;
   border-radius: var(--radius-md);
-  border: 1px solid var(--hairline);
-  background: var(--canvas);
+  border: 1px solid var(--input);
+  background: var(--card);
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
   line-height: 1.5;
   color: var(--ink-body);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
-.field-input::placeholder { color: var(--muted); }
-.field-input:hover { border-color: color-mix(in srgb, var(--ink) 22%, var(--hairline)); }
+.field-input::placeholder { color: var(--muted-foreground); }
+.field-input:hover { border-color: color-mix(in srgb, var(--forest) 30%, var(--input)); }
 .field-input:focus,
 .field-input:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 40%, transparent);
 }
 .field-input[aria-invalid="true"] {
-  border-color: var(--coral);
+  border-color: var(--destructive);
 }
 .field-input[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 30%, transparent);
 }
 
-/* Hairline-bordered card — flat, no drop shadow (DESIGN.md elevation) */
+/* ── Surfaces ──────────────────────────────────────────────────────────── */
+
+/* shadcn card — bordered, near-flat, lifts on hover */
 .card-hair {
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--forest-black) 5%, transparent);
   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 .card-hair:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  box-shadow: 0 12px 30px -18px rgba(23, 23, 28, 0.35);
+  border-color: color-mix(in srgb, var(--forest) 45%, transparent);
+  box-shadow: 0 14px 32px -20px color-mix(in srgb, var(--forest) 70%, transparent);
 }
 
-/* Full-width dark product band (deep green / navy) */
+/* Stretched link — lets a whole card be one click target without wrapping the
+   card's markup in an <a>. Put `.card-surface` on the card and `.card-link` on
+   the single anchor inside it; any real control in the card then sits above the
+   overlay with `position:relative` and stays independently operable. Avoids
+   nesting a <button> inside an <a>, which is invalid and unreachable by
+   screen readers. */
+.card-surface {
+  position: relative;
+}
+.card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Cream card — warm counterpart used inside white sections */
+.card-cream {
+  border: 1px solid var(--cream-deep);
+  border-radius: var(--radius-lg);
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-cream:hover {
+  border-color: color-mix(in srgb, var(--forest) 35%, transparent);
+  box-shadow: 0 14px 32px -20px color-mix(in srgb, var(--forest) 60%, transparent);
+}
+
+/* Full-width section bands */
+.band-cream {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.band-wash {
+  background: var(--moss-wash);
+  color: var(--foreground);
+}
 .band-dark {
-  background: var(--green-deep);
-  color: #fff;
+  background: var(--forest-deep);
+  color: var(--primary-foreground);
 }
 .band-navy {
-  background: var(--navy);
-  color: #fff;
+  background: var(--forest-black);
+  color: var(--primary-foreground);
 }
 
-/* ── Print (portfolio) — preserved ──────────────────────────────────────── */
+/* ── Photographic hero ─────────────────────────────────────────────────── */
+
+/* Legibility scrim for copy laid over an arbitrary photograph. The hero image
+   is admin-supplied, so the copy has to stay readable over a blown-out sky and
+   over a dark forest alike — but a flat overlay would dim the whole picture.
+   This ramps from near-opaque at the baseline to fully clear by the top third,
+   so only the band actually carrying text is darkened. Forest-black rather
+   than neutral black keeps the overlay inside the palette. */
+.scrim-hero {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--forest-black) 92%, transparent) 0%,
+    color-mix(in srgb, var(--forest-black) 74%, transparent) 24%,
+    color-mix(in srgb, var(--forest-black) 34%, transparent) 52%,
+    color-mix(in srgb, var(--forest-black) 10%, transparent) 76%,
+    transparent 100%
+  );
+}
+
+/* Organic paper grain — a whisper of texture on large flat bands.
+   Inline SVG so it costs no request and never breaks a strict CSP. */
+.texture-grain {
+  position: relative;
+  isolation: isolate;
+}
+.texture-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+} /* @layer components */
+
+/* ── Print (portfolio) — preserved ─────────────────────────────────────── */
 
 body.portfolio-focused-route > div {
   padding-top: 0;
@@ -332,11 +740,14 @@ body.portfolio-focused-route > div {
     animation: none !important;
     transition: none !important;
   }
+
+  .texture-grain::after { display: none; }
 }
 
-/* Keyboard focus ring */
+/* ── Focus & a11y ──────────────────────────────────────────────────────── */
+
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -348,8 +759,8 @@ body.portfolio-focused-route > div {
   z-index: 200;
   padding: 0.625rem 1rem;
   border-radius: var(--radius-sm);
-  background: var(--ink);
-  color: #fff;
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 0.8125rem;
   font-weight: 500;
   transform: translateY(-150%);

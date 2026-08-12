@@ -95,11 +95,11 @@ export default function CheckoutPage() {
           initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-white text-2xl mb-8"
+          className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl mb-8"
         >
           <span aria-hidden>✓</span>
         </motion.div>
-        <p className="eyebrow text-muted mb-4">Order Placed</p>
+        <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
         <p className="text-[15px] text-ink-body mb-10 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
 
   const inputClass = "field-input";
   const labelClass = "field-label";
-  const errorClass = "mt-1.5 text-xs text-coral";
+  const errorClass = "mt-1.5 text-xs text-brick";
 
   return (
     <main className="min-h-screen bg-canvas px-4 md:px-8 py-12 md:py-20">
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
           <Link href="/cart" className="link-underline text-sm text-slate">
             ← Back to Cart
           </Link>
-          <p className="eyebrow text-muted mt-6 mb-3">Checkout</p>
+          <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
           <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해주세요.</h1>
         </header>
 
@@ -223,7 +223,7 @@ export default function CheckoutPage() {
             {orderError && (
               <p
                 role="alert"
-                className="rounded-md border border-coral/40 bg-coral/[0.06] px-4 py-3 text-sm text-coral"
+                className="rounded-md border border-brick/40 bg-brick/[0.06] px-4 py-3 text-sm text-brick"
               >
                 {orderError}
               </p>
@@ -241,7 +241,7 @@ export default function CheckoutPage() {
           {/* Order summary */}
           <div className="md:col-span-5">
             <div className="rounded-lg bg-stone p-6 space-y-6">
-              <p className="eyebrow text-muted">Order Summary</p>
+              <p className="eyebrow text-muted-foreground">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (
                   <div key={item.id} className="flex justify-between items-center gap-3">
@@ -251,16 +251,16 @@ export default function CheckoutPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink-body leading-snug truncate">{item.name}</p>
-                        <p className="text-xs text-muted mt-0.5">× {item.quantity}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">× {item.quantity}</p>
                       </div>
                     </div>
-                    <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩ {(item.price * item.quantity).toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</p>
                   </div>
                 ))}
               </div>
               <div className="border-t border-hairline pt-4 flex justify-between items-baseline">
-                <span className="eyebrow text-muted">Total</span>
-                <span className="text-xl font-semibold text-ink tabular-nums">₩ {totalPrice().toLocaleString()}</span>
+                <span className="eyebrow text-muted-foreground">Total</span>
+                <span className="text-xl font-semibold text-ink tabular-nums">₩&nbsp;{totalPrice().toLocaleString()}</span>
               </div>
               <p className="text-xs text-slate leading-relaxed">
                 * 현재는 계좌이체로 주문을 받고 있습니다.<br />

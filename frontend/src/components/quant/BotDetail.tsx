@@ -15,10 +15,10 @@ import {
 
 const REFRESH_MS = 60_000;
 
-const SECTION_LABEL = "eyebrow text-white/40";
+const SECTION_LABEL = "eyebrow text-white/65";
 const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
-  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
+  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/65";
 
 // Scope the fetch to this bot (?id=) so we don't download every bot's full
 // equity_curve to render one detail view. Same endpoint, still returns an array.
@@ -59,9 +59,9 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (error) {
     return (
-      <div className="rounded-md border border-red-400/25 bg-red-400/[0.06] p-6">
-        <p className="eyebrow text-red-300/70">Error</p>
-        <p className="mt-2 font-mono text-[12px] text-red-400">{error}</p>
+      <div className="rounded-md border border-brick-light/30 bg-brick-light/[0.08] p-6">
+        <p className="eyebrow text-brick-light/70">Error</p>
+        <p className="mt-2 font-mono text-[12px] text-brick-light">{error}</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export function BotDetail({ botId }: { botId: string }) {
   if (!bots) {
     return (
       <div className={`${CARD} p-12 text-center`}>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/25 animate-pulse">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/55 animate-pulse">
           Loading…
         </p>
       </div>
@@ -79,12 +79,12 @@ export function BotDetail({ botId }: { botId: string }) {
   if (!bot) {
     return (
       <div className={`${CARD} p-12 space-y-4`}>
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-white/45">
+        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-white/65">
           No bot with id <span className="text-white/75">{botId}</span>
         </p>
         <Link
           href="/lab"
-          className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent-light hover:text-white transition-colors"
+          className="text-[11px] font-mono uppercase tracking-[0.18em] text-moss hover:text-white transition-colors"
         >
           ← back to fleet
         </Link>
@@ -103,7 +103,7 @@ export function BotDetail({ botId }: { botId: string }) {
       <header className="space-y-4">
         <Link
           href="/lab"
-          className="inline-block text-[10px] font-mono uppercase tracking-[0.18em] text-white/40 hover:text-accent-light transition-colors"
+          className="inline-block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 hover:text-moss transition-colors"
         >
           ← fleet
         </Link>
@@ -114,8 +114,8 @@ export function BotDetail({ botId }: { botId: string }) {
           <span
             className={`rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 ${
               bot.market === "crypto"
-                ? "text-amber-300 bg-amber-300/10"
-                : "text-sky-300 bg-sky-300/10"
+                ? "text-cream bg-cream/10"
+                : "text-cream/60 bg-white/[0.07]"
             }`}
           >
             {bot.market}
@@ -124,11 +124,11 @@ export function BotDetail({ botId }: { botId: string }) {
             {bot.strategy}
           </span>
         </div>
-        <p className="text-[11px] font-mono text-white/35">
+        <p className="text-[11px] font-mono text-white/65">
           updated {fmtRelative(bot.updated_at)} ·{" "}
           <span className="text-white/55">{bot.id}</span>
         </p>
-        <p className="inline-flex rounded-md border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] text-amber-200">
+        <p className="inline-flex rounded-md border border-cream/25 bg-cream/[0.06] px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] text-cream/85">
           Paper trading only · simulated capital · no real-money performance
         </p>
       </header>
@@ -192,9 +192,9 @@ function Stat({
 }) {
   const color =
     tone === "pos"
-      ? "text-emerald-400"
+      ? "text-moss"
       : tone === "neg"
-        ? "text-red-400"
+        ? "text-brick-light"
         : "text-white";
   return (
     <div className={`${CARD} p-5 space-y-2`}>
@@ -209,7 +209,7 @@ function Stat({
 function KV({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-[12px] font-mono">
-      <span className="text-white/40 uppercase tracking-[0.18em] text-[10px]">
+      <span className="text-white/65 uppercase tracking-[0.18em] text-[10px]">
         {k}
       </span>
       <span className="text-white/80 text-right break-all">{v}</span>

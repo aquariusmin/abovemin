@@ -20,10 +20,10 @@ type SortKey = "equity" | "pnl_pct" | "updated_at" | "bot_name";
 
 // Centralised reused class strings — keeps the JSX legible and the
 // dark palette consistent with the rest of /lab.
-const SECTION_LABEL = "eyebrow text-white/40";
+const SECTION_LABEL = "eyebrow text-white/65";
 const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
 const STAT_LABEL =
-  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/40";
+  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/65";
 
 export function FleetDashboard() {
   const [bots, setBots] = useState<FleetBot[] | null>(null);
@@ -88,9 +88,9 @@ export function FleetDashboard() {
 
   if (error) {
     return (
-      <div className="rounded-md border border-red-400/25 bg-red-400/[0.06] p-6">
-        <p className="eyebrow text-red-300/70">Error</p>
-        <p className="mt-2 font-mono text-[12px] text-red-400">
+      <div className="rounded-md border border-brick-light/30 bg-brick-light/[0.08] p-6">
+        <p className="eyebrow text-brick-light/70">Error</p>
+        <p className="mt-2 font-mono text-[12px] text-brick-light">
           Failed to load fleet: {error}
         </p>
       </div>
@@ -100,7 +100,7 @@ export function FleetDashboard() {
   if (!bots) {
     return (
       <div className={`${CARD} p-12 text-center`}>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/25 animate-pulse">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/55 animate-pulse">
           Loading fleet data…
         </p>
       </div>
@@ -137,8 +137,8 @@ export function FleetDashboard() {
                 onClick={() => setMarketFilter(m)}
                 className={`rounded-md px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.18em] transition-colors ${
                   active
-                    ? "bg-accent-light/90 text-[#0e1410]"
-                    : "border border-white/10 text-white/45 hover:text-white/80 hover:border-white/25"
+                    ? "bg-moss text-forest-black"
+                    : "border border-white/10 text-white/65 hover:text-white/80 hover:border-white/25"
                 }`}
               >
                 {m}
@@ -146,7 +146,7 @@ export function FleetDashboard() {
             );
           })}
         </div>
-        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/30">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/55">
           auto-refresh · {REFRESH_MS / 1000}s
         </span>
       </div>
@@ -157,7 +157,7 @@ export function FleetDashboard() {
         <div className={`${CARD} overflow-x-auto`}>
           <table className="w-full font-mono text-[12px]">
             <thead>
-              <tr className="text-[10px] uppercase tracking-[0.16em] text-white/40 border-b border-white/8">
+              <tr className="text-[10px] uppercase tracking-[0.16em] text-white/65 border-b border-white/8">
                 <Th sortKey="bot_name" sortState={sortKey} dir={sortDir} onSort={toggleSort}>
                   Bot
                 </Th>
@@ -190,7 +190,7 @@ export function FleetDashboard() {
                     <td className="px-3 py-3">
                       <Link
                         href={`/lab/bot/${encodeURIComponent(b.id)}`}
-                        className="text-white/85 hover:text-accent-light transition-colors"
+                        className="text-white/85 hover:text-moss transition-colors"
                       >
                         {b.bot_name}
                       </Link>
@@ -199,8 +199,8 @@ export function FleetDashboard() {
                       <span
                         className={`rounded text-[10px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 ${
                           b.market === "crypto"
-                            ? "text-amber-300 bg-amber-300/10"
-                            : "text-sky-300 bg-sky-300/10"
+                            ? "text-cream bg-cream/10"
+                            : "text-cream/60 bg-white/[0.07]"
                         }`}
                       >
                         {b.market}
@@ -213,31 +213,31 @@ export function FleetDashboard() {
                       <span
                         className={`rounded px-1.5 py-0.5 font-bold ${
                           up
-                            ? "text-emerald-400 bg-emerald-400/10"
-                            : "text-red-400 bg-red-400/10"
+                            ? "text-moss bg-moss/10"
+                            : "text-brick-light bg-brick-light/10"
                         }`}
                       >
                         {fmtPct(b.pnl_pct)}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-right text-white/45">
+                    <td className="px-3 py-3 text-right text-white/65">
                       {b.position_pct === null
                         ? "—"
                         : `${Math.round(b.position_pct)}%`}
                     </td>
-                    <td className="px-3 py-3 text-right text-white/45">
+                    <td className="px-3 py-3 text-right text-white/65">
                       {b.holdings_count ?? "—"}
                     </td>
-                    <td className="px-3 py-3 text-right text-white/45">
+                    <td className="px-3 py-3 text-right text-white/65">
                       {b.fills_count ?? "—"}
                     </td>
-                    <td className="px-3 py-3 text-white/45 text-[11px] truncate max-w-[180px]">
+                    <td className="px-3 py-3 text-white/65 text-[11px] truncate max-w-[180px]">
                       {b.last_fill ?? "—"}
                     </td>
                     <td className="px-3 py-3">
                       <EquitySparkline points={points} positive={up} />
                     </td>
-                    <td className="px-3 py-3 text-right text-white/35 text-[11px] whitespace-nowrap">
+                    <td className="px-3 py-3 text-right text-white/65 text-[11px] whitespace-nowrap">
                       {fmtRelative(b.updated_at)}
                     </td>
                   </tr>
@@ -247,7 +247,7 @@ export function FleetDashboard() {
                 <tr>
                   <td
                     colSpan={10}
-                    className="px-3 py-10 text-center text-[11px] font-mono text-white/35 uppercase tracking-[0.18em]"
+                    className="px-3 py-10 text-center text-[11px] font-mono text-white/65 uppercase tracking-[0.18em]"
                   >
                     No bots match this filter
                   </td>
@@ -272,9 +272,9 @@ function Stat({
 }) {
   const valueColor =
     tone === "pos"
-      ? "text-emerald-400"
+      ? "text-moss"
       : tone === "neg"
-        ? "text-red-400"
+        ? "text-brick-light"
         : "text-white";
   return (
     <div className={`${CARD} p-5 space-y-2`}>

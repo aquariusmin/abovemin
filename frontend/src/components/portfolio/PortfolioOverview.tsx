@@ -32,7 +32,7 @@ export default function PortfolioOverview({
         <section className="space-y-10">
           <Reveal className="grid gap-6 md:grid-cols-12 md:items-end" y={16}>
             <div className="space-y-4 md:col-span-7">
-              <p className="eyebrow text-slate">
+              <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
                 {isKorean ? "제가 일하는 방식" : "How I work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
@@ -66,14 +66,14 @@ export default function PortfolioOverview({
         <section className="space-y-10" id="cases">
           <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end" y={16}>
             <div className="space-y-4">
-              <p className="eyebrow text-slate">
+              <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
                 {isKorean ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다." : "Seven projects I can walk through in detail."}
               </h2>
             </div>
-            <p className="max-w-md break-keep text-sm leading-relaxed text-muted">
+            <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
               {isKorean
                 ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
                 : "Each project explains why I started it, what I checked, and where the conclusion should stop."}

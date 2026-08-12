@@ -10,7 +10,7 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
 
   const bgColor = isLab ? 'bg-surface-dark' : 'bg-canvas';
-  const textColor = isLab ? 'text-white' : 'text-ink-body';
+  const textColor = isLab ? 'text-cream' : 'text-ink-body';
 
   useEffect(() => {
     function blockContextMenu(e: MouseEvent) {

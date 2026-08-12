@@ -15,7 +15,7 @@ export default function Lab() {
             PnL, holdings, and a 90-day curve per bot are synced from the
             validation server.
           </p>
-          <p className="inline-flex items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200">
+          <p className="inline-flex items-center gap-2 rounded-md border border-cream/25 bg-cream/[0.06] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-cream/85">
             Paper trading only · simulated capital · no real-money performance
           </p>
         </Reveal>

@@ -20,8 +20,8 @@ export default function PortfolioHero({
   return (
     <Reveal as="header" className="grid gap-10 border-b border-hairline pb-14 md:grid-cols-12 md:items-end md:pb-20" y={16}>
       <div className="space-y-7 md:col-span-8">
-        <p className="eyebrow text-slate">
-          {isKorean ? "포트폴리오 · 이상민" : "Portfolio · Sangmin Lee"}
+        <p className={`eyebrow-marked text-primary ${isKorean ? 'label-ko' : 'eyebrow'}`}>
+          {isKorean ? "포트폴리오 · 이상민" : "Portfolio · Sangmin Lee"}
         </p>
         <div className="space-y-5">
           <h1 className="max-w-5xl break-keep font-serif text-4xl font-medium leading-[1.05] tracking-tight text-ink sm:text-5xl md:text-7xl">
@@ -59,13 +59,13 @@ export default function PortfolioHero({
             href={getPortfolioPrintPath(locale, mode)}
             className="link-underline inline-flex items-center py-2 text-sm text-slate"
           >
-            {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
+            {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}
           </Link>
         </div>
       </div>
 
       <div className="space-y-5 md:col-span-4 md:border-l md:border-hairline md:pl-8">
-        <p className="eyebrow text-slate">
+        <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
           {isKorean ? "문제 해결 흐름" : "Working method"}
         </p>
         <ol className="space-y-3 text-sm text-slate">
@@ -74,7 +74,7 @@ export default function PortfolioHero({
             : ["Frame the question", "Check the data", "Analyze / model", "Set boundaries", "Recommend next steps"]
           ).map((step, index) => (
             <li key={step} className="flex items-center gap-3">
-              <span className="w-5 font-mono text-[10px] text-accent">{String(index + 1).padStart(2, "0")}</span>
+              <span className="w-5 font-mono text-[10px] text-primary">{String(index + 1).padStart(2, "0")}</span>
               <span>{step}</span>
             </li>
           ))}

@@ -1,4 +1,5 @@
 import EvidenceFigure from "@/components/portfolio/EvidenceFigure";
+import { chartSeries, palette } from "@/lib/palette";
 import {
   churnContractRates,
   churnTenureRates,
@@ -55,7 +56,7 @@ function ChurnEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="verified"
           title={locale === "ko" ? "계약 유형별 이탈률" : "Churn rate by contract type"}
-          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · 7,043 rows"
+          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · 7,043 rows"
           caption={
             locale === "ko"
               ? "원자료에서 직접 계산한 기술통계입니다. 월 단위 계약과 이탈의 연관성을 보여주지만, 특정 유지 전략이 이탈률을 낮췄다는 인과적 성과를 뜻하지 않습니다."
@@ -69,7 +70,7 @@ function ChurnEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="verified"
           title={locale === "ko" ? "이용 기간 구간별 이탈률" : "Churn rate by tenure group"}
-          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · bins computed from tenure"
+          source="WA_Fn-UseC_-Telco-Customer-Churn.csv · bins computed from tenure"
           caption={
             locale === "ko"
               ? "원자료의 tenure를 0–12, 13–24, 25–48, 49–72개월로 구분해 계산했습니다. 가입 초기의 높은 이탈 비중을 보여주지만, 고객별 원인이나 제안 전략의 실제 효과를 증명하지는 않습니다."
@@ -120,7 +121,7 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
           <div className="grid min-h-44 place-items-center border border-accent/15 bg-accent/[0.035] text-center">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate">Reported R-squared</p>
-              <p className="mt-3 text-6xl font-bold tracking-tight text-accent">0.819</p>
+              <p className="mt-3 text-6xl font-semibold tracking-tight text-accent">0.819</p>
               <p className="mt-3 font-sans text-xs text-slate">N = 791 in the reported simple-model output</p>
             </div>
           </div>
@@ -137,14 +138,14 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
               : "973, 820, and 791 refer to raw rows, merged observations, and GDP-usable observations. They are different processing stages and must not be treated as interchangeable sample sizes."
           }
         >
-          <div className="grid gap-px bg-black/5 sm:grid-cols-3">
+          <div className="grid gap-px bg-border sm:grid-cols-3">
             {[
               ["973", locale === "ko" ? "원자료 행" : "Raw rows"],
               ["820", locale === "ko" ? "병합 관측치" : "Merged observations"],
               ["791", locale === "ko" ? "GDP 관측치" : "GDP observations"],
             ].map(([value, label]) => (
               <div key={value} className="bg-white/80 p-6 text-center">
-                <p className="text-4xl font-bold text-accent">{value}</p>
+                <p className="text-4xl font-semibold text-accent">{value}</p>
                 <p className="mt-2 break-keep font-sans text-xs text-slate">{label}</p>
               </div>
             ))}
@@ -162,7 +163,7 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
         locale={locale}
         status="reported"
         title={locale === "ko" ? "2020–2024 수익성 지표 추이" : "2020–2024 profitability trends"}
-        source="Korean Air Financial Analysis report · profitability table"
+        source="Korean Air Financial Analysis report · profitability table"
         caption={
           locale === "ko"
             ? "보고서의 순이익률, ROE, ROA 표를 옮긴 추이입니다. 팬데믹 이후 회복과 변동은 볼 수 있지만, 투자 판단을 제공하는 자료는 아닙니다."
@@ -176,21 +177,21 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
         locale={locale}
         status="reported"
         title={locale === "ko" ? "가치평가 방법별 해석 차이" : "Valuation-method divergence"}
-        source="Korean Air Financial Analysis report · DCF, APV, and multiples sections"
+        source="Korean Air Financial Analysis report · DCF, APV, and multiples sections"
         caption={
           locale === "ko"
             ? "보고서에서 DCF와 APV는 음의 FCF 가정으로 불안정하거나 음수 결과를 보인 반면, multiples는 더 긍정적인 상대가치를 제시했습니다. 이는 방법 간 충돌을 보여줄 뿐 특정 목표가격이나 매매 판단을 검증하지 않습니다."
             : "In the report, negative FCF assumptions made DCF and APV unstable or negative, while multiples produced a more positive relative view. The panel shows method conflict; it does not validate a target price or investment action."
         }
       >
-        <div className="grid gap-px bg-black/5 md:grid-cols-3">
+        <div className="grid gap-px bg-border md:grid-cols-3">
           {[
-            ["DCF", locale === "ko" ? "FCF 가정에 매우 민감 · 음수/불안정" : "Highly sensitive to FCF · negative/unstable"],
+            ["DCF", locale === "ko" ? "FCF 가정에 매우 민감 · 음수/불안정" : "Highly sensitive to FCF · negative/unstable"],
             ["APV", locale === "ko" ? "영업 기반 손실이 절세효과를 압도" : "Operating-base weakness outweighed tax shield"],
             ["Multiples", locale === "ko" ? "상대적으로 더 긍정적인 시장 비교" : "More positive relative market comparison"],
           ].map(([method, interpretation]) => (
             <div key={method} className="min-h-40 bg-white/80 p-6">
-              <p className="font-mono text-xs font-bold tracking-[0.18em] text-accent">{method}</p>
+              <p className="font-mono text-xs font-semibold tracking-[0.18em] text-accent">{method}</p>
               <p className="mt-5 break-keep font-sans text-sm leading-relaxed text-slate">{interpretation}</p>
             </div>
           ))}
@@ -203,7 +204,7 @@ function KoreanAirEvidence({ locale }: { locale: EvidenceLocale }) {
 function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
   const architecture = locale === "ko"
     ? ["전략 봇", "KIS·CCXT broker", "실행·상태 저장", "FastAPI 제어", "React 모니터링"]
-    : ["Strategy bots", "KIS · CCXT brokers", "Execution · state store", "FastAPI controls", "React monitoring"];
+    : ["Strategy bots", "KIS · CCXT brokers", "Execution · state store", "FastAPI controls", "React monitoring"];
   const checklist = locale === "ko"
     ? [
         ["라이브 서버 모의투자", "모의"],
@@ -282,7 +283,7 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="reported"
           title={locale === "ko" ? "PCA 설명분산" : "PCA explained variance"}
-          source="Financial AI assignment 1 report · national-risk example"
+          source="Financial AI assignment 1 report · national-risk example"
           caption={
             locale === "ko"
               ? "보고서에서 PC1과 PC2가 각각 64.03%, 24.37%를 설명해 합계 약 88.4%였습니다. 특정 국가위험 예시의 수업 결과이며 일반적인 금융 예측 성능을 뜻하지 않습니다."
@@ -298,7 +299,7 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
           locale={locale}
           status="reported"
           title={locale === "ko" ? "Linear SVR tuning 결과" : "Linear SVR tuning result"}
-          source="Financial AI assignment 3 report · Iowa housing example"
+          source="Financial AI assignment 3 report · Iowa housing example"
           caption={
             locale === "ko"
               ? "비교한 조합 중 C=1, epsilon=50이 보고서상 가장 낮은 validation MSE를 보였습니다. 제한된 수업 실험의 결과이며 외부 데이터나 production 환경의 성능을 보장하지 않습니다."
@@ -326,17 +327,17 @@ function FinancialAiEvidence({ locale }: { locale: EvidenceLocale }) {
               : "The report concludes that the deeper DNN did not deliver a meaningful improvement over the smaller ANN. Because minimum-loss figures are not fully consistent within the document, only the qualitative conclusion is shown."
           }
         >
-          <div className="grid gap-px bg-black/5 sm:grid-cols-2">
+          <div className="grid gap-px bg-border sm:grid-cols-2">
             <div className="bg-white/80 p-6">
-              <p className="font-mono text-xs font-bold tracking-[0.16em] text-accent">ANN</p>
+              <p className="font-mono text-xs font-semibold tracking-[0.16em] text-accent">ANN</p>
               <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
-                {locale === "ko" ? "은닉층 1개 · 비교 기준 모형" : "One hidden layer · comparison baseline"}
+                {locale === "ko" ? "은닉층 1개 · 비교 기준 모형" : "One hidden layer · comparison baseline"}
               </p>
             </div>
             <div className="bg-white/80 p-6">
-              <p className="font-mono text-xs font-bold tracking-[0.16em] text-accent">DNN</p>
+              <p className="font-mono text-xs font-semibold tracking-[0.16em] text-accent">DNN</p>
               <p className="mt-4 break-keep font-sans text-sm leading-relaxed text-slate">
-                {locale === "ko" ? "은닉층 3개 · 추가 복잡도의 개선 제한" : "Three hidden layers · limited gain from added complexity"}
+                {locale === "ko" ? "은닉층 3개 · 추가 복잡도의 개선 제한" : "Three hidden layers · limited gain from added complexity"}
               </p>
             </div>
           </div>
@@ -396,7 +397,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
         locale={locale}
         status="verified"
         title={locale === "ko" ? "Workbook 카이제곱 요약" : "Workbook chi-square summary"}
-        source="Blood Type and Personality Survey workbook · 101 responses"
+        source="Blood Type and Personality Survey workbook · 101 responses"
         caption={
           locale === "ko"
             ? "workbook에 계산된 네 차원의 카이제곱 통계량과 최소 기대빈도를 표시합니다. 모든 표에서 기대빈도 5 미만인 셀이 하나씩 있어 가정을 명시해야 하며, 한 차원의 값만으로 광범위한 과학적 관계를 입증할 수 없습니다."
@@ -415,7 +416,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
             <tbody className="divide-y divide-black/5">
               {surveyChiSquare.map((row) => (
                 <tr key={row.dimension}>
-                  <td className="px-3 py-4 font-bold">{row.dimension}</td>
+                  <td className="px-3 py-4 font-semibold">{row.dimension}</td>
                   <td className="px-3 py-4 font-mono">{row.statistic.toFixed(4)}</td>
                   <td className="px-3 py-4 font-mono">{row.minimumExpected.toFixed(3)}</td>
                 </tr>
@@ -429,7 +430,7 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
         locale={locale}
         status="verified"
         title={locale === "ko" ? "T/F 관측빈도와 기대빈도" : "T/F observed and expected frequencies"}
-        source="Blood Type and Personality Survey workbook · T/F table"
+        source="Blood Type and Personality Survey workbook · T/F table"
         caption={
           locale === "ko"
             ? "T/F 차원의 혈액형별 관측값과 독립 가정 아래 기대값을 그대로 표시합니다. AB–F 기대빈도는 4.950으로 5보다 작으며, 이 표만으로 혈액형과 성격의 관계를 일반화할 수 없습니다."
@@ -441,20 +442,20 @@ function SurveyEvidence({ locale }: { locale: EvidenceLocale }) {
             <thead>
               <tr className="border-b border-black/10 text-left font-mono text-[10px] uppercase tracking-[0.13em] text-slate">
                 <th className="px-3 py-3">{locale === "ko" ? "혈액형" : "Blood type"}</th>
-                <th className="px-3 py-3">T · {locale === "ko" ? "관측" : "observed"}</th>
-                <th className="px-3 py-3">T · {locale === "ko" ? "기대" : "expected"}</th>
-                <th className="px-3 py-3">F · {locale === "ko" ? "관측" : "observed"}</th>
-                <th className="px-3 py-3">F · {locale === "ko" ? "기대" : "expected"}</th>
+                <th className="px-3 py-3">T · {locale === "ko" ? "관측" : "observed"}</th>
+                <th className="px-3 py-3">T · {locale === "ko" ? "기대" : "expected"}</th>
+                <th className="px-3 py-3">F · {locale === "ko" ? "관측" : "observed"}</th>
+                <th className="px-3 py-3">F · {locale === "ko" ? "기대" : "expected"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
               {surveyTfFrequencies.map((row) => (
                 <tr key={row.bloodType}>
-                  <td className="px-3 py-4 font-bold">{row.bloodType}</td>
+                  <td className="px-3 py-4 font-semibold">{row.bloodType}</td>
                   <td className="px-3 py-4 font-mono">{row.observedT}</td>
                   <td className="px-3 py-4 font-mono text-slate">{row.expectedT.toFixed(3)}</td>
                   <td className="px-3 py-4 font-mono">{row.observedF}</td>
-                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-bold text-amber-800" : "text-slate"}`}>
+                  <td className={`px-3 py-4 font-mono ${row.expectedF < 5 ? "font-semibold text-brick" : "text-slate"}`}>
                     {row.expectedF.toFixed(3)}
                   </td>
                 </tr>
@@ -486,10 +487,10 @@ function HorizontalBars({
             <span className="font-semibold text-slate">{item.label}</span>
             <span className="font-mono text-slate">
               {valueFormatter ? valueFormatter(item.value) : item.value.toFixed(2)}{valueSuffix}
-              {item.detail ? ` · ${item.detail}` : ""}
+              {item.detail ? ` · ${item.detail}` : ""}
             </span>
           </div>
-          <div className="h-2.5 bg-black/[0.045]">
+          <div className="h-2.5 bg-muted">
             <div
               className="h-full bg-accent"
               style={{ width: `${Math.max((item.value / max) * 100, 1)}%` }}
@@ -533,9 +534,9 @@ function ProfitabilityTrend() {
   const x = (index: number) => padX + (index * (width - padX * 2)) / (koreanAirProfitability.length - 1);
   const y = (value: number) => padY + ((max - value) * (height - padY * 2)) / (max - min);
   const series = [
-    { key: "netMargin" as const, label: "Net margin", color: "#4A5D4E" },
-    { key: "roe" as const, label: "ROE", color: "#8B6F47" },
-    { key: "roa" as const, label: "ROA", color: "#718096" },
+    { key: "netMargin" as const, label: "Net margin", color: chartSeries[0] },
+    { key: "roe" as const, label: "ROE", color: chartSeries[3] },
+    { key: "roa" as const, label: "ROA", color: chartSeries[4] },
   ];
 
   return (
@@ -551,7 +552,7 @@ function ProfitabilityTrend() {
         {[0, 10, 20].map((tick) => (
           <g key={tick}>
             <line x1={padX} x2={width - padX} y1={y(tick)} y2={y(tick)} stroke="rgba(0,0,0,0.08)" />
-            <text x={padX - 10} y={y(tick) + 4} textAnchor="end" fontSize="10" fill="#9CA3AF">{tick}%</text>
+            <text x={padX - 10} y={y(tick) + 4} textAnchor="end" fontSize="10" fill={palette.mutedForeground}>{tick}%</text>
           </g>
         ))}
         <line x1={padX} x2={width - padX} y1={y(0)} y2={y(0)} stroke="rgba(0,0,0,0.25)" />
@@ -567,7 +568,7 @@ function ProfitabilityTrend() {
           );
         })}
         {koreanAirProfitability.map((row, index) => (
-          <text key={row.year} x={x(index)} y={height - 8} textAnchor="middle" fontSize="11" fill="#6B7280">{row.year}</text>
+          <text key={row.year} x={x(index)} y={height - 8} textAnchor="middle" fontSize="11" fill={palette.slate}>{row.year}</text>
         ))}
       </svg>
       <table className="sr-only">
@@ -581,17 +582,17 @@ function ProfitabilityTrend() {
 
 function Checklist({ rows, locale }: { rows: string[][]; locale: EvidenceLocale }) {
   return (
-    <ul className="grid gap-px bg-black/5 md:grid-cols-2">
+    <ul className="grid gap-px bg-border md:grid-cols-2">
       {rows.map(([item, status]) => (
         <li key={item} className="flex items-center justify-between gap-4 bg-white/80 p-4 font-sans text-sm">
           <span className="break-keep text-ink-body">{item}</span>
-          <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-accent">
+          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-accent">
             {status}
           </span>
         </li>
       ))}
-      <li className="md:col-span-2 bg-amber-50 p-4 font-sans text-xs leading-relaxed text-amber-900">
-        {locale === "ko" ? "Paper-trading 검증 전용 · 실거래 운영 및 수익 성과를 주장하지 않습니다." : "Paper-trading validation only · no real-money operation or return claim."}
+      <li className="md:col-span-2 bg-brick/[0.05] p-4 font-sans text-xs leading-relaxed text-brick">
+        {locale === "ko" ? "Paper-trading 검증 전용 · 실거래 운영 및 수익 성과를 주장하지 않습니다." : "Paper-trading validation only · no real-money operation or return claim."}
       </li>
     </ul>
   );
@@ -599,11 +600,11 @@ function Checklist({ rows, locale }: { rows: string[][]; locale: EvidenceLocale 
 
 function MetricCards({ metrics }: { metrics: string[][] }) {
   return (
-    <div className="grid gap-px bg-black/5 sm:grid-cols-2">
+    <div className="grid gap-px bg-border sm:grid-cols-2">
       {metrics.map(([label, value]) => (
         <div key={label} className="bg-white/80 p-5">
           <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.13em] text-slate">{label}</p>
-          <p className="mt-2 font-mono text-xl font-bold text-accent">{value}</p>
+          <p className="mt-2 font-mono text-xl font-semibold text-accent">{value}</p>
         </div>
       ))}
     </div>

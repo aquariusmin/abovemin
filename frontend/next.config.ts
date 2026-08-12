@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Next 16 ignores any `quality` not listed here and silently falls back to
+    // 75. The hero asks for 90, so both values have to be declared.
+    qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),
       new URL('https://images.unsplash.com/**'),

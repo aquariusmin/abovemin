@@ -133,7 +133,7 @@ export const portfolioCardChips: Record<string, LocalizedText[]> = {
   ],
   "korean-air": [
     { en: "2020–2024 ratios", ko: "2020–2024 재무비율" },
-    { en: "DCF · APV · Multiples", ko: "DCF · APV · 멀티플" },
+    { en: "DCF · APV · Multiples", ko: "DCF · APV · 멀티플" },
     { en: "WACC ≈ 2.8%", ko: "WACC 약 2.8%" },
   ],
   "quant-trading-fleet": [
@@ -143,8 +143,8 @@ export const portfolioCardChips: Record<string, LocalizedText[]> = {
   ],
   "financial-ai-model-study": [
     { en: "4 assignments", ko: "4개 과제" },
-    { en: "PCA · SVR", ko: "PCA · SVR" },
-    { en: "ANN · DNN", ko: "ANN · DNN" },
+    { en: "PCA · SVR", ko: "PCA · SVR" },
+    { en: "ANN · DNN", ko: "ANN · DNN" },
   ],
   phorage: [
     { en: "Pre-launch MVP", ko: "출시 전 MVP" },
