@@ -1,6 +1,9 @@
 import EvidenceFigure from "@/components/portfolio/EvidenceFigure";
 import { chartSeries, palette } from "@/lib/palette";
 import {
+  arcticNavigableMonths,
+  busanCheckoutIndex,
+  busanInflowDwell,
   churnContractRates,
   churnTenureRates,
   koreanAirProfitability,
@@ -8,6 +11,7 @@ import {
   polynomialValidationRmse,
   surveyChiSquare,
   surveyTfFrequencies,
+  tqtWalkForward,
   type EvidenceLocale,
 } from "@/data/portfolioEvidence";
 
@@ -19,6 +23,10 @@ export default function ProjectEvidence({
   locale: EvidenceLocale;
 }) {
   switch (slug) {
+    case "arctic-route":
+      return <ArcticEvidence locale={locale} />;
+    case "busan-station-dwell":
+      return <BusanEvidence locale={locale} />;
     case "telecom-churn":
       return <ChurnEvidence locale={locale} />;
     case "satellite-gdp":
@@ -36,6 +44,100 @@ export default function ProjectEvidence({
     default:
       return null;
   }
+}
+
+function ArcticEvidence({ locale }: { locale: EvidenceLocale }) {
+  const months = arcticNavigableMonths.map((item) => ({
+    label: item.label[locale],
+    value: item.value,
+    detail: `n=${item.years}`,
+  }));
+
+  return (
+    <div className="space-y-5">
+      <EvidenceFigure
+        locale={locale}
+        status="verified"
+        title={locale === "ko" ? "10년 단위 평균 통항 가능 개월수" : "Mean navigable months per decade"}
+        source="outputs/tables/nsr_annual_navigability.csv · NSIDC Sea Ice Index v4 (ice-1A/PC7)"
+        caption={
+          locale === "ko"
+            ? "프로젝트 산출 테이블에서 다시 계산한 10년 단위 평균입니다. 6~11월 표본 기준이며, 해빙농도 임계값을 넘긴 달을 통항 가능으로 셉니다. 실제 상업 운항 가능성을 뜻하지 않습니다."
+            : "Decade means recomputed from the project's own output table. Sampling covers June–November and counts a month as navigable when it clears the concentration threshold; it does not imply commercial viability."
+        }
+      >
+        <HorizontalBars
+          items={months}
+          valueSuffix={locale === "ko" ? "개월" : " mo"}
+          valueFormatter={(value) => value.toFixed(1)}
+        />
+      </EvidenceFigure>
+
+      <EvidenceFigure
+        locale={locale}
+        status="verified"
+        title={locale === "ko" ? "추세 검증과 거리 절감" : "Trend validation and distance saving"}
+        source="outputs/tables/trends_navigable_months.csv · outputs/tables/logistics_vs_suez.csv"
+        caption={
+          locale === "ko"
+            ? "OLS와 Theil-Sen이 같은 부호를 보일 때만 추세로 인정했습니다. 거리 절감은 대권 경로 기준 계산값이며, 항만 접근이나 운항 비용은 포함하지 않습니다."
+            : "A trend counts only when OLS and Theil-Sen agree in sign. The distance saving is computed on great-circle routings and excludes port access and operating cost."
+        }
+      >
+        <MetricCards
+          metrics={[
+            [locale === "ko" ? "OLS 기울기" : "OLS slope", locale === "ko" ? "+0.92 개월/10년" : "+0.92 months/decade"],
+            [locale === "ko" ? "Theil-Sen 기울기" : "Theil-Sen slope", locale === "ko" ? "+0.83 개월/10년" : "+0.83 months/decade"],
+            [locale === "ko" ? "적합도 · 유의성" : "Fit · significance", "R² = 0.66 · p < 0.001"],
+            [locale === "ko" ? "수에즈 대비 절감" : "Saving versus Suez", locale === "ko" ? "3,151해리 · 29.8%" : "3,151 nm · 29.8%"],
+          ]}
+        />
+      </EvidenceFigure>
+    </div>
+  );
+}
+
+function BusanEvidence({ locale }: { locale: EvidenceLocale }) {
+  const dwell = busanInflowDwell.map((item) => ({ label: item.label[locale], value: item.value }));
+  const checkout = busanCheckoutIndex.map((item) => ({ label: item.label[locale], value: item.value }));
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <EvidenceFigure
+          locale={locale}
+          status="verified"
+          title={locale === "ko" ? "유입형 역 평균 체류시간 하위 구간" : "Lowest dwell among inflow-type stations"}
+          source="data/processed/station_kpi.csv · 112 stations, Jan–Jun 2026"
+          caption={
+            locale === "ko"
+              ? "min-shift 보정 후 값을 KPI 테이블에서 다시 계산했습니다. 해운대역은 유입형 49개 역 중 최하위이며 중앙값의 절반 이하입니다. 체류는 개찰 기록에서 추정한 대리지표입니다."
+              : "Recomputed from the KPI table after the min-shift correction. Haeundae is the lowest of 49 inflow-type stations, under half the median. Dwell is a proxy estimated from gate records."
+          }
+        >
+          <HorizontalBars
+            items={dwell}
+            valueSuffix={locale === "ko" ? "시간" : " h"}
+            valueFormatter={(value) => value.toFixed(2)}
+          />
+        </EvidenceFigure>
+
+        <EvidenceFigure
+          locale={locale}
+          status="verified"
+          title={locale === "ko" ? "일요일 체크아웃 지수" : "Sunday checkout index"}
+          source="data/processed/station_typology.csv · Sunday 10–13h ÷ 07–10h boardings"
+          caption={
+            locale === "ko"
+              ? "통근이 사라지는 일요일에 늦은 오전 승차가 몰리는 정도입니다. 해운대역은 KTX 환승역인 부산역 다음으로 높아 숙박 신호 자체는 확인됩니다. 다만 그 규모가 유입의 5.8%에 그쳐 낮은 체류전환율의 설명으로는 채택하지 않았습니다."
+              : "How much boarding concentrates late in the morning on Sundays, when commuting disappears. Haeundae ranks second behind the KTX interchange, so the lodging signal is real — but it covers only 5.8% of inflow and was rejected as the explanation for low dwell conversion."
+          }
+        >
+          <HorizontalBars items={checkout} valueFormatter={(value) => value.toFixed(2)} />
+        </EvidenceFigure>
+      </div>
+    </div>
+  );
 }
 
 function ChurnEvidence({ locale }: { locale: EvidenceLocale }) {
@@ -247,6 +349,45 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
         }
       >
         <Checklist rows={checklist} locale={locale} />
+      </EvidenceFigure>
+
+      <EvidenceFigure
+        locale={locale}
+        status="reported"
+        title={locale === "ko" ? "walk-forward 아웃오브샘플 결과" : "Walk-forward out-of-sample results"}
+        source="tqt project · five-year train, two-year test · 2011–2026 daily bars"
+        caption={
+          locale === "ko"
+            ? "인샘플이 아닌 아웃오브샘플 결과만 옮긴 표입니다. decay가 1.0 이상이면 검증 구간에서 성과가 무너지지 않았다는 뜻이며, 미래 수익을 보장하지 않습니다. 매수보유의 CAGR이 더 높다는 점도 그대로 남겼습니다."
+            : "The table reports out-of-sample results only. A decay at or above 1.0 means performance did not collapse in the test window; it does not promise future return. Buy-and-hold's higher CAGR is left in place."
+        }
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[34rem] border-collapse font-sans text-sm">
+            <thead>
+              <tr className="border-b border-hairline text-left font-mono text-[10px] uppercase tracking-[0.12em] text-slate">
+                <th className="py-3 pr-4 font-semibold">{locale === "ko" ? "전략" : "Strategy"}</th>
+                <th className="py-3 pr-4 text-right font-semibold">{locale === "ko" ? "인샘플 CAGR" : "In-sample CAGR"}</th>
+                <th className="py-3 pr-4 text-right font-semibold">{locale === "ko" ? "OOS CAGR" : "OOS CAGR"}</th>
+                <th className="py-3 pr-4 text-right font-semibold">Sharpe</th>
+                <th className="py-3 pr-4 text-right font-semibold">{locale === "ko" ? "최대낙폭" : "Max drawdown"}</th>
+                <th className="py-3 text-right font-semibold">Decay</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tqtWalkForward.map((row) => (
+                <tr key={row.strategy.en} className="border-b border-hairline/60 last:border-0">
+                  <td className="py-3 pr-4 break-keep text-ink-body">{row.strategy[locale]}</td>
+                  <td className="py-3 pr-4 text-right font-mono text-slate">{row.inSample.toFixed(2)}%</td>
+                  <td className="py-3 pr-4 text-right font-mono font-semibold text-accent">{row.outOfSample.toFixed(2)}%</td>
+                  <td className="py-3 pr-4 text-right font-mono text-slate">{row.sharpe.toFixed(2)}</td>
+                  <td className="py-3 pr-4 text-right font-mono text-slate">{row.maxDrawdown.toFixed(1)}%</td>
+                  <td className="py-3 text-right font-mono text-slate">{`\u00d7${row.decay.toFixed(2)}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </EvidenceFigure>
     </div>
   );

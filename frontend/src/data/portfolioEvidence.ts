@@ -9,6 +9,24 @@ export const evidenceStatusLabels: Record<EvidenceStatus, LocalizedText> = {
 
 export const portfolioEvidenceOverview = [
   {
+    slug: "arctic-route",
+    title: "Arctic Route Accessibility Analysis",
+    status: "verified" as const,
+    summary: {
+      en: "Navigable-season and trend figures are recomputed from the project's own output tables, which are pinned to a SHA-256 data manifest.",
+      ko: "통항 가능 기간과 추세 수치는 SHA-256 매니페스트로 고정된 산출 테이블에서 다시 계산했습니다.",
+    },
+  },
+  {
+    slug: "busan-station-dwell",
+    title: "Busan Station Dwell Conversion Analysis",
+    status: "verified" as const,
+    summary: {
+      en: "Dwell times and station typology are recomputed from the processed KPI table; the study itself is still in progress.",
+      ko: "체류시간과 역 유형 분류는 처리된 KPI 테이블에서 다시 계산했으며, 연구 자체는 아직 진행 중입니다.",
+    },
+  },
+  {
     slug: "telecom-churn",
     title: "Telecom Customer Churn Analysis",
     status: "verified" as const,
@@ -37,11 +55,11 @@ export const portfolioEvidenceOverview = [
   },
   {
     slug: "quant-trading-fleet",
-    title: "Quant Trading Fleet",
-    status: "verified" as const,
+    title: "Quant Trading Automation",
+    status: "reported" as const,
     summary: {
-      en: "Architecture and operating controls are supported by the codebase; performance screenshots and claims are excluded.",
-      ko: "구조와 운영 제어는 코드로 확인했으며, 성과 화면과 수익 관련 주장은 제외했습니다.",
+      en: "Architecture and operating controls are supported by the codebase; backtest figures are quoted from the project's own walk-forward output, not re-run here.",
+      ko: "구조와 운영 제어는 코드로 확인했고, 백테스트 수치는 프로젝트의 walk-forward 산출값을 인용한 것으로 이 페이지에서 다시 실행하지는 않았습니다.",
     },
   },
   {
@@ -74,6 +92,28 @@ export const portfolioEvidenceOverview = [
 ];
 
 export const portfolioEvidenceHighlights = [
+  {
+    evidence: { en: "0 → 3.4 navigable months a year", ko: "연 통항 가능 0개월 → 3.4개월" },
+    demonstrates: {
+      en: "Turning satellite climate grids into a decision-grade operating window, with OLS and Theil-Sen required to agree.",
+      ko: "위성 기후 격자를 운항 판단 단위로 옮기고, OLS와 Theil-Sen이 일치할 때만 추세를 보고하는 검증 규칙을 적용했습니다.",
+    },
+    caution: {
+      en: "Physical accessibility under concentration thresholds only; it excludes insurance, escort, and regulatory constraints.",
+      ko: "해빙농도 임계값 기준의 물리적 접근성이며, 보험·쇄빙선 지원·규제 제약은 포함하지 않습니다.",
+    },
+  },
+  {
+    evidence: { en: "0.96 h dwell at Haeundae", ko: "해운대역 체류 0.96시간" },
+    demonstrates: {
+      en: "Constructing a variable the source data does not contain, finding the first metric broken, and repairing it before reporting.",
+      ko: "원자료에 없는 변수를 만들고, 첫 지표가 깨진 것을 확인한 뒤 보정하고 나서 보고하는 과정입니다.",
+    },
+    caution: {
+      en: "In-progress work ahead of a September 2026 submission; dwell is estimated from gate records, not measured mobility data.",
+      ko: "2026년 9월 제출을 앞둔 진행 중 과제이며, 체류는 개찰 기록에서 추정한 값입니다.",
+    },
+  },
   {
     evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
     demonstrates: {
@@ -108,19 +148,29 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
-    evidence: { en: "Live-server paper-trading architecture", ko: "라이브 서버 모의투자 아키텍처" },
+    evidence: { en: "Walk-forward out-of-sample validation", ko: "walk-forward 아웃오브샘플 검증" },
     demonstrates: {
-      en: "Broker abstraction, bot control, dashboards, logging, and operational validation.",
-      ko: "브로커 추상화, 봇 제어, 대시보드, 로그, 운영 검증을 아우르는 핀테크 시스템 설계 작업입니다.",
+      en: "Broker abstraction and operating controls, plus a refusal to report in-sample performance.",
+      ko: "브로커 추상화와 운영 제어, 그리고 인샘플 성과를 보고하지 않겠다는 검증 규칙을 함께 보여줍니다.",
     },
     caution: {
-      en: "Paper-trading validation only; no real-money operation or performance claim.",
-      ko: "모의투자 검증 단계이며, 실거래 운용이나 수익 성과를 주장하지 않습니다.",
+      en: "Paper-trading validation only; backtests are historical simulations, not a real-money record.",
+      ko: "페이퍼 트레이딩 검증 단계이며, 백테스트는 과거 데이터 시뮬레이션이지 실거래 기록이 아닙니다.",
     },
   },
 ];
 
 export const portfolioCardChips: Record<string, LocalizedText[]> = {
+  "arctic-route": [
+    { en: "1979–2025 grids", ko: "1979–2025 격자" },
+    { en: "OLS + Theil-Sen", ko: "OLS + Theil-Sen" },
+    { en: "3,151 nm saved", ko: "3,151해리 절감" },
+  ],
+  "busan-station-dwell": [
+    { en: "40,544 rows", ko: "40,544행" },
+    { en: "112 stations", ko: "112개 역" },
+    { en: "Little's Law", ko: "Little's Law" },
+  ],
   "telecom-churn": [
     { en: "7,043 records", ko: "7,043건" },
     { en: "Contract & tenure EDA", ko: "계약·이용기간 EDA" },
@@ -137,9 +187,9 @@ export const portfolioCardChips: Record<string, LocalizedText[]> = {
     { en: "WACC ≈ 2.8%", ko: "WACC 약 2.8%" },
   ],
   "quant-trading-fleet": [
-    { en: "Paper trading", ko: "모의투자" },
-    { en: "Broker abstraction", ko: "브로커 추상화" },
-    { en: "Dashboard & logs", ko: "대시보드·로그" },
+    { en: "Walk-forward OOS", ko: "walk-forward 검증" },
+    { en: "Measured costs", ko: "실측 비용 반영" },
+    { en: "Paper trading", ko: "페이퍼 트레이딩" },
   ],
   "financial-ai-model-study": [
     { en: "4 assignments", ko: "4개 과제" },
@@ -157,6 +207,40 @@ export const portfolioCardChips: Record<string, LocalizedText[]> = {
     { en: "Observed vs expected", ko: "관측·기대빈도 비교" },
   ],
 };
+
+// Decade means recomputed from outputs/tables/nsr_annual_navigability.csv (ice-1A/PC7, Jun-Nov sampling).
+export const arcticNavigableMonths = [
+  { label: { en: "1980s", ko: "1980년대" }, value: 0.0, years: 11 },
+  { label: { en: "1990s", ko: "1990년대" }, value: 0.9, years: 10 },
+  { label: { en: "2000s", ko: "2000년대" }, value: 1.6, years: 10 },
+  { label: { en: "2010s", ko: "2010년대" }, value: 3.2, years: 10 },
+  { label: { en: "2020-2025", ko: "2020-2025" }, value: 3.17, years: 6 },
+];
+
+// Mean dwell hours for inflow-type stations, recomputed from data/processed/station_kpi.csv.
+export const busanInflowDwell = [
+  { label: { en: "Haeundae", ko: "해운대역" }, value: 0.96 },
+  { label: { en: "Namcheon", ko: "남천역" }, value: 1.21 },
+  { label: { en: "Geumnyeonsan", ko: "금련산역" }, value: 1.22 },
+  { label: { en: "Dongnae (Line 4)", ko: "동래역(4호선)" }, value: 1.27 },
+  { label: { en: "Inflow-type median", ko: "유입형 49개 역 중앙값" }, value: 2.09 },
+];
+
+// Sunday checkout index = 10-13h boardings divided by 07-10h boardings, same source table.
+export const busanCheckoutIndex = [
+  { label: { en: "Busan (KTX)", ko: "부산역 (KTX)" }, value: 2.779 },
+  { label: { en: "Haeundae", ko: "해운대역" }, value: 2.715 },
+  { label: { en: "Jagalchi", ko: "자갈치역" }, value: 2.482 },
+  { label: { en: "Deokcheon (Line 2)", ko: "덕천역(2호선)" }, value: 2.366 },
+  { label: { en: "Seomyeon (Line 2)", ko: "서면역(2호선)" }, value: 2.365 },
+];
+
+// Quoted from the tqt project README walk-forward table (five-year train, two-year test).
+export const tqtWalkForward = [
+  { strategy: { en: "Faber", ko: "Faber" }, inSample: 5.73, outOfSample: 7.36, sharpe: 1.01, maxDrawdown: -14.1, decay: 1.28 },
+  { strategy: { en: "Dual momentum", ko: "듀얼 모멘텀" }, inSample: 7.60, outOfSample: 7.57, sharpe: 0.49, maxDrawdown: -30.5, decay: 1.00 },
+  { strategy: { en: "Buy and hold", ko: "매수보유" }, inSample: 8.94, outOfSample: 11.10, sharpe: 0.97, maxDrawdown: -20.1, decay: 1.24 },
+];
 
 export const churnContractRates = [
   { label: { en: "Month-to-month", ko: "월 단위" }, value: 42.71 },

@@ -21,8 +21,135 @@ export type PortfolioProject = {
 
 export const portfolioProjects: PortfolioProject[] = [
   {
-    slug: "telecom-churn",
+    slug: "arctic-route",
     number: "01",
+    title: "Arctic Route Accessibility Analysis",
+    category: "Climate Data · Logistics Strategy",
+    period: "July 2026",
+    role: "Individual project · polar big-data analysis",
+    sourceUrl: "https://github.com/aquariusmin/arctic-route-accessibility-analysis",
+    summary:
+      "Measured how many months a year Arctic shipping routes are actually open, using observed NSIDC sea-ice concentration grids from 1979 to 2025, and translated the result into distance saved on the Busan–Rotterdam leg.",
+    question:
+      "How much has sea-ice loss changed the operational window of Arctic routes, and what choice does that leave a Korean shipper?",
+    evidence: [
+      "NSIDC Sea Ice Index v4 monthly sea-ice concentration grids at 25 km, 1979–2025",
+      "SHA-256 checksum data manifest with idempotent ingestion scripts",
+      "Gridded-versus-official extent cross-check and 50 km buffer sensitivity analysis",
+      "CSV outputs recording OLS and Theil-Sen trends side by side, with roughly 30 tests",
+    ],
+    tools: ["Python", "pandas", "NumPy", "rasterio", "GeoPandas", "SciPy", "statsmodels", "pytest"],
+    process: [
+      {
+        title: "Pin down provenance",
+        description:
+          "Ingested NSIDC gridded GeoTIFFs, fixed provenance with a SHA-256 checksum manifest, and cross-checked gridded extent against the official NSIDC series.",
+      },
+      {
+        title: "Build route corridors",
+        description:
+          "Buffered the great-circle tracks of the Northern Sea Route, Northwest Passage, and Transpolar route by 50 km, rasterised them onto the ice grid, and split them into segments for bottleneck detection.",
+      },
+      {
+        title: "Compute feasibility",
+        description:
+          "Applied per-vessel-class concentration thresholds to decide navigability by year and month, identified the limiting bottleneck segment, and aggregated navigable months per year.",
+      },
+      {
+        title: "Validate trends and read scenarios",
+        description:
+          "Ran OLS alongside robust Theil-Sen and reported a trend only when both agreed, then framed the distance saving against Suez as logistics and cruise scenarios.",
+      },
+    ],
+    insights: [
+      "For ice-1A/PC7 vessels the NSR navigable season grew from about 0 months a year in the 1980s to about 3.4 months a year since 2015, a robust +0.9 months per decade where OLS and Theil-Sen agree.",
+      "September corridor sea-ice concentration fell about 3.2% per decade.",
+      "The NSR is 3,151 nautical miles, about 29.8%, shorter than the Suez routing for Busan–Rotterdam.",
+      "The Transpolar route is the shortest on paper but recorded zero navigable months across the entire record for non-icebreaking vessels.",
+    ],
+    decisionValue:
+      "Reduced the finding to two decision-grade numbers, navigable months per year and nautical miles saved, so routes can be compared on when and for how long they are usable.",
+    limitations: [
+      "This is an observation-based analysis, not a climate model that forecasts future ice.",
+      "Navigability is judged on sea-ice concentration thresholds and excludes insurance, port, icebreaker-escort, and regulatory constraints.",
+      "Some risk and cost layers in the extended Phase E analysis use synthetic stand-ins where real data was unavailable; these are labelled explicitly in the code.",
+    ],
+    suggestedVisuals: [
+      "Navigable months per year",
+      "September corridor concentration trend with OLS and Theil-Sen",
+      "NSR bottleneck comparison",
+      "Distance saving versus Suez",
+    ],
+    caution:
+      "Navigable months describe physical accessibility under concentration thresholds; they do not mean commercial transit is operationally viable.",
+  },
+  {
+    slug: "busan-station-dwell",
+    number: "02",
+    title: "Busan Station Dwell Conversion Analysis",
+    category: "Public Data · Urban Policy",
+    period: "August 2026 (in progress)",
+    role: "Individual project · entry in preparation for the 2026 Big Data competition",
+    sourceUrl: "https://github.com/aquariusmin/busan-station-dwell",
+    summary:
+      "Estimated dwell, a variable absent from the source data, using only Busan metro tap-in and tap-out records, and identified stations where arrivals are high but people do not stay.",
+    question:
+      "What does a ridership-based policy target list miss? Are alighting and dwelling the same thing?",
+    evidence: [
+      "40,544 rows of hourly boarding and alighting counts across 112 stations, January–June 2026",
+      "System-wide daily boarding-alighting gap of at most 0.748%, confirming the data is gate-based",
+      "Station-level KPI table joined with station coordinates and building attributes",
+      "Weekday and weekend hourly boarding profiles used to test the lodging hypothesis",
+    ],
+    tools: ["Python", "pandas", "NumPy", "Korea Public Data Portal", "Little's Law"],
+    process: [
+      {
+        title: "Test the premise first",
+        description:
+          "Compared system-wide boardings and alightings to confirm the data records gate crossings, so inter-line transfers never appear as a boarding or alighting.",
+      },
+      {
+        title: "Design the dwell metric",
+        description:
+          "Built net rail-attributable dwelling population as cumulative alightings minus cumulative boardings, then divided the curve area by daily alightings to derive mean dwell time.",
+      },
+      {
+        title: "Find and fix the defect",
+        description:
+          "Found the raw metric collapsing to negative values at residential stations and applied a per-day min-shift so only the rail-attributable increment remained.",
+      },
+      {
+        title: "Test the competing explanation",
+        description:
+          "Checked whether hotel density explains Haeundae's low dwell using a checkout index, and recorded the conclusion that it does not.",
+      },
+    ],
+    insights: [
+      "After the min-shift correction, mean dwell time at non-transfer stations moved from an impossible −1.23 hours to 2.78 hours.",
+      "The order of the daily trough and peak alone separated 49 inflow-type stations from 63 residential-type stations.",
+      "Haeundae station averages 0.96 hours of dwell, the lowest of the 49 inflow-type stations against a median of 2.09, and shows the widest gap between alighting rank and dwell rank.",
+      "The lodging explanation was detectable but insufficient: the Sunday checkout index reached 2.72, yet the signal accounts for only 5.8% of inflow and cannot explain the low conversion rate.",
+    ],
+    decisionValue:
+      "Ranking stations by failed dwell conversion instead of raw ridership produces a different target list for commercial-district renewal budgets, and producing that list is the point of the analysis.",
+    limitations: [
+      "The project is in progress ahead of a September 2026 submission, and current figures are first-round validation results.",
+      "Commercial-establishment data and regression residual diagnostics are still outstanding, so stations undersupplied relative to dwell are not yet identified.",
+      "The dwell measure is a proxy for rail-attributable presence and excludes arrivals by bus or car.",
+      "Only 112 of 114 stations appear in the ridership data, so two stations are missing from the analysis.",
+    ],
+    suggestedVisuals: [
+      "Hourly dwell curve before and after the min-shift correction",
+      "Alighting rank versus dwell rank scatter",
+      "Inflow-type and residential-type station map",
+      "Haeundae hourly boarding profile by day of week",
+    ],
+    caution:
+      "Dwelling population and dwell time are estimated from gate records; they are not measured mobility data from telecom or card sources.",
+  },
+  {
+    slug: "telecom-churn",
+    number: "03",
     title: "Telecom Customer Churn Analysis",
     category: "Customer Analytics · Strategy",
     period: "Summer 2025",
@@ -84,7 +211,7 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     slug: "satellite-gdp",
-    number: "02",
+    number: "04",
     title: "Satellite Night-Light GDP Analysis",
     category: "Economics · Alternative Data",
     period: "Spring 2025",
@@ -145,7 +272,7 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     slug: "korean-air",
-    number: "03",
+    number: "05",
     title: "Korean Air Financial Analysis",
     category: "Financial Research · Strategy",
     period: "Spring 2025",
@@ -206,68 +333,71 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     slug: "quant-trading-fleet",
-    number: "04",
-    title: "Quant Trading Fleet",
-    category: "Fintech · Service Operations",
-    period: "2025-Present",
-    role: "Individual project",
-    sourceUrl: "https://github.com/aquariusmin/quant_trading_fleet",
+    number: "06",
+    title: "Quant Trading Automation",
+    category: "Fintech · Strategy Validation and Operations",
+    period: "2025–present",
+    role: "Individual project · tqt (Toss Open API) · Quant Trading Fleet",
+    sourceUrl: "https://github.com/aquariusmin/toss-api-quant-trading",
     summary:
-      "Built a live-server paper-trading system connecting strategy bots, broker abstractions, persistent execution data, controls, logging, and a monitoring dashboard.",
+      "Spent less time inventing strategies than on checking whether a strategy has an edge and on being able to start, stop, and record it safely. tqt handles validation and execution; Fleet is the operating dashboard.",
     question:
-      "What operating infrastructure is required to move trading rules from standalone scripts into a controllable and observable service?",
+      "What does running trading rules as a service require beyond strategy code, and how do you confirm the rules actually have an edge?",
     evidence: [
-      "KIS and Binance/CCXT broker interfaces",
-      "Bot states, strategy settings, logs, and execution history",
-      "Live-server paper-trading validation",
+      "Daily-bar backtest over eight domestically listed global ETFs and two government-bond ETFs, 2011–2026",
+      "Cost assumptions using the account's real commission rate read from the API, 10 bp slippage, and next-open fills",
+      "Walk-forward out-of-sample results (five-year train, two-year test) plus parameter sensitivity sweeps",
+      "KIS and Binance/CCXT broker interfaces with bot state, strategy settings, order history, and logs",
     ],
-    tools: ["Python", "FastAPI", "React", "TypeScript", "SQLite", "SQLAlchemy", "Docker"],
+    tools: ["Python", "pandas", "FastAPI", "React", "TypeScript", "SQLite", "SQLAlchemy", "Docker", "Toss Open API"],
     process: [
       {
-        title: "Separate strategy and broker logic",
+        title: "Separate strategy from broker logic",
         description:
-          "Created broker abstractions for exchange-specific data and order behavior.",
+          "Designed a broker abstraction layer to isolate per-exchange differences in market data and order handling.",
       },
       {
-        title: "Make state observable",
+        title: "Make state and history visible",
         description:
-          "Modeled bot states, settings, execution history, and operational logs in SQLite.",
+          "Persisted bot state, settings, execution history, and operating logs, controlled through a FastAPI service and a React dashboard.",
       },
       {
-        title: "Add operator control",
+        title: "Backtest on measured costs",
         description:
-          "Implemented FastAPI services, asynchronous bot controls, and a React/TypeScript dashboard.",
+          "Replaced assumed fees with the account's actual rates from the API and applied slippage and next-open fills so cost assumptions match reality.",
       },
       {
-        title: "Validate operations",
+        title: "Validate out-of-sample, then on paper",
         description:
-          "Containerized the service and began live-server paper-trading validation.",
+          "Reported performance only from a five-year train, two-year test walk-forward, then validated operations with paper trading that fills against the live order book.",
       },
     ],
     insights: [
-      "Automated trading is also an operations-design problem.",
-      "A usable service needs state visibility, logging, parameter governance, test modes, recovery behavior, and human supervision.",
-      "The project demonstrates how financial-service data is generated, stored, monitored, and governed.",
+      "Out-of-sample, the Faber moving-average sleeve returned 7.36% CAGR with a 1.01 Sharpe, a −14.1% maximum drawdown, and decay of ×1.28, so there is no sign of overfitting.",
+      "Buy-and-hold still wins on CAGR at 8.94%. What tactical allocation buys is not return but drawdown, cutting the maximum from −20.1% to −14.5%.",
+      "The Toss Open API serves only about four days of one-minute bars, which makes intraday backtesting impossible. Choosing low-frequency daily strategies was a constraint, not a preference.",
+      "Automated trading is an operations problem as much as a modelling one: state checks, logs, parameter management, a kill switch, and recovery procedures are what make it safe to leave running.",
     ],
     decisionValue:
-      "The system makes strategy operations inspectable and supports structured validation before any consideration of real-money use.",
+      "Instead of claiming returns, set out in numbers and operating controls the conditions under which a strategy may run and the signals that should switch it off.",
     limitations: [
-      "A formal paper-trading validation report is still needed.",
-      "Uptime, failed-order, reconciliation, duplicate-order, restart, and logging criteria should be defined.",
-      "Every strategy and broker mode requires end-to-end validation before the system is described as stable.",
+      "Both projects are at paper-trading validation with no real-money operating history.",
+      "The backtest universe consists of currently listed instruments, so some survivorship bias remains.",
+      "Most validated strategies lost money in 2022; this design does not defend a period where equities and long bonds fall together.",
+      "Long-running uptime, order-failure handling, and restart scenarios remain separate operating concerns.",
     ],
     suggestedVisuals: [
-      "Strategy-to-dashboard architecture",
-      "Anonymized dashboard labeled Paper Trading",
-      "Bot state-transition diagram",
-      "Paper-trading validation scorecard",
+      "In-sample versus out-of-sample walk-forward comparison",
+      "CAGR and maximum drawdown trade-off by strategy",
+      "System architecture from strategy to dashboard",
+      "Anonymised dashboard shown in paper-trading mode",
     ],
     caution:
-      "Paper-trading validation only. No real-money operation, returns, win rate, profitability, or capital-growth claim is made.",
+      "Paper-trading validation only. Backtest figures are simulations on historical data and claim no real-money operation, return, win rate, or capital growth.",
   },
   {
     slug: "financial-ai-model-study",
-    number: "05",
+    number: "07",
     title: "Financial AI Model Study",
     category: "Applied Analytics · Model Selection",
     period: "Fall 2024",
@@ -326,7 +456,7 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     slug: "phorage",
-    number: "06",
+    number: "08",
     title: "Phorage Brand and Commerce MVP",
     category: "Service Planning · MVP",
     period: "2025-Present",
@@ -387,7 +517,7 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     slug: "blood-type-survey",
-    number: "07",
+    number: "09",
     title: "Blood Type and Personality Survey Study",
     category: "Research Design · Statistics",
     period: "Fall 2023",
