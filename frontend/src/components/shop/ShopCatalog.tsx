@@ -16,6 +16,10 @@ interface Product {
   in_stock: boolean;
 }
 
+// Sentinel for "no category filter". Kept distinct from a real category name
+// because category values come from the DB; the Korean label is display-only.
+const ALL = '__all__';
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
@@ -27,7 +31,7 @@ const itemVariants = {
 };
 
 export default function ShopCatalog({ products, loadError }: { products: Product[]; loadError: boolean }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL);
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
 
   const [addedId, setAddedId] = useState<number | null>(null);
@@ -52,8 +56,8 @@ export default function ShopCatalog({ products, loadError }: { products: Product
     if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
   }, []);
 
-  const categories = ['All', ...Array.from(new Set(products.map(i => i.category)))];
-  const filtered = (selectedCategory === 'All' ? products : products.filter(i => i.category === selectedCategory))
+  const categories = [ALL, ...Array.from(new Set(products.map(i => i.category)))];
+  const filtered = (selectedCategory === ALL ? products : products.filter(i => i.category === selectedCategory))
     .toSorted((a, b) => {
       if (sortBy === 'price-asc') return a.price - b.price;
       if (sortBy === 'price-desc') return b.price - a.price;
@@ -82,23 +86,23 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 aria-pressed={selectedCategory === cat}
                 className="btn-outline"
               >
-                {cat}
+                {cat === ALL ? '전체' : cat}
               </button>
             ))}
           </div>
 
           <label className="flex items-center gap-2 self-start md:self-auto">
-            <span className="eyebrow text-muted-foreground">Sort</span>
+            <span className="label-ko text-muted-foreground">정렬</span>
             <span className="relative inline-flex items-center">
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                aria-label="Sort products"
+                aria-label="상품 정렬"
                 className="appearance-none bg-transparent pr-6 text-sm font-medium text-ink cursor-pointer rounded-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
-                <option value="newest">Newest</option>
-                <option value="price-asc">Price low → high</option>
-                <option value="price-desc">Price high → low</option>
+                <option value="newest">최신순</option>
+                <option value="price-asc">가격 낮은순</option>
+                <option value="price-desc">가격 높은순</option>
               </select>
               <svg
                 aria-hidden

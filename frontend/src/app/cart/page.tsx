@@ -85,7 +85,7 @@ export default function CartPage() {
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     disabled={item.quantity <= 1}
-                    aria-label="Decrease quantity"
+                    aria-label="수량 줄이기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent disabled:opacity-40 disabled:hover:border-hairline disabled:hover:text-slate disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     −
@@ -93,7 +93,7 @@ export default function CartPage() {
                   <span className="text-sm font-semibold w-6 text-center tabular-nums">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    aria-label="Increase quantity"
+                    aria-label="수량 늘리기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     +
