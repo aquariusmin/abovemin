@@ -179,7 +179,7 @@ export const portfolioProjects: PortfolioProject[] = [
       {
         title: "Compare and interpret models",
         description:
-          "Compared seven classifiers, selected Gradient Boosting based on the strongest reported ROC-AUC, and used SHAP and dependence analysis to explain key drivers.",
+          "Compared seven classifiers, selected Gradient Boosting on the strongest ROC-AUC, and used SHAP and dependence analysis to explain key drivers.",
       },
       {
         title: "Translate analysis into action",
@@ -191,7 +191,7 @@ export const portfolioProjects: PortfolioProject[] = [
       "Month-to-month contracts were the clearest churn-risk signal.",
       "Shorter tenure and higher monthly charges were associated with greater risk.",
       "Non-use of selected security and technical-support services provided additional risk signals.",
-      "Gradient Boosting produced a reported ROC-AUC of approximately 0.842; a reproducible final metrics table is still needed.",
+      "Gradient Boosting reaches a test-set ROC-AUC of 0.841, and reproduce.py in the repository regenerates the same metrics table.",
     ],
     decisionValue:
       "The analysis turns a binary prediction task into a prioritization framework and proposes retention strategies targeting a 5.0 percentage-point reduction in churn; the target has not been achieved or validated.",
@@ -250,7 +250,7 @@ export const portfolioProjects: PortfolioProject[] = [
       },
     ],
     insights: [
-      "Night-light intensity explained 81.9% of GDP variation in the reported simple model (R-squared = 0.819).",
+      "Night-light intensity explains 81.9% of GDP variation in the simple model (R-squared = 0.819, N = 791), reproducible via reproduce.py in the repository.",
       "Urban population and electricity access produced statistically significant interaction effects in the report.",
       "The result is explanatory and should not be described as prediction accuracy or causal proof.",
     ],
@@ -268,7 +268,7 @@ export const portfolioProjects: PortfolioProject[] = [
       "What the result supports / does not support panel",
     ],
     caution:
-      "R-squared = 0.819 describes explanatory fit in the reported simple model; it is not 81.9% prediction accuracy.",
+      "R-squared = 0.819 describes explanatory fit in the simple model; it is not 81.9% prediction accuracy.",
   },
   {
     slug: "korean-air",

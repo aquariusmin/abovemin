@@ -211,29 +211,29 @@ function GdpEvidence({ locale }: { locale: EvidenceLocale }) {
       <div className="grid gap-5 lg:grid-cols-2">
         <EvidenceFigure
           locale={locale}
-          status="reported"
-          title={locale === "ko" ? "SPSS 보고 모형 적합도" : "SPSS-reported model fit"}
-          source="SPSS model summary embedded in the GDP presentation"
+          status="verified"
+          title={locale === "ko" ? "단순회귀 모형 적합도" : "Simple-model fit"}
+          source="reproduce.py · SPSS analysis file (.sav) · ln(GDP) ~ ln(brightness)"
           caption={
             locale === "ko"
-              ? "보고된 단순 회귀모형에서 R² = 0.819였습니다. 이는 표본 내 GDP 변동의 81.9%를 설명했다는 뜻이며, 81.9%의 예측 정확도나 인과효과를 의미하지 않습니다."
-              : "The reported simple model has R-squared = 0.819. This is explanatory fit within the reported sample, not 81.9% prediction accuracy and not causal evidence."
+              ? "저장소의 reproduce.py가 SPSS 분석 파일에서 다시 계산한 값입니다. 표본 내 GDP 변동의 81.9%를 설명한다는 뜻이며, 81.9%의 예측 정확도나 인과효과를 의미하지 않습니다."
+              : "Recomputed by the repository's reproduce.py from the SPSS analysis file. It is explanatory fit within the sample, not 81.9% prediction accuracy and not causal evidence."
           }
         >
           <div className="grid min-h-44 place-items-center border border-accent/15 bg-accent/[0.035] text-center">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate">Reported R-squared</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate">{locale === "ko" ? "재현 R²" : "Reproduced R-squared"}</p>
               <p className="mt-3 text-6xl font-semibold tracking-tight text-accent">0.819</p>
-              <p className="mt-3 font-sans text-xs text-slate">N = 791 in the reported simple-model output</p>
+              <p className="mt-3 font-sans text-xs text-slate">N = 791 · slope 0.834 · p &lt; 0.001</p>
             </div>
           </div>
         </EvidenceFigure>
 
         <EvidenceFigure
           locale={locale}
-          status="reported"
+          status="verified"
           title={locale === "ko" ? "서로 다른 데이터 단계" : "Distinct dataset stages"}
-          source="Project XLSX and HWPX methodology section"
+          source="reproduce.py row counts · project spreadsheet and SPSS file"
           caption={
             locale === "ko"
               ? "973, 820, 791은 각각 원자료, 병합 관측치, GDP 사용 가능 관측치를 뜻합니다. 서로 다른 처리 단계이므로 동일한 표본 크기처럼 바꾸어 사용할 수 없습니다."

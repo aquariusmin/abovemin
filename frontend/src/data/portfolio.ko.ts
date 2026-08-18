@@ -178,7 +178,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       {
         title: "모형 비교와 해석",
         description:
-          "7개 분류모형을 비교하고 보고된 ROC-AUC가 가장 높았던 Gradient Boosting을 최종 모형으로 선택한 뒤, SHAP과 dependence 분석으로 주요 요인을 해석했습니다.",
+          "7개 분류모형을 비교해 ROC-AUC가 가장 높았던 Gradient Boosting을 최종 모형으로 선택한 뒤, SHAP과 dependence 분석으로 주요 요인을 해석했습니다.",
       },
       {
         title: "분석을 실행안으로 연결",
@@ -190,13 +190,13 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "월 단위 계약은 가장 뚜렷한 이탈 위험 신호로 나타났습니다.",
       "이용 기간이 짧고 월 요금이 높을수록 이탈 위험이 커지는 경향을 확인했습니다.",
       "보안·기술지원 관련 일부 서비스의 미이용도 추가적인 위험 신호로 나타났습니다.",
-      "Gradient Boosting의 보고된 ROC-AUC는 약 0.842이며, 정확한 수치는 재현 가능한 최종 지표표로 다시 확인해야 합니다.",
+      "Gradient Boosting의 테스트셋 ROC-AUC는 0.841입니다. 저장소의 reproduce.py를 실행하면 같은 지표표가 다시 나옵니다.",
     ],
     decisionValue:
       "예측 점수 자체보다 어떤 고객군부터 챙길지 정리한 데 의미를 뒀습니다. 5.0%p 감소는 실행 전 목표라 실제 성과처럼 쓰지 않았습니다.",
     limitations: [
       "공개 데이터에는 캠페인 노출, 민원 이력, 개입 비용, 실제 고객 유지 결과가 포함되어 있지 않습니다.",
-      "정확한 성능 수치는 최종 파이프라인과 지표표가 같은 기준으로 재현될 때만 공개할 수 있습니다.",
+      "성능 수치는 라이브러리 버전에 따라 소수 셋째 자리에서 달라질 수 있어, 재현 스크립트가 출력한 값을 기준으로 씁니다.",
       "제안한 전략은 실험을 거쳐야 실제 효과로 말할 수 있습니다.",
     ],
     suggestedVisuals: [
@@ -255,7 +255,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       },
     ],
     insights: [
-      "보고된 단순 회귀모형에서 야간조도는 GDP 변동의 81.9%를 설명했습니다(R² = 0.819).",
+      "단순 회귀모형에서 야간조도는 GDP 변동의 81.9%를 설명했습니다(R² = 0.819, N = 791). 저장소의 reproduce.py로 재현됩니다.",
       "보고서에서는 도시인구와 전력 접근성의 상호작용 효과가 통계적으로 유의하게 나타났습니다.",
       "이 결과는 설명적 관계이며 예측 정확도나 인과관계의 증거로 해석할 수 없습니다.",
     ],
@@ -273,7 +273,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "해석 가능한 범위와 불가능한 범위",
     ],
     caution:
-      "R² = 0.819는 보고된 단순 회귀모형의 설명력을 뜻합니다. 이를 81.9%의 예측 정확도로 표현하지 않습니다.",
+      "R² = 0.819는 단순 회귀모형의 설명력을 뜻합니다. 이를 81.9%의 예측 정확도로 표현하지 않습니다.",
   },
   {
     slug: "korean-air",
