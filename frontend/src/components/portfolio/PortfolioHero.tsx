@@ -15,6 +15,7 @@ export default function PortfolioHero({
   mode?: PortfolioMode;
 }) {
   const isKorean = locale === "ko";
+  const isKoreanSubmission = isKorean && mode === "submission";
   const alternateLocale = isKorean ? "en" : "ko";
 
   return (
@@ -25,17 +26,23 @@ export default function PortfolioHero({
         </p>
         <div className="space-y-5">
           <h1 className="max-w-5xl break-keep font-serif text-4xl font-medium leading-[1.05] tracking-tight text-ink sm:text-5xl md:text-7xl">
-            {isKorean
+            {isKoreanSubmission
+              ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+              : isKorean
               ? "데이터를 보고, 시장 맥락을 붙여, 다음 판단까지 정리합니다."
               : "I connect data with business context, then turn it into a next step."}
           </h1>
           <p className="max-w-3xl break-keep text-base font-medium leading-relaxed text-accent md:text-xl">
-            {isKorean
+            {isKoreanSubmission
+              ? "국제통상·경영 배경 위에서 공공데이터, 고객 데이터, 대체 경제지표를 분석합니다. 좋은 숫자를 만드는 것보다 그 숫자가 어디까지 말할 수 있는지 확인하는 데 집중합니다."
+              : isKorean
               ? "광운대학교 국제통상학부에서 국제통상을 전공하고 경영학을 복수전공하고 있습니다. 데이터 분석, 금융·시장 리서치, 서비스 기획이 만나는 일을 준비하고 있습니다."
               : "International Trade major and Business Administration double-major candidate, preparing for work across analytics, financial research, and service planning."}
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-slate md:text-base">
-            {isKorean
+            {isKoreanSubmission
+              ? "대표 프로젝트는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight 세 가지입니다. 북극항로처럼 AI 도움으로 낯선 도메인을 탐색한 작업은 Explore 영역에 낮은 비중으로 분리했습니다."
+              : isKorean
               ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 모의투자 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
               : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a paper-trading system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
           </p>
@@ -70,7 +77,9 @@ export default function PortfolioHero({
         </p>
         <ol className="space-y-3 text-sm text-slate">
           {(isKorean
-            ? ["질문 정리", "데이터 확인", "분석·모델링", "해석 범위", "다음 판단"]
+            ? isKoreanSubmission
+              ? ["문제 정의", "데이터 가정 확인", "지표·모델 설계", "검증과 수정", "해석 범위"]
+              : ["질문 정리", "데이터 확인", "분석·모델링", "해석 범위", "다음 판단"]
             : ["Frame the question", "Check the data", "Analyze / model", "Set boundaries", "Recommend next steps"]
           ).map((step, index) => (
             <li key={step} className="flex items-center gap-3">
