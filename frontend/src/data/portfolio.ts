@@ -15,6 +15,7 @@ export type PortfolioProject = {
   insights: string[];
   decisionValue: string;
   limitations: string[];
+  notClaimed?: string[];
   suggestedVisuals: string[];
   caution?: string;
 };
@@ -73,6 +74,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "This is an observation-based analysis, not a climate model that forecasts future ice.",
       "Navigability is judged on sea-ice concentration thresholds and excludes insurance, port, icebreaker-escort, and regulatory constraints.",
       "Some risk and cost layers in the extended Phase E analysis use synthetic stand-ins where real data was unavailable; these are labelled explicitly in the code.",
+    ],
+    notClaimed: [
+      "Does not forecast future sea ice. Only past trends from observed grids.",
+      "Does not claim commercial navigability. Insurance, ports, icebreaker support, and regulation are excluded.",
+      "Does not claim domain expertise. GIS and climate data were explored with AI assistance.",
     ],
     suggestedVisuals: [
       "Navigable months per year",
@@ -138,6 +144,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "The dwell measure is a proxy for rail-attributable presence and excludes arrivals by bus or car.",
       "Only 112 of 114 stations appear in the ridership data, so two stations are missing from the analysis.",
     ],
+    notClaimed: [
+      "Does not claim dwell time was measured. It is a proxy estimated from gate records.",
+      "Does not claim a verified link to commercial revenue. Merging retail data is still outstanding.",
+      "Does not claim final results. This is first-pass validation ahead of a September 2026 submission.",
+    ],
     suggestedVisuals: [
       "Hourly dwell curve before and after the min-shift correction",
       "Alighting rank versus dwell rank scatter",
@@ -200,6 +211,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "The final model pipeline, hyperparameters, random seed, and metrics table should be reproduced before treating the exact score as verified.",
       "Proposed interventions require experimental validation and explicit retention KPIs.",
     ],
+    notClaimed: [
+      "Does not claim churn fell by 5.0 percentage points. It is a pre-execution target still to be tested.",
+      "Does not read SHAP as causal. It explains how the model decided, nothing more.",
+      "Does not claim a real retention outcome. The public dataset carries no intervention results.",
+    ],
     suggestedVisuals: [
       "Contract-type churn-rate chart",
       "Seven-model comparison table",
@@ -261,6 +277,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "An earlier-year Albania record and the final brightness definition require reconciliation.",
       "Fixed-effects and out-of-sample analysis are needed before making predictive claims.",
     ],
+    notClaimed: [
+      "Does not claim predictive accuracy. R-squared is in-sample explanatory power.",
+      "Does not claim causation. Brightness does not create GDP.",
+      "Does not propose a new method. It checks how far a known relationship holds.",
+    ],
     suggestedVisuals: [
       "VIIRS and World Bank data-flow diagram",
       "Log brightness versus log GDP scatterplot",
@@ -321,6 +342,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "The unavailable valuation workbook should be recreated and audited.",
       "Formulas, peers, units, dates, estimates, and target-price arithmetic require verification before public use.",
       "Exact financial and market source dates should be documented.",
+    ],
+    notClaimed: [
+      "Does not issue a target price. The figures are not usable for an investment decision.",
+      "Is not investment advice. It is a conditional analysis built on coursework.",
+      "Does not claim every assumption was audited. Workbook formulas and peer selection still need review.",
     ],
     suggestedVisuals: [
       "2020-2024 ratio trends",
@@ -386,6 +412,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "Most validated strategies lost money in 2022; this design does not defend a period where equities and long bonds fall together.",
       "Long-running uptime, order-failure handling, and restart scenarios remain separate operating concerns.",
     ],
+    notClaimed: [
+      "Does not claim returns or win rate. There is no real-money track record.",
+      "Does not claim the strategy has an edge. The best variant still trailed buy-and-hold on CAGR.",
+      "Does not claim production operation. It remains at paper trading.",
+    ],
     suggestedVisuals: [
       "In-sample versus out-of-sample walk-forward comparison",
       "CAGR and maximum drawdown trade-off by strategy",
@@ -447,6 +478,10 @@ export const portfolioProjects: PortfolioProject[] = [
       "The four assignments should be consolidated into reproducible notebooks.",
       "Classroom metrics should not be presented as production performance.",
     ],
+    notClaimed: [
+      "Does not claim applied business impact. These are assignment-level comparisons.",
+      "Does not claim one model is always better. It depends on the data and the goal.",
+    ],
     suggestedVisuals: [
       "PCA scree plot",
       "Linear SVR tuning surface",
@@ -505,6 +540,10 @@ export const portfolioProjects: PortfolioProject[] = [
       "The number and type of goods produced should be documented.",
       "Gifts, product tests, and paid acquaintance sales should be separated.",
       "Target customer, qualitative feedback, and launch metrics still require definition.",
+    ],
+    notClaimed: [
+      "Does not claim a public launch. It is a pre-release MVP.",
+      "Does not claim traffic, order, or revenue figures. Only small-scale checks with acquaintances.",
     ],
     suggestedVisuals: [
       "Physical product photography",
@@ -565,6 +604,10 @@ export const portfolioProjects: PortfolioProject[] = [
       "The sample was concentrated among respondents in their twenties and recruited through team acquaintances.",
       "Team size and task division still require confirmation.",
       "Exact p-values and expected-frequency assumptions should be checked and reported.",
+    ],
+    notClaimed: [
+      "Does not claim blood type relates to personality. Three of four dimensions showed no significant association.",
+      "Does not claim a generalizable conclusion. The sample skews toward people in their twenties.",
     ],
     suggestedVisuals: [
       "Survey and hypothesis flow",
