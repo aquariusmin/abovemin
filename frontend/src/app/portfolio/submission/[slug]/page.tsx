@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
-import { getKoreanPortfolioProject, koreanPortfolioProjects } from "@/data/portfolio.ko";
+import {
+  getKoreanPortfolioProject,
+  getKoreanSubmissionPortfolioProject,
+  getKoreanSubmissionPortfolioProjects,
+  koreanPortfolioProjects,
+} from "@/data/portfolio.ko";
 
 export const dynamicParams = false;
 
@@ -23,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PortfolioSubmissionCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = getKoreanPortfolioProject(slug);
+  const project = getKoreanSubmissionPortfolioProject(slug);
   if (!project) notFound();
-  return <PortfolioCaseStudy project={project} projects={koreanPortfolioProjects} locale="ko" mode="submission" />;
+  return <PortfolioCaseStudy project={project} projects={getKoreanSubmissionPortfolioProjects()} locale="ko" mode="submission" />;
 }

@@ -4,7 +4,11 @@ import PortfolioHero from "@/components/portfolio/PortfolioHero";
 import ProjectCard from "@/components/portfolio/ProjectCard";
 import SelectedEvidenceHighlights from "@/components/portfolio/SelectedEvidenceHighlights";
 import Reveal from "@/components/motion/Reveal";
-import { koreanPortfolioProjects } from "@/data/portfolio.ko";
+import {
+  getKoreanSubmissionArchiveProjects,
+  getKoreanSubmissionFeaturedProjects,
+  koreanPortfolioProjects,
+} from "@/data/portfolio.ko";
 import { portfolioProjects } from "@/data/portfolio";
 import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import {
@@ -21,7 +25,10 @@ export default function PortfolioOverview({
   mode?: PortfolioMode;
 }) {
   const isKorean = locale === "ko";
+  const isKoreanSubmission = isKorean && mode === "submission";
   const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
+  const featuredProjects = isKoreanSubmission ? getKoreanSubmissionFeaturedProjects() : projects;
+  const archiveProjects = isKoreanSubmission ? getKoreanSubmissionArchiveProjects() : [];
   const basePath = getPortfolioBasePath(locale, mode);
 
   return (
@@ -61,7 +68,7 @@ export default function PortfolioOverview({
           </div>
         </section>
 
-        <SelectedEvidenceHighlights locale={locale} />
+        <SelectedEvidenceHighlights locale={locale} mode={mode} />
 
         <section className="space-y-10" id="cases">
           <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end" y={16}>
@@ -70,17 +77,23 @@ export default function PortfolioOverview({
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                {isKorean ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다." : "Seven projects I can walk through in detail."}
+                {isKoreanSubmission
+                  ? "대표 프로젝트 3개를 먼저 보여줍니다."
+                  : isKorean
+                    ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다."
+                    : "Seven projects I can walk through in detail."}
               </h2>
             </div>
             <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
-              {isKorean
-                ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
+              {isKoreanSubmission
+                ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
+                : isKorean
+                  ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
                 : "Each project explains why I started it, what I checked, and where the conclusion should stop."}
             </p>
           </Reveal>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project, i) =>
+            {featuredProjects.map((project, i) =>
               isKorean ? (
                 <Reveal key={project.slug} delay={i * 0.06} y={16} className="h-full">
                   <KoreanProjectCard project={project} basePath={basePath} />
@@ -93,6 +106,29 @@ export default function PortfolioOverview({
             )}
           </div>
         </section>
+
+        {archiveProjects.length > 0 && (
+          <section className="space-y-8" aria-labelledby="submission-archive">
+            <Reveal className="grid gap-5 border-t border-hairline pt-10 md:grid-cols-12 md:items-end" y={16}>
+              <div className="space-y-3 md:col-span-7">
+                <p className="label-ko text-slate">Explore / Archive</p>
+                <h2 id="submission-archive" className="break-keep font-serif text-2xl font-medium tracking-tight text-ink md:text-3xl">
+                  낯선 도메인과 보조 프로젝트는 낮은 비중으로 둡니다.
+                </h2>
+              </div>
+              <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
+                북극항로는 AI 도움을 받아 확장한 탐색형 작업이라 대표 프로젝트에서 제외했습니다. 그래도 재현성, 한계 명시, 시스템 구현 습관을 확인할 수 있는 보조 자료로 남겨둡니다.
+              </p>
+            </Reveal>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {archiveProjects.map((project, i) => (
+                <Reveal key={project.slug} delay={i * 0.04} y={16} className="h-full">
+                  <KoreanProjectCard project={project} basePath={basePath} />
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
 
         <PortfolioClosingCta locale={locale} mode={mode} />
       </div>

@@ -93,6 +93,7 @@ export const portfolioEvidenceOverview = [
 
 export const portfolioEvidenceHighlights = [
   {
+    slug: "arctic-route",
     evidence: { en: "0 → 3.4 navigable months a year", ko: "연 통항 가능 0개월 → 3.4개월" },
     demonstrates: {
       en: "Turning satellite climate grids into a decision-grade operating window, with OLS and Theil-Sen required to agree.",
@@ -104,6 +105,7 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
+    slug: "busan-station-dwell",
     evidence: { en: "0.96 h dwell at Haeundae", ko: "해운대역 체류 0.96시간" },
     demonstrates: {
       en: "Constructing a variable the source data does not contain, finding the first metric broken, and repairing it before reporting.",
@@ -115,6 +117,7 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
+    slug: "telecom-churn",
     evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
     demonstrates: {
       en: "Customer segmentation, explainable classification, and action-oriented retention planning.",
@@ -126,10 +129,11 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
+    slug: "satellite-gdp",
     evidence: { en: "R-squared = 0.819", ko: "R² = 0.819" },
     demonstrates: {
-      en: "Economic research using satellite data, public indicators, and regression analysis.",
-      ko: "위성 데이터와 공공 지표를 결합한 경제 연구 및 회귀분석 역량을 보여줍니다.",
+      en: "Testing night lights as an auxiliary economic indicator, while separating data QA from model claims.",
+      ko: "야간조도를 경제 보조 지표로 검증하고, 데이터 QA와 모형 주장을 분리해 기록한 작업입니다.",
     },
     caution: {
       en: "This is explanatory fit in a simple model, not prediction accuracy or causal proof.",
@@ -137,6 +141,7 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
+    slug: "korean-air",
     evidence: { en: "2020–2024 financial-ratio review", ko: "2020–2024 재무비율 분석" },
     demonstrates: {
       en: "Financial statement analysis and comparison of DCF, APV, and relative valuation.",
@@ -148,6 +153,7 @@ export const portfolioEvidenceHighlights = [
     },
   },
   {
+    slug: "quant-trading-fleet",
     evidence: { en: "Walk-forward out-of-sample validation", ko: "walk-forward 아웃오브샘플 검증" },
     demonstrates: {
       en: "Broker abstraction and operating controls, plus a refusal to report in-sample performance.",

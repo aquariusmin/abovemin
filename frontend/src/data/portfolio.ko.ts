@@ -211,58 +211,61 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
   {
     slug: "satellite-gdp",
     number: "04",
-    title: "Satellite Night-Light GDP Analysis",
-    category: "경제 분석 · 대체 데이터",
+    title: "Satellite GDP Insight",
+    category: "경제 데이터 · 대체 지표 검증",
     period: "2025년 봄학기",
     role: "개인 프로젝트",
     sourceUrl: "https://github.com/aquariusmin/Satellite-GDP-Insight",
     summary:
-      "야간 위성 조도와 World Bank 지표를 엮어, 공식 통계가 부족한 곳에서도 경제활동의 단서를 읽을 수 있는지 살펴봤습니다.",
+      "야간 위성 조도와 World Bank 지표를 국가·연도 단위로 맞춰, 밤의 밝기가 GDP의 보조 지표로 어디까지 유효한지 검증했습니다.",
     question:
-      "공식 통계가 부족할 때 밤의 밝기는 GDP를 읽는 보조 단서가 될 수 있을까?",
+      "공식 통계가 부족하거나 늦게 나올 때, 야간조도는 경제활동을 읽는 보조 지표로 어디까지 쓸 수 있을까?",
     storyArc: [
-      "국가별 경제활동을 꼭 전통 통계로만 봐야 하는지 궁금해서, 위성에서 보이는 밤의 밝기를 GDP와 나란히 놓고 봤습니다.",
-      "VIIRS 야간조도와 World Bank 지표를 국가·연도 단위로 맞추고, 로그 변환과 상호작용항을 통해 관계를 확인했습니다.",
-      "보고서 기준 단순 회귀에서는 R² = 0.819가 나왔고, 도시인구와 전력 접근성도 해석에 영향을 주는 변수로 보였습니다.",
-      "이 결과는 예측 정확도나 인과관계가 아니라 설명적 관계입니다. 그래서 보조 신호라는 선을 지켰습니다.",
+      "북한의 야간 위성사진처럼 공식 통계가 부족한 지역에서도 경제활동의 흔적을 볼 수 있지 않을까 하는 문제의식에서 시작했습니다.",
+      "VIIRS 야간조도와 World Bank의 GDP·인구·도시화·전력 접근성 지표를 2019~2023년 국가·연도 단위로 맞췄습니다.",
+      "단순 회귀의 R²는 0.819로 재현됐지만, 도시인구·전력 접근성 조절항의 추가 설명력은 작았습니다. 밝기 하나로 경제를 충분히 읽을 수 있다는 뜻은 아니었습니다.",
+      "이 프로젝트의 결론은 새로운 예측모형이 아니라, 야간조도를 경제 보조 지표로 쓸 때 필요한 데이터 정합성 점검과 해석 범위입니다.",
     ],
     evidence: [
       "VIIRS 야간조도와 World Bank의 GDP, 인구, 도시인구, 전력 접근성 지표",
-      "주요 분석 기간: 2019~2023년",
-      "데이터 단계별 표본: 원자료 973행, 병합 자료 820개 관측치, GDP 사용 가능 관측치 791개",
+      "분석 기간 2019~2023년 · 164개국 · 병합 후 820개 국가-연도 관측치",
+      "GDP 사용 가능 관측치 791개 기준 단순 회귀 R² = 0.819",
+      "저장소에 있던 스프레드시트의 밝기 열 어긋남을 확인하고, SPSS 분석 파일과 reproduce.py 기준값을 분리해 기록",
     ],
-    tools: ["Python", "SPSS", "Excel", "Regression", "Interaction effects"],
+    tools: ["Python", "SPSS", "Excel", "Regression", "Data QA"],
     process: [
+      {
+        title: "문제의식 설정",
+        description:
+          "공식 GDP가 늦거나 제한적인 지역에서 대체 신호가 필요하다는 질문을 먼저 세우고, 야간조도를 후보 지표로 잡았습니다.",
+      },
       {
         title: "국가·연도 데이터 통합",
         description:
-          "위성 밝기 데이터와 경제지표를 국가·연도 단위로 병합했습니다.",
+          "VIIRS 밝기 데이터와 World Bank 경제지표를 국가명과 연도 기준으로 맞춰 2019~2023년 패널 형태의 분석 테이블을 만들었습니다.",
       },
       {
-        title: "변수 전처리",
+        title: "회귀와 조절효과 검정",
         description:
-          "분포가 치우친 변수에 로그 변환을 적용하고 조절변수를 중심화했습니다.",
+          "분포가 치우친 변수에는 로그 변환을 적용하고, 도시인구·전력 접근성 조절항을 추가해 관계가 조건에 따라 달라지는지 확인했습니다.",
       },
       {
-        title: "관계와 상호작용 검정",
+        title: "데이터 정합성 수정",
         description:
-          "기본 회귀모형을 추정한 뒤 도시인구와 전력 접근성의 상호작용항을 추가했습니다.",
-      },
-      {
-        title: "해석 범위 설정",
-        description:
-          "모형 적합도와 함께 인프라 수준, 결측치, 경제활동 이외의 빛 발생 요인을 고려해 결과의 활용 범위를 정리했습니다.",
+          "보고서와 함께 있던 xlsx의 밝기 열이 어긋난 것을 확인해 산점도 주장은 제외하고, SPSS 분석 파일과 reproduce.py로 재현되는 값만 남겼습니다.",
       },
     ],
     insights: [
       "단순 회귀모형에서 야간조도는 GDP 변동의 81.9%를 설명했습니다(R² = 0.819, N = 791). 저장소의 reproduce.py로 재현됩니다.",
-      "보고서에서는 도시인구와 전력 접근성의 상호작용 효과가 통계적으로 유의하게 나타났습니다.",
-      "이 결과는 설명적 관계이며 예측 정확도나 인과관계의 증거로 해석할 수 없습니다.",
+      "도시인구와 전력 접근성 조절항을 추가해도 설명력 증가는 작았습니다. 따라서 핵심은 복잡한 모형보다 기본 관계와 데이터 품질 확인에 있었습니다.",
+      "함께 있던 xlsx에서는 밝기 열이 어긋나 더 높은 R²처럼 읽힐 수 있었고, 이 값을 사용하지 않도록 저장소에 경고를 명시했습니다.",
+      "이 결과는 설명적 관계이며 예측 정확도, 인과관계, 공식 GDP 대체 가능성의 증거로 해석하지 않습니다.",
     ],
     decisionValue:
-      "야간조도는 시장 진입 전 국가를 거칠게 가려보거나 위험 변화를 모니터링할 때 참고할 수 있는 보조 신호입니다.",
+      "야간조도는 공식 통계를 대체하기보다, 국가·지역을 1차로 스크리닝하거나 통계 공백 구간의 변화를 모니터링하는 보조 신호로 쓸 수 있습니다.",
     limitations: [
       "973·820·791은 데이터 처리 단계가 다르므로 하나의 표본 크기처럼 섞어 쓰지 않았습니다.",
+      "야간조도와 GDP의 관계는 이미 알려진 연구 주제입니다. 이 프로젝트의 초점은 새로운 학술 기여가 아니라 직접 문제를 세우고 데이터 정합성을 검증한 과정입니다.",
       "밝기 변수 정의가 보고서와 파일 사이에서 어긋날 수 있어 산점도 주장은 제외했습니다.",
       "예측이나 인과를 말하려면 고정효과와 표본 외 검증이 따로 필요합니다.",
     ],
@@ -614,4 +617,49 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
 
 export function getKoreanPortfolioProject(slug: string) {
   return koreanPortfolioProjects.find((project) => project.slug === slug);
+}
+
+export const koreanSubmissionFeaturedSlugs = [
+  "busan-station-dwell",
+  "telecom-churn",
+  "satellite-gdp",
+] as const;
+
+export const koreanSubmissionArchiveSlugs = [
+  "arctic-route",
+  "quant-trading-fleet",
+  "korean-air",
+  "financial-ai-model-study",
+  "phorage",
+  "blood-type-survey",
+] as const;
+
+function getSubmissionProjectsBySlugs(slugs: readonly string[], prefix = "") {
+  return slugs.flatMap((slug, index) => {
+    const project = getKoreanPortfolioProject(slug);
+    if (!project) return [];
+    return [{
+      ...project,
+      number: `${prefix}${String(index + 1).padStart(2, "0")}`,
+    }];
+  });
+}
+
+export function getKoreanSubmissionFeaturedProjects() {
+  return getSubmissionProjectsBySlugs(koreanSubmissionFeaturedSlugs);
+}
+
+export function getKoreanSubmissionArchiveProjects() {
+  return getSubmissionProjectsBySlugs(koreanSubmissionArchiveSlugs, "A");
+}
+
+export function getKoreanSubmissionPortfolioProjects() {
+  return [
+    ...getKoreanSubmissionFeaturedProjects(),
+    ...getKoreanSubmissionArchiveProjects(),
+  ];
+}
+
+export function getKoreanSubmissionPortfolioProject(slug: string) {
+  return getKoreanSubmissionPortfolioProjects().find((project) => project.slug === slug);
 }
