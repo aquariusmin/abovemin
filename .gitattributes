@@ -1,0 +1,15 @@
+# 줄바꿈 정규화 — Windows/WSL 혼용 시 CRLF가 유입돼 전체 파일이 수정된 것처럼 보이는 문제 방지
+* text=auto eol=lf
+
+# 바이너리 (변환 금지)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary

@@ -35,6 +35,7 @@ const labels = {
       ["07 · Figures", "Tables and figures"],
     ],
     boundary: "Important boundary:",
+    notClaimed: "Not claimed",
     previous: "Previous case",
     next: "Next case",
     print: "Print / Save as PDF",
@@ -64,6 +65,7 @@ const labels = {
       ["07 · 근거 화면", "표와 그래프로 확인하기"],
     ],
     boundary: "해석 시 유의사항:",
+    notClaimed: "주장하지 않는 것",
     previous: "이전 프로젝트",
     next: "다음 프로젝트",
     print: "인쇄 · PDF로 저장",
@@ -171,6 +173,19 @@ export default function PortfolioCaseStudy({
             <div className="grid gap-4 md:grid-cols-2">
               {project.insights.map((insight) => <p key={insight} className="break-keep border border-border-light bg-white p-6 text-sm leading-relaxed text-ink-body">{insight}</p>)}
             </div>
+            {project.notClaimed && project.notClaimed.length > 0 && (
+              <div className="mt-5 border border-brick/25 bg-brick/[0.04] p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-brick">{copy.notClaimed}</p>
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {project.notClaimed.map((item) => (
+                    <li key={item} className="flex gap-2 text-sm leading-relaxed text-brick">
+                      <span aria-hidden="true" className="mt-[2px] font-semibold">&times;</span>
+                      <span className="break-keep">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {project.caution && <div className="mt-5 break-keep border border-brick/20 bg-brick/[0.05] px-5 py-4 text-sm leading-relaxed text-brick"><span className="font-semibold">{copy.boundary}</span> {project.caution}</div>}
           </CaseSection>
 
