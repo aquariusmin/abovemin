@@ -34,23 +34,34 @@ export const LAB_STATUS = {
 } as const;
 
 /**
- * Six categorical slots, fixed order. The ORDER is a safety mechanism, not a
- * preference: it was searched over permutations, because equal-lightness clay
- * beside moss is exactly the red/green pair deuteranopia erases. Validated as
- * a set against LAB_SURFACE — band, chroma, CVD separation and >=3:1 contrast
- * all pass with no warnings.
+ * Five categorical slots, fixed order.
+ *
+ * Generated in OKLCH near the TOP of the validator's lightness band (L 0.665)
+ * at close to the maximum chroma sRGB allows at each hue. The first attempt
+ * took each colour at the LOWEST lightness that still cleared 3:1 — technically
+ * passing, and muddy: dark, low-chroma colours laid on a dark ground read as
+ * sludge. On a dark surface the data has to be lighter and cleaner than the
+ * surface, not merely legible against it.
+ *
+ * Hues are the families Forest Editorial already speaks — moss, sky, sand,
+ * sea, amber — so the chart still belongs to the site.
+ *
+ * The ORDER is a safety mechanism, not a preference: it was searched over
+ * permutations, because two colours of equal lightness in neighbouring hues
+ * are what colour-blindness collapses. Validated as a set against LAB_SURFACE:
+ * band, chroma floor, CVD separation (worst adjacent ΔE 12.3) and >=3:1
+ * contrast all pass, with no warnings.
  *
  * The brand's own five could not be used directly: forest/fern/moss are three
  * greens that collapse under colour-blindness, forest falls below the
  * lightness band, and cream below the chroma floor.
  */
 export const LAB_SERIES = [
-  "#537e0e", // moss-green
-  "#a4559e", // plum
-  "#946e00", // wheat
-  "#b55269", // rose
-  "#3a75bf", // sky
-  "#c4493a", // clay
+  "#4aad31", // moss
+  "#2d9fd6", // sky
+  "#bb8a28", // sand
+  "#2eaa90", // sea
+  "#cf7e28", // amber
 ] as const;
 
 export const LAB_TOOLTIP = {
