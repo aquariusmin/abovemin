@@ -317,11 +317,21 @@ different mode, not as a different site.
 The one place the brand palette could not be used as-is is the categorical
 series. Forest, fern and moss are three greens that collapse under
 colour-blindness; forest falls below the validator's lightness band and cream
-below its chroma floor. The six series colours were therefore generated in
-OKLCH *inside* the band, held to hue families the site already uses (moss,
-plum, wheat, rose, sky, clay), and their ORDER searched rather than chosen —
-equal-lightness clay beside moss is exactly the red/green pair deuteranopia
-erases. Status keeps the site's directional semantics: moss up, brick down.
+below its chroma floor. The series colours were therefore generated in OKLCH
+*inside* the band, held to hue families the site already uses (moss, sky, sand,
+sea, amber), and their ORDER searched rather than chosen — two equal-lightness
+neighbours are exactly what deuteranopia collapses. Status keeps the site's
+directional semantics: moss up, brick down.
+
+**Passing is not the same as good.** The first version of that set took each
+hue at the LOWEST lightness that still cleared 3:1 against the panel. Every
+check came back green and the chart looked like sludge — dark, low-chroma
+colour laid on a dark ground is mud. On a dark surface the data has to sit
+*lighter* and cleaner than the surface, not merely be legible against it, so
+the set is now generated near the TOP of the band (L 0.665) at close to the
+maximum chroma sRGB allows at each hue, and the two hues that stayed muddy at
+any lightness (wheat-mustard, plum) were dropped rather than nudged. Five slots
+is also nearer the truth: the fleet is one bot.
 
 **It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in
@@ -329,7 +339,7 @@ that scope; and the file lands in its own route chunk, so `/portfolio` never
 downloads it. If you add to that file, keep both properties — a bare selector
 or a `:root` token there would reach the whole site.
 
-Nothing there is chosen by eye. The six categorical slots, four status tokens
+Nothing there is chosen by eye. The five categorical slots, four status tokens
 and three ink steps were validated against the console's own panel surface
 (`--card`, `#1d2b21`) — lightness band, chroma floor, colour-blind separation
 and ≥3:1 contrast, all passing with no warnings. The header comment in

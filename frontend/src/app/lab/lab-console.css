@@ -20,10 +20,17 @@
    slot ORDER is a safety mechanism here, because equal-lightness red beside
    green is exactly what deuteranopia erases.
 
+   Passing is not the same as good. The first set took each hue at the LOWEST
+   lightness that still cleared 3:1 — every check green, and the result was
+   sludge, because dark low-chroma colour on a dark ground is mud. On a dark
+   surface the data must sit LIGHTER and cleaner than the surface, so the set
+   is generated near the TOP of the band (L 0.665) at close to the maximum
+   chroma sRGB allows per hue.
+
    Against this panel surface (#1d2b21), via the dataviz validator:
 
-     categorical 6: lightness band PASS · chroma floor PASS
-                    CVD adjacent worst ΔE 8.8 PASS · normal-vision 15.3 PASS
+     categorical 5: lightness band PASS · chroma floor PASS
+                    CVD adjacent worst ΔE 12.3 PASS · normal-vision 17.5 PASS
                     contrast vs surface all >= 3:1 PASS   (no warnings)
      status 4:      moss 7.84 · amber 7.83 · ember 5.61 · brick 4.22
      ink:           primary 13.2 · body 12.0 · muted 5.4
