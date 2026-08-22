@@ -30,8 +30,9 @@ export function FleetEquityChart({
     const all = bots
       .map((b) => ({ bot: b, points: parseEquityCurve(b.equity_curve) }))
       .filter((x) => x.points.length >= 2);
-    // Only bots that own a colour are plotted: past the palette's seven slots
-    // there is no legal hue left, and cycling would put two bots on one colour.
+    // Only bots that own a colour are plotted: past the palette's slots there
+    // is no legal hue left, and cycling would put two bots on one colour. The
+    // count of the unpainted is surfaced under the chart, never swallowed.
     const perBot = all.filter((x) => colors.has(x.bot.id));
     const omitted = all.length - perBot.length;
 

@@ -6,67 +6,76 @@
  * other — and if the SURFACE changes, re-run the dataviz validator, because
  * contrast is only meaningful against the surface a chart renders on.
  *
- * These carry the site's forest hue (155°) at a tenth of the chroma its
- * `.dark` tokens use, plus neutral ink. The tokens were used verbatim first
- * and the console read as swamp — see the plane comments in lab-console.css.
+ * These are the site's LIGHT tokens, unmodified — the console shares the
+ * canvas its header and footer sit on. Two dark versions came before this and
+ * both read as mud; see the header comment in `lab-console.css` for why.
  */
-export const LAB_SURFACE = "#262c28";  /* L 0.285  C 0.010 */
-export const LAB_GRID = "#2f3431";
-export const LAB_BORDER = "#373c38";
-export const LAB_PLANE = "#161b18";
+export const LAB_SURFACE = "#ffffff";  /* --card, the chart surface */
+export const LAB_GRID = "#ebe7d9";     /* --border-light, recessive on white */
+export const LAB_BORDER = "#e2decd";   /* --border */
+export const LAB_PLANE = "#fcfaf4";    /* --background, the paper canvas */
 
-/* Neutral by construction: type carries no hue, the marks beside it do. */
 export const LAB_INK = {
-  primary: "#f0f2f1",
-  secondary: "#babdbb",
-  muted: "#999c9a",
+  primary: "#1f2a1e",    /* --foreground  14.91:1 on white */
+  secondary: "#2e3a2c",  /* --ink-body    11.95:1 */
+  muted: "#57624f",      /* --slate        6.43:1 */
 } as const;
 
 /**
  * Reserved. Only where the colour MEANS good/bad, never as a series — and
  * always beside a label, so hue never carries the meaning alone. Keeps the
- * site's directional semantics: moss up, brick down.
+ * site's directional semantics: green up, brick down.
+ *
+ * `good` is FOREST, not moss. Moss reads 1.89:1 on white — the site's own rule
+ * is that moss never carries text on a light surface; it is a highlight or an
+ * underlay there, which is what `--lab-accent-wash` is for.
  */
 export const LAB_STATUS = {
-  good: "#a7c957",      /* --moss */
-  warning: "#e8b45c",
-  serious: "#e08a5c",
-  critical: "#d76668",  /* .dark --destructive */
+  good: "#386641",      /* --forest  6.68:1 */
+  warning: "#8a6410",   /*           5.37:1 */
+  serious: "#a85222",   /*           5.39:1 */
+  critical: "#bc4749",  /* --brick   5.08:1 */
 } as const;
 
 /**
- * Five categorical slots, fixed order.
+ * Four categorical slots, fixed order.
  *
- * Generated in OKLCH near the TOP of the validator's lightness band (L 0.665)
- * at close to the maximum chroma sRGB allows at each hue. The first attempt
- * took each colour at the LOWEST lightness that still cleared 3:1 — technically
- * passing, and muddy: dark, low-chroma colours laid on a dark ground read as
- * sludge. On a dark surface the data has to be lighter and cleaner than the
- * surface, not merely legible against it.
+ * On paper the set uses LIGHTNESS as a second channel of separation, and that
+ * is the whole reason it works. Colour-blindness flattens hue; it does not
+ * flatten value. Every equal-lightness set searched here FAILED the CVD check
+ * no matter how the hues were arranged, and every set that varies lightness
+ * across slots passed comfortably — worst adjacent ΔE 18.6 against the 12.3
+ * the dark version managed, and against a floor of 8.
  *
- * Hues are the families Forest Editorial already speaks — moss, sky, sand,
- * sea, amber — so the chart still belongs to the site.
+ * Lightness also has a ceiling on white: past L ~0.64 a mark stops clearing
+ * 3:1 against the surface. That ceiling, not taste, is what fixes each slot.
  *
- * The ORDER is a safety mechanism, not a preference: it was searched over
- * permutations, because two colours of equal lightness in neighbouring hues
- * are what colour-blindness collapses. Validated as a set against LAB_SURFACE:
- * band, chroma floor, CVD separation (worst adjacent ΔE 12.3) and >=3:1
- * contrast all pass, with no warnings.
+ * The hues are the site's: forest green, brick, and two cool anchors. The
+ * highest-scoring set the search returned put a light orchid in slot 4 (ΔE
+ * 22.8); teal was taken instead at ΔE 18.6, because orchid is not a colour
+ * this site speaks and 18.6 is not a close call.
  *
  * The brand's own five could not be used directly: forest/fern/moss are three
- * greens that collapse under colour-blindness, forest falls below the
- * lightness band, and cream below the chroma floor.
+ * greens that collapse under colour-blindness, cream falls below the chroma
+ * floor, and moss reads 1.89:1 on white.
+ *
+ * The ORDER is a safety mechanism, not a preference — it was searched over
+ * permutations, and it keeps forest and teal non-adjacent.
+ *
+ * The palette STOPS rather than cycling. A fifth bot is not given a generated
+ * hue; `buildSeriesColors` leaves it uncoloured and the chart reports it as
+ * "not plotted", because two bots sharing one colour is worse than one bot
+ * being visibly absent.
  */
 export const LAB_SERIES = [
-  "#4aad31", // moss
-  "#2d9fd6", // sky
-  "#bb8a28", // sand
-  "#2eaa90", // sea
-  "#cf7e28", // amber
+  "#146a2d", // forest   L 0.46
+  "#2086cd", // sky      L 0.60
+  "#b53715", // brick    L 0.52
+  "#269da9", // teal     L 0.64
 ] as const;
 
 export const LAB_TOOLTIP = {
-  backgroundColor: LAB_PLANE,
+  backgroundColor: LAB_SURFACE,
   border: `1px solid ${LAB_BORDER}`,
   color: LAB_INK.primary,
   fontSize: 11,

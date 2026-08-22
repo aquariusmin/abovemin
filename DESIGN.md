@@ -309,45 +309,36 @@ throughout, glass chrome over opaque data, a condition stripe per row — becaus
 it is machinery read at a glance to answer "is anything wrong", not an
 editorial page.
 
-Its **colour is this site's hue, not this site's tokens.** Ground, panels and
-borders sit on forest 155°, moss is the accent and the section tick, and the
-directional semantics are unchanged — so it reads as this site in a different
-mode. But the `.dark` tokens are not used verbatim, and the first version that
-did use them was wrong.
+Its **colour does not diverge at all.** Ground, panels, borders, ink and accent
+are the site's light tokens from `globals.css`, unmodified — paper canvas,
+white panels, cream chrome, forest accent — so the console sits between the
+site header and footer as one continuous sheet.
 
-Those tokens carry C 0.025–0.037 in OKLCH. That is the worst possible amount
-of colour for a large plane: too much to read as neutral, too little to read as
-a deliberate hue, so it reads as mud. They were drawn for an editorial page
-where forest-black is a footer band framed by cream; stretched across a full
-dense screen the cast has nothing to play against. Worse, the ink tokens carry
-*more* chroma than the ground beneath them (0.030–0.037 against 0.025) —
-greenish grey type on a greenish ground, which is exactly backwards.
+It took two wrong dark versions to get there, and both are worth recording
+because the mistakes are general:
 
-So `/lab` keeps the hue and spends the chroma differently: planes at C ≈ 0.010,
-type fully neutral, and full-strength colour reserved for the things that are
-small — the accent tick, the status dots, the data marks. **Chroma belongs to
-small areas.** The panel/ground lightness gap is also widened (0.032 → 0.070)
-so a panel reads as a panel rather than as a slightly different shade of the
-ground.
+1. **Series colours taken at the lowest lightness that still cleared 3:1.**
+   Every check passed and the chart looked like sludge. Dark, low-chroma marks
+   on a dark ground are mud; on a dark surface the data has to sit *lighter*
+   than the surface, not merely be legible against it.
+2. **Planes and ink copied verbatim from the `.dark` tokens.** Measured in
+   OKLCH they sit at C 0.025–0.037 across h 120–158 — a whole screen inside one
+   narrow green band, at the worst possible amount of colour: too much to read
+   as neutral, too little to read as intent. Worse, the ink carried *more*
+   chroma than the ground beneath it. Those tokens were drawn for an editorial
+   page where forest-black is a footer band framed by cream; a full dense
+   screen of it has nothing to play against.
 
-The one place the brand palette could not be used as-is is the categorical
-series. Forest, fern and moss are three greens that collapse under
-colour-blindness; forest falls below the validator's lightness band and cream
-below its chroma floor. The series colours were therefore generated in OKLCH
-*inside* the band, held to hue families the site already uses (moss, sky, sand,
-sea, amber), and their ORDER searched rather than chosen — two equal-lightness
-neighbours are exactly what deuteranopia collapses. Status keeps the site's
-directional semantics: moss up, brick down.
+The deeper problem was structural, not tonal: **a dark console between a light
+header and a light footer is not "the site in another mode", it is a hole in
+the page.** Matching the site's own theme removes the question. The console now
+earns its distinctness from structure — grid, monospace, density — which is
+where a console's distinctness should come from anyway.
 
-**Passing is not the same as good.** The first version of that set took each
-hue at the LOWEST lightness that still cleared 3:1 against the panel. Every
-check came back green and the chart looked like sludge — dark, low-chroma
-colour laid on a dark ground is mud. On a dark surface the data has to sit
-*lighter* and cleaner than the surface, not merely be legible against it, so
-the set is now generated near the TOP of the band (L 0.665) at close to the
-maximum chroma sRGB allows at each hue, and the two hues that stayed muddy at
-any lightness (wheat-mustard, plum) were dropped rather than nudged. Five slots
-is also nearer the truth: the fleet is one bot.
+One brand rule survives the move intact and is worth restating, because it is
+what forced `good` off moss: **moss reads 1.89:1 on white.** It is a highlight
+or an underlay on a light surface, never type and never a status mark. Forest
+(6.68:1) carries "good" instead, and moss-wash carries the row hover.
 
 **It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in

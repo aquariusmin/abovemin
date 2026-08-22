@@ -1,94 +1,94 @@
 /* ---------------------------------------------------------------------------
-   Lab console — Forest Editorial's palette, an instrument's structure.
+   Lab console — the site's theme, an instrument's structure.
 
-   The STRUCTURE stays: hairline grid, no cards, monospace figures, glass
-   chrome over opaque data, a condition stripe per row.
+   The STRUCTURE diverges and stays diverged: hairline grid, no cards,
+   monospace figures, dense tables, a condition stripe per row. It is
+   machinery read at a glance to answer "is anything wrong", not an
+   editorial page.
 
-   The COLOUR is the site's HUE, not the site's tokens. Ground, panels and
-   borders sit on forest 155° but at a tenth of the chroma the `.dark` tokens
-   carry, and the type is neutral grey. Moss stays the accent, unchanged and
-   full-strength, because it is small. That inversion — hue everywhere, chroma
-   only where the area is small — is what keeps /lab recognisably this site
-   without turning a full screen of dark green into swamp. See the plane
-   comments below; using the tokens as-is was tried first and it was muddy.
+   The COLOUR does not diverge at all any more. Ground, panels, borders, ink
+   and accent are the site's LIGHT tokens from `globals.css` — paper canvas,
+   white panels, cream chrome, forest accent — so the console sits between the
+   site header and footer as one continuous sheet.
+
+   Two dark versions came before this one and both were muddy, for reasons
+   worth keeping written down:
+
+     1. Series colours taken at the LOWEST lightness that still cleared 3:1.
+        Every check passed; dark low-chroma marks on a dark ground are mud.
+     2. Planes and ink copied verbatim from the `.dark` tokens. Measured in
+        OKLCH those sit at C 0.025-0.037 across h 120-158 — a whole screen in
+        one narrow green band, at the worst possible chroma: too much to read
+        as neutral, too little to read as intent. The ink carried MORE chroma
+        than the ground beneath it.
+
+   The deeper problem was that a dark console between a light header and a
+   light footer is not "the site in another mode", it is a hole in the page.
+   Matching the site's own theme removes the question entirely.
 
    EVERY rule is nested under `.lab-console`. That is the requirement, not
    tidiness: an unscoped token or a bare `*` reset would reach the portfolio,
    the shop and the archive. Nothing here may be written unscoped.
 
-   COLOUR IS VALIDATED, NOT EYEBALLED. The categorical set could not simply be
-   the brand's five: forest/fern/moss are three greens that collapse under
-   colour-blindness, forest sits below the lightness band and cream below the
-   chroma floor. So the series were generated in OKLCH inside the band, held to
-   the hue families the site already uses, and searched over orderings — the
-   slot ORDER is a safety mechanism here, because equal-lightness red beside
-   green is exactly what deuteranopia erases.
+   COLOUR IS VALIDATED, NOT EYEBALLED. The categorical series could not be the
+   brand's five: forest/fern/moss are three greens that collapse under
+   colour-blindness, and moss reaches only 1.89:1 on white — the site's own
+   rule that moss never carries text on a light surface. The series are
+   generated in OKLCH and searched, and on paper they use LIGHTNESS as a second
+   channel: colour-blindness flattens hue, it does not flatten value, so an
+   equal-lightness set is exactly the one that fails.
 
-   Passing is not the same as good. The first set took each hue at the LOWEST
-   lightness that still cleared 3:1 — every check green, and the result was
-   sludge, because dark low-chroma colour on a dark ground is mud. On a dark
-   surface the data must sit LIGHTER and cleaner than the surface, so the set
-   is generated near the TOP of the band (L 0.665) at close to the maximum
-   chroma sRGB allows per hue.
+   Against the panel surface (#ffffff), via the dataviz validator:
 
-   Against this panel surface (#262c28), via the dataviz validator:
-
-     categorical 5: lightness band PASS · chroma floor PASS
-                    CVD adjacent worst ΔE 12.3 PASS · normal-vision 17.5 PASS
+     categorical 4: lightness band PASS · chroma floor PASS
+                    CVD adjacent worst ΔE 18.6 PASS · normal-vision 24.1 PASS
                     contrast vs surface all >= 3:1 PASS   (no warnings)
-     status 4:      moss 7.56 · amber 7.54 · ember 5.40 · brick 4.07
-     ink:           primary 12.68 · body 7.52 · muted 5.14
+                    — also re-checked against the canvas #fcfaf4: all pass
+
+     status 4:      forest 6.68 · amber 5.37 · ember 5.39 · brick 5.08
+     ink:           primary 14.91 · body 11.95 · muted 6.43
 
    Change --lab-surface-1 → re-run the validator. Contrast only means anything
    against the surface a chart actually renders on.
 --------------------------------------------------------------------------- */
 
 .lab-console {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Planes — the site's forest hue (155°) held to a WHISPER of chroma.
-     The site's own `.dark` tokens were used here verbatim at first and the
-     console read as swamp. They carry C 0.025-0.037 in OKLCH, which is the
-     worst possible amount: too much to read as neutral, too little to read as
-     a deliberate colour, so it just reads muddy. Those tokens were drawn for
-     an editorial page where forest-black is a footer band surrounded by cream
-     — stretched across a full dense screen the cast has nothing to play
-     against. Chroma belongs to SMALL areas (the accent tick, status dots, the
-     data itself), never to the largest one. Hue is unchanged; only the amount.
-
-     The L spread is also deliberately wider than the source tokens (0.032
-     between ground and panel, now 0.070) so a panel reads as a panel rather
-     than as a slightly different shade of the ground. */
-  --lab-plane: #161b18;      /* L 0.215  C 0.009 */
-  --lab-surface-1: #262c28;  /* L 0.285  C 0.010 — the validated chart surface */
-  --lab-surface-2: #323733;  /* L 0.330  C 0.010 */
-  --lab-surface-3: #3d433f;  /* L 0.375  C 0.010 */
+  /* Planes — the site's light tokens, unmodified. The canvas is the same
+     `--background` the header and footer sit on, so there is no seam. */
+  --lab-plane: #fcfaf4;      /* --background / --canvas */
+  --lab-surface-1: #ffffff;  /* --card — the validated chart surface */
+  --lab-surface-2: #f7f2e3;  /* --surface, the warm section tone */
+  --lab-surface-3: #f1ede0;  /* --muted */
 
   /* Structure */
-  --lab-border: #373c38;        /* L 0.350  C 0.010 */
-  --lab-border-strong: #434a45; /* L 0.400  C 0.011 */
-  --lab-grid: #2f3431;          /* gridline, one step off the surface */
+  --lab-border: #e2decd;        /* --border */
+  --lab-border-strong: #dcd7c4; /* --input */
+  --lab-grid: #ebe7d9;          /* --border-light, recessive on white */
 
-  /* Ink — NEUTRAL. The source tokens gave the text more chroma than the
-     ground it sat on (C 0.030-0.037 vs 0.025), which is exactly backwards:
-     greenish grey type on a greenish ground is the single largest source of
-     the muddiness. Type carries no hue here; the marks beside it do. */
-  --lab-ink-1: #f0f2f1;      /* 12.68:1 on surface-1 */
-  --lab-ink-2: #babdbb;      /*  7.52:1 */
-  --lab-ink-3: #999c9a;      /*  5.14:1 */
+  /* Ink */
+  --lab-ink-1: #1f2a1e;      /* --foreground   14.91:1 on white */
+  --lab-ink-2: #2e3a2c;      /* --ink-body     11.95:1 */
+  --lab-ink-3: #57624f;      /* --slate         6.43:1 */
 
-  /* Glass — chrome only. The specular edge is what makes a translucent panel
-     read as a physical pane rather than as opacity. */
-  --lab-glass-edge: rgb(255 255 255 / 0.07);
+  /* Chrome tint. On paper a translucent white pane is invisible, so the
+     floating layer is warm cream over blur with a white specular top edge —
+     the same trick, inverted for the ground it now sits on. */
+  --lab-glass-edge: rgb(255 255 255 / 0.75);
 
   /* Status — reserved, never reused as a series colour, always beside a label.
-     Keeps the site's directional semantics: moss up, brick down. */
-  --lab-good: #a7c957;       /* --moss */
-  --lab-warning: #e8b45c;
-  --lab-serious: #e08a5c;
-  --lab-critical: #d76668;   /* .dark --destructive */
+     Keeps the site's directional semantics: green up, brick down. Moss is NOT
+     the "good" token here: it reads 1.89:1 on white, which is the site's own
+     rule that moss never carries text on a light surface. Forest does. */
+  --lab-good: #386641;       /* --forest   6.68:1 */
+  --lab-warning: #8a6410;    /*            5.37:1 */
+  --lab-serious: #a85222;    /*            5.39:1 */
+  --lab-critical: #bc4749;   /* --brick    5.08:1 */
 
-  --lab-accent: #a7c957;     /* --moss, the site's accent-of-record */
+  --lab-accent: #386641;     /* --forest, the site's accent-of-record on light */
+  --lab-accent-wash: #eef4dc; /* --moss-wash, for fills where moss belongs */
+  --lab-moss: #a7c957;       /* --moss. A FILL only, never type — 1.89:1. */
 
   /* The categorical series lives in `components/quant/theme.ts`, NOT here.
      Recharts needs the values in JS, and duplicating them as custom properties
@@ -111,23 +111,22 @@
   border-radius: 0;
 }
 
-/* CONTENT is opaque. A see-through surface has no fixed colour, so the
-   validated contrast figures stop being verifiable and dense figures read
-   against a moving ground. It keeps the specular edge so it shares the
-   material language without the transparency. */
+/* CONTENT is opaque white paper with a hairline edge — no shadow, no gradient.
+   A see-through surface has no fixed colour, so the validated contrast figures
+   stop being verifiable and dense figures read against a moving ground. On
+   paper the border is what separates a panel from the canvas; the 1.03:1
+   between white and the canvas is deliberate and is the site's own card
+   treatment. */
 .lab-console .pane {
-  background:
-    linear-gradient(to bottom, rgb(255 255 255 / 0.02), rgb(255 255 255 / 0) 120px),
-    var(--lab-surface-1);
-  box-shadow: inset 0 1px 0 var(--lab-glass-edge);
+  background: var(--lab-surface-1);
   border: 1px solid var(--lab-border);
 }
 
 /* CHROME is glass: header strips, the layer that floats above content. */
 .lab-console .glass-inset {
-  background: rgb(255 255 255 / 0.03);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  background: color-mix(in oklab, var(--lab-surface-2) 78%, transparent);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   box-shadow: inset 0 1px 0 var(--lab-glass-edge);
 }
 
@@ -167,14 +166,14 @@
   font-feature-settings: "tnum" 1;
 }
 
-/* Row hover is a wash of light, not a colour change: the row lifts toward the
-   viewer. Tinted with the accent so even the hover belongs to the site. */
+/* Row hover is a wash, not a colour change: the row settles rather than
+   changing identity. Moss-wash is the site's own hover tone. */
 .lab-console .row-hover:hover {
-  background: color-mix(in oklab, var(--lab-accent) 7%, transparent);
+  background: var(--lab-accent-wash);
 }
 
 .lab-console ::selection {
-  background: color-mix(in oklab, var(--lab-accent) 35%, transparent);
+  background: color-mix(in oklab, var(--lab-moss) 55%, transparent);
 }
 
 @keyframes lab-pulse {
