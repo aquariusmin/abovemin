@@ -5,214 +5,176 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquityChart } from "@/components/quant/EquityChart";
 import { HoldingsTable } from "@/components/quant/HoldingsTable";
+import { Bar, Frame, Metric, Pill, Section } from "@/components/quant/Panel";
 import {
-  fmtMoney,
-  fmtPct,
-  fmtRelative,
-  parseEquityCurve,
-  type FleetBot,
+  fmtAmount, fmtPct, fmtRelative, lastCycle, parseBotName,
+  parseEquityCurve, staleness, type FleetBot,
 } from "@/lib/quant";
 
 const REFRESH_MS = 60_000;
 
-const SECTION_LABEL = "eyebrow text-white/65";
-const CARD = "rounded-md border border-white/8 bg-white/[0.02]";
-const STAT_LABEL =
-  "text-[10px] font-mono uppercase tracking-[0.2em] text-white/65";
-
-// Scope the fetch to this bot (?id=) so we don't download every bot's full
-// equity_curve to render one detail view. Same endpoint, still returns an array.
 export function BotDetail({ botId }: { botId: string }) {
-  const [bots, setBots] = useState<FleetBot[] | null>(null);
+  const [bot, setBot] = useState<FleetBot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const fetchRows = async () => {
+    const load = async () => {
       try {
+        // ?id= scopes the response so the detail view doesn't download every
+        // bot's full equity_curve to render one.
         const res = await fetch(`/api/market/quant-fleet?id=${encodeURIComponent(botId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: FleetBot[] = await res.json();
         if (cancelled) return;
-        setBots(data ?? []);
+        setBot(data?.[0] ?? null);
         setError(null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoaded(true);
       }
     };
-    fetchRows();
-    const id = setInterval(fetchRows, REFRESH_MS);
+    load();
+    const id = setInterval(load, REFRESH_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
   }, [botId]);
 
-  const bot = useMemo(
-    () => bots?.find((b) => b.id === botId) ?? null,
-    [bots, botId],
-  );
   const points = useMemo(
     () => (bot ? parseEquityCurve(bot.equity_curve) : []),
     [bot],
   );
 
+  if (!loaded) {
+    return (
+      <Frame className="p-3 text-[var(--lab-ink-3)]">
+        <span className="pulse">◼</span> loading…
+      </Frame>
+    );
+  }
   if (error) {
-    return (
-      <div className="rounded-md border border-brick-light/30 bg-brick-light/[0.08] p-6">
-        <p className="eyebrow text-brick-light/70">Error</p>
-        <p className="mt-2 font-mono text-[12px] text-brick-light">{error}</p>
-      </div>
-    );
+    return <Frame className="p-3 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
-
-  if (!bots) {
-    return (
-      <div className={`${CARD} p-12 text-center`}>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/55 animate-pulse">
-          Loading…
-        </p>
-      </div>
-    );
-  }
-
   if (!bot) {
     return (
-      <div className={`${CARD} p-12 space-y-4`}>
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-white/65">
-          No bot with id <span className="text-white/75">{botId}</span>
-        </p>
-        <Link
-          href="/lab"
-          className="text-[11px] font-mono uppercase tracking-[0.18em] text-moss hover:text-white transition-colors"
-        >
-          ← back to fleet
-        </Link>
-      </div>
+      <Frame className="space-y-2 p-3">
+        <div className="text-[var(--lab-ink-2)]">
+          no bot with id <span className="text-[var(--lab-ink-1)]">{botId}</span>
+        </div>
+        <BackLink />
+      </Frame>
     );
   }
 
-  const up = (bot.pnl_pct ?? 0) >= 0;
+  const name = parseBotName(bot.bot_name);
+  const positive = (bot.pnl_pct ?? 0) >= 0;
+  const seen = lastCycle(points, bot.updated_at);
+  const age = staleness(seen);
   const positionValue =
     bot.cash !== null && bot.cash !== undefined
       ? Math.max(0, bot.equity - bot.cash)
       : null;
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-4">
-        <Link
-          href="/lab"
-          className="inline-block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 hover:text-moss transition-colors"
-        >
-          ← fleet
-        </Link>
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h1 className="font-serif text-3xl md:text-5xl font-medium text-white tracking-tight leading-[1.05]">
-            {bot.bot_name}
-          </h1>
-          <span
-            className={`rounded text-[10px] uppercase tracking-[0.14em] font-semibold px-1.5 py-0.5 ${
-              bot.market === "crypto"
-                ? "text-cream bg-cream/10"
-                : "text-cream/60 bg-white/[0.07]"
-            }`}
-          >
-            {bot.market}
-          </span>
-          <span className="rounded text-[10px] uppercase tracking-[0.14em] font-semibold px-1.5 py-0.5 text-white/50 bg-white/5">
-            {bot.strategy}
-          </span>
-        </div>
-        <p className="text-[11px] font-mono text-white/65">
-          updated {fmtRelative(bot.updated_at)} ·{" "}
-          <span className="text-white/55">{bot.id}</span>
-        </p>
-        <p className="inline-flex rounded-md border border-cream/25 bg-cream/[0.06] px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] text-cream/85">
-          Paper trading only · simulated capital · no real-money performance
-        </p>
-      </header>
+    <div className="space-y-2">
+      <BackLink />
+      <Frame>
+        {/* Identity first: the venue tag and halt state decide how to read
+            every number below, and mock equity looks identical to real money
+            otherwise. */}
+        <Section className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+          <h1 className="text-[16px] tracking-[0.12em] text-[var(--lab-ink-1)]">{name.tag}</h1>
+          <span className="text-[11px] text-[var(--lab-ink-3)]">{name.strategy}</span>
+          <Pill tone={name.venue ? (name.real ? "serious" : "neutral") : "neutral"}>
+            {name.venue ?? "SIM"}
+          </Pill>
+          {name.halted ? (
+            <Pill tone="critical" dot>halted · {name.haltKind}</Pill>
+          ) : age === "live" ? (
+            <Pill tone="good" dot>trading</Pill>
+          ) : (
+            <Pill tone="warning" dot>{age}</Pill>
+          )}
+          <span className="lab-label ml-auto">{bot.id}</span>
+        </Section>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Paper Equity" value={fmtMoney(bot.equity)} />
-        <Stat
-          label="Paper PnL"
-          value={fmtPct(bot.pnl_pct)}
-          tone={up ? "pos" : "neg"}
-        />
-        <Stat label="Cash" value={bot.cash !== null ? fmtMoney(bot.cash) : "—"} />
-        <Stat
-          label="Position"
-          value={
-            bot.position_pct === null
-              ? "—"
-              : `${Math.round(bot.position_pct)}%${
-                  positionValue !== null ? ` · ${fmtMoney(positionValue)}` : ""
-                }`
-          }
-        />
-      </section>
+        {name.halted ? (
+          <Section className="border-l-2 border-l-[var(--lab-critical)] px-3 py-2 text-[11px] text-[var(--lab-ink-2)]">
+            <span className="text-[var(--lab-critical)]">
+              TRADING STOPPED ({name.haltKind})
+            </span>{" "}
+            — the bot is flat and still cycling.{" "}
+            {name.haltKind === "daily"
+              ? "A daily halt clears by itself at the next UTC midnight; nothing to do."
+              : name.haltKind === "kill_switch"
+                ? "Remove reports/STOP and it resumes on the next cycle."
+                : "A terminal halt never self-clears — investigate, then delete the bot's *.risk.json."}
+          </Section>
+        ) : null}
 
-      <section className={`${CARD} p-4 md:p-6 space-y-4`}>
-        <h3 className={SECTION_LABEL}>
-          Equity Curve · last {points.length} points
-        </h3>
-        <EquityChart points={points} positive={up} />
-      </section>
+        <Section className="grid grid-cols-2 lg:grid-cols-4">
+          <Metric label="equity" value={fmtAmount(bot.equity, bot.currency, 2)} />
+          <Metric label="pnl" value={fmtPct(bot.pnl_pct)}
+                  tone={positive ? "good" : "critical"} sub="vs initial equity" />
+          <Metric label="cash" value={fmtAmount(bot.cash, bot.currency, 2)}
+                  sub={positionValue !== null
+                    ? `${fmtAmount(positionValue, bot.currency, 0)} deployed`
+                    : undefined} />
+          <Metric label="invested"
+                  value={bot.position_pct === null ? "—" : `${Math.round(bot.position_pct)}%`}
+                  sub={`${bot.holdings_count ?? 0} position(s)`} />
+        </Section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className={`${CARD} p-5 space-y-4`}>
-          <h3 className={SECTION_LABEL}>
-            Holdings · {bot.holdings ? Object.keys(bot.holdings).length : 0} symbol(s)
-          </h3>
-          <HoldingsTable holdings={bot.holdings} equity={bot.equity} />
-        </div>
-        <div className={`${CARD} p-5 space-y-3`}>
-          <h3 className={SECTION_LABEL}>Recent Activity</h3>
-          <KV
-            k="Total Fills"
-            v={bot.fills_count !== null ? String(bot.fills_count) : "—"}
-          />
-          <KV k="Last Fill" v={bot.last_fill ?? "—"} />
-          <KV k="Updated" v={new Date(bot.updated_at).toLocaleString()} />
-        </div>
-      </section>
+        <Section>
+          <Bar title="equity & drawdown" right={<span className="lab-label">{points.length} points</span>} />
+          <div className="p-3">
+            <EquityChart points={points} positive={positive} currency={bot.currency} />
+          </div>
+        </Section>
+
+        <Section className="grid lg:grid-cols-[1fr_300px]">
+          <div className="border-b border-[var(--lab-border)] lg:border-b-0 lg:border-r">
+            <Bar title="holdings"
+                 right={<span className="lab-label">
+                   {bot.holdings ? Object.keys(bot.holdings).length : 0} symbols
+                 </span>} />
+            <HoldingsTable holdings={bot.holdings} equity={bot.equity} currency={bot.currency} />
+          </div>
+          <div>
+            <Bar title="telemetry" />
+            <div className="divide-y divide-[var(--lab-border)]">
+              <KV k="strategy" v={bot.strategy} />
+              <KV k="market" v={`${bot.market} · ${bot.currency ?? "USD"}`} />
+              <KV k="total fills" v={bot.fills_count !== null ? String(bot.fills_count) : "—"} />
+              <KV k="last action" v={bot.last_fill ?? "—"} />
+              <KV k="last cycle" v={fmtRelative(new Date(seen).toISOString())} />
+              <KV k="row synced" v={fmtRelative(bot.updated_at)} />
+            </div>
+          </div>
+        </Section>
+      </Frame>
     </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "pos" | "neg";
-}) {
-  const color =
-    tone === "pos"
-      ? "text-moss"
-      : tone === "neg"
-        ? "text-brick-light"
-        : "text-white";
+function BackLink() {
   return (
-    <div className={`${CARD} p-5 space-y-2`}>
-      <p className={STAT_LABEL}>{label}</p>
-      <p className={`text-2xl font-semibold tracking-tight font-mono ${color}`}>
-        {value}
-      </p>
-    </div>
+    <Link href="/lab"
+          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--lab-ink-3)] transition-colors hover:text-[var(--lab-accent)]">
+      ← fleet
+    </Link>
   );
 }
 
 function KV({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 text-[12px] font-mono">
-      <span className="text-white/65 uppercase tracking-[0.18em] text-[10px]">
-        {k}
-      </span>
-      <span className="text-white/80 text-right break-all">{v}</span>
+    <div className="flex items-baseline justify-between gap-3 px-3 py-1.5">
+      <span className="lab-label shrink-0">{k}</span>
+      <span className="truncate text-[11px] tnum text-[var(--lab-ink-1)]">{v}</span>
     </div>
   );
 }

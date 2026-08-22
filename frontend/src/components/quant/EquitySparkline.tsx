@@ -1,11 +1,19 @@
 "use client";
 
+import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import type { EquityPoint } from "@/lib/quant";
-import { trend } from "@/lib/palette";
+import { LAB_STATUS } from "@/components/quant/theme";
 
-// Tiny inline SVG sparkline. Matches the existing FleetGrid style
-// (polyline, no axes, no animation) so the table feels native to the
-// rest of /lab.
+/**
+ * Row-level trend. No axes, no tooltip — the row's own figures carry the
+ * values; this only has to show the shape.
+ *
+ * The domain is the series' own min/max rather than zero-based: at a fleet's
+ * typical scale a zero-based sparkline is a flat line and shows nothing. The
+ * colour is the reserved good/critical token (gain/loss is a good/bad
+ * judgement, not an identity) and never appears without the signed PnL figure
+ * in the adjacent cell.
+ */
 export function EquitySparkline({
   points,
   positive,
@@ -14,29 +22,26 @@ export function EquitySparkline({
   positive: boolean;
 }) {
   if (points.length < 2) {
-    return <span className="text-[9px] font-mono text-white/55">—</span>;
+    return <span className="text-[11px] text-[var(--lab-ink-3)]">—</span>;
   }
-  const values = points.map((p) => p.equity);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const stroke = positive ? trend.up : trend.down;
+  const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
   return (
-    <svg
-      viewBox={`0 0 ${values.length - 1} 20`}
-      preserveAspectRatio="none"
-      className="w-20 h-5"
-      role="img"
-      aria-label={`Equity trend ${positive ? "up" : "down"}`}
-    >
-      <polyline
-        fill="none"
-        stroke={stroke}
-        strokeWidth="1.2"
-        points={values
-          .map((v, i) => `${i},${20 - ((v - min) / range) * 18}`)
-          .join(" ")}
-      />
-    </svg>
+    <div className="h-[18px] w-20">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={points} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
+          <YAxis hide domain={["dataMin", "dataMax"]} />
+          <Area
+            type="monotone"
+            dataKey="equity"
+            stroke={stroke}
+            strokeWidth={1.25}
+            fill={stroke}
+            fillOpacity={0.13}
+            isAnimationActive={false}
+            dot={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
