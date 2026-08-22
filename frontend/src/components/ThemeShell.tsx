@@ -6,11 +6,14 @@ import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
 export default function ThemeShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
 
-  const bgColor = isLab ? 'bg-surface-dark' : 'bg-canvas';
-  const textColor = isLab ? 'text-cream' : 'text-ink-body';
+  // /lab used to force forest-black here. It no longer does: a dark console
+  // between a light header and a light footer is a hole in the page, not a
+  // mode. The console carries the site's own light theme now, so the body it
+  // sits on is the same canvas every other route uses.
+  const bgColor = 'bg-canvas';
+  const textColor = 'text-ink-body';
 
   useEffect(() => {
     function blockContextMenu(e: MouseEvent) {

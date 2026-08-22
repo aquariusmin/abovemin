@@ -22,7 +22,7 @@ export function EquitySparkline({
   positive: boolean;
 }) {
   if (points.length < 2) {
-    return <span className="text-[11px] text-[var(--lab-ink-3)]">—</span>;
+    return <span className="text-[12px] text-[var(--lab-ink-3)]">—</span>;
   }
   const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
   return (

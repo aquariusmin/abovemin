@@ -79,7 +79,7 @@ export function Metric({
         {value}
       </div>
       {sub ? (
-        <div className="mt-1.5 truncate text-[10px] text-[var(--lab-ink-3)]">{sub}</div>
+        <div className="mt-1.5 truncate text-[11px] text-[var(--lab-ink-3)]">{sub}</div>
       ) : null}
     </div>
   );
@@ -109,7 +109,7 @@ export function Pill({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 border px-1.5 py-[1px] text-[10px] uppercase tracking-[0.1em] whitespace-nowrap",
+        "inline-flex items-center gap-1.5 border px-1.5 py-[1px] text-[11px] uppercase tracking-[0.1em] whitespace-nowrap",
         PILL[tone],
       )}
     >

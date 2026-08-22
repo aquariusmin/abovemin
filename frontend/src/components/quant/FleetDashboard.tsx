@@ -129,7 +129,7 @@ export function FleetDashboard() {
               {totals.stale} not cycling
             </Pill>
           ) : null}
-          <span className="text-[11px] text-[var(--lab-ink-2)]">
+          <span className="text-[12px] text-[var(--lab-ink-2)]">
             {totals.halted > 0
               ? "A halted bot holds flat and re-checks each cycle. daily → clears at UTC midnight · kill_switch → remove reports/STOP · terminal → operator only."
               : "The row still syncs, but the bot behind it has not run."}
@@ -183,7 +183,7 @@ export function FleetDashboard() {
           right={<span className="lab-label">{sorted.length} row{sorted.length === 1 ? "" : "s"}</span>}
         />
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="glass-inset border-b border-[var(--lab-border)]">
                 <Th onClick={() => toggleSort("bot_name")} active={sortKey === "bot_name"} dir={sortDir}>bot</Th>
@@ -220,7 +220,7 @@ export function FleetDashboard() {
                           {bot.tag}
                         </span>
                         {/* A legacy bot name can be a whole parameter dump. */}
-                        <span className="min-w-0 truncate text-[10px] text-[var(--lab-ink-3)]" title={bot.strategy}>
+                        <span className="min-w-0 truncate text-[11px] text-[var(--lab-ink-3)]" title={bot.strategy}>
                           {bot.strategy}
                         </span>
                       </Link>

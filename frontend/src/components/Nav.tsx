@@ -8,7 +8,6 @@ import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
 export default function Nav() {
   const pathname = usePathname();
-  const isLab = pathname === '/lab' || pathname?.startsWith('/lab/');
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -55,17 +54,17 @@ export default function Nav() {
   const cartCount = useCartStore(state => state.totalCount());
   const displayCount = mounted ? cartCount : 0;
 
-  // Surface-aware palette: warm paper canvas vs. forest-black lab shell.
-  // Both surfaces share one accent language — lime marks the active route.
-  const shell = isLab
-    ? 'bg-forest-black/85 border-white/10'
-    : 'bg-canvas/80 border-border/70';
-  const logoColor = isLab ? 'text-cream' : 'text-forest';
-  const idleLink = isLab ? 'text-cream/65' : 'text-muted-foreground';
-  const activeLink = isLab ? 'text-moss' : 'text-primary';
-  const hoverLink = isLab ? 'hover:text-cream' : 'hover:text-primary';
+  // Lime marks the active route, everywhere.
+  // /lab is no longer a dark route, so the nav no longer inverts for it. One
+  // header treatment for every page is the point: the console has to read as
+  // part of this site, and a bar that changes colour under it says otherwise.
+  const shell = 'bg-canvas/80 border-border/70';
+  const logoColor = 'text-forest';
+  const idleLink = 'text-muted-foreground';
+  const activeLink = 'text-primary';
+  const hoverLink = 'hover:text-primary';
   const underline = 'bg-moss';
-  const divider = isLab ? 'bg-white/15' : 'bg-border';
+  const divider = 'bg-border';
 
   const navLinks = [
     { href: '/about', label: 'About' },
@@ -166,7 +165,7 @@ export default function Nav() {
             <button
               ref={toggleRef}
               onClick={() => setMenuOpen(prev => !prev)}
-              className={`flex flex-col gap-[5px] p-2 -mr-2 ${isLab ? 'text-cream' : 'text-forest'}`}
+              className={`flex flex-col gap-[5px] p-2 -mr-2 text-forest`}
               aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
@@ -187,7 +186,7 @@ export default function Nav() {
         inert={!menuOpen}
         className={`lg:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}
       >
-        <div className={`border-t ${isLab ? 'border-white/10' : 'border-border/70'} px-6 py-6 flex flex-col gap-1`}>
+        <div className={`border-t border-border/70 px-6 py-6 flex flex-col gap-1`}>
           {navLinks.map(link => {
             const active = isActiveLink(link.href);
             return (

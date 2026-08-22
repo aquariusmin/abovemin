@@ -88,7 +88,7 @@ export function BotDetail({ botId }: { botId: string }) {
             otherwise. */}
         <Section className="flex flex-wrap items-center gap-3 px-3 py-2.5">
           <h1 className="text-[16px] tracking-[0.12em] text-[var(--lab-ink-1)]">{name.tag}</h1>
-          <span className="text-[11px] text-[var(--lab-ink-3)]">{name.strategy}</span>
+          <span className="text-[12px] text-[var(--lab-ink-3)]">{name.strategy}</span>
           <Pill tone={name.venue ? (name.real ? "serious" : "neutral") : "neutral"}>
             {name.venue ?? "SIM"}
           </Pill>
@@ -103,7 +103,7 @@ export function BotDetail({ botId }: { botId: string }) {
         </Section>
 
         {name.halted ? (
-          <Section className="border-l-2 border-l-[var(--lab-critical)] px-3 py-2 text-[11px] text-[var(--lab-ink-2)]">
+          <Section className="border-l-2 border-l-[var(--lab-critical)] px-3 py-2 text-[12px] text-[var(--lab-ink-2)]">
             <span className="text-[var(--lab-critical)]">
               TRADING STOPPED ({name.haltKind})
             </span>{" "}
@@ -164,7 +164,7 @@ export function BotDetail({ botId }: { botId: string }) {
 function BackLink() {
   return (
     <Link href="/lab"
-          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--lab-ink-3)] transition-colors hover:text-[var(--lab-accent)]">
+          className="inline-flex items-center gap-1.5 text-[12px] text-[var(--lab-ink-3)] transition-colors hover:text-[var(--lab-accent)]">
       ← fleet
     </Link>
   );
@@ -174,7 +174,7 @@ function KV({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 px-3 py-1.5">
       <span className="lab-label shrink-0">{k}</span>
-      <span className="truncate text-[11px] tnum text-[var(--lab-ink-1)]">{v}</span>
+      <span className="truncate text-[12px] tnum text-[var(--lab-ink-1)]">{v}</span>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export function HoldingsTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[12px]">
+      <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr className="glass-inset border-b border-[var(--lab-border)]">
             {["symbol", "qty", "mark", "value", "weight"].map((h, i) => (

@@ -38,15 +38,15 @@
    channel: colour-blindness flattens hue, it does not flatten value, so an
    equal-lightness set is exactly the one that fails.
 
-   Against the panel surface (#ffffff), via the dataviz validator:
+   Against the panel surface (#f7f2e3), via the dataviz validator:
 
      categorical 4: lightness band PASS · chroma floor PASS
-                    CVD adjacent worst ΔE 18.6 PASS · normal-vision 24.1 PASS
+                    CVD adjacent worst ΔE 17.8 PASS · normal-vision 24.1 PASS
                     contrast vs surface all >= 3:1 PASS   (no warnings)
                     — also re-checked against the canvas #fcfaf4: all pass
 
-     status 4:      forest 6.68 · amber 5.37 · ember 5.39 · brick 5.08
-     ink:           primary 14.91 · body 11.95 · muted 6.43
+     status 4:      forest 5.97 · amber 4.80 · ember 4.82 · brick 4.54
+     ink:           primary 12.07 · body 8.29 · muted 5.00
 
    Change --lab-surface-1 → re-run the validator. Contrast only means anything
    against the surface a chart actually renders on.
@@ -57,20 +57,23 @@
 
   /* Planes — the site's light tokens, unmodified. The canvas is the same
      `--background` the header and footer sit on, so there is no seam. */
-  --lab-plane: #fcfaf4;      /* --background / --canvas */
-  --lab-surface-1: #ffffff;  /* --card — the validated chart surface */
-  --lab-surface-2: #f7f2e3;  /* --surface, the warm section tone */
-  --lab-surface-3: #f1ede0;  /* --muted */
+  --lab-plane: #fcfaf4;      /* --background / --canvas — matches the nav */
+  --lab-surface-1: #f7f2e3;  /* --surface — the validated chart surface */
+  --lab-surface-2: #f1ede0;  /* --muted, the chrome tint */
+  --lab-surface-3: #eae4d3;
 
   /* Structure */
   --lab-border: #e2decd;        /* --border */
-  --lab-border-strong: #dcd7c4; /* --input */
-  --lab-grid: #ebe7d9;          /* --border-light, recessive on white */
+  --lab-border-strong: #d8d2bd;
+  --lab-grid: #e6e0cf;          /* recessive: 1.18:1 off the surface */
 
-  /* Ink */
-  --lab-ink-1: #1f2a1e;      /* --foreground   14.91:1 on white */
-  --lab-ink-2: #2e3a2c;      /* --ink-body     11.95:1 */
-  --lab-ink-3: #57624f;      /* --slate         6.43:1 */
+  /* Ink — spaced, not maxed. Pure #1f2a1e on white was 14.91:1, and a whole
+     screen of near-black on near-white is glare, not legibility. The ramp is
+     12.07 / 8.29 / 5.00 against the panel: every step still clears 4.5:1 by a
+     wide margin, and the three are far enough apart to read as a hierarchy. */
+  --lab-ink-1: #26312a;      /* 12.07:1 */
+  --lab-ink-2: #404a3d;      /*  8.29:1 */
+  --lab-ink-3: #616b58;      /*  5.00:1 */
 
   /* Chrome tint. On paper a translucent white pane is invisible, so the
      floating layer is warm cream over blur with a white specular top edge —
@@ -81,10 +84,10 @@
      Keeps the site's directional semantics: green up, brick down. Moss is NOT
      the "good" token here: it reads 1.89:1 on white, which is the site's own
      rule that moss never carries text on a light surface. Forest does. */
-  --lab-good: #386641;       /* --forest   6.68:1 */
-  --lab-warning: #8a6410;    /*            5.37:1 */
-  --lab-serious: #a85222;    /*            5.39:1 */
-  --lab-critical: #bc4749;   /* --brick    5.08:1 */
+  --lab-good: #386641;       /* --forest   5.97:1 */
+  --lab-warning: #8a6410;    /*            4.80:1 */
+  --lab-serious: #a85222;    /*            4.82:1 */
+  --lab-critical: #bc4749;   /* --brick    4.54:1 */
 
   --lab-accent: #386641;     /* --forest, the site's accent-of-record on light */
   --lab-accent-wash: #eef4dc; /* --moss-wash, for fills where moss belongs */
@@ -97,9 +100,17 @@
      prevent. */
 
   color: var(--lab-ink-1);
-  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
-  font-size: 12px;
-  -webkit-font-smoothing: antialiased;
+  /* --font-mono-stack, NOT --font-mono. The bare variable is only the Latin
+     face next/font loads; the stack is what pairs it with the Korean face.
+     Using the bare one dropped every Hangul glyph in the console onto whatever
+     monospace the OS happened to ship, which is the other half of why the type
+     looked wrong. */
+  font-family: var(--font-mono-stack, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-size: 13px;
+  line-height: 1.45;
+  /* No `-webkit-font-smoothing: antialiased` here. It thins strokes, which is
+     right for light type on a dark ground and wrong for dark type on paper —
+     it made a dense monospace grid look frail. Let the platform render it. */
 }
 
 /* A pane has an edge; an absolute right angle reads as a cut rather than a
@@ -111,12 +122,16 @@
   border-radius: 0;
 }
 
-/* CONTENT is opaque white paper with a hairline edge — no shadow, no gradient.
-   A see-through surface has no fixed colour, so the validated contrast figures
-   stop being verifiable and dense figures read against a moving ground. On
-   paper the border is what separates a panel from the canvas; the 1.03:1
-   between white and the canvas is deliberate and is the site's own card
-   treatment. */
+/* CONTENT is opaque paper with a hairline edge — no shadow, no gradient. A
+   see-through surface has no fixed colour, so the validated contrast figures
+   stop being verifiable and dense figures read against a moving ground.
+
+   The panel sits SLIGHTLY DARKER than the canvas rather than lighter. Pure
+   white panels were 0% off the maximum the screen can emit and read as glare
+   across a dense console; the site's own `--surface` is 11% less light and
+   still unmistakably paper. It also separates better — 1.07:1 against the
+   canvas where white managed 1.03:1 — so the panel reads as a well, and the
+   hairline is confirming an edge rather than inventing one. */
 .lab-console .pane {
   background: var(--lab-surface-1);
   border: 1px solid var(--lab-border);
@@ -152,7 +167,7 @@
 
 /* The tracked micro-label heading every panel, column and field. */
 .lab-console .lab-label {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
   letter-spacing: 0.11em;
   text-transform: uppercase;

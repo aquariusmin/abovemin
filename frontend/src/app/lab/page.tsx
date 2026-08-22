@@ -9,7 +9,7 @@ export default function Lab() {
             machinery, and dressing it as editorial would misrepresent what it
             is. Everything below is scoped to `.lab-console`. */}
         <header className="glass-inset mb-3 flex h-10 items-center gap-3 border border-[var(--lab-border)] px-3">
-          <span className="text-[13px] tracking-[0.18em] text-[var(--lab-ink-1)]">
+          <span className="text-[14px] tracking-[0.18em] text-[var(--lab-ink-1)]">
             QUANT<span className="text-[var(--lab-ink-3)]">/</span>FLEET
           </span>
           <span className="hidden h-3 w-px bg-[var(--lab-border)] sm:block" />
@@ -24,7 +24,7 @@ export default function Lab() {
             trading only · simulated capital" — true then, and false the moment
             a real account started trading. The per-bot VENUE tag is what
             actually distinguishes them, row by row. */}
-        <p className="mt-3 border border-[var(--lab-border)] bg-[var(--lab-surface-1)] px-3 py-2 text-[11px] leading-relaxed text-[var(--lab-ink-2)]">
+        <p className="mt-3 border border-[var(--lab-border)] bg-[var(--lab-surface-1)] px-3 py-2 text-[12px] leading-relaxed text-[var(--lab-ink-2)]">
           Live operational status, synced from the trading host. Each row is
           tagged with the account it trades:{" "}
           <span className="text-[var(--lab-serious)]">TOSS·REAL</span> and{" "}

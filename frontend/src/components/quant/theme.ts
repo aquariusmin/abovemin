@@ -10,15 +10,17 @@
  * canvas its header and footer sit on. Two dark versions came before this and
  * both read as mud; see the header comment in `lab-console.css` for why.
  */
-export const LAB_SURFACE = "#ffffff";  /* --card, the chart surface */
-export const LAB_GRID = "#ebe7d9";     /* --border-light, recessive on white */
+export const LAB_SURFACE = "#f7f2e3";  /* --surface, the chart surface */
+export const LAB_GRID = "#e6e0cf";     /* recessive: 1.18:1 off the surface */
 export const LAB_BORDER = "#e2decd";   /* --border */
 export const LAB_PLANE = "#fcfaf4";    /* --background, the paper canvas */
 
+/* Spaced, not maxed: near-black on near-white across a whole dense screen is
+   glare rather than legibility. Every step still clears 4.5:1 comfortably. */
 export const LAB_INK = {
-  primary: "#1f2a1e",    /* --foreground  14.91:1 on white */
-  secondary: "#2e3a2c",  /* --ink-body    11.95:1 */
-  muted: "#57624f",      /* --slate        6.43:1 */
+  primary: "#26312a",    /* 12.07:1 on the surface */
+  secondary: "#404a3d",  /*  8.29:1 */
+  muted: "#616b58",      /*  5.00:1 */
 } as const;
 
 /**
@@ -31,10 +33,10 @@ export const LAB_INK = {
  * underlay there, which is what `--lab-accent-wash` is for.
  */
 export const LAB_STATUS = {
-  good: "#386641",      /* --forest  6.68:1 */
-  warning: "#8a6410",   /*           5.37:1 */
-  serious: "#a85222",   /*           5.39:1 */
-  critical: "#bc4749",  /* --brick   5.08:1 */
+  good: "#386641",      /* --forest  5.97:1 */
+  warning: "#8a6410",   /*           4.80:1 */
+  serious: "#a85222",   /*           4.82:1 */
+  critical: "#bc4749",  /* --brick   4.54:1 */
 } as const;
 
 /**
@@ -44,16 +46,18 @@ export const LAB_STATUS = {
  * is the whole reason it works. Colour-blindness flattens hue; it does not
  * flatten value. Every equal-lightness set searched here FAILED the CVD check
  * no matter how the hues were arranged, and every set that varies lightness
- * across slots passed comfortably — worst adjacent ΔE 18.6 against the 12.3
+ * across slots passed comfortably — worst adjacent ΔE 17.8 against the 12.3
  * the dark version managed, and against a floor of 8.
  *
- * Lightness also has a ceiling on white: past L ~0.64 a mark stops clearing
- * 3:1 against the surface. That ceiling, not taste, is what fixes each slot.
+ * Lightness has a ceiling, and the ceiling moved: on white a mark could reach
+ * L 0.64 before it stopped clearing 3:1, but the panel is now the site's
+ * `--surface` — 11% less light — so slot 4 had to come down to L 0.62. That
+ * ceiling, not taste, is what fixes each slot.
  *
  * The hues are the site's: forest green, brick, and two cool anchors. The
  * highest-scoring set the search returned put a light orchid in slot 4 (ΔE
- * 22.8); teal was taken instead at ΔE 18.6, because orchid is not a colour
- * this site speaks and 18.6 is not a close call.
+ * 22.8); teal was taken instead at ΔE 17.8, because orchid is not a colour
+ * this site speaks and 17.8 is not a close call.
  *
  * The brand's own five could not be used directly: forest/fern/moss are three
  * greens that collapse under colour-blindness, cream falls below the chroma
@@ -71,7 +75,7 @@ export const LAB_SERIES = [
   "#146a2d", // forest   L 0.46
   "#2086cd", // sky      L 0.60
   "#b53715", // brick    L 0.52
-  "#269da9", // teal     L 0.64
+  "#0798a4", // teal     L 0.62
 ] as const;
 
 export const LAB_TOOLTIP = {

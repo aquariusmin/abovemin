@@ -310,9 +310,10 @@ it is machinery read at a glance to answer "is anything wrong", not an
 editorial page.
 
 Its **colour does not diverge at all.** Ground, panels, borders, ink and accent
-are the site's light tokens from `globals.css`, unmodified — paper canvas,
-white panels, cream chrome, forest accent — so the console sits between the
-site header and footer as one continuous sheet.
+are the site's light tokens from `globals.css` — paper canvas, warm `--surface`
+panels, cream chrome, forest accent — and the site nav renders over it in its
+normal light treatment, so the console sits between header and footer as one
+continuous sheet.
 
 It took two wrong dark versions to get there, and both are worth recording
 because the mistakes are general:
@@ -325,20 +326,42 @@ because the mistakes are general:
    OKLCH they sit at C 0.025–0.037 across h 120–158 — a whole screen inside one
    narrow green band, at the worst possible amount of colour: too much to read
    as neutral, too little to read as intent. Worse, the ink carried *more*
-   chroma than the ground beneath it. Those tokens were drawn for an editorial
-   page where forest-black is a footer band framed by cream; a full dense
-   screen of it has nothing to play against.
+   chroma than the ground beneath it.
 
 The deeper problem was structural, not tonal: **a dark console between a light
 header and a light footer is not "the site in another mode", it is a hole in
-the page.** Matching the site's own theme removes the question. The console now
-earns its distinctness from structure — grid, monospace, density — which is
-where a console's distinctness should come from anyway.
+the page.** `Nav` and `ThemeShell` both used to invert on `/lab`; neither does
+now, and there is no `isLab` branch left in either. The console earns its
+distinctness from structure — grid, monospace, density — which is where a
+console's distinctness should come from anyway.
 
-One brand rule survives the move intact and is worth restating, because it is
+Then the light version had to be tuned twice more, for reasons that are the
+mirror image of the dark ones:
+
+- **Panels are not pure white, and sit slightly *darker* than the canvas.**
+  White is 0% off the maximum a screen can emit; across a dense console that
+  is glare, not legibility. `--surface` is 11% less light, still unmistakably
+  paper, and separates better (1.07:1 against the canvas where white managed
+  1.03:1) — so a panel reads as a well and its hairline confirms an edge
+  instead of inventing one.
+- **Ink is spaced, not maxed.** The ramp is 12.07 / 8.29 / 5.00 against the
+  panel rather than a near-black 14.91 top step. Every step still clears 4.5:1
+  by a wide margin.
+- **`-webkit-font-smoothing: antialiased` is off inside the console.** It thins
+  strokes, which is right for light type on a dark ground and wrong for dark
+  type on paper — it left a dense monospace grid looking frail.
+- **The type stack was wrong, not just small.** The console asked for
+  `--font-mono`, which is only the Latin face `next/font` loads; `--font-mono-stack`
+  is what pairs it with the Korean face. Every Hangul glyph in the console was
+  falling back to whatever monospace the OS shipped. The scale also moved up one
+  step (10/11/12/13 → 11/12/13/14), because Hangul carries more strokes per em
+  than Latin and 10px monospace that merely reads as dense in English is not
+  readable in Korean.
+
+One brand rule survives all of it intact and is worth restating, because it is
 what forced `good` off moss: **moss reads 1.89:1 on white.** It is a highlight
 or an underlay on a light surface, never type and never a status mark. Forest
-(6.68:1) carries "good" instead, and moss-wash carries the row hover.
+carries "good" instead, and moss-wash carries the row hover.
 
 **It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in
