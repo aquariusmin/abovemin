@@ -2,11 +2,15 @@
    Lab console — Forest Editorial's palette, an instrument's structure.
 
    The STRUCTURE stays: hairline grid, no cards, monospace figures, glass
-   chrome over opaque data, a condition stripe per row. The COLOUR is the
-   site's. Every plane, border and ink below is a `.dark` token lifted straight
-   from `globals.css` — forest-black ground, card/secondary surfaces, moss as
-   the accent — so /lab reads as the same site in a different mode rather than
-   as a different site.
+   chrome over opaque data, a condition stripe per row.
+
+   The COLOUR is the site's HUE, not the site's tokens. Ground, panels and
+   borders sit on forest 155° but at a tenth of the chroma the `.dark` tokens
+   carry, and the type is neutral grey. Moss stays the accent, unchanged and
+   full-strength, because it is small. That inversion — hue everywhere, chroma
+   only where the area is small — is what keeps /lab recognisably this site
+   without turning a full screen of dark green into swamp. See the plane
+   comments below; using the tokens as-is was tried first and it was muddy.
 
    EVERY rule is nested under `.lab-console`. That is the requirement, not
    tidiness: an unscoped token or a bare `*` reset would reach the portfolio,
@@ -27,13 +31,13 @@
    is generated near the TOP of the band (L 0.665) at close to the maximum
    chroma sRGB allows per hue.
 
-   Against this panel surface (#1d2b21), via the dataviz validator:
+   Against this panel surface (#262c28), via the dataviz validator:
 
      categorical 5: lightness band PASS · chroma floor PASS
                     CVD adjacent worst ΔE 12.3 PASS · normal-vision 17.5 PASS
                     contrast vs surface all >= 3:1 PASS   (no warnings)
-     status 4:      moss 7.84 · amber 7.83 · ember 5.61 · brick 4.22
-     ink:           primary 13.2 · body 12.0 · muted 5.4
+     status 4:      moss 7.56 · amber 7.54 · ember 5.40 · brick 4.07
+     ink:           primary 12.68 · body 7.52 · muted 5.14
 
    Change --lab-surface-1 → re-run the validator. Contrast only means anything
    against the surface a chart actually renders on.
@@ -42,21 +46,36 @@
 .lab-console {
   color-scheme: dark;
 
-  /* Planes — the site's own dark tokens */
-  --lab-plane: #16231a;      /* --forest-black / .dark --background */
-  --lab-surface-1: #1d2b21;  /* .dark --card — the validated chart surface */
-  --lab-surface-2: #24332a;  /* .dark --secondary */
-  --lab-surface-3: #2c3b31;
+  /* Planes — the site's forest hue (155°) held to a WHISPER of chroma.
+     The site's own `.dark` tokens were used here verbatim at first and the
+     console read as swamp. They carry C 0.025-0.037 in OKLCH, which is the
+     worst possible amount: too much to read as neutral, too little to read as
+     a deliberate colour, so it just reads muddy. Those tokens were drawn for
+     an editorial page where forest-black is a footer band surrounded by cream
+     — stretched across a full dense screen the cast has nothing to play
+     against. Chroma belongs to SMALL areas (the accent tick, status dots, the
+     data itself), never to the largest one. Hue is unchanged; only the amount.
+
+     The L spread is also deliberately wider than the source tokens (0.032
+     between ground and panel, now 0.070) so a panel reads as a panel rather
+     than as a slightly different shade of the ground. */
+  --lab-plane: #161b18;      /* L 0.215  C 0.009 */
+  --lab-surface-1: #262c28;  /* L 0.285  C 0.010 — the validated chart surface */
+  --lab-surface-2: #323733;  /* L 0.330  C 0.010 */
+  --lab-surface-3: #3d433f;  /* L 0.375  C 0.010 */
 
   /* Structure */
-  --lab-border: #2c3b31;     /* .dark --border */
-  --lab-border-strong: #34453a; /* .dark --input */
-  --lab-grid: #24332a;       /* gridline, one step off the surface */
+  --lab-border: #373c38;        /* L 0.350  C 0.010 */
+  --lab-border-strong: #434a45; /* L 0.400  C 0.011 */
+  --lab-grid: #2f3431;          /* gridline, one step off the surface */
 
-  /* Ink */
-  --lab-ink-1: #f1f3ec;      /* .dark --foreground */
-  --lab-ink-2: #b3bda9;      /* .dark --slate */
-  --lab-ink-3: #94a189;      /* .dark --muted-foreground */
+  /* Ink — NEUTRAL. The source tokens gave the text more chroma than the
+     ground it sat on (C 0.030-0.037 vs 0.025), which is exactly backwards:
+     greenish grey type on a greenish ground is the single largest source of
+     the muddiness. Type carries no hue here; the marks beside it do. */
+  --lab-ink-1: #f0f2f1;      /* 12.68:1 on surface-1 */
+  --lab-ink-2: #babdbb;      /*  7.52:1 */
+  --lab-ink-3: #999c9a;      /*  5.14:1 */
 
   /* Glass — chrome only. The specular edge is what makes a translucent panel
      read as a physical pane rather than as opacity. */

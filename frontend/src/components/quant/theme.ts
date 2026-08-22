@@ -6,19 +6,20 @@
  * other — and if the SURFACE changes, re-run the dataviz validator, because
  * contrast is only meaningful against the surface a chart renders on.
  *
- * These are the site's own dark tokens plus a categorical set generated in
- * OKLCH to sit inside the validator's lightness band while staying in the
- * hue families Forest Editorial already uses.
+ * These carry the site's forest hue (155°) at a tenth of the chroma its
+ * `.dark` tokens use, plus neutral ink. The tokens were used verbatim first
+ * and the console read as swamp — see the plane comments in lab-console.css.
  */
-export const LAB_SURFACE = "#1d2b21";  /* .dark --card */
-export const LAB_GRID = "#24332a";     /* .dark --secondary */
-export const LAB_BORDER = "#2c3b31";   /* .dark --border */
-export const LAB_PLANE = "#16231a";    /* --forest-black */
+export const LAB_SURFACE = "#262c28";  /* L 0.285  C 0.010 */
+export const LAB_GRID = "#2f3431";
+export const LAB_BORDER = "#373c38";
+export const LAB_PLANE = "#161b18";
 
+/* Neutral by construction: type carries no hue, the marks beside it do. */
 export const LAB_INK = {
-  primary: "#f1f3ec",
-  secondary: "#b3bda9",
-  muted: "#94a189",
+  primary: "#f0f2f1",
+  secondary: "#babdbb",
+  muted: "#999c9a",
 } as const;
 
 /**

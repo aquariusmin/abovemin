@@ -309,10 +309,26 @@ throughout, glass chrome over opaque data, a condition stripe per row — becaus
 it is machinery read at a glance to answer "is anything wrong", not an
 editorial page.
 
-Its **colour does not diverge.** Every plane, border and ink is a `.dark` token
-from `globals.css`: forest-black ground, `--card` panels, `--secondary` header
-strips, moss as the accent and as the section tick. It reads as this site in a
-different mode, not as a different site.
+Its **colour is this site's hue, not this site's tokens.** Ground, panels and
+borders sit on forest 155°, moss is the accent and the section tick, and the
+directional semantics are unchanged — so it reads as this site in a different
+mode. But the `.dark` tokens are not used verbatim, and the first version that
+did use them was wrong.
+
+Those tokens carry C 0.025–0.037 in OKLCH. That is the worst possible amount
+of colour for a large plane: too much to read as neutral, too little to read as
+a deliberate hue, so it reads as mud. They were drawn for an editorial page
+where forest-black is a footer band framed by cream; stretched across a full
+dense screen the cast has nothing to play against. Worse, the ink tokens carry
+*more* chroma than the ground beneath them (0.030–0.037 against 0.025) —
+greenish grey type on a greenish ground, which is exactly backwards.
+
+So `/lab` keeps the hue and spends the chroma differently: planes at C ≈ 0.010,
+type fully neutral, and full-strength colour reserved for the things that are
+small — the accent tick, the status dots, the data marks. **Chroma belongs to
+small areas.** The panel/ground lightness gap is also widened (0.032 → 0.070)
+so a panel reads as a panel rather than as a slightly different shade of the
+ground.
 
 The one place the brand palette could not be used as-is is the categorical
 series. Forest, fern and moss are three greens that collapse under
@@ -341,7 +357,7 @@ or a `:root` token there would reach the whole site.
 
 Nothing there is chosen by eye. The five categorical slots, four status tokens
 and three ink steps were validated against the console's own panel surface
-(`--card`, `#1d2b21`) — lightness band, chroma floor, colour-blind separation
+(`#262c28`) — lightness band, chroma floor, colour-blind separation
 and ≥3:1 contrast, all passing with no warnings. The header comment in
 `lab-console.css` records the numbers and what to re-run if the surface
 changes.
