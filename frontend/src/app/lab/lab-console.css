@@ -1,0 +1,154 @@
+/* ---------------------------------------------------------------------------
+   Lab console — an operations instrument, scoped to /lab.
+
+   EVERY rule here is nested under `.lab-console`. That is not tidiness, it is
+   the requirement: this is a second design language living inside Forest
+   Editorial, and a global token or a bare `*` reset would leak into the
+   portfolio, the shop and the archive. Nothing in this file may be written
+   unscoped.
+
+   The greys are Blueprint's dark ramp — Palantir's own — cool and blue-tinted
+   rather than warm. That is deliberately at odds with the site's warm palette:
+   the Lab is machinery, and it should not pretend to be editorial.
+
+   Colour is validated, not eyeballed. Against the opaque panel surface
+   (#252A31), via the dataviz validator:
+
+     categorical 7: lightness band PASS · chroma floor PASS
+                    CVD adjacent worst ΔE 8.4 PASS · normal-vision 19.3 PASS
+                    contrast vs surface all >= 3:1 PASS
+     status 4:      contrast vs surface all >= 3:1 PASS
+     ink:           primary 13.5:1 · secondary 6.8:1 · axis 5.0:1
+
+   The reference palette's 8th slot (#008300) is dropped — 2.92:1 here, under
+   the floor. Change --lab-surface-1 → re-run the validator; contrast only
+   means anything against the surface a chart actually renders on.
+--------------------------------------------------------------------------- */
+
+.lab-console {
+  color-scheme: dark;
+
+  /* Planes — Blueprint dark-gray1..3 */
+  --lab-plane: #1a1e24;
+  --lab-surface-1: #252a31;  /* opaque panel + chart surface (validated) */
+  --lab-surface-2: #2f343c;
+  --lab-surface-3: #383e47;
+
+  /* Structure — the hairline grid IS the layout */
+  --lab-border: #363c45;
+  --lab-border-strong: #454c58;
+  --lab-grid: #2f343c;
+
+  /* Ink — light-gray5, gray4, gray3 */
+  --lab-ink-1: #f6f7f9;
+  --lab-ink-2: #abb3bf;
+  --lab-ink-3: #8f99a8;
+
+  /* Glass — chrome only. The specular edge is what makes a translucent panel
+     read as a physical pane rather than as opacity. */
+  --lab-glass: rgb(37 42 49 / 0.62);
+  --lab-glass-edge: rgb(255 255 255 / 0.09);
+
+  /* Status — reserved, never reused as a series colour, always with a label. */
+  --lab-good: #0ca30c;
+  --lab-warning: #fab219;
+  --lab-serious: #ec835a;
+  --lab-critical: #d03b3b;
+
+  --lab-accent: #4c90f0;
+
+  color: var(--lab-ink-1);
+  font-family: var(--font-geist-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A pane has an edge; an absolute right angle reads as a cut rather than a
+   sheet. 2px is a hairline chamfer, nowhere near a card. Tables stay square so
+   the grid stays a grid. */
+.lab-console :where(div, span, a, button, input, section, header, footer, nav) {
+  border-radius: 2px;
+}
+.lab-console :where(table, thead, tbody, tr, th, td) {
+  border-radius: 0;
+}
+
+/* CONTENT is opaque. A see-through surface has no fixed colour, so the
+   validated contrast figures stop being verifiable and dense figures read
+   against a moving ground. It keeps the specular edge so it shares the
+   material language without the transparency. */
+.lab-console .pane {
+  background:
+    linear-gradient(to bottom, rgb(255 255 255 / 0.022), rgb(255 255 255 / 0) 120px),
+    var(--lab-surface-1);
+  box-shadow: inset 0 1px 0 var(--lab-glass-edge);
+  border: 1px solid var(--lab-border);
+}
+
+/* CHROME is glass: header strips and rails, the layer that floats above
+   content and may hint at what is behind it. */
+.lab-console .glass-inset {
+  background: rgb(255 255 255 / 0.035);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  box-shadow: inset 0 1px 0 var(--lab-glass-edge);
+}
+
+/* Section bar: an accent tick on the leading edge turns a line of text into a
+   labelled instrument panel. */
+.lab-console .bar {
+  position: relative;
+  border-bottom: 1px solid var(--lab-border);
+}
+.lab-console .bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--lab-accent),
+    color-mix(in oklab, var(--lab-accent) 30%, transparent)
+  );
+}
+
+/* The tracked micro-label heading every panel, column and field. */
+.lab-console .lab-label {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--lab-ink-3);
+}
+
+/* Figures in columns must align vertically — that is what makes a dense table
+   scannable at a glance. */
+.lab-console .tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Row hover is a wash of light, not a grey block: the row lifts toward the
+   viewer instead of changing colour. */
+.lab-console .row-hover:hover {
+  background: rgb(255 255 255 / 0.045);
+}
+
+.lab-console ::selection {
+  background: color-mix(in oklab, var(--lab-accent) 40%, transparent);
+}
+
+@keyframes lab-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+.lab-console .pulse {
+  animation: lab-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-console .pulse {
+    animation: none;
+  }
+}

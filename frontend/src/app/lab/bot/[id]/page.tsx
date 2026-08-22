@@ -1,5 +1,5 @@
 import { BotDetail } from "@/components/quant/BotDetail";
-import Reveal from "@/components/motion/Reveal";
+import "../../lab-console.css";
 
 export default async function BotPage({
   params,
@@ -8,10 +8,10 @@ export default async function BotPage({
 }) {
   const { id } = await params;
   return (
-    <main className="min-h-screen bg-surface-dark pt-32 pb-20 px-6 md:px-10">
-      <Reveal className="max-w-7xl mx-auto" y={16}>
+    <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 pt-24 pb-14 md:px-6">
+      <div className="mx-auto max-w-[1500px]">
         <BotDetail botId={decodeURIComponent(id)} />
-      </Reveal>
+      </div>
     </main>
   );
 }

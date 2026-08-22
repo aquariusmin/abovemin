@@ -1,21 +1,19 @@
 import type { Holding } from "@/lib/quant";
-import { fmtMoney } from "@/lib/quant";
+import { fmtAmount } from "@/lib/quant";
+import { LAB_INK } from "@/components/quant/theme";
 
-// Per-symbol breakdown for the bot-detail page. `mark` / `value` can be
-// null (exchange unreachable at sync time) — we still show the row so
-// the position itself isn't hidden, just its current valuation.
 export function HoldingsTable({
   holdings,
   equity,
+  currency,
 }: {
   holdings: Record<string, Holding> | null;
   equity: number;
+  currency: string | null;
 }) {
   if (!holdings || Object.keys(holdings).length === 0) {
     return (
-      <p className="text-[11px] font-mono text-white/65 uppercase tracking-[0.18em] py-2">
-        No open positions — bot is flat
-      </p>
+      <div className="px-3 py-4 text-[var(--lab-ink-3)]">FLAT · no open positions</div>
     );
   }
   const rows = Object.entries(holdings)
@@ -24,34 +22,47 @@ export function HoldingsTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full font-mono text-[12px]">
+      <table className="w-full border-collapse text-[12px]">
         <thead>
-          <tr className="text-[10px] uppercase tracking-[0.16em] text-white/65 border-b border-white/8">
-            <th scope="col" className="text-left py-2.5 font-semibold">Symbol</th>
-            <th scope="col" className="text-right py-2.5 font-semibold">Qty</th>
-            <th scope="col" className="text-right py-2.5 font-semibold">Mark</th>
-            <th scope="col" className="text-right py-2.5 font-semibold">Value</th>
-            <th scope="col" className="text-right py-2.5 font-semibold">% Eq</th>
+          <tr className="glass-inset border-b border-[var(--lab-border)]">
+            {["symbol", "qty", "mark", "value", "weight"].map((h, i) => (
+              <th key={h} className={`px-3 py-1.5 font-normal ${i === 0 ? "text-left" : "text-right"}`}>
+                <span className="lab-label">{h}</span>
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]">
+        <tbody>
           {rows.map((r) => {
-            const pct =
-              r.value !== null && equity > 0 ? (r.value / equity) * 100 : null;
+            const w = r.value !== null && equity > 0 ? (r.value / equity) * 100 : null;
             return (
-              <tr key={r.symbol} className="hover:bg-white/[0.03] transition-colors">
-                <td className="py-2.5 text-white/85">{r.symbol}</td>
-                <td className="py-2.5 text-right text-white/70">
-                  {r.qty.toLocaleString("en-US", { maximumFractionDigits: 8 })}
+              <tr key={r.symbol} className="row-hover border-b border-[var(--lab-border)] last:border-0">
+                <td className="px-3 py-1.5 text-[var(--lab-ink-1)]">{r.symbol}</td>
+                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-1)]">
+                  {r.qty.toLocaleString("en-US", { maximumFractionDigits: 6 })}
                 </td>
-                <td className="py-2.5 text-right text-white/55">
-                  {r.mark !== null ? fmtMoney(r.mark, 2) : "—"}
+                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-2)]">
+                  {fmtAmount(r.mark, currency, 2)}
                 </td>
-                <td className="py-2.5 text-right text-white/85">
-                  {r.value !== null ? fmtMoney(r.value, 2) : "—"}
+                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-1)]">
+                  {fmtAmount(r.value, currency, 2)}
                 </td>
-                <td className="py-2.5 text-right text-white/65">
-                  {pct !== null ? `${pct.toFixed(1)}%` : "—"}
+                <td className="px-3 py-1.5 text-right">
+                  {w !== null ? (
+                    // The weight bar is the chart here: a value in a column of
+                    // values is hard to rank at a glance, a proportional rule
+                    // beside it is read instantly. One colour for every row —
+                    // the length already encodes magnitude.
+                    <span className="flex items-center justify-end gap-2">
+                      <span className="h-[3px] w-14 shrink-0" style={{ background: "var(--lab-grid)" }} aria-hidden>
+                        <span className="block h-full"
+                              style={{ width: `${Math.min(100, w)}%`, background: LAB_INK.secondary }} />
+                      </span>
+                      <span className="w-10 tnum text-[var(--lab-ink-2)]">{w.toFixed(1)}%</span>
+                    </span>
+                  ) : (
+                    <span className="text-[var(--lab-ink-3)]">—</span>
+                  )}
                 </td>
               </tr>
             );

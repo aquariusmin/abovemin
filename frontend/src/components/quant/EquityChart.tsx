@@ -1,116 +1,109 @@
 "use client";
 
+import { useMemo } from "react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
 } from "recharts";
 
-import type { EquityPoint } from "@/lib/quant";
-import { trend } from "@/lib/palette";
+import { fmtAmount, type EquityPoint } from "@/lib/quant";
+import { LAB_AXIS, LAB_GRID, LAB_INK, LAB_STATUS, LAB_TOOLTIP } from "@/components/quant/theme";
 
-// Full-size equity curve used on the bot-detail page. Styling mirrors
-// /lab's existing chart section (grid stroke alpha, monospace ticks,
-// 'rgba(255,255,255,...)' palette) so both views read as one site.
+/**
+ * One bot's equity, with its drawdown underneath.
+ *
+ * Two stacked panes rather than a dual axis: equity in currency and drawdown
+ * in percent do not share a scale, and overlaying them on two y-axes would
+ * invent an alignment the data does not have. Stacked, they share the x-axis
+ * and stay honest.
+ *
+ * Drawdown earns its place because the fleet's L4 halt fires on drawdown, so
+ * "how deep and how long" is the operational question — and that is exactly
+ * what a headline equity line hides.
+ */
 export function EquityChart({
   points,
   positive,
+  currency,
 }: {
   points: EquityPoint[];
   positive: boolean;
+  currency: string | null;
 }) {
+  const dd = useMemo(() => {
+    // Plain loop rather than a closure over a running `peak`: the React
+    // compiler (enabled site-wide) rejects reassigning a captured variable.
+    const out: Array<{ ts: number; dd: number }> = [];
+    let peak = -Infinity;
+    for (const p of points) {
+      if (p.equity > peak) peak = p.equity;
+      out.push({ ts: p.ts, dd: peak > 0 ? (p.equity / peak - 1) * 100 : 0 });
+    }
+    return out;
+  }, [points]);
+
   if (points.length < 2) {
     return (
-      <div className="h-64 grid place-items-center">
-        <p className="text-[10px] font-mono text-white/55 uppercase tracking-[0.2em]">
-          No equity history yet
-        </p>
+      <div className="grid h-64 place-items-center text-[11px] text-[var(--lab-ink-3)]">
+        Not enough equity history yet.
       </div>
     );
   }
-  const stroke = positive ? trend.up : trend.down;
-  const gradStart = stroke;
+
+  // Gain/loss is a good/bad judgement, so it wears the reserved status tokens
+  // rather than a series colour. The signed figure beside the chart is the
+  // label that keeps this from being colour-alone.
+  const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
+  const fmtDate = (ts: number) => new Date(ts).toISOString().slice(5, 10);
+
   return (
-    <div
-      className="h-64 md:h-80 w-full"
-      role="img"
-      aria-label={`Equity curve over ${points.length} points, trending ${
-        positive ? "up" : "down"
-      }`}
-    >
-      <ResponsiveContainer>
-        <AreaChart
-          data={points}
-          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="quantEquityGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={gradStart} stopOpacity={0.18} />
-              <stop offset="95%" stopColor={gradStart} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.10)" />
-          <XAxis
-            dataKey="ts"
-            tick={{
-              fontSize: 9,
-              fill: "rgba(255,255,255,0.55)",
-              fontFamily: "monospace",
-            }}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(ts) =>
-              new Date(Number(ts)).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })
-            }
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            tick={{
-              fontSize: 9,
-              fill: "rgba(255,255,255,0.55)",
-              fontFamily: "monospace",
-            }}
-            tickLine={false}
-            axisLine={false}
-            width={70}
-            tickFormatter={(v) =>
-              `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-            }
-            domain={["auto", "auto"]}
-          />
-          <Tooltip
-            labelFormatter={(label) => new Date(Number(label)).toLocaleString()}
-            formatter={(value) =>
-              `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-            }
-            contentStyle={{
-              backgroundColor: "rgba(22,35,26,0.96)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              borderRadius: 6,
-              color: "rgba(255,255,255,0.9)",
-              fontFamily: "monospace",
-              fontSize: 11,
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="equity"
-            stroke={stroke}
-            strokeWidth={1.5}
-            fill="url(#quantEquityGrad)"
-            dot={false}
-            activeDot={{ r: 3, fill: stroke }}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+    <div className="space-y-1">
+      <div className="h-52 w-full">
+        <ResponsiveContainer>
+          <AreaChart data={points} margin={{ top: 6, right: 12, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="labEqFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={LAB_GRID} vertical={false} />
+            <XAxis dataKey="ts" tickFormatter={fmtDate} {...LAB_AXIS} minTickGap={40} />
+            <YAxis {...LAB_AXIS} width={64} domain={["auto", "auto"]}
+                   tickFormatter={(v: number) => fmtAmount(v, currency, 0)} />
+            <Tooltip
+              contentStyle={LAB_TOOLTIP}
+              cursor={{ stroke: LAB_INK.muted, strokeWidth: 1 }}
+              labelFormatter={(l) =>
+                new Date(Number(l)).toISOString().replace("T", " ").slice(0, 16) + "Z"}
+              formatter={(v) => [fmtAmount(Number(v), currency, 2), "equity"]}
+            />
+            <Area type="monotone" dataKey="equity" stroke={stroke} strokeWidth={2}
+                  fill="url(#labEqFill)" dot={false} isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="lab-label px-1 pt-1">drawdown from peak</div>
+      <div className="h-20 w-full">
+        <ResponsiveContainer>
+          <AreaChart data={dd} margin={{ top: 2, right: 12, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke={LAB_GRID} vertical={false} />
+            <XAxis dataKey="ts" hide />
+            <YAxis {...LAB_AXIS} width={64} domain={["auto", 0]}
+                   tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
+            <ReferenceLine y={0} stroke={LAB_INK.muted} strokeWidth={1} />
+            <Tooltip
+              contentStyle={LAB_TOOLTIP}
+              cursor={{ stroke: LAB_INK.muted, strokeWidth: 1 }}
+              labelFormatter={(l) => new Date(Number(l)).toISOString().slice(0, 10)}
+              formatter={(v) => [`${Number(v).toFixed(2)}%`, "drawdown"]}
+            />
+            <Area type="monotone" dataKey="dd" stroke={LAB_STATUS.critical} strokeWidth={1.5}
+                  fill={LAB_STATUS.critical} fillOpacity={0.14} dot={false} isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
