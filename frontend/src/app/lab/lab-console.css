@@ -64,15 +64,11 @@
 
   --lab-accent: #a7c957;     /* --moss, the site's accent-of-record */
 
-  /* Categorical series — six slots, fixed order. The order is load-bearing:
-     it was searched, not chosen, and moving clay next to moss reintroduces the
-     red/green pair that colour-blind readers cannot separate. */
-  --lab-s1: #537e0e;         /* moss-green   */
-  --lab-s2: #a4559e;         /* plum         */
-  --lab-s3: #946e00;         /* wheat        */
-  --lab-s4: #b55269;         /* rose         */
-  --lab-s5: #3a75bf;         /* sky          */
-  --lab-s6: #c4493a;         /* clay         */
+  /* The categorical series lives in `components/quant/theme.ts`, NOT here.
+     Recharts needs the values in JS, and duplicating them as custom properties
+     would be a second source of truth for the one set of colours that was
+     searched and validated — exactly the drift this file's scoping is meant to
+     prevent. */
 
   color: var(--lab-ink-1);
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
