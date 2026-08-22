@@ -8,7 +8,7 @@ The surface treatment is not shadcn's neutral grey. The palette is five colours 
 - Warm paper canvas (`#fcfaf4`) as the default surface — never pure white, never grey.
 - Cream bands mark chapter breaks; a single forest band closes the page.
 - Forest-green pill CTAs, not near-black — the brand colour does the primary action.
-- Lime is the accent-of-record: active nav underline, section eyebrow tick, hero underlay, positive Lab metrics.
+- Lime is the accent-of-record: active nav underline, section eyebrow tick, hero underlay.
 - Monumental grotesk display type with tight tracking, over restrained 14–17px body copy.
 - Flat, bordered cards (`shadow-xs`, 1px warm border) that lift on hover — no heavy drop shadows.
 - A whisper of SVG paper grain on large flat bands.
@@ -30,7 +30,7 @@ The five source colours. Everything else is derived from them.
 ### Tonal Extensions
 
 - `--forest-deep` (`#24402c`): Deep product / CTA bands.
-- `--forest-black` (`#16231a`): Lab shell, footer, deepest surface.
+- `--forest-black` (`#16231a`): Footer and the deepest editorial surface. (No longer the Lab shell — see **The Lab is not this system** below.)
 - `--moss-wash` (`#eef4dc`): Palest lime section wash and verified-evidence chips.
 - `--cream-deep` (`#e8dcbb`): Pressed cream, border-on-cream.
 - `--brick-soft` (`#e0a8a6`): Brick chip borders.
@@ -67,7 +67,7 @@ The codebase already speaks a set of older names; they are re-pointed at the new
 
 `--chart-1` … `--chart-5` run forest → fern → moss → brick → `#8b7a4f` (tan). `src/lib/palette.ts` mirrors the palette as literal hex for the places that cannot read a CSS variable: Recharts `stroke`/`fill` props, inline SVG charts, and the Satori-rendered OG image. Keep the two in sync.
 
-Directional colour on the Lab's dark shell uses `trend.up` = moss and `trend.down` = `#d76668`. Categorical market chips deliberately avoid those two so a chip never reads as a P&L signal.
+Directional colour in editorial contexts uses `trend.up` = moss and `trend.down` = `#d76668`. Categorical market chips deliberately avoid those two so a chip never reads as a P&L signal. (`/lab` no longer uses these — it carries its own reserved status palette.)
 
 ### Contrast Notes
 
@@ -89,7 +89,7 @@ Directional colour on the Lab's dark shell uses `trend.up` = moss and `trend.dow
 
 **400 / 500 / 600 are loaded, for every family — and 600 is the ceiling.** Ask for `font-bold` (700) or heavier and there is no face to match, so the browser synthesises one: smeared strokes, worst on Hangul and on the 9–12px mono labels where it shows most. Those classes therefore appear nowhere in the app.
 
-Mono carries 600 even though the weight budget is otherwise tight. Measured cost: +32 KB on disk across five unicode-range subsets, of which a page downloads only `latin` — against the 150–330 KB a Korean weight would add. It earns that by carrying every emphasised mono label: table headers, status chips, stat values, the Lab's entire data surface.
+Mono carries 600 even though the weight budget is otherwise tight. Measured cost: +32 KB on disk across five unicode-range subsets, of which a page downloads only `latin` — against the 150–330 KB a Korean weight would add. It earns that by carrying every emphasised mono label: table headers, status chips, stat values.
 
 **The portfolio surface opts out of the display voice entirely** (`.portfolio-ui` maps `font-serif` to the body stack). Fraunces beside Plex Sans KR works everywhere the two alternate by *section* — but the portfolio mixes them inside a line, because the Korean edition keeps project titles in English ("Korean Air Financial Analysis" a line below 재무비율) and evidence labels run "DCF · APV · 멀티플". At that distance a Latin serif against Hangul reads as two typefaces that met by accident, so that surface sets everything in IBM Plex — one superfamily, Latin and Hangul drawn to a shared skeleton, at no extra webfont cost.
 
@@ -268,7 +268,7 @@ Inline-SVG `feTurbulence` noise at 50% opacity, `mix-blend-mode: multiply`, pain
 - Do not use pure white or pure black as a surface; the system has no cold neutrals.
 - Do not add heavy drop shadows — depth comes from surface alternation and hover lift.
 - Do not make every section card-based; unframed rows and tonal bands carry most of the structure.
-- Do not let the Lab's directional colours (moss up / clay down) leak into categorical chips.
+- Do not let directional colours (moss up / clay down) leak into categorical chips.
 
 ## Responsive Behavior
 
@@ -301,8 +301,34 @@ Pill CTAs use 12–24px padding; the shop's add-to-cart control is a 40px circle
 4. Use semantic role tokens (`bg-primary`, `text-muted-foreground`, `border-border`) in new markup; the legacy aliases exist for the existing surface area, not for new code.
 5. When a colour cannot come from CSS (SVG props, OG images), import it from `src/lib/palette.ts` rather than hardcoding hex.
 
+## The Lab is not this system
+
+`/lab` is an operations console for a fleet that trades real money, and it is
+**deliberately outside Forest Editorial**. It uses Blueprint's cool dark grey
+ramp — Palantir's — rather than the warm palette, a hairline grid rather than
+bordered cards, monospace throughout, and its own reserved status colours for
+good/warning/serious/critical.
+
+That is a considered divergence, not drift. The rest of the site is editorial;
+the Lab is machinery, read at a glance to answer "is anything wrong". Dressing
+it in the warm voice would misrepresent what it is, and the warm neutrals do
+not give a dense figure table the contrast it needs.
+
+**It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
+under `.lab-console`; every custom property is `--lab-*` and is defined only in
+that scope; and the file lands in its own route chunk, so `/portfolio` never
+downloads it. If you add to that file, keep both properties — a bare selector
+or a `:root` token there would reach the whole site.
+
+Its colours are not chosen by eye. The seven categorical slots, four status
+tokens and three ink steps were validated against the console's own panel
+surface (`#252A31`) — lightness band, chroma floor, colour-blind separation,
+and ≥3:1 contrast. The header comment in that file records the numbers and what
+to re-run if the surface changes. The reference palette's eighth slot was
+dropped for measuring 2.92:1 there.
+
 ## Known Gaps
 
-- The `.dark` token block is defined and correct but not yet wired to a toggle — the Lab shell still styles its dark surfaces with explicit `text-cream/…` utilities rather than tokens. Migrating `/lab` onto `.dark` is the natural next step.
+- The `.dark` token block is defined and correct but not yet wired to a toggle. (It is no longer blocked on `/lab`, which now carries its own palette — see below.)
 - Korean webfonts are not bundled; the stacks fall back to system Korean faces.
 - The portfolio print stylesheet is preserved from the previous system and has not been re-toned to the new palette beyond replacing stock greys.
