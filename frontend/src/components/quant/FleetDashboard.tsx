@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EquitySparkline } from "@/components/quant/EquitySparkline";
 import { FleetEquityChart } from "@/components/quant/FleetEquityChart";
 import { Bar, Frame, Metric, Pill, Section, cx } from "@/components/quant/Panel";
+import { LAB_SERIES } from "@/components/quant/theme";
 import {
   books, buildSeriesColors, fmtAmount, fmtPct, fmtRelative, lastCycle,
   parseBotName, parseEquityCurve, staleness, type FleetBot,
@@ -50,7 +51,7 @@ export function FleetDashboard() {
   // Built from EVERY row, not the visible ones, so sorting can never repaint
   // a bot's colour.
   const colors = useMemo(
-    () => buildSeriesColors((bots ?? []).map((b) => b.id)),
+    () => buildSeriesColors((bots ?? []).map((b) => b.id), LAB_SERIES),
     [bots],
   );
 

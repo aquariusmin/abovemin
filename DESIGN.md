@@ -303,16 +303,25 @@ Pill CTAs use 12–24px padding; the shop's add-to-cart control is a 40px circle
 
 ## The Lab is not this system
 
-`/lab` is an operations console for a fleet that trades real money, and it is
-**deliberately outside Forest Editorial**. It uses Blueprint's cool dark grey
-ramp — Palantir's — rather than the warm palette, a hairline grid rather than
-bordered cards, monospace throughout, and its own reserved status colours for
-good/warning/serious/critical.
+`/lab` is an operations console for a fleet that trades real money. Its
+**structure** diverges — hairline grid instead of bordered cards, monospace
+throughout, glass chrome over opaque data, a condition stripe per row — because
+it is machinery read at a glance to answer "is anything wrong", not an
+editorial page.
 
-That is a considered divergence, not drift. The rest of the site is editorial;
-the Lab is machinery, read at a glance to answer "is anything wrong". Dressing
-it in the warm voice would misrepresent what it is, and the warm neutrals do
-not give a dense figure table the contrast it needs.
+Its **colour does not diverge.** Every plane, border and ink is a `.dark` token
+from `globals.css`: forest-black ground, `--card` panels, `--secondary` header
+strips, moss as the accent and as the section tick. It reads as this site in a
+different mode, not as a different site.
+
+The one place the brand palette could not be used as-is is the categorical
+series. Forest, fern and moss are three greens that collapse under
+colour-blindness; forest falls below the validator's lightness band and cream
+below its chroma floor. The six series colours were therefore generated in
+OKLCH *inside* the band, held to hue families the site already uses (moss,
+plum, wheat, rose, sky, clay), and their ORDER searched rather than chosen —
+equal-lightness clay beside moss is exactly the red/green pair deuteranopia
+erases. Status keeps the site's directional semantics: moss up, brick down.
 
 **It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in
@@ -320,12 +329,12 @@ that scope; and the file lands in its own route chunk, so `/portfolio` never
 downloads it. If you add to that file, keep both properties — a bare selector
 or a `:root` token there would reach the whole site.
 
-Its colours are not chosen by eye. The seven categorical slots, four status
-tokens and three ink steps were validated against the console's own panel
-surface (`#252A31`) — lightness band, chroma floor, colour-blind separation,
-and ≥3:1 contrast. The header comment in that file records the numbers and what
-to re-run if the surface changes. The reference palette's eighth slot was
-dropped for measuring 2.92:1 there.
+Nothing there is chosen by eye. The six categorical slots, four status tokens
+and three ink steps were validated against the console's own panel surface
+(`--card`, `#1d2b21`) — lightness band, chroma floor, colour-blind separation
+and ≥3:1 contrast, all passing with no warnings. The header comment in
+`lab-console.css` records the numbers and what to re-run if the surface
+changes.
 
 ## Known Gaps
 

@@ -1,71 +1,87 @@
 /* ---------------------------------------------------------------------------
-   Lab console — an operations instrument, scoped to /lab.
+   Lab console — Forest Editorial's palette, an instrument's structure.
 
-   EVERY rule here is nested under `.lab-console`. That is not tidiness, it is
-   the requirement: this is a second design language living inside Forest
-   Editorial, and a global token or a bare `*` reset would leak into the
-   portfolio, the shop and the archive. Nothing in this file may be written
-   unscoped.
+   The STRUCTURE stays: hairline grid, no cards, monospace figures, glass
+   chrome over opaque data, a condition stripe per row. The COLOUR is the
+   site's. Every plane, border and ink below is a `.dark` token lifted straight
+   from `globals.css` — forest-black ground, card/secondary surfaces, moss as
+   the accent — so /lab reads as the same site in a different mode rather than
+   as a different site.
 
-   The greys are Blueprint's dark ramp — Palantir's own — cool and blue-tinted
-   rather than warm. That is deliberately at odds with the site's warm palette:
-   the Lab is machinery, and it should not pretend to be editorial.
+   EVERY rule is nested under `.lab-console`. That is the requirement, not
+   tidiness: an unscoped token or a bare `*` reset would reach the portfolio,
+   the shop and the archive. Nothing here may be written unscoped.
 
-   Colour is validated, not eyeballed. Against the opaque panel surface
-   (#252A31), via the dataviz validator:
+   COLOUR IS VALIDATED, NOT EYEBALLED. The categorical set could not simply be
+   the brand's five: forest/fern/moss are three greens that collapse under
+   colour-blindness, forest sits below the lightness band and cream below the
+   chroma floor. So the series were generated in OKLCH inside the band, held to
+   the hue families the site already uses, and searched over orderings — the
+   slot ORDER is a safety mechanism here, because equal-lightness red beside
+   green is exactly what deuteranopia erases.
 
-     categorical 7: lightness band PASS · chroma floor PASS
-                    CVD adjacent worst ΔE 8.4 PASS · normal-vision 19.3 PASS
-                    contrast vs surface all >= 3:1 PASS
-     status 4:      contrast vs surface all >= 3:1 PASS
-     ink:           primary 13.5:1 · secondary 6.8:1 · axis 5.0:1
+   Against this panel surface (#1d2b21), via the dataviz validator:
 
-   The reference palette's 8th slot (#008300) is dropped — 2.92:1 here, under
-   the floor. Change --lab-surface-1 → re-run the validator; contrast only
-   means anything against the surface a chart actually renders on.
+     categorical 6: lightness band PASS · chroma floor PASS
+                    CVD adjacent worst ΔE 8.8 PASS · normal-vision 15.3 PASS
+                    contrast vs surface all >= 3:1 PASS   (no warnings)
+     status 4:      moss 7.84 · amber 7.83 · ember 5.61 · brick 4.22
+     ink:           primary 13.2 · body 12.0 · muted 5.4
+
+   Change --lab-surface-1 → re-run the validator. Contrast only means anything
+   against the surface a chart actually renders on.
 --------------------------------------------------------------------------- */
 
 .lab-console {
   color-scheme: dark;
 
-  /* Planes — Blueprint dark-gray1..3 */
-  --lab-plane: #1a1e24;
-  --lab-surface-1: #252a31;  /* opaque panel + chart surface (validated) */
-  --lab-surface-2: #2f343c;
-  --lab-surface-3: #383e47;
+  /* Planes — the site's own dark tokens */
+  --lab-plane: #16231a;      /* --forest-black / .dark --background */
+  --lab-surface-1: #1d2b21;  /* .dark --card — the validated chart surface */
+  --lab-surface-2: #24332a;  /* .dark --secondary */
+  --lab-surface-3: #2c3b31;
 
-  /* Structure — the hairline grid IS the layout */
-  --lab-border: #363c45;
-  --lab-border-strong: #454c58;
-  --lab-grid: #2f343c;
+  /* Structure */
+  --lab-border: #2c3b31;     /* .dark --border */
+  --lab-border-strong: #34453a; /* .dark --input */
+  --lab-grid: #24332a;       /* gridline, one step off the surface */
 
-  /* Ink — light-gray5, gray4, gray3 */
-  --lab-ink-1: #f6f7f9;
-  --lab-ink-2: #abb3bf;
-  --lab-ink-3: #8f99a8;
+  /* Ink */
+  --lab-ink-1: #f1f3ec;      /* .dark --foreground */
+  --lab-ink-2: #b3bda9;      /* .dark --slate */
+  --lab-ink-3: #94a189;      /* .dark --muted-foreground */
 
   /* Glass — chrome only. The specular edge is what makes a translucent panel
      read as a physical pane rather than as opacity. */
-  --lab-glass: rgb(37 42 49 / 0.62);
-  --lab-glass-edge: rgb(255 255 255 / 0.09);
+  --lab-glass-edge: rgb(255 255 255 / 0.07);
 
-  /* Status — reserved, never reused as a series colour, always with a label. */
-  --lab-good: #0ca30c;
-  --lab-warning: #fab219;
-  --lab-serious: #ec835a;
-  --lab-critical: #d03b3b;
+  /* Status — reserved, never reused as a series colour, always beside a label.
+     Keeps the site's directional semantics: moss up, brick down. */
+  --lab-good: #a7c957;       /* --moss */
+  --lab-warning: #e8b45c;
+  --lab-serious: #e08a5c;
+  --lab-critical: #d76668;   /* .dark --destructive */
 
-  --lab-accent: #4c90f0;
+  --lab-accent: #a7c957;     /* --moss, the site's accent-of-record */
+
+  /* Categorical series — six slots, fixed order. The order is load-bearing:
+     it was searched, not chosen, and moving clay next to moss reintroduces the
+     red/green pair that colour-blind readers cannot separate. */
+  --lab-s1: #537e0e;         /* moss-green   */
+  --lab-s2: #a4559e;         /* plum         */
+  --lab-s3: #946e00;         /* wheat        */
+  --lab-s4: #b55269;         /* rose         */
+  --lab-s5: #3a75bf;         /* sky          */
+  --lab-s6: #c4493a;         /* clay         */
 
   color: var(--lab-ink-1);
-  font-family: var(--font-geist-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
   font-size: 12px;
   -webkit-font-smoothing: antialiased;
 }
 
 /* A pane has an edge; an absolute right angle reads as a cut rather than a
-   sheet. 2px is a hairline chamfer, nowhere near a card. Tables stay square so
-   the grid stays a grid. */
+   sheet. Tables stay square so the grid stays a grid. */
 .lab-console :where(div, span, a, button, input, section, header, footer, nav) {
   border-radius: 2px;
 }
@@ -79,23 +95,22 @@
    material language without the transparency. */
 .lab-console .pane {
   background:
-    linear-gradient(to bottom, rgb(255 255 255 / 0.022), rgb(255 255 255 / 0) 120px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.02), rgb(255 255 255 / 0) 120px),
     var(--lab-surface-1);
   box-shadow: inset 0 1px 0 var(--lab-glass-edge);
   border: 1px solid var(--lab-border);
 }
 
-/* CHROME is glass: header strips and rails, the layer that floats above
-   content and may hint at what is behind it. */
+/* CHROME is glass: header strips, the layer that floats above content. */
 .lab-console .glass-inset {
-  background: rgb(255 255 255 / 0.035);
+  background: rgb(255 255 255 / 0.03);
   backdrop-filter: blur(8px) saturate(140%);
   -webkit-backdrop-filter: blur(8px) saturate(140%);
   box-shadow: inset 0 1px 0 var(--lab-glass-edge);
 }
 
-/* Section bar: an accent tick on the leading edge turns a line of text into a
-   labelled instrument panel. */
+/* Section bar: a moss tick on the leading edge — the site's own eyebrow
+   marker, doing the same job it does on the editorial pages. */
 .lab-console .bar {
   position: relative;
   border-bottom: 1px solid var(--lab-border);
@@ -110,7 +125,7 @@
   background: linear-gradient(
     to bottom,
     var(--lab-accent),
-    color-mix(in oklab, var(--lab-accent) 30%, transparent)
+    color-mix(in oklab, var(--lab-accent) 25%, transparent)
   );
 }
 
@@ -130,14 +145,14 @@
   font-feature-settings: "tnum" 1;
 }
 
-/* Row hover is a wash of light, not a grey block: the row lifts toward the
-   viewer instead of changing colour. */
+/* Row hover is a wash of light, not a colour change: the row lifts toward the
+   viewer. Tinted with the accent so even the hover belongs to the site. */
 .lab-console .row-hover:hover {
-  background: rgb(255 255 255 / 0.045);
+  background: color-mix(in oklab, var(--lab-accent) 7%, transparent);
 }
 
 .lab-console ::selection {
-  background: color-mix(in oklab, var(--lab-accent) 40%, transparent);
+  background: color-mix(in oklab, var(--lab-accent) 35%, transparent);
 }
 
 @keyframes lab-pulse {

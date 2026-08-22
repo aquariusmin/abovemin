@@ -226,21 +226,21 @@ export function books(bots: FleetBot[]): { real: Book[]; sim: Book[] } {
 }
 
 /**
- * Validated categorical palette, SEVEN slots, assigned across the whole fleet.
+ * Assign a colour per bot from `palette`, across the whole fleet.
  *
- * Hashing the id collided — with eight bots three drew in the same blue, so the
- * chart had fewer colours than series. Position in the sorted id list is
+ * Hashing the id collided — with eight bots three drew in the same colour, so
+ * the chart had fewer colours than series. Position in the sorted id list is
  * collision-free and still never repaints a survivor when the table is
  * filtered, because the order comes from every row, not the visible ones. Past
- * seven the map STOPS rather than cycling; callers draw the overflow neutrally
- * and say so.
+ * the palette's length the map STOPS rather than cycling; callers draw the
+ * overflow neutrally and say so. The palette is passed in rather than imported
+ * so the validated set stays beside the other chart tokens.
  */
-export const LAB_SERIES = [
-  "#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#9085e9", "#e66767",
-] as const;
-
-export function buildSeriesColors(ids: string[]): Map<string, string> {
+export function buildSeriesColors(
+  ids: string[],
+  palette: readonly string[],
+): Map<string, string> {
   return new Map(
-    [...ids].sort().slice(0, LAB_SERIES.length).map((id, i) => [id, LAB_SERIES[i]]),
+    [...ids].sort().slice(0, palette.length).map((id, i) => [id, palette[i]]),
   );
 }
