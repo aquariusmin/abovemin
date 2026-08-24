@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
+// About and Portfolio are deliberately absent here, as they are in `Nav`.
+// Neither page is gone: both stay live, indexed and in the sitemap, and the
+// home page's closing band still links to both by name ("스튜디오 소개 보기" /
+// "포트폴리오 보기"). What changes is that they are no longer in the chrome
+// that follows a visitor around — you arrive at them from the front door or
+// from a URL someone handed you, not from every page on the site.
 const NAV = [
-  { href: '/about', label: 'About' },
-  { href: '/portfolio', label: 'Portfolio' },
   { href: '/archive', label: 'Archive' },
   { href: '/shop', label: 'Shop' },
   { href: '/lab', label: 'The Lab', italic: true },
