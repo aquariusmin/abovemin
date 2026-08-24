@@ -789,6 +789,15 @@ html {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* `Reveal` sets its travel as an inline style, and an inline style is the
+     one thing a stylesheet cannot outrank without `!important`. Zeroing the
+     transition above would otherwise leave the element snapped to its
+     pre-animation offset instead of where it belongs. The fade is kept — it
+     is instantaneous under the rule above — so nothing is withheld. */
+  [data-reveal] {
+    transform: none !important;
+  }
 }
 
 /* Prevent casual image download / drag */

@@ -7,6 +7,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: 'Shop',
   description: 'Tangible light for your space. phorage가 엄선한 소품 컬렉션.',
+  alternates: { canonical: '/shop' },
 };
 
 export default async function Shop() {

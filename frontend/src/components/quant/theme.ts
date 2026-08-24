@@ -1,14 +1,17 @@
 /**
- * Chart colours, mirrored from `src/app/lab/lab-console.css`.
+ * Chart colours.
  *
- * Recharts needs concrete values for strokes and fills, so the `--lab-*`
- * custom properties are duplicated here as literals. Change one, change the
- * other — and if the SURFACE changes, re-run the dataviz validator, because
- * contrast is only meaningful against the surface a chart renders on.
+ * Recharts takes strokes and fills as JS strings, so these cannot be
+ * `var(--…)` the way `lab-console.css` now writes them — a literal here is
+ * forced, not a shortcut. What that costs is a mirror: these are the site's
+ * light tokens from `globals.css`, and if one of THOSE moves, the matching
+ * literal below has to move with it.
  *
- * These are the site's LIGHT tokens, unmodified — the console shares the
- * canvas its header and footer sit on. Two dark versions came before this and
- * both read as mud; see the header comment in `lab-console.css` for why.
+ * If the SURFACE changes, re-run the dataviz validator as well — contrast is
+ * only meaningful against the surface a chart actually renders on.
+ *
+ * Two dark versions came before this one and both read as mud; see the header
+ * comment in `lab-console.css` for why.
  */
 export const LAB_SURFACE = "#f7f2e3";  /* --surface, the chart surface */
 export const LAB_GRID = "#e6e0cf";     /* recessive: 1.18:1 off the surface */
@@ -18,9 +21,9 @@ export const LAB_PLANE = "#fcfaf4";    /* --background, the paper canvas */
 /* Spaced, not maxed: near-black on near-white across a whole dense screen is
    glare rather than legibility. Every step still clears 4.5:1 comfortably. */
 export const LAB_INK = {
-  primary: "#26312a",    /* 12.07:1 on the surface */
-  secondary: "#404a3d",  /*  8.29:1 */
-  muted: "#616b58",      /*  5.00:1 */
+  primary: "#26312a",    /* 12.07:1 on the surface — console-specific */
+  secondary: "#404a3d",  /*  8.29:1 — mirrors --ink-body */
+  muted: "#616b58",      /*  5.00:1 — mirrors --slate */
 } as const;
 
 /**

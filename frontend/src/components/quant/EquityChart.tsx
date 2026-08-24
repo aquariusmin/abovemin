@@ -44,7 +44,7 @@ export function EquityChart({
 
   if (points.length < 2) {
     return (
-      <div className="grid h-64 place-items-center text-[12px] text-[var(--lab-ink-3)]">
+      <div className="lab-prose grid h-64 place-items-center text-[var(--lab-ink-3)]">
         Not enough equity history yet.
       </div>
     );

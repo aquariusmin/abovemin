@@ -37,10 +37,21 @@ export function BotDetail({ botId }: { botId: string }) {
       }
     };
     load();
-    const id = setInterval(load, REFRESH_MS);
+
+    // Same as the fleet view: a hidden tab is not worth a request a minute,
+    // and returning to it refetches at once.
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, REFRESH_MS);
+    const onVisible = () => {
+      if (!document.hidden) load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       cancelled = true;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [botId]);
 
@@ -51,19 +62,19 @@ export function BotDetail({ botId }: { botId: string }) {
 
   if (!loaded) {
     return (
-      <Frame className="p-3 text-[var(--lab-ink-3)]">
+      <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
         <span className="pulse">◼</span> loading…
       </Frame>
     );
   }
   if (error) {
-    return <Frame className="p-3 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
+    return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
   if (!bot) {
     return (
-      <Frame className="space-y-2 p-3">
-        <div className="text-[var(--lab-ink-2)]">
-          no bot with id <span className="text-[var(--lab-ink-1)]">{botId}</span>
+      <Frame className="space-y-3 p-4">
+        <div className="lab-prose text-[var(--lab-ink-2)]">
+          no bot with id <span className="lab-mono text-[var(--lab-ink-1)]">{botId}</span>
         </div>
         <BackLink />
       </Frame>
@@ -80,15 +91,15 @@ export function BotDetail({ botId }: { botId: string }) {
       : null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <BackLink />
       <Frame>
         {/* Identity first: the venue tag and halt state decide how to read
             every number below, and mock equity looks identical to real money
             otherwise. */}
-        <Section className="flex flex-wrap items-center gap-3 px-3 py-2.5">
-          <h1 className="text-[16px] tracking-[0.12em] text-[var(--lab-ink-1)]">{name.tag}</h1>
-          <span className="text-[12px] text-[var(--lab-ink-3)]">{name.strategy}</span>
+        <Section className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <h1 className="lab-mono text-[16px] font-medium tracking-[0.12em] text-[var(--lab-ink-1)]">{name.tag}</h1>
+          <span className="lab-mono text-[12px] text-[var(--lab-ink-3)]">{name.strategy}</span>
           <Pill tone={name.venue ? (name.real ? "serious" : "neutral") : "neutral"}>
             {name.venue ?? "SIM"}
           </Pill>
@@ -99,12 +110,12 @@ export function BotDetail({ botId }: { botId: string }) {
           ) : (
             <Pill tone="warning" dot>{age}</Pill>
           )}
-          <span className="lab-label ml-auto">{bot.id}</span>
+          <span className="lab-label ml-auto truncate">{bot.id}</span>
         </Section>
 
         {name.halted ? (
-          <Section className="border-l-2 border-l-[var(--lab-critical)] px-3 py-2 text-[12px] text-[var(--lab-ink-2)]">
-            <span className="text-[var(--lab-critical)]">
+          <Section className="lab-prose border-l-2 border-l-[var(--lab-critical)] bg-[color-mix(in_srgb,var(--lab-critical)_5%,transparent)] px-4 py-3 text-[var(--lab-ink-2)]">
+            <span className="lab-mono font-medium text-[var(--lab-critical)]">
               TRADING STOPPED ({name.haltKind})
             </span>{" "}
             — the bot is flat and still cycling.{" "}
@@ -131,7 +142,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
         <Section>
           <Bar title="equity & drawdown" right={<span className="lab-label">{points.length} points</span>} />
-          <div className="p-3">
+          <div className="p-4">
             <EquityChart points={points} positive={positive} currency={bot.currency} />
           </div>
         </Section>
@@ -164,7 +175,7 @@ export function BotDetail({ botId }: { botId: string }) {
 function BackLink() {
   return (
     <Link href="/lab"
-          className="inline-flex items-center gap-1.5 text-[12px] text-[var(--lab-ink-3)] transition-colors hover:text-[var(--lab-accent)]">
+          className="link-underline inline-flex items-center gap-1.5 text-[12px] text-[var(--lab-ink-3)] transition-colors hover:text-[var(--lab-accent)]">
       ← fleet
     </Link>
   );
@@ -172,7 +183,7 @@ function BackLink() {
 
 function KV({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 px-3 py-1.5">
+    <div className="flex items-baseline justify-between gap-3 px-4 py-2">
       <span className="lab-label shrink-0">{k}</span>
       <span className="truncate text-[12px] tnum text-[var(--lab-ink-1)]">{v}</span>
     </div>

@@ -41,10 +41,24 @@ export function FleetDashboard() {
       }
     };
     load();
-    const id = setInterval(load, REFRESH_MS);
+
+    // Don't poll a tab nobody is looking at. The console refreshes forever
+    // once opened, and a backgrounded tab was still spending a request a
+    // minute — on the client's battery and on the edge cache alike. Coming
+    // back to the tab refetches immediately, so what you see on return is
+    // current rather than however stale the last background tick left it.
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, REFRESH_MS);
+    const onVisible = () => {
+      if (!document.hidden) load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       cancelled = true;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -93,11 +107,11 @@ export function FleetDashboard() {
   };
 
   if (error) {
-    return <Frame className="p-3 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
+    return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
   if (!bots) {
     return (
-      <Frame className="p-3 text-[var(--lab-ink-3)]">
+      <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
         <span className="pulse">◼</span> establishing feed…
       </Frame>
     );
@@ -113,10 +127,10 @@ export function FleetDashboard() {
       {totals && (totals.halted > 0 || totals.stale > 0) ? (
         <Section
           className={cx(
-            "flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 px-3 py-2",
+            "flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 px-4 py-3",
             totals.halted > 0
-              ? "border-l-[var(--lab-critical)]"
-              : "border-l-[var(--lab-warning)]",
+              ? "border-l-[var(--lab-critical)] bg-[color-mix(in_srgb,var(--lab-critical)_5%,transparent)]"
+              : "border-l-[var(--lab-warning)] bg-[color-mix(in_srgb,var(--lab-warning)_6%,transparent)]",
           )}
         >
           {totals.halted > 0 ? (
@@ -129,7 +143,7 @@ export function FleetDashboard() {
               {totals.stale} not cycling
             </Pill>
           ) : null}
-          <span className="text-[12px] text-[var(--lab-ink-2)]">
+          <span className="lab-prose text-[var(--lab-ink-2)]">
             {totals.halted > 0
               ? "A halted bot holds flat and re-checks each cycle. daily → clears at UTC midnight · kill_switch → remove reports/STOP · terminal → operator only."
               : "The row still syncs, but the bot behind it has not run."}
@@ -172,7 +186,7 @@ export function FleetDashboard() {
 
       <Section>
         <Bar title="relative performance" right={<span className="lab-label">all bots · one axis</span>} />
-        <div className="p-3">
+        <div className="p-4">
           <FleetEquityChart bots={bots} colors={colors} />
         </div>
       </Section>
@@ -206,7 +220,7 @@ export function FleetDashboard() {
                 const age = staleness(lastCycle(points, b.updated_at));
                 return (
                   <tr key={b.id} className="row-hover border-b border-[var(--lab-border)] transition-colors last:border-0">
-                    <td className="relative py-1 pl-3.5 pr-2.5">
+                    <td className="relative py-2 pl-4 pr-3">
                       {/* Leading stripe carries series identity, tying the row
                           to its line above. Condition is the STATE pill, in
                           words — two colour marks per row was just noise. */}
@@ -216,21 +230,21 @@ export function FleetDashboard() {
                         aria-hidden
                       />
                       <Link href={`/lab/bot/${encodeURIComponent(b.id)}`} className="group flex items-center gap-2">
-                        <span className="shrink-0 text-[var(--lab-ink-1)] group-hover:text-[var(--lab-accent)]">
+                        <span className="lab-mono shrink-0 font-medium text-[var(--lab-ink-1)] transition-colors group-hover:text-[var(--lab-accent)]">
                           {bot.tag}
                         </span>
                         {/* A legacy bot name can be a whole parameter dump. */}
-                        <span className="min-w-0 truncate text-[11px] text-[var(--lab-ink-3)]" title={bot.strategy}>
+                        <span className="lab-mono min-w-0 truncate text-[11px] text-[var(--lab-ink-3)]" title={bot.strategy}>
                           {bot.strategy}
                         </span>
                       </Link>
                     </td>
-                    <td className="px-2.5 py-1">
+                    <td className="px-3 py-2">
                       <Pill tone={bot.venue ? (bot.real ? "serious" : "neutral") : "neutral"}>
                         {bot.venue ?? "SIM"}
                       </Pill>
                     </td>
-                    <td className="px-2.5 py-1">
+                    <td className="px-3 py-2">
                       {bot.halted ? (
                         <Pill tone="critical" dot>halted·{bot.haltKind}</Pill>
                       ) : age === "live" ? (
@@ -246,7 +260,7 @@ export function FleetDashboard() {
                     <Td right mono muted>{b.position_pct !== null ? `${b.position_pct.toFixed(0)}%` : "—"}</Td>
                     <Td right mono muted>{b.holdings_count ?? "—"}</Td>
                     <Td right mono muted>{b.fills_count ?? "—"}</Td>
-                    <td className="px-2.5 py-1">
+                    <td className="px-3 py-2">
                       <EquitySparkline points={points} positive={positive} />
                     </td>
                     <Td right mono muted>
@@ -257,7 +271,7 @@ export function FleetDashboard() {
               })}
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-6 text-center text-[var(--lab-ink-3)]">
+                  <td colSpan={10} className="lab-prose px-3 py-8 text-center text-[var(--lab-ink-3)]">
                     No bots have synced yet.
                   </td>
                 </tr>
@@ -270,6 +284,14 @@ export function FleetDashboard() {
   );
 }
 
+/**
+ * A column header, sortable ones as a real <button>.
+ *
+ * It used to be an onClick on the <th> itself, which no keyboard could reach
+ * and no screen reader announced as actionable. `aria-sort` on the cell is the
+ * other half: the arrow glyph is visual-only, so without it the current sort
+ * is invisible to anyone not looking at the arrow.
+ */
 function Th({
   children, onClick, active, dir, align = "left",
 }: {
@@ -279,19 +301,33 @@ function Th({
   dir?: "asc" | "desc";
   align?: "left" | "right";
 }) {
+  const label = (
+    <>
+      {children}
+      {active ? (dir === "desc" ? " ↓" : " ↑") : ""}
+    </>
+  );
   return (
     <th
+      aria-sort={
+        onClick ? (active ? (dir === "desc" ? "descending" : "ascending") : "none") : undefined
+      }
       className={cx(
-        "px-2.5 py-1.5 font-normal",
+        "px-3 py-2 font-normal",
         align === "right" ? "text-right" : "text-left",
-        onClick && "cursor-pointer select-none",
       )}
-      onClick={onClick}
     >
-      <span className={cx("lab-label", active && "text-[var(--lab-ink-1)]")}>
-        {children}
-        {active ? (dir === "desc" ? " ↓" : " ↑") : ""}
-      </span>
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className={cx("lab-label lab-sort select-none", active && "text-[var(--lab-ink-1)]")}
+        >
+          {label}
+        </button>
+      ) : (
+        <span className="lab-label">{label}</span>
+      )}
     </th>
   );
 }
@@ -308,7 +344,7 @@ function Td({
   return (
     <td
       className={cx(
-        "px-2.5 py-1",
+        "px-3 py-2",
         right && "text-right",
         mono && "tnum",
         muted ? "text-[var(--lab-ink-2)]" : "text-[var(--lab-ink-1)]",

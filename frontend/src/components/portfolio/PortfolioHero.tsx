@@ -5,14 +5,20 @@ import {
   getPortfolioBasePath,
   getPortfolioPrintPath,
   type PortfolioMode,
+  type PortfolioRoute,
 } from "@/data/portfolioRouting";
 
+// `mode` picks the copy, `route` picks the URLs — see `portfolioRouting.ts`.
+// `/portfolio` passes mode="submission" route="normal" to get the curated
+// reading on the public, indexed URL family.
 export default function PortfolioHero({
   locale,
   mode = "normal",
+  route = mode,
 }: {
   locale: EvidenceLocale;
   mode?: PortfolioMode;
+  route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
   const isKoreanSubmission = isKorean && mode === "submission";
@@ -59,11 +65,11 @@ export default function PortfolioHero({
           <Link href="#cases" className="btn-primary">
             {isKorean ? "프로젝트 보기" : "View case studies"}
           </Link>
-          <Link href={getPortfolioBasePath(alternateLocale, mode)} hrefLang={alternateLocale} className="btn-outline">
+          <Link href={getPortfolioBasePath(alternateLocale, route)} hrefLang={alternateLocale} className="btn-outline">
             {isKorean ? "English" : "한국어"}
           </Link>
           <Link
-            href={getPortfolioPrintPath(locale, mode)}
+            href={getPortfolioPrintPath(locale, route)}
             className="link-underline inline-flex items-center py-2 text-sm text-slate"
           >
             {isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"}

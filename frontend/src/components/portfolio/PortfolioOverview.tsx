@@ -1,6 +1,7 @@
 import KoreanProjectCard from "@/components/portfolio/KoreanProjectCard";
 import PortfolioClosingCta from "@/components/portfolio/PortfolioClosingCta";
 import PortfolioHero from "@/components/portfolio/PortfolioHero";
+import PortfolioJsonLd from "@/components/portfolio/PortfolioJsonLd";
 import ProjectCard from "@/components/portfolio/ProjectCard";
 import SelectedEvidenceHighlights from "@/components/portfolio/SelectedEvidenceHighlights";
 import Reveal from "@/components/motion/Reveal";
@@ -15,26 +16,40 @@ import {
   getPortfolioBasePath,
   type PortfolioLocale,
   type PortfolioMode,
+  type PortfolioRoute,
 } from "@/data/portfolioRouting";
 
 export default function PortfolioOverview({
   locale,
   mode = "normal",
+  route = mode,
 }: {
   locale: PortfolioLocale;
   mode?: PortfolioMode;
+  /** Which URL family the cards link into. Defaults to `mode`; `/portfolio`
+   *  overrides it so the curated presentation lives on the indexed URLs. */
+  route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
   const isKoreanSubmission = isKorean && mode === "submission";
   const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
   const featuredProjects = isKoreanSubmission ? getKoreanSubmissionFeaturedProjects() : projects;
   const archiveProjects = isKoreanSubmission ? getKoreanSubmissionArchiveProjects() : [];
-  const basePath = getPortfolioBasePath(locale, mode);
+  const basePath = getPortfolioBasePath(locale, route);
 
   return (
     <main lang={isKorean ? "ko" : "en"} className="portfolio-ui min-h-screen bg-surface px-4 py-10 font-sans text-ink-body sm:px-6 md:px-10 md:py-16">
+      {/* Only on the indexable route — see the component's own note. */}
+      {route === "normal" && (
+        <PortfolioJsonLd
+          locale={locale}
+          projects={[...featuredProjects, ...archiveProjects]}
+          basePath={basePath}
+        />
+      )}
+
       <div className="mx-auto max-w-[1400px] space-y-20 md:space-y-28">
-        <PortfolioHero locale={locale} mode={mode} />
+        <PortfolioHero locale={locale} mode={mode} route={route} />
 
         <section className="space-y-10">
           <Reveal className="grid gap-6 md:grid-cols-12 md:items-end" y={16}>
@@ -130,7 +145,7 @@ export default function PortfolioOverview({
           </section>
         )}
 
-        <PortfolioClosingCta locale={locale} mode={mode} />
+        <PortfolioClosingCta locale={locale} mode={mode} route={route} />
       </div>
     </main>
   );

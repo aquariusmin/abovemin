@@ -86,7 +86,7 @@ export function FleetEquityChart({
 
   if (series.length === 0) {
     return (
-      <div className="grid h-56 place-items-center text-[12px] text-[var(--lab-ink-3)]">
+      <div className="lab-prose grid h-56 place-items-center text-[var(--lab-ink-3)]">
         No equity history yet.
       </div>
     );
@@ -103,7 +103,7 @@ export function FleetEquityChart({
         {series.map((s) => (
           <span key={s.id} className="flex items-center gap-1.5">
             <span className="h-[2px] w-3 shrink-0" style={{ background: s.color }} aria-hidden />
-            <span className="text-[11px] tracking-wide text-[var(--lab-ink-2)]">{s.label}</span>
+            <span className="lab-mono text-[11px] tracking-wide text-[var(--lab-ink-2)]">{s.label}</span>
           </span>
         ))}
         <span className="lab-label ml-auto">
