@@ -5,15 +5,23 @@ import {
 import { portfolioProjects } from "@/data/portfolio";
 import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import { portfolioCardChips, type EvidenceLocale } from "@/data/portfolioEvidence";
-import { getPortfolioBasePath, type PortfolioMode } from "@/data/portfolioRouting";
+import {
+  getPortfolioBasePath,
+  type PortfolioMode,
+  type PortfolioRoute,
+} from "@/data/portfolioRouting";
 import PrintControls from "@/components/portfolio/PrintControls";
 
 export default function PortfolioPrintContent({
   locale,
   mode = "normal",
+  route = mode,
 }: {
   locale: EvidenceLocale;
   mode?: PortfolioMode;
+  /** Which overview this sheet was opened from — decides the "back" link and
+   *  the URL printed on the header, independently of the project ordering. */
+  route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
   const isKoreanSubmission = isKorean && mode === "submission";
@@ -22,12 +30,12 @@ export default function PortfolioPrintContent({
     : isKorean
       ? koreanPortfolioProjects
       : portfolioProjects;
-  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, mode)}`;
+  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, route)}`;
   const githubUrl = "https://github.com/aquariusmin";
 
   return (
     <main lang={isKorean ? "ko" : "en"} className="portfolio-ui portfolio-print bg-white text-[#202020]">
-      <PrintControls locale={locale} mode={mode} />
+      <PrintControls locale={locale} route={route} />
       <article className="mx-auto max-w-[210mm] bg-white px-6 py-8 sm:px-10">
         <header className="portfolio-print-section border-b-2 border-accent pb-7">
           <div className="flex flex-wrap items-start justify-between gap-4">

@@ -7,6 +7,7 @@ import {
   getPortfolioPrintPath,
   type PortfolioLocale,
   type PortfolioMode,
+  type PortfolioRoute,
 } from "@/data/portfolioRouting";
 
 const labels = {
@@ -77,11 +78,16 @@ export default function PortfolioCaseStudy({
   projects,
   locale,
   mode = "normal",
+  route = mode,
 }: {
   project: PortfolioProject;
   projects: PortfolioProject[];
   locale: PortfolioLocale;
   mode?: PortfolioMode;
+  /** URL family for back / prev / next / alternate-locale links. Defaults to
+   *  `mode`; `/portfolio/[slug]` overrides it so the curated ordering renders
+   *  on the indexed URLs. */
+  route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
   const copy = labels[locale];
@@ -89,7 +95,7 @@ export default function PortfolioCaseStudy({
   const previous = projects[(currentIndex - 1 + projects.length) % projects.length];
   const next = projects[(currentIndex + 1) % projects.length];
   const alternateLocale: PortfolioLocale = isKorean ? "en" : "ko";
-  const overviewPath = getPortfolioBasePath(locale, mode);
+  const overviewPath = getPortfolioBasePath(locale, route);
 
   return (
     <main lang={isKorean ? "ko" : "en"} className="portfolio-ui min-h-screen bg-surface px-4 py-10 font-sans text-ink sm:px-6 md:px-10 md:py-16">
@@ -107,12 +113,12 @@ export default function PortfolioCaseStudy({
                 <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
                   GitHub
                 </a>
-                <Link href={getPortfolioPrintPath(locale, mode)} className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
+                <Link href={getPortfolioPrintPath(locale, route)} className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
                   {copy.print}
                 </Link>
               </>
             )}
-            <Link href={getPortfolioCasePath(alternateLocale, mode, project.slug)} hrefLang={alternateLocale} className={`text-[11px] font-semibold text-slate transition-colors hover:text-accent ${isKorean ? "uppercase tracking-[0.2em]" : "tracking-[0.14em]"}`}>
+            <Link href={getPortfolioCasePath(alternateLocale, route, project.slug)} hrefLang={alternateLocale} className={`text-[11px] font-semibold text-slate transition-colors hover:text-accent ${isKorean ? "uppercase tracking-[0.2em]" : "tracking-[0.14em]"}`}>
               {isKorean ? "English" : "한국어"}
             </Link>
           </div>
@@ -209,11 +215,11 @@ export default function PortfolioCaseStudy({
         </div>
 
         <nav aria-label={isKorean ? "프로젝트 이동" : "Case study navigation"} className="grid gap-px border-y border-hairline bg-hairline sm:grid-cols-2">
-          <Link href={getPortfolioCasePath(locale, mode, previous.slug)} className="group bg-surface p-6 transition-colors hover:bg-white md:p-8">
+          <Link href={getPortfolioCasePath(locale, route, previous.slug)} className="group bg-surface p-6 transition-colors hover:bg-white md:p-8">
             <span className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>{copy.previous}</span>
             <p className="mt-3 font-serif text-lg font-semibold transition-colors group-hover:text-accent">&larr; {previous.title}</p>
           </Link>
-          <Link href={getPortfolioCasePath(locale, mode, next.slug)} className="group bg-surface p-6 text-right transition-colors hover:bg-white md:p-8">
+          <Link href={getPortfolioCasePath(locale, route, next.slug)} className="group bg-surface p-6 text-right transition-colors hover:bg-white md:p-8">
             <span className={`text-[11px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "uppercase tracking-[0.2em]"}`}>{copy.next}</span>
             <p className="mt-3 font-serif text-lg font-semibold transition-colors group-hover:text-accent">{next.title} &rarr;</p>
           </Link>

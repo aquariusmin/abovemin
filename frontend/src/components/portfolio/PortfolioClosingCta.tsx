@@ -1,13 +1,19 @@
 import Link from "next/link";
 import type { EvidenceLocale } from "@/data/portfolioEvidence";
-import { getPortfolioPrintPath, type PortfolioMode } from "@/data/portfolioRouting";
+import {
+  getPortfolioPrintPath,
+  type PortfolioMode,
+  type PortfolioRoute,
+} from "@/data/portfolioRouting";
 
 export default function PortfolioClosingCta({
   locale,
   mode = "normal",
+  route = mode,
 }: {
   locale: EvidenceLocale;
   mode?: PortfolioMode;
+  route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
 
@@ -31,10 +37,10 @@ export default function PortfolioClosingCta({
       <div className="flex flex-col items-start gap-3 text-sm font-semibold md:col-span-5 md:items-end">
         <a className="link-underline text-forest hover:text-fern" href="mailto:aquariusmin01@naver.com">aquariusmin01@naver.com</a>
         <a className="link-underline text-forest hover:text-fern" href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer">github.com/aquariusmin</a>
-        {mode === "normal" && (
+        {route === "normal" && (
           <Link className="link-underline text-forest hover:text-fern" href="/about">{isKorean ? "소개 더 보기" : "More about me"} &rarr;</Link>
         )}
-        <Link className="link-underline text-forest hover:text-fern" href={getPortfolioPrintPath(locale, mode)}>{isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"} &rarr;</Link>
+        <Link className="link-underline text-forest hover:text-fern" href={getPortfolioPrintPath(locale, route)}>{isKorean ? "인쇄 · PDF로 저장" : "Print / Save as PDF"} &rarr;</Link>
       </div>
     </section>
   );

@@ -3,7 +3,7 @@ import PortfolioPrintContent from "@/components/portfolio/PortfolioPrintContent"
 
 export const metadata: Metadata = {
   title: "Portfolio — Print Version",
-  description: "Print-friendly summary of Sangmin Lee's seven portfolio case studies.",
+  description: "Print-friendly summary of Sangmin Lee's portfolio case studies.",
   robots: { index: false, follow: false },
 };
 
@@ -13,5 +13,5 @@ export default async function EnglishPortfolioPrintPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  return <PortfolioPrintContent locale="en" mode={from === "submission" ? "submission" : "normal"} />;
+  return <PortfolioPrintContent locale="en" route={from === "submission" ? "submission" : "normal"} />;
 }
