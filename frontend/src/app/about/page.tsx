@@ -5,6 +5,7 @@ import Reveal from '@/components/motion/Reveal';
 export const metadata: Metadata = {
   title: 'About',
   description: 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.',
+  alternates: { canonical: '/about' },
 };
 
 const WHAT_I_DO = [

@@ -6,6 +6,7 @@ import ArchiveGrid from '@/components/archive/ArchiveGrid';
 export const metadata: Metadata = {
   title: 'Archive',
   description: "Yesterday's light, collected today. phorage의 사진 아카이브.",
+  alternates: { canonical: "/archive" },
 };
 
 export const revalidate = 0;

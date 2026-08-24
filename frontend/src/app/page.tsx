@@ -1,6 +1,13 @@
 import { getFeaturedProducts, getSiteSettings } from '@/lib/supabase';
 import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
+import type { Metadata } from 'next';
+
+// Title and description come from the root layout; only the canonical is
+// missing there, because `metadataBase` alone does not emit one.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export const revalidate = 60;
 
