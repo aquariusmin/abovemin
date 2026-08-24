@@ -66,24 +66,29 @@ export default function Nav() {
   const underline = 'bg-moss';
   const divider = 'bg-border';
 
+  // About and Portfolio are deliberately absent.
+  //
+  // Both pages are live, indexed, in the sitemap and linked from the footer —
+  // they are simply not in the top bar. The bar is the shop-side path through
+  // the site (browse, collect, buy); the portfolio is handed out by URL, and
+  // its own closing CTA is what carries a reader on to /about.
+  //
+  // Keep this list and the footer's in mind together: the footer is where
+  // these two are still reachable from any page, so dropping them there too
+  // would make them URL-only.
   const navLinks = [
-    { href: '/about', label: 'About' },
-    { href: '/portfolio', label: 'Portfolio' },
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },
     { href: '/lab', label: 'Lab', italic: true },
   ];
 
-  const isActiveLink = (href: string) =>
-    href === '/portfolio'
-      ? pathname?.startsWith('/portfolio') || pathname?.startsWith('/en/portfolio')
-      : pathname?.startsWith(href);
+  const isActiveLink = (href: string) => pathname?.startsWith(href);
 
   if (isPortfolioFocused) return null;
 
   // Nav labels scale with the viewport instead of sitting at a fixed 11px:
-  // cramped where the row is tightest (they only appear from `lg`, where five
-  // labels plus the wordmark barely fit) and undersized on a wide monitor.
+  // cramped where the row is tightest (they only appear from `lg`) and
+  // undersized on a wide monitor.
   // 11px at 1024 → 14px from ~1600 up; below `lg` the clamp floors at 11px, so
   // the mobile bar is unchanged. Tracking is in `em`, so it follows along.
   const fluidLabel = 'text-[clamp(0.6875rem,0.52vw+0.35rem,0.875rem)]';
