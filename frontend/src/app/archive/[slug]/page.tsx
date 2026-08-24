@@ -69,11 +69,11 @@ export default async function CollectionPage({
 
       {/* Bottom nav */}
       <Reveal className="max-w-[1400px] mx-auto mt-14 md:mt-20 pt-8 md:pt-10 border-t border-hairline flex justify-between items-center gap-4" y={16}>
-        <Link href="/archive" className="eyebrow text-muted-foreground hover:text-accent transition-colors">
-          &larr; All collections
+        <Link href="/archive" className="label-ko text-muted-foreground hover:text-accent transition-colors">
+          &larr; 전체 컬렉션
         </Link>
-        <Link href={`/archive/${nextAlbum.slug}`} className="eyebrow text-muted-foreground hover:text-accent transition-colors text-right">
-          Next: {nextAlbum.title} &rarr;
+        <Link href={`/archive/${nextAlbum.slug}`} className="label-ko text-muted-foreground hover:text-accent transition-colors text-right">
+          다음 컬렉션 · {nextAlbum.title} &rarr;
         </Link>
       </Reveal>
 
