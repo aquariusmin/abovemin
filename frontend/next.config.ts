@@ -32,6 +32,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ['yahoo-finance2'],
+  experimental: {
+    // framer-motion re-exports its whole surface from one entry point, so a
+    // component that imports `{ motion }` drags the gesture, layout-animation
+    // and scroll modules in with it. Next ships this treatment for `recharts`
+    // by default; framer-motion is not on that list and is the heavier import
+    // of the two here. (`Reveal` no longer uses it at all — see its comment —
+    // so this only covers the routes that genuinely animate.)
+    optimizePackageImports: ['framer-motion'],
+  },
   async headers() {
     return [
       {
