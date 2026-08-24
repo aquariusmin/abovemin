@@ -301,19 +301,38 @@ Pill CTAs use 12–24px padding; the shop's add-to-cart control is a 40px circle
 4. Use semantic role tokens (`bg-primary`, `text-muted-foreground`, `border-border`) in new markup; the legacy aliases exist for the existing surface area, not for new code.
 5. When a colour cannot come from CSS (SVG props, OG images), import it from `src/lib/palette.ts` rather than hardcoding hex.
 
-## The Lab is not this system
+## The Lab diverges in structure, not in design
 
 `/lab` is an operations console for a fleet that trades real money. Its
-**structure** diverges — hairline grid instead of bordered cards, monospace
-throughout, glass chrome over opaque data, a condition stripe per row — because
-it is machinery read at a glance to answer "is anything wrong", not an
-editorial page.
+**structure** diverges — one continuous hairline grid instead of a deck of
+bordered cards, dense tables, tabular figures, glass chrome over opaque data, a
+condition stripe per row — because it is machinery read at a glance to answer
+"is anything wrong", not an editorial page.
 
-Its **colour does not diverge at all.** Ground, panels, borders, ink and accent
-are the site's light tokens from `globals.css` — paper canvas, warm `--surface`
-panels, cream chrome, forest accent — and the site nav renders over it in its
-normal light treatment, so the console sits between header and footer as one
-continuous sheet.
+Its **design does not diverge.** Ground, panels, borders, ink, accent, radii,
+type and elevation are all this system's, and are now taken *by reference*
+rather than copied:
+
+- Every `--lab-*` plane, edge and status token is `var(--…)` off the site's own
+  token set. They used to be hex literals transcribed out of `globals.css` —
+  a second source of truth for exactly the values that must not drift. Two
+  literals remain and both are justified in place: `--lab-grid` (a chart rule
+  more recessive than any border the site defines) and `--lab-ink-1`.
+- **Type is the pairing, not one face.** Prose in the console runs in the body
+  stack like every other page; mono is reserved for what mono is *for* —
+  micro-labels (`.lab-label`), identifiers (`.lab-mono`) and figures in columns
+  (`.tnum`). A whole screen set in monospace was the single loudest reason the
+  page read as a different website.
+- **Radii come off `--radius`.** `--radius-lg` on the outer pane, exactly like
+  `.card-hair`; `--radius-pill` on status pills, exactly like `.chip`. The
+  console used to sit at a flat 2px everywhere. Tables stay square, because a
+  grid should read as a grid.
+- **Elevation is `.card-hair`'s** hairline-plus-whisper shadow, and the section
+  marker is `.eyebrow-marked`'s forest→moss gradient.
+- **Spacing follows the site's rhythm.** The page frame is `px-4 sm:px-6
+  md:px-10` and `py-10 md:py-16` like every other route; cells and rows sit one
+  step off the tightest thing that fits. Density is for the tables, which have
+  a reason for it — a stat cell does not.
 
 It took two wrong dark versions to get there, and both are worth recording
 because the mistakes are general:
@@ -332,8 +351,8 @@ The deeper problem was structural, not tonal: **a dark console between a light
 header and a light footer is not "the site in another mode", it is a hole in
 the page.** `Nav` and `ThemeShell` both used to invert on `/lab`; neither does
 now, and there is no `isLab` branch left in either. The console earns its
-distinctness from structure — grid, monospace, density — which is where a
-console's distinctness should come from anyway.
+distinctness from structure — grid, monospace figures, density — which is where
+a console's distinctness should come from anyway.
 
 Then the light version had to be tuned twice more, for reasons that are the
 mirror image of the dark ones:
@@ -346,17 +365,14 @@ mirror image of the dark ones:
   instead of inventing one.
 - **Ink is spaced, not maxed.** The ramp is 12.07 / 8.29 / 5.00 against the
   panel rather than a near-black 14.91 top step. Every step still clears 4.5:1
-  by a wide margin.
+  by a wide margin, and steps 2 and 3 are simply `--ink-body` and `--slate`.
 - **`-webkit-font-smoothing: antialiased` is off inside the console.** It thins
   strokes, which is right for light type on a dark ground and wrong for dark
-  type on paper — it left a dense monospace grid looking frail.
-- **The type stack was wrong, not just small.** The console asked for
-  `--font-mono`, which is only the Latin face `next/font` loads; `--font-mono-stack`
-  is what pairs it with the Korean face. Every Hangul glyph in the console was
-  falling back to whatever monospace the OS shipped. The scale also moved up one
-  step (10/11/12/13 → 11/12/13/14), because Hangul carries more strokes per em
-  than Latin and 10px monospace that merely reads as dense in English is not
-  readable in Korean.
+  type on paper — it left a dense grid of figures looking frail.
+- **The type stack has to be `--font-*-stack`, never the bare `--font-*`.** The
+  bare variables are only the Latin faces `next/font` loads; the stacks are what
+  pair each with the Korean face. Asking for `--font-mono` dropped every Hangul
+  glyph in the console onto whatever monospace the OS shipped.
 
 One brand rule survives all of it intact and is worth restating, because it is
 what forced `good` off moss: **moss reads 1.89:1 on white.** It is a highlight
@@ -365,19 +381,51 @@ carries "good" instead, and moss-wash carries the row hover.
 
 **It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in
-that scope; and the file lands in its own route chunk, so `/portfolio` never
-downloads it. If you add to that file, keep both properties — a bare selector
-or a `:root` token there would reach the whole site.
+that scope; and the file is imported once, in `src/app/lab/layout.tsx`, so it
+lands in its own route chunk and `/portfolio` never downloads it. If you add to
+that file, keep both properties — a bare selector or a `:root` token there
+would reach the whole site.
 
-Nothing there is chosen by eye. The five categorical slots, four status tokens
+Nothing there is chosen by eye. The four categorical slots, four status tokens
 and three ink steps were validated against the console's own panel surface
-(`#262c28`) — lightness band, chroma floor, colour-blind separation
-and ≥3:1 contrast, all passing with no warnings. The header comment in
-`lab-console.css` records the numbers and what to re-run if the surface
-changes.
+(`--surface`, `#f7f2e3`) — lightness band, chroma floor, colour-blind
+separation and ≥3:1 contrast, all passing with no warnings. The header comment
+in `lab-console.css` records the numbers and what to re-run if the surface
+changes. The categorical series itself lives in `components/quant/theme.ts`,
+not in the CSS, because Recharts needs the values as JS strings.
+
+## Portfolio: one presentation, two URL families
+
+`/portfolio` and `/portfolio/submission` render the same page. The curated
+reading — three defensible projects first, the rest demoted to an Explore
+archive, copy written for someone screening a candidate — is now what the
+public route shows.
+
+Two axes in `src/data/portfolioRouting.ts` keep that from collapsing into a
+redirect:
+
+- **`PortfolioMode`** is the *presentation*: `submission` (curated) or `normal`
+  (the flat list of every project in data order).
+- **`PortfolioRoute`** is *which URL family the links belong to*.
+
+They used to be one value, and that coupling is what made the two paths two
+different pages. `/portfolio` passes `mode="submission" route="normal"`, so the
+indexed URLs carry the good version while `/portfolio/submission` stays valid —
+`noindex`, nav suppressed — for links already handed out. Every component
+downstream defaults `route` to `mode`, so a call site that never cared keeps its
+old behaviour.
+
+The one intentional difference between the two: the closing CTA's "소개 더 보기"
+link appears on `/portfolio` and not on `/portfolio/submission`. It is keyed to
+`route`, not `mode` — a submission handout has no site to wander into, and a
+site page should link onward.
+
+`/portfolio` also emits `ProfilePage` + `Person` JSON-LD
+(`PortfolioJsonLd.tsx`), gated on `route === "normal"` so the noindex family
+never describes the same person at a second URL.
 
 ## Known Gaps
 
-- The `.dark` token block is defined and correct but not yet wired to a toggle. (It is no longer blocked on `/lab`, which now carries its own palette — see below.)
+- The `.dark` token block is defined and correct but not yet wired to a toggle. (`/lab` no longer blocks it: the console runs on the light tokens like every other route.)
 - Korean webfonts are not bundled; the stacks fall back to system Korean faces.
 - The portfolio print stylesheet is preserved from the previous system and has not been re-toned to the new palette beyond replacing stock greys.
