@@ -16,26 +16,6 @@ interface FeaturedProduct {
   image_url: string;
 }
 
-interface Pillar {
-  title: string;
-  href: string;
-  desc: string;
-  /** What the link actually opens. Beats a repeated generic "Enter". */
-  action: string;
-  italic?: boolean;
-}
-
-const PILLARS: Pillar[] = [
-  { title: 'Archive', href: '/archive', action: '사진 보기',
-    desc: '필름과 디지털로 담은 사진을 앨범 단위로 기록합니다.' },
-  { title: 'Shop', href: '/shop', action: '소품 보기',
-    desc: '자연에서 영감 받은 포스터와 라이프스타일 소품.' },
-  { title: 'Portfolio', href: '/portfolio', action: '프로젝트 보기',
-    desc: '데이터·경제·재무 분석을 의사결정 중심으로 정리합니다.' },
-  { title: 'Lab', href: '/lab', action: '대시보드 보기', italic: true,
-    desc: '페이퍼 트레이딩 환경에서 전략과 데이터를 관찰합니다.' },
-];
-
 // Shared editorial easing — slow settle, no bounce.
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -193,49 +173,6 @@ export default function HomeContent({
           </motion.div>
         </section>
 
-        {/* ── Pillars / capability strip ───────────────────────────────────
-             Cream band: the first tonal shift on the page, so the four
-             entrances read as a distinct chapter rather than more hero. */}
-        <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-28">
-          <div className="max-w-[1400px] mx-auto">
-            <motion.div {...inViewProps} variants={rise} className="mb-10 md:mb-14 space-y-4">
-              <p className="eyebrow eyebrow-marked text-forest">What lives here</p>
-              <h2 className="font-serif text-3xl md:text-[2.75rem] font-medium tracking-[-0.01em] leading-[1.15] text-forest-deep max-w-[20ch] break-keep">
-                사진과 소품, 그리고 분석. 네 갈래로 기록합니다.
-              </h2>
-            </motion.div>
-
-            <motion.div
-              {...inViewProps}
-              variants={scrollStagger}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
-            >
-              {PILLARS.map(p => (
-                <MotionLink
-                  key={p.title}
-                  href={p.href}
-                  variants={rise}
-                  className="card-hair group relative overflow-hidden p-6 md:p-7 flex flex-col gap-3 hover:-translate-y-1"
-                >
-                  {/* Lime wick that fills the top edge on hover */}
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 top-0 h-[3px] w-0 bg-gradient-to-r from-forest to-moss transition-all duration-500 ease-out group-hover:w-full"
-                  />
-                  <h3 className={`font-serif text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors ${p.italic ? 'italic' : ''}`}>
-                    {p.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate break-keep flex-1">{p.desc}</p>
-                  <span className="text-[13px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                    {p.action}{' '}
-                    <span aria-hidden className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
-                  </span>
-                </MotionLink>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
         {/* ── New collectibles preview ─────────────────────────────────────── */}
         <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
           <div className="max-w-[1400px] mx-auto">
@@ -294,35 +231,6 @@ export default function HomeContent({
               </p>
             )}
           </div>
-        </section>
-
-        {/* ── Closing CTA — the one deep-forest band on the page ───────────── */}
-        <section className="px-5 sm:px-6 md:px-10 pb-20 md:pb-28">
-          <motion.div
-            {...inViewProps}
-            variants={rise}
-            className="band-dark texture-grain max-w-[1400px] mx-auto rounded-2xl px-7 py-14 md:px-16 md:py-20"
-          >
-            <p className="eyebrow text-moss mb-6">Collecting the greenery</p>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-medium tracking-[-0.01em] leading-[1.18] max-w-[20ch] break-keep">
-              phorage가 일하는 방식이 궁금하다면.
-            </h2>
-            <p className="mt-6 max-w-[46ch] text-sm md:text-base leading-relaxed text-cream/70 break-keep">
-              사진을 고르는 기준부터 데이터를 다루는 방법까지, 스튜디오 소개와
-              포트폴리오에 정리해두었습니다.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <Link
-                href="/about"
-                className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
-              >
-                스튜디오 소개 보기
-              </Link>
-              <Link href="/portfolio" className="link-underline text-cream/80 text-sm hover:text-moss">
-                포트폴리오 보기
-              </Link>
-            </div>
-          </motion.div>
         </section>
       </main>
     </MotionConfig>
