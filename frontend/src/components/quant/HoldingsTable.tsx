@@ -13,7 +13,7 @@ export function HoldingsTable({
 }) {
   if (!holdings || Object.keys(holdings).length === 0) {
     return (
-      <div className="px-3 py-4 text-[var(--lab-ink-3)]">FLAT · no open positions</div>
+      <div className="lab-prose px-4 py-5 text-[var(--lab-ink-3)]">FLAT · no open positions</div>
     );
   }
   const rows = Object.entries(holdings)
@@ -26,7 +26,7 @@ export function HoldingsTable({
         <thead>
           <tr className="glass-inset border-b border-[var(--lab-border)]">
             {["symbol", "qty", "mark", "value", "weight"].map((h, i) => (
-              <th key={h} className={`px-3 py-1.5 font-normal ${i === 0 ? "text-left" : "text-right"}`}>
+              <th key={h} className={`px-3 py-2 font-normal ${i === 0 ? "text-left" : "text-right"}`}>
                 <span className="lab-label">{h}</span>
               </th>
             ))}
@@ -37,17 +37,17 @@ export function HoldingsTable({
             const w = r.value !== null && equity > 0 ? (r.value / equity) * 100 : null;
             return (
               <tr key={r.symbol} className="row-hover border-b border-[var(--lab-border)] last:border-0">
-                <td className="px-3 py-1.5 text-[var(--lab-ink-1)]">{r.symbol}</td>
-                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-1)]">
+                <td className="px-3 py-2 font-medium text-[var(--lab-ink-1)]">{r.symbol}</td>
+                <td className="px-3 py-2 text-right tnum text-[var(--lab-ink-1)]">
                   {r.qty.toLocaleString("en-US", { maximumFractionDigits: 6 })}
                 </td>
-                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-2)]">
+                <td className="px-3 py-2 text-right tnum text-[var(--lab-ink-2)]">
                   {fmtAmount(r.mark, currency, 2)}
                 </td>
-                <td className="px-3 py-1.5 text-right tnum text-[var(--lab-ink-1)]">
+                <td className="px-3 py-2 text-right tnum text-[var(--lab-ink-1)]">
                   {fmtAmount(r.value, currency, 2)}
                 </td>
-                <td className="px-3 py-1.5 text-right">
+                <td className="px-3 py-2 text-right">
                   {w !== null ? (
                     // The weight bar is the chart here: a value in a column of
                     // values is hard to rank at a glance, a proportional rule

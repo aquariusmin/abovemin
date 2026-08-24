@@ -43,7 +43,7 @@ export function Bar({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="bar glass-inset flex h-7 items-center justify-between gap-3 pl-3 pr-2">
+    <div className="bar glass-inset flex h-9 items-center justify-between gap-3 pl-4 pr-3">
       <span className="lab-label">{title}</span>
       {right}
     </div>
@@ -54,6 +54,10 @@ export function Bar({
  * A metric cell. Cells butt against each other divided by hairlines, not four
  * separate cards. Deliberately not a chart: when the story is one number, the
  * number IS the visualisation.
+ *
+ * Padding follows the site's rhythm rather than the tightest thing that fits.
+ * The console is dense because its TABLES are dense; a stat cell has no such
+ * excuse, and cramming it was what made this block read as a different site.
  */
 export function Metric({
   label,
@@ -73,13 +77,13 @@ export function Metric({
     warning: "text-[var(--lab-warning)]",
   }[tone];
   return (
-    <div className="min-w-0 border-r border-[var(--lab-border)] px-3 py-2 last:border-r-0">
-      <div className="lab-label mb-1.5 truncate">{label}</div>
-      <div className={cx("truncate text-[20px] leading-none tnum", color)}>
+    <div className="min-w-0 border-r border-[var(--lab-border)] px-4 py-3.5 last:border-r-0">
+      <div className="lab-label mb-2 truncate">{label}</div>
+      <div className={cx("truncate text-[22px] leading-none tnum", color)}>
         {value}
       </div>
       {sub ? (
-        <div className="mt-1.5 truncate text-[11px] text-[var(--lab-ink-3)]">{sub}</div>
+        <div className="mt-2 truncate text-[11px] text-[var(--lab-ink-3)]">{sub}</div>
       ) : null}
     </div>
   );
@@ -87,9 +91,12 @@ export function Metric({
 
 type PillTone = "neutral" | "good" | "warning" | "serious" | "critical";
 
+/* Tone only sets the two colours; geometry lives in `.lab-pill`, which is the
+   site's own `.chip` shape. A pill here and a chip on the portfolio should
+   differ in what they say, not in how they are built. */
 const PILL: Record<PillTone, string> = {
   neutral: "border-[var(--lab-border-strong)] text-[var(--lab-ink-2)]",
-  good: "border-[var(--lab-good)]/45 text-[var(--lab-good)]",
+  good: "border-[var(--lab-good)]/45 text-[var(--lab-good)] bg-[var(--lab-accent-wash)]",
   warning: "border-[var(--lab-warning)]/45 text-[var(--lab-warning)]",
   serious: "border-[var(--lab-serious)]/45 text-[var(--lab-serious)]",
   critical: "border-[var(--lab-critical)]/55 text-[var(--lab-critical)]",
@@ -108,12 +115,9 @@ export function Pill({
 }) {
   return (
     <span
-      className={cx(
-        "inline-flex items-center gap-1.5 border px-1.5 py-[1px] text-[11px] uppercase tracking-[0.1em] whitespace-nowrap",
-        PILL[tone],
-      )}
+      className={cx("lab-pill", PILL[tone])}
     >
-      {dot ? <span className="h-1 w-1 shrink-0 bg-current" aria-hidden /> : null}
+      {dot ? <span className="h-1 w-1 shrink-0 rounded-full bg-current" aria-hidden /> : null}
       {children}
     </span>
   );

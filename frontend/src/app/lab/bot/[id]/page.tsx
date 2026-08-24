@@ -1,5 +1,4 @@
 import { BotDetail } from "@/components/quant/BotDetail";
-import "../../lab-console.css";
 
 export default async function BotPage({
   params,
@@ -8,7 +7,7 @@ export default async function BotPage({
 }) {
   const { id } = await params;
   return (
-    <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 pt-24 pb-14 md:px-6">
+    <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 py-10 sm:px-6 md:px-10 md:py-16">
       <div className="mx-auto max-w-[1500px]">
         <BotDetail botId={decodeURIComponent(id)} />
       </div>

@@ -1,4 +1,9 @@
 import type { Metadata } from 'next';
+// Imported ONCE, here, rather than in each page under /lab. Both `page.tsx`
+// and `bot/[id]/page.tsx` used to import it themselves, which is a second
+// place to forget when a third console page is added — and the layout is
+// already the thing every one of them renders inside.
+import './lab-console.css';
 
 export const metadata: Metadata = {
   title: 'Lab — Quant Fleet Console',

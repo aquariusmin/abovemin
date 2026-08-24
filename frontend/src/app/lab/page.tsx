@@ -1,18 +1,22 @@
 import { FleetDashboard } from "@/components/quant/FleetDashboard";
-import "./lab-console.css";
 
 export default function Lab() {
   return (
-    <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 pt-24 pb-14 md:px-6">
-      <div className="mx-auto max-w-[1500px]">
-        {/* Command bar. Deliberately not the site's serif masthead: the Lab is
-            machinery, and dressing it as editorial would misrepresent what it
-            is. Everything below is scoped to `.lab-console`. */}
-        <header className="glass-inset mb-3 flex h-10 items-center gap-3 border border-[var(--lab-border)] px-3">
-          <span className="text-[14px] tracking-[0.18em] text-[var(--lab-ink-1)]">
-            QUANT<span className="text-[var(--lab-ink-3)]">/</span>FLEET
+    // Same page frame as every other route: `px-4 sm:px-6 md:px-10` and the
+    // site's `py-10 md:py-16` rhythm. It used to sit at `pt-24`, which stacked
+    // on top of the layout's own nav offset and left the console floating far
+    // below where every other page starts.
+    <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 py-10 sm:px-6 md:px-10 md:py-16">
+      <div className="mx-auto max-w-[1500px] space-y-4">
+        {/* Command bar. The console is machinery and its structure says so —
+            but the wordmark wears the site's ink: forest for the name, moss
+            for the divider, the same two colours the nav and the section
+            markers use. Everything below is scoped to `.lab-console`. */}
+        <header className="glass-inset flex h-11 items-center gap-3 border border-[var(--lab-border)] px-4">
+          <span className="lab-mono text-[14px] font-medium tracking-[0.18em] text-[var(--lab-accent)]">
+            QUANT<span className="text-[var(--moss)]">/</span>FLEET
           </span>
-          <span className="hidden h-3 w-px bg-[var(--lab-border)] sm:block" />
+          <span className="hidden h-3.5 w-px bg-[var(--lab-border)] sm:block" />
           <span className="lab-label hidden sm:block">operational console</span>
           <span className="lab-label ml-auto">abovemin.com/lab</span>
         </header>
@@ -24,13 +28,13 @@ export default function Lab() {
             trading only · simulated capital" — true then, and false the moment
             a real account started trading. The per-bot VENUE tag is what
             actually distinguishes them, row by row. */}
-        <p className="mt-3 border border-[var(--lab-border)] bg-[var(--lab-surface-1)] px-3 py-2 text-[12px] leading-relaxed text-[var(--lab-ink-2)]">
+        <p className="lab-prose rounded-[var(--radius-md)] border border-[var(--lab-border)] bg-[var(--lab-surface-1)] px-4 py-3 text-[var(--lab-ink-2)]">
           Live operational status, synced from the trading host. Each row is
           tagged with the account it trades:{" "}
-          <span className="text-[var(--lab-serious)]">TOSS·REAL</span> and{" "}
-          <span className="text-[var(--lab-serious)]">KIS</span> are real money;{" "}
-          <span className="text-[var(--lab-ink-1)]">KIS-MOCK</span> and{" "}
-          <span className="text-[var(--lab-ink-1)]">SIM</span> are simulated
+          <span className="lab-mono text-[var(--lab-serious)]">TOSS·REAL</span> and{" "}
+          <span className="lab-mono text-[var(--lab-serious)]">KIS</span> are real money;{" "}
+          <span className="lab-mono text-[var(--lab-ink-1)]">KIS-MOCK</span> and{" "}
+          <span className="lab-mono text-[var(--lab-ink-1)]">SIM</span> are simulated
           capital. Real and simulated equity are never totalled together.
           Nothing here is advice, a solicitation, or a claim of future
           performance.
