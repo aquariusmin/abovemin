@@ -68,11 +68,14 @@ export function signUploadParams(
 export function isOwnCloudinaryUrl(url: string, cloudName: string): boolean {
   try {
     const { protocol, hostname, pathname } = new URL(url);
+    // `/image/upload/`를 앞부분으로 고정한다. `includes('/upload/')`로 두면
+    // `/<cloud>/image/fetch/https://evil.example/upload/x.jpg` 같은 fetch 형
+    // 딜리버리 URL도 통과한다 — 남의 이미지를 이 계정 호스트로 프록시해
+    // CSP와 `images.remotePatterns`를 동시에 만족시키는 형태다.
     return (
       protocol === 'https:' &&
       hostname === 'res.cloudinary.com' &&
-      pathname.startsWith(`/${cloudName}/`) &&
-      pathname.includes('/upload/')
+      pathname.startsWith(`/${cloudName}/image/upload/`)
     );
   } catch {
     return false;
