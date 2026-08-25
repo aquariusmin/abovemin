@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { cloudinary } from '@/lib/cloudinary';
+import ArchivePhotos from '@/components/admin/ArchivePhotos';
 
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -368,6 +369,9 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+
+        {/* 아카이브 사진 업로드 & 수정 */}
+        <ArchivePhotos />
 
         {/* 상태 필터 */}
         <div className="flex gap-2 mb-6 flex-wrap" role="group" aria-label="주문 상태 필터">

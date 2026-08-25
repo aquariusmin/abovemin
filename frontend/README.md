@@ -33,6 +33,31 @@
 - 고객 이탈 감소율은 실제 달성치가 아니라 실험 전 제안 목표로 표현합니다.
 - AI 도움을 받은 작업은 대표 프로젝트가 아닌 탐색형 작업으로 낮춰 배치합니다.
 
+## Archive photo upload
+
+아카이브 사진은 두 가지 방법으로 추가합니다. Cloudinary 콘솔과 Supabase Studio를 오갈 필요는 없습니다.
+
+**1. `/admin` 업로드 위젯** — 앨범을 고르고 사진을 끌어다 놓으면 브라우저가 Cloudinary로 직접 올립니다(서버를 거치지 않으므로 원본 크기 제한이 없습니다). EXIF 촬영일에서 연도가 자동으로 채워지고, 제목/장소를 확인한 뒤 저장하면 `photos` 행이 만들어집니다. 장소와 연도는 일괄 적용 칸으로 한 번에 넣을 수 있습니다.
+
+같은 화면 아래쪽에 그 앨범의 기존 사진이 나열됩니다. 여기서 세 가지를 합니다.
+
+- **정보 수정** — 제목/장소/연도를 고치고 행마다 저장합니다. 바뀐 필드만 서버로 갑니다.
+- **순서 변경** — 위/아래 버튼으로 옮긴 뒤 `순서 저장`을 한 번 누릅니다. 서버는 전체 순서를 받아 `sort_order`를 1..n으로 다시 매기며, 같은 요청을 다시 보내도 결과가 같습니다.
+- **삭제** — 사이트에서 내립니다. Cloudinary의 원본 파일은 남으므로, 용량 정리는 콘솔에서 따로 합니다.
+
+사진 파일 자체를 교체하는 것은 지원하지 않습니다 — 새로 올리는 쪽을 씁니다.
+
+**2. CLI** — 수십~수백 장을 한 번에 밀어 넣을 때 씁니다.
+
+```bash
+npm run photos:add -- --album=korea --location=Seoul --dry-run ./photos/*.jpg
+npm run photos:add -- --album=korea --location=Seoul ./photos/*.jpg
+```
+
+두 경로 모두 `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_CLOUD_NAME`이 필요합니다(`.env.example` 참고). 프로덕션에서 업로드하려면 Vercel 환경변수에도 같은 값을 넣어야 합니다.
+
+저장하지 않고 화면을 떠나면 파일은 Cloudinary에 남되 사이트에는 노출되지 않습니다. 정리는 Cloudinary 콘솔에서 합니다.
+
 ## Tech stack
 
 - Next.js App Router

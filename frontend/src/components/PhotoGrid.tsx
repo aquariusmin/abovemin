@@ -13,7 +13,7 @@ interface Photo {
   src: string;
   title: string;
   location: string;
-  year: string;
+  year: number;
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
