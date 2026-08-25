@@ -26,8 +26,8 @@ export interface Photo {
   src: string;
   title: string;
   location: string;
-  year: string;
-  categories: string;
+  /** `photos.year`는 정수 컬럼이다. 문자열로 선언돼 있던 것을 스키마에 맞췄다. */
+  year: number;
   sort_order: number;
 }
 

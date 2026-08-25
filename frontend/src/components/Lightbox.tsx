@@ -17,7 +17,7 @@ interface Photo {
   src: string;
   title: string;
   location: string;
-  year: string;
+  year: number;
 }
 
 interface LightboxProps {

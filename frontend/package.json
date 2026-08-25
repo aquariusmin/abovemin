@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "photos:add": "node --env-file-if-exists=.env.local scripts/add-photos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
