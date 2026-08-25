@@ -83,6 +83,7 @@ export function BotDetail({ botId }: { botId: string }) {
 
   const name = parseBotName(bot.bot_name);
   const positive = (bot.pnl_pct ?? 0) >= 0;
+  const day = bot.day_pnl_pct;
   const seen = lastCycle(points, bot.updated_at);
   const age = staleness(seen);
   const positionValue =
@@ -131,6 +132,14 @@ export function BotDetail({ botId }: { botId: string }) {
           <Metric label="equity" value={fmtAmount(bot.equity, bot.currency, 2)} />
           <Metric label="pnl" value={fmtPct(bot.pnl_pct)}
                   tone={positive ? "good" : "critical"} sub="vs initial equity" />
+          {/* Neutral tone when null: no baseline is not a flat day. */}
+          <Metric label="day" value={fmtPct(day)}
+                  tone={day === null || day === undefined
+                    ? "neutral"
+                    : day >= 0 ? "good" : "critical"}
+                  sub={day === null || day === undefined
+                    ? "no baseline — bot not cycling"
+                    : "since the previous cycle"} />
           <Metric label="cash" value={fmtAmount(bot.cash, bot.currency, 2)}
                   sub={positionValue !== null
                     ? `${fmtAmount(positionValue, bot.currency, 0)} deployed`
