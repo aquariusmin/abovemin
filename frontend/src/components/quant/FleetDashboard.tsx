@@ -14,7 +14,11 @@ import {
 
 const REFRESH_MS = 60_000;
 
-type SortKey = "equity" | "pnl_pct" | "updated_at" | "bot_name";
+type SortKey = "equity" | "pnl_pct" | "day_pnl_pct" | "updated_at" | "bot_name";
+
+// Sorted as numbers, and nullable — `day_pnl_pct` is null whenever the bot has
+// not cycled recently enough to have a baseline.
+const NUMERIC_SORT = new Set<SortKey>(["equity", "pnl_pct", "day_pnl_pct"]);
 
 export function FleetDashboard() {
   const [bots, setBots] = useState<FleetBot[] | null>(null);
@@ -74,8 +78,14 @@ export function FleetDashboard() {
     return [...bots].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
-      if (typeof av === "number" && typeof bv === "number") {
-        return sortDir === "desc" ? bv - av : av - bv;
+      if (NUMERIC_SORT.has(sortKey)) {
+        const an = typeof av === "number" ? av : null;
+        const bn = typeof bv === "number" ? bv : null;
+        // "No number" is not a small number: a null sorts last in BOTH
+        // directions rather than landing at the top of an ascending sort as
+        // if the bot were the day's worst performer.
+        if (an === null || bn === null) return an === bn ? 0 : an === null ? 1 : -1;
+        return sortDir === "desc" ? bn - an : an - bn;
       }
       return sortDir === "desc"
         ? String(bv ?? "").localeCompare(String(av ?? ""))
@@ -205,6 +215,7 @@ export function FleetDashboard() {
                 <Th>state</Th>
                 <Th align="right" onClick={() => toggleSort("equity")} active={sortKey === "equity"} dir={sortDir}>equity</Th>
                 <Th align="right" onClick={() => toggleSort("pnl_pct")} active={sortKey === "pnl_pct"} dir={sortDir}>pnl</Th>
+                <Th align="right" onClick={() => toggleSort("day_pnl_pct")} active={sortKey === "day_pnl_pct"} dir={sortDir}>day</Th>
                 <Th align="right">pos</Th>
                 <Th align="right">hold</Th>
                 <Th align="right">fills</Th>
@@ -217,6 +228,7 @@ export function FleetDashboard() {
                 const bot = parseBotName(b.bot_name);
                 const points = parseEquityCurve(b.equity_curve);
                 const positive = (b.pnl_pct ?? 0) >= 0;
+                const day = b.day_pnl_pct;
                 const age = staleness(lastCycle(points, b.updated_at));
                 return (
                   <tr key={b.id} className="row-hover border-b border-[var(--lab-border)] transition-colors last:border-0">
@@ -257,6 +269,27 @@ export function FleetDashboard() {
                     <Td right mono className={positive ? "text-[var(--lab-good)]" : "text-[var(--lab-critical)]"}>
                       {fmtPct(b.pnl_pct)}
                     </Td>
+                    {/* Since the bot's last cycle. Uncoloured when null so a
+                        missing baseline never reads as a flat day. */}
+                    <Td
+                      right
+                      mono
+                      muted={day === null || day === undefined}
+                      className={
+                        day === null || day === undefined
+                          ? undefined
+                          : day >= 0
+                            ? "text-[var(--lab-good)]"
+                            : "text-[var(--lab-critical)]"
+                      }
+                      title={
+                        day === null || day === undefined
+                          ? "no baseline — the bot has not cycled since before yesterday"
+                          : "since the previous daily cycle"
+                      }
+                    >
+                      {fmtPct(day)}
+                    </Td>
                     <Td right mono muted>{b.position_pct !== null ? `${b.position_pct.toFixed(0)}%` : "—"}</Td>
                     <Td right mono muted>{b.holdings_count ?? "—"}</Td>
                     <Td right mono muted>{b.fills_count ?? "—"}</Td>
@@ -271,7 +304,7 @@ export function FleetDashboard() {
               })}
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="lab-prose px-3 py-8 text-center text-[var(--lab-ink-3)]">
+                  <td colSpan={11} className="lab-prose px-3 py-8 text-center text-[var(--lab-ink-3)]">
                     No bots have synced yet.
                   </td>
                 </tr>
@@ -333,16 +366,19 @@ function Th({
 }
 
 function Td({
-  children, right, mono, muted, className,
+  children, right, mono, muted, className, title,
 }: {
   children?: React.ReactNode;
   right?: boolean;
   mono?: boolean;
   muted?: boolean;
   className?: string;
+  /** Hover text — used to explain a cell that renders "—" on purpose. */
+  title?: string;
 }) {
   return (
     <td
+      title={title}
       className={cx(
         "px-3 py-2",
         right && "text-right",
