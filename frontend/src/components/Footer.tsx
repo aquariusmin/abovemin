@@ -44,8 +44,7 @@ export default function Footer() {
               phorage
             </h2>
             <p className="text-sm leading-relaxed text-cream/60 max-w-sm break-keep">
-              빛을 수집하고 세상을 분석합니다. 서울에서 사진 아카이브와 소품샵,
-              그리고 데이터 분석 작업을 함께 운영합니다.
+              작은 관심을 기록하고 만들어갑니다.
             </p>
           </div>
 
