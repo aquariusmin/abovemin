@@ -20,6 +20,19 @@
    hover surfaces use `--muted` / `--secondary` instead.
    ========================================================================== */
 
+
+/* Country flags, and nothing else. `unicode-range` restricts this family to the
+   regional-indicator block, so it can sit in the middle of the general emoji
+   stack without ever being consulted for another character — and so a page with
+   no flag on it never triggers the download at all. See public/fonts/README.md
+   for provenance and licence (Twemoji, CC-BY 4.0). */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("/fonts/TwemojiCountryFlags.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+1F1E6-1F1FF;
+}
+
 :root {
   /* ── Brand palette ─────────────────────────────────────────────────────── */
   --forest: #386641;
@@ -100,12 +113,47 @@
      resolves per-glyph into two fonts chosen to sit together — not into a
      webfont beside whatever Korean face the OS happens to ship. System faces
      stay at the end as a last resort only. */
+
+  /* Emoji, named explicitly. Album titles are admin-authored and carry flags
+     ("Korea 🇰🇷"), and font fallback resolves per glyph against the
+     stack in order — whichever family first claims a codepoint wins. Naming
+     the colour-emoji families keeps that decision here instead of leaving it
+     to whatever the OS happens to reach last.
+
+     Two separate Windows problems are being fixed, and only one of them is a
+     naming problem:
+
+     1. Ordering. Without these names the first family in the stack that
+        claimed an emoji codepoint on Windows was "Malgun Gothic" — the Korean
+        system face carries the older symbol block (☀ ★ ✈ ❤ …)
+        as flat monochrome outlines. Listing the colour fonts ahead of it fixes
+        that, and the position matters as much as the names: they sit AFTER the
+        webfonts, so Segoe UI Emoji is never asked about digits (it ships 0–9
+        and # as keycap bases, which would turn "2026" into emoji), and BEFORE
+        the Korean system faces, so Malgun is never asked about ✈.
+
+     2. Flags, which no ordering can fix. Segoe UI Emoji deliberately omits
+        every country flag — a Microsoft product decision — so Chromium on
+        Windows draws 🇰🇷 as the two boxed letters "KR" no matter what
+        we put in the stack. The only fix is to ship the glyphs, which is what
+        the @font-face below does.
+
+     The order is also what keeps that font off the wire for people who don't
+     need it. A webfont is fetched only when it is actually selected to draw
+     something, so Apple Color Emoji (macOS) and Noto Color Emoji (Android,
+     most Linux) both claim the flags first and Twemoji is never requested.
+     Windows has neither, falls through to Twemoji, and pays the 78 KB. */
+  --font-emoji: "Apple Color Emoji", "Noto Color Emoji", "Twemoji Country Flags",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+
   --font-display-stack: var(--font-display), var(--font-korean),
-    "Apple SD Gothic Neo", "Malgun Gothic", ui-serif, Georgia, serif;
+    var(--font-emoji), "Apple SD Gothic Neo", "Malgun Gothic", ui-serif,
+    Georgia, serif;
   --font-body-stack: var(--font-body), var(--font-korean), Pretendard,
-    "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
-  --font-mono-stack: var(--font-mono), var(--font-korean), ui-monospace,
-    "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+    var(--font-emoji), "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono-stack: var(--font-mono), var(--font-korean), var(--font-emoji),
+    ui-monospace, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
 }
 
 /* Dark surfaces (the Lab shell). Available as a `.dark` scope for any block
