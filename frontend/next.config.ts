@@ -48,6 +48,16 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
+      {
+        // `public/`는 파일명에 해시가 붙지 않아 기본 캐시가 사실상 없다.
+        // 국기 웹폰트는 내용이 고정된 벤더 파일이므로 1년 immutable로 못박는다.
+        // 교체할 일이 생기면 덮어쓰지 말고 **파일명을 바꿔야** 한다
+        // (public/fonts/README.md 참고).
+        source: '/fonts/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
     ];
   },
   async redirects() {
