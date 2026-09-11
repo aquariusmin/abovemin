@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getProducts, getProductById } from '@/lib/supabase';
 import AddToCartButton from '@/components/AddToCartButton';
 import Reveal from '@/components/motion/Reveal';
+import { formatPrice } from '@/lib/price';
 
 export const revalidate = 60;
 
@@ -39,20 +40,28 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const product = await getProductById(numId);
   if (!product) notFound();
 
+  // `offers` only when there is a price to offer. A product still waiting on
+  // one carries `price: 0`, and an Offer saying a thing costs ₩0 is a claim,
+  // not a placeholder — search engines render it as free. Omitting the node
+  // says "no offer yet", which is what is true.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     image: product.image_url,
     description: product.description || `${product.name} — phorage shop`,
-    offers: {
-      '@type': 'Offer',
-      price: product.price,
-      priceCurrency: 'KRW',
-      availability: product.in_stock
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-    },
+    ...(product.price > 0
+      ? {
+          offers: {
+            '@type': 'Offer',
+            price: product.price,
+            priceCurrency: 'KRW',
+            availability: product.in_stock
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+          },
+        }
+      : {}),
   };
 
   return (
@@ -107,7 +116,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink break-keep">
               {product.name}
             </h1>
-            <p className="text-2xl font-semibold text-accent tabular-nums">₩&nbsp;{product.price.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-accent tabular-nums">{formatPrice(product.price)}</p>
           </div>
 
           <hr className="rule" />

@@ -13,10 +13,19 @@ import {
 
 const REFRESH_MS = 60_000;
 
-export function BotDetail({ botId }: { botId: string }) {
-  const [bot, setBot] = useState<FleetBot | null>(null);
+export function BotDetail({
+  botId,
+  /** Server-rendered first paint. See `getBot` in this route's page. */
+  initialBot = null,
+}: {
+  botId: string;
+  initialBot?: FleetBot | null;
+}) {
+  const [bot, setBot] = useState<FleetBot | null>(initialBot);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // Seeded rows are already "loaded": showing the spinner over numbers the
+  // server just delivered would be a step backwards.
+  const [loaded, setLoaded] = useState(initialBot !== null);
 
   useEffect(() => {
     let cancelled = false;

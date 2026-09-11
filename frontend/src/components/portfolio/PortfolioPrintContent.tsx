@@ -67,9 +67,18 @@ export default function PortfolioPrintContent({
           </p>
         </header>
 
+        {/* Titles AND bodies. This block printed the four words on their own —
+            시장 / 재무 / 분석 / 실행 in bordered boxes with nothing under them,
+            which reads as a table whose rows failed to render. The data file
+            says these are "shared by the web overview and the print/PDF
+            summary so the two never drift apart"; the print half had drifted,
+            and it is the half that gets handed to a recruiter. */}
         <section className="portfolio-print-section mt-7 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           {portfolioCapabilities[locale].map((capability) => (
-            <p key={capability.title} className="bg-white p-3 text-[10px] font-semibold text-accent">{capability.title}</p>
+            <div key={capability.title} className="bg-white p-3">
+              <p className="text-[10px] font-semibold text-accent">{capability.title}</p>
+              <p className="mt-1.5 break-keep text-[9px] leading-relaxed text-slate">{capability.body}</p>
+            </div>
           ))}
         </section>
 

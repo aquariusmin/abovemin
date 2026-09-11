@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/lib/price';
 
 interface Product {
   id: number;
@@ -189,7 +190,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                     </Link>
                   </h2>
                   <p className="mt-1.5 text-sm font-semibold text-primary">
-                    ₩&nbsp;{item.price.toLocaleString()}
+                    {formatPrice(item.price)}
                   </p>
                 </div>
 

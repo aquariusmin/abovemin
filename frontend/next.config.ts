@@ -32,6 +32,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // `opengraph-image`가 `readFile(process.cwd() + 'assets/…')`로 서체를 읽는다.
+  // 파일 트레이서는 그런 런타임 경로를 따라가지 못하므로 명시해 준다 — 없으면
+  // 로컬에서는 되고 배포에서만 카드가 폰트 없이(또는 500으로) 나온다.
+  outputFileTracingIncludes: {
+    '/opengraph-image': ['./assets/**'],
+    '/portfolio/opengraph-image': ['./assets/**'],
+  },
   serverExternalPackages: ['yahoo-finance2'],
   experimental: {
     // framer-motion re-exports its whole surface from one entry point, so a
