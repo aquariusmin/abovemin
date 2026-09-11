@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { z } from 'zod';
+import { OrderInput } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
@@ -8,25 +8,6 @@ import { log } from '@/lib/logger';
 const OWNER_EMAIL = process.env.OWNER_EMAIL ?? 'owner@phorage.com';
 const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.com>';
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
-
-const OrderItemInput = z.object({
-  id: z.number().int().positive(),
-  quantity: z.number().int().positive().max(99),
-});
-
-// Every field the checkout form sends has to be declared here. Zod strips what
-// it does not know about, silently — which is exactly how `zipcode` came to be
-// collected on the form, posted by the browser, and then dropped on the floor
-// before it reached the insert or either email.
-const OrderInput = z.object({
-  name: z.string().min(1).max(100),
-  email: z.string().email().max(200),
-  phone: z.string().max(40).optional().nullable(),
-  zipcode: z.string().max(20).optional().nullable(),
-  address: z.string().min(1).max(500),
-  note: z.string().max(1000).optional().nullable(),
-  items: z.array(OrderItemInput).min(1).max(50),
-});
 
 interface ResolvedItem {
   id: number;

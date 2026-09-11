@@ -378,6 +378,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
     period: "2025년~현재",
     role: "개인 프로젝트 · tqt(토스 Open API) · Quant Trading Fleet",
     sourceUrl: "https://github.com/aquariusmin/toss-api-quant-trading",
+    liveUrl: "/lab",
     summary:
       "전략을 새로 만드는 일보다, 그 전략에 우위가 있는지 검증하고 안전하게 켜고 끄고 기록하는 데 시간을 더 썼습니다. tqt가 검증과 실행을, Fleet이 운영 대시보드를 맡습니다.",
     question:

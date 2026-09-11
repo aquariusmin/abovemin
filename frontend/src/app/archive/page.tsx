@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { getAlbumsWithCounts } from '@/lib/supabase';
+import { getAlbumsWithCounts, getAllPhotos } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ArchiveGrid from '@/components/archive/ArchiveGrid';
+import PhotoFilter from '@/components/archive/PhotoFilter';
 
 export const metadata: Metadata = {
   title: 'Archive',
@@ -14,7 +15,13 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function Archive() {
-  const albumsWithCount = await getAlbumsWithCounts();
+  // 조회 실패도 "앨범 0개"로 다룬다. 아래에 이미 그 상태의 화면이 있는데,
+  // 예외가 거기까지 가지 못하게 막고 있었다 — 프리렌더 단계에서 터지면
+  // 배포 전체가 죽는다.
+  const [albumsWithCount, allPhotos] = await Promise.all([
+    getAlbumsWithCounts().catch(() => []),
+    getAllPhotos().catch(() => []),
+  ]);
 
   return (
     <main className="px-5 sm:px-6 md:px-10 py-14 md:py-24 min-h-screen bg-canvas text-ink-body">
@@ -35,6 +42,23 @@ export default async function Archive() {
         <p className="max-w-[1400px] mx-auto text-center text-sm text-muted-foreground py-20 border border-dashed border-hairline rounded-lg">
           아직 공개된 컬렉션이 없습니다.
         </p>
+      )}
+
+      {/* 앨범을 가로지르는 보기. 컬렉션은 이야기 단위이고, 이쪽은 "2019년"이나
+          "Seoul"처럼 이야기를 가로지르는 질문을 위한 것이다. 앨범 아래에 두는
+          이유도 그것이다 — 이 사이트가 먼저 제안하는 것은 컬렉션이다. */}
+      {allPhotos.length > 0 && (
+        <section className="mt-20 md:mt-28">
+          <Reveal className="max-w-[1400px] mx-auto mb-8" y={16}>
+            <h2 className="font-serif text-2xl md:text-3xl font-medium tracking-tight text-ink">
+              전체에서 찾기
+            </h2>
+            <p className="mt-2 text-sm text-slate break-keep">
+              컬렉션과 상관없이 연도와 장소로 좁혀 봅니다.
+            </p>
+          </Reveal>
+          <PhotoFilter photos={allPhotos} />
+        </section>
       )}
 
       <div className="h-16 md:h-24" />

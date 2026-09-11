@@ -26,8 +26,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+/**
+ * 빌드 시점에 미리 구울 앨범 목록.
+ *
+ * 조회가 실패하면 빈 배열을 준다. 이게 없으면 배포 순간 Supabase가 잠깐
+ * 흔들리기만 해도 **빌드 전체가 죽는다** — 실제로 `Failed to collect page data`로
+ * 확인했다. 사이트의 다른 모든 부분은 데이터가 없는 경우를 이미 처리하고
+ * 있는데(빈 상태·에러 상태, `sitemap.ts`의 `.catch(() => [])`) 여기만
+ * 예외였다.
+ *
+ * 빈 배열이어도 라우트가 사라지지는 않는다. `dynamicParams`가 기본으로 켜져
+ * 있어 첫 요청 때 서버에서 그려지고, 그 뒤로는 평소의 ISR을 탄다. 미리 굽지
+ * 못하는 것이 배포에 실패하는 것보다 낫다.
+ */
 export async function generateStaticParams() {
-  const albums = await getAlbums();
+  const albums = await getAlbums().catch(() => []);
   return albums.map(a => ({ slug: a.slug }));
 }
 
@@ -39,14 +52,21 @@ export default async function CollectionPage({
   const { slug } = await params;
   const [result, albums] = await Promise.all([
     getAlbumWithPhotos(slug),
-    getAlbums(),
+    // 앨범 목록은 "다음 컬렉션" 링크에만 쓰인다. 그것 하나 때문에 페이지가
+    // 통째로 실패할 이유가 없다.
+    getAlbums().catch(() => []),
   ]);
 
   if (!result) notFound();
   const { album, photos } = result;
 
+  // 목록이 비었거나 이 앨범이 그 안에 없으면 `albums[NaN]`이 되어 아래에서
+  // 터진다. 링크를 빼는 쪽이 맞다.
   const currentIdx = albums.findIndex(a => a.slug === slug);
-  const nextAlbum = albums[(currentIdx + 1) % albums.length];
+  const nextAlbum =
+    currentIdx >= 0 && albums.length > 0
+      ? albums[(currentIdx + 1) % albums.length]
+      : null;
 
   return (
     <main className="px-5 sm:px-6 md:px-10 py-10 md:py-16 min-h-screen bg-canvas text-ink-body">
@@ -75,9 +95,11 @@ export default async function CollectionPage({
         <Link href="/archive" className="label-ko text-muted-foreground hover:text-accent transition-colors">
           &larr; 전체 컬렉션
         </Link>
-        <Link href={`/archive/${nextAlbum.slug}`} className="label-ko text-muted-foreground hover:text-accent transition-colors text-right">
-          다음 컬렉션 · {nextAlbum.title} &rarr;
-        </Link>
+        {nextAlbum && (
+          <Link href={`/archive/${nextAlbum.slug}`} className="label-ko text-muted-foreground hover:text-accent transition-colors text-right">
+            다음 컬렉션 · {nextAlbum.title} &rarr;
+          </Link>
+        )}
       </Reveal>
 
       <div className="h-16 md:h-24" />

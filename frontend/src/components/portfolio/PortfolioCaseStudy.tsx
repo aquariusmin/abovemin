@@ -16,6 +16,8 @@ const labels = {
     period: "Period",
     role: "Role",
     source: "Source",
+    live: "Live",
+    liveLabel: "Operational console",
     story: {
       label: "Quick read",
       title: "The through-line of the work.",
@@ -46,6 +48,8 @@ const labels = {
     period: "기간",
     role: "역할",
     source: "원본",
+    live: "라이브",
+    liveLabel: "운영 콘솔 보기",
     story: {
       label: "프로젝트 흐름",
       title: "먼저 흐름을 잡으면 이렇습니다.",
@@ -133,7 +137,17 @@ export default function PortfolioCaseStudy({
             <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
             <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
-          <div className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${project.sourceUrl ? "sm:grid-cols-2 lg:grid-cols-[minmax(9rem,0.8fr)_minmax(24rem,1.8fr)_minmax(10rem,1fr)]" : "sm:grid-cols-2"}`}>
+          {/* 칸 수가 2~4개로 달라진다. 고정 트랙을 쓰면 라이브 링크가 붙는
+              순간 마지막 칸이 넘치므로, 3개를 넘어가면 균등 분할로 바꾼다. */}
+          <div
+            className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${
+              project.sourceUrl && project.liveUrl
+                ? "sm:grid-cols-2 lg:grid-cols-4"
+                : project.sourceUrl
+                  ? "sm:grid-cols-2 lg:grid-cols-[minmax(9rem,0.8fr)_minmax(24rem,1.8fr)_minmax(10rem,1fr)]"
+                  : "sm:grid-cols-2"
+            }`}
+          >
             <p className="break-keep"><span className="font-semibold text-ink">{copy.period}</span> · {project.period}</p>
             <p className="break-keep"><span className="font-semibold text-ink">{copy.role}</span> · {project.role}</p>
             {project.sourceUrl && (
@@ -142,6 +156,18 @@ export default function PortfolioCaseStudy({
                 <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer" className="link-underline text-accent">
                   {isKorean ? "GitHub 저장소" : "GitHub repository"}
                 </a>
+              </p>
+            )}
+            {/* 돌아가고 있는 것은 코드보다 강한 증거다. 이 링크가 없어서,
+                포트폴리오만 받은 사람은 실자금 계좌가 붙은 운영 콘솔이
+                존재한다는 사실 자체를 알 수 없었다. 같은 사이트 안이므로
+                새 탭으로 열지 않는다. */}
+            {project.liveUrl && (
+              <p className="break-keep">
+                <span className="font-semibold text-ink">{copy.live}</span> ·{" "}
+                <Link href={project.liveUrl} className="link-underline text-accent">
+                  {copy.liveLabel}
+                </Link>
               </p>
             )}
           </div>

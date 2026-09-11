@@ -6,6 +6,8 @@ import {
   IBM_Plex_Mono,
 } from 'next/font/google';
 import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
@@ -115,6 +117,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <Footer />
+        {/* 방문 통계와 실사용자 Core Web Vitals.
+
+            /portfolio는 URL로만 건네는 페이지다 — 열렸는지, 어디까지 읽혔는지,
+            인쇄 화면까지 갔는지 알 방법이 지금까지 없었다. 지원 후 팔로업에
+            실제로 쓰는 정보다.
+
+            Speed Insights를 같이 두는 이유는 폰트 preload를 들어낸 변경(홈
+            2.4 MB → 0.85 MB)이 실험실 수치라서다. 현장에서 확인되지 않으면
+            그냥 주장이다.
+
+            둘 다 같은 오리진(`/_vercel/…`)에서 스크립트를 받고 같은 곳으로
+            비콘을 보내므로 CSP를 손댈 필요가 없다. 쿠키도 쓰지 않는다. */}
+        <Analytics />
+        <SpeedInsights />
       </ThemeShell>
     </html>
   );

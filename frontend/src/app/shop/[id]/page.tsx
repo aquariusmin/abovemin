@@ -8,8 +8,21 @@ import { formatPrice } from '@/lib/price';
 
 export const revalidate = 60;
 
+/**
+ * 빌드 시점에 미리 구울 상품 목록.
+ *
+ * 조회가 실패하면 빈 배열을 준다. 이게 없으면 배포 순간 Supabase가 잠깐
+ * 흔들리기만 해도 **빌드 전체가 죽는다** — 실제로 `Failed to collect page data`로
+ * 확인했다. 사이트의 다른 모든 부분은 데이터가 없는 경우를 이미 처리하고
+ * 있는데(빈 상태·에러 상태, `sitemap.ts`의 `.catch(() => [])`) 여기만
+ * 예외였다.
+ *
+ * 빈 배열이어도 라우트가 사라지지는 않는다. `dynamicParams`가 기본으로 켜져
+ * 있어 첫 요청 때 서버에서 그려지고, 그 뒤로는 평소의 ISR을 탄다. 미리 굽지
+ * 못하는 것이 배포에 실패하는 것보다 낫다.
+ */
 export async function generateStaticParams() {
-  const products = await getProducts();
+  const products = await getProducts().catch(() => []);
   return products.map(p => ({ id: String(p.id) }));
 }
 
