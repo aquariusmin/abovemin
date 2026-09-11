@@ -14,7 +14,10 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function Archive() {
-  const albumsWithCount = await getAlbumsWithCounts();
+  // 조회 실패도 "앨범 0개"로 다룬다. 아래에 이미 그 상태의 화면이 있는데,
+  // 예외가 거기까지 가지 못하게 막고 있었다 — 프리렌더 단계에서 터지면
+  // 배포 전체가 죽는다.
+  const albumsWithCount = await getAlbumsWithCounts().catch(() => []);
 
   return (
     <main className="px-5 sm:px-6 md:px-10 py-14 md:py-24 min-h-screen bg-canvas text-ink-body">

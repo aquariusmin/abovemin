@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
+import type { OrderInputValues } from '@/lib/orders-schema';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -54,20 +55,30 @@ export default function CheckoutPage() {
     }
     setSubmitting(true);
 
+    // Typed against the schema the server parses with, on purpose.
+    //
+    // This is the compile-time half of the fix for the dropped postal code: an
+    // object literal annotated with `OrderInputValues` cannot carry a key the
+    // schema does not declare, so adding a field to this form without adding
+    // it to `orders-schema` fails the build instead of being silently stripped
+    // at runtime. `total_price` is gone for the same reason — the server has
+    // always recomputed it from the products table, and sending it suggested
+    // otherwise.
+    const payload: OrderInputValues = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      zipcode: form.zipcode.trim() || null,
+      address: form.address.trim(),
+      note: form.note.trim() || null,
+      items,
+    };
+
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim() || null,
-          zipcode: form.zipcode.trim() || null,
-          address: form.address.trim(),
-          note: form.note.trim() || null,
-          items,
-          total_price: totalPrice(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
