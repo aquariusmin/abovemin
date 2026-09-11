@@ -57,3 +57,16 @@ describe('clientIp()', () => {
     expect(clientIp(req({}))).toBe('unknown');
   });
 });
+
+describe('rateLimitShared() — 저장소가 없을 때', () => {
+  it('in-memory 리미터와 똑같이 동작한다', async () => {
+    // Upstash 변수가 없으면 공유 경로는 조용히 로컬로 되돌아가야 한다.
+    // 설정하지 않은 배포에서 아무것도 달라지지 않는다는 것이 요점이다.
+    const { rateLimitShared } = await import('@/lib/rate-limit');
+    const k = key();
+    const opts = { limit: 2, windowMs: 60_000 };
+    expect((await rateLimitShared(k, opts)).ok).toBe(true);
+    expect((await rateLimitShared(k, opts)).ok).toBe(true);
+    expect((await rateLimitShared(k, opts)).ok).toBe(false);
+  });
+});

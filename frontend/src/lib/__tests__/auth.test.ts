@@ -68,3 +68,13 @@ describe('assertSameOrigin()', () => {
     ).toBe(false);
   });
 });
+
+describe('공유 저장소가 없을 때', () => {
+  it('kv는 꺼져 있고 세션 검사는 네트워크를 타지 않는다', async () => {
+    // Upstash를 설정하지 않은 배포에서 인증 경로가 예전과 같아야 한다.
+    const { kvEnabled, exists, setWithTtl } = await import('@/lib/kv');
+    expect(kvEnabled).toBe(false);
+    expect(await exists('anything')).toBeNull();
+    expect(await setWithTtl('a', 'b', 10)).toBe(false);
+  });
+});

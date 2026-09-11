@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { timingSafeEqual } from 'crypto';
 import { signSession, revoke, SESSION_COOKIE, isAdminRequest } from '@/lib/auth';
-import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 
 function passwordMatches(input: string): boolean {
@@ -31,7 +31,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
-  const rl = rateLimit(`admin-auth:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 });
+  // 인스턴스를 넘는 제한. 로그인 시도는 in-memory 카운터로는 의미가 약하다
+  // (서버리스에서는 사실상 "인스턴스당 5회").
+  const rl = await rateLimitShared(`admin-auth:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 });
   if (!rl.ok) {
     return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
   }
