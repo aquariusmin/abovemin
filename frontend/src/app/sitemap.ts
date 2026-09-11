@@ -1,5 +1,6 @@
 import { getAlbums, getProducts } from '@/lib/supabase';
 import { portfolioProjects } from '@/data/portfolio';
+import { getNotes } from '@/data/notes';
 
 const BASE = 'https://abovemin.com';
 
@@ -52,6 +53,26 @@ export default async function sitemap() {
     priority: 0.8,
   }));
 
+  // 글이 없는 동안 `/notes`는 404다(그 페이지가 `notFound()`를 부른다).
+  // 없는 URL을 sitemap에 싣지 않도록 목록에서 끌어온다.
+  const notes = getNotes();
+  const notePages = notes.length
+    ? [
+        {
+          url: `${BASE}/notes`,
+          lastModified: new Date(notes[0].date),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        },
+        ...notes.map(note => ({
+          url: `${BASE}/notes/${note.slug}`,
+          lastModified: new Date(note.date),
+          changeFrequency: 'yearly' as const,
+          priority: 0.6,
+        })),
+      ]
+    : [];
+
   const portfolioPages = portfolioProjects.flatMap(project => [
     {
       url: `${BASE}/portfolio/${project.slug}`,
@@ -67,5 +88,5 @@ export default async function sitemap() {
     },
   ]);
 
-  return [...staticPages, ...portfolioPages, ...albumPages, ...productPages];
+  return [...staticPages, ...notePages, ...portfolioPages, ...albumPages, ...productPages];
 }

@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
+import { notes } from '@/data/notes';
+
+const hasNotes = notes.length > 0;
 
 // About and Portfolio are deliberately absent here, as they are in `Nav`.
 // Neither page is gone: both stay live, indexed and in the sitemap. What
@@ -12,9 +15,13 @@ import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 // The home page's closing band does NOT link to them (it used to, by name,
 // and this comment outlived that). Between here and `Nav`, URL-only is the
 // whole truth.
+// Notes는 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
+// `notFound()`를 부르므로, 조건 없이 링크하면 푸터에서 404로 가는 길이 생긴다.
+// 첫 글을 `data/notes.ts`에 넣는 순간 여기와 sitemap과 RSS가 같이 살아난다.
 const NAV = [
   { href: '/archive', label: 'Archive' },
   { href: '/shop', label: 'Shop' },
+  ...(hasNotes ? [{ href: '/notes', label: 'Notes' }] : []),
   { href: '/lab', label: 'The Lab', italic: true },
 ];
 
