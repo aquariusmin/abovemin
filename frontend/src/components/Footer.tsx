@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
 
 // About and Portfolio are deliberately absent here, as they are in `Nav`.
-// Neither page is gone: both stay live, indexed and in the sitemap, and the
-// home page's closing band still links to both by name ("스튜디오 소개 보기" /
-// "포트폴리오 보기"). What changes is that they are no longer in the chrome
-// that follows a visitor around — you arrive at them from the front door or
-// from a URL someone handed you, not from every page on the site.
+// Neither page is gone: both stay live, indexed and in the sitemap. What
+// changes is that they are no longer in the chrome that follows a visitor
+// around — you arrive at them from a URL someone handed you.
+//
+// The home page's closing band does NOT link to them (it used to, by name,
+// and this comment outlived that). Between here and `Nav`, URL-only is the
+// whole truth.
 const NAV = [
   { href: '/archive', label: 'Archive' },
   { href: '/shop', label: 'Shop' },
@@ -101,7 +103,9 @@ export default function Footer() {
 
         {/* Meta row — thin rule, mono microcopy */}
         <div className="mt-9 md:mt-10 pt-5 border-t border-cream/15 flex flex-col sm:flex-row justify-between gap-2 eyebrow text-cream/50">
-          <span>&copy; 2026 phorage studio</span>
+          {/* Rendered at request/build time rather than typed in, so the
+              footer does not quietly go stale on 1 January. */}
+          <span>&copy; {new Date().getFullYear()} phorage studio</span>
           <span>Digital studio · Seoul</span>
         </div>
       </div>

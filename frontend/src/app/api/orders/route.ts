@@ -14,10 +14,15 @@ const OrderItemInput = z.object({
   quantity: z.number().int().positive().max(99),
 });
 
+// Every field the checkout form sends has to be declared here. Zod strips what
+// it does not know about, silently — which is exactly how `zipcode` came to be
+// collected on the form, posted by the browser, and then dropped on the floor
+// before it reached the insert or either email.
 const OrderInput = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email().max(200),
   phone: z.string().max(40).optional().nullable(),
+  zipcode: z.string().max(20).optional().nullable(),
   address: z.string().min(1).max(500),
   note: z.string().max(1000).optional().nullable(),
   items: z.array(OrderItemInput).min(1).max(50),
@@ -38,18 +43,18 @@ export async function POST(request: Request) {
   const ip = clientIp(request);
   const rl = rateLimit(`orders:${ip}`, { limit: 10, windowMs: 10 * 60 * 1000 });
   if (!rl.ok) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    return NextResponse.json({ error: '주문 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.' }, { status: 429 });
   }
 
   const raw = await request.json().catch(() => null);
   const parsed = OrderInput.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Invalid input', details: parsed.error.issues.map(i => i.message) },
+      { error: '입력한 주문 정보가 올바르지 않습니다. 다시 확인해주세요.', details: parsed.error.issues.map(i => i.message) },
       { status: 400 },
     );
   }
-  const { name, email, phone, address, note, items } = parsed.data;
+  const { name, email, phone, zipcode, address, note, items } = parsed.data;
 
   let supabase: ReturnType<typeof getSupabaseAdmin>;
   try {
@@ -71,7 +76,7 @@ export async function POST(request: Request) {
 
   if (prodErr) {
     log.error('orders.product_lookup', prodErr);
-    return NextResponse.json({ error: 'Failed to validate items' }, { status: 500 });
+    return NextResponse.json({ error: '상품 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
 
   const byId = new Map<number, { id: number; name: string; price: number; in_stock: boolean }>(
@@ -82,10 +87,16 @@ export async function POST(request: Request) {
   for (const item of items) {
     const product = byId.get(item.id);
     if (!product) {
-      return NextResponse.json({ error: `Item ${item.id} not found` }, { status: 400 });
+      return NextResponse.json(
+        { error: '장바구니에 더 이상 판매하지 않는 상품이 있습니다. 장바구니에서 삭제한 뒤 다시 시도해주세요.' },
+        { status: 400 },
+      );
     }
     if (!product.in_stock) {
-      return NextResponse.json({ error: `Item '${product.name}' is out of stock` }, { status: 400 });
+      return NextResponse.json(
+        { error: `'${product.name}'은(는) 품절되었습니다. 장바구니에서 삭제한 뒤 다시 시도해주세요.` },
+        { status: 400 },
+      );
     }
     resolved.push({ id: product.id, name: product.name, price: product.price, quantity: item.quantity });
   }
@@ -97,6 +108,7 @@ export async function POST(request: Request) {
       name,
       email,
       phone: phone || null,
+      zipcode: zipcode || null,
       address,
       note: note || null,
       items: resolved,
@@ -107,7 +119,7 @@ export async function POST(request: Request) {
 
   if (dbError) {
     log.error('orders.insert', dbError);
-    return NextResponse.json({ error: 'Failed to save order' }, { status: 500 });
+    return NextResponse.json({ error: '주문을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
 
   const orderId = order.id;
@@ -115,7 +127,10 @@ export async function POST(request: Request) {
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   const safePhone = escapeHtml(phone || '-');
-  const safeAddress = escapeHtml(address);
+  // One line, the way it goes on a shipping label: `[12345] 서울시 …`. The zip
+  // is optional on the form, so an order without one reads as a plain address
+  // rather than an empty bracket.
+  const safeAddress = escapeHtml(zipcode ? `[${zipcode}] ${address}` : address);
   const safeNote = escapeHtml(note || '-');
 
   const itemRows = resolved

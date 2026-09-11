@@ -87,7 +87,10 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             height={0}
             sizes="(max-width: 768px) 100vw, 58vw"
             className="w-full h-auto object-cover"
-            priority
+            /* The product shot is this page's LCP element at every width, so
+               `preload` is the correct Next 16 replacement for the deprecated
+               `priority` — unlike the grids, where it is not. */
+            preload
           />
         </Reveal>
 

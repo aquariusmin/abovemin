@@ -118,7 +118,13 @@ export default function HomeContent({
                 className="object-cover"
                 alt="phorage 대표 이미지 — 초록을 수집하다"
                 sizes={`(max-width: ${heroWidth}px) 100vw, ${heroWidth}px`}
-                priority
+                /* Next 16 replaces `priority` with `preload`. Here it is the
+                   right migration and not just a rename: one photograph, above
+                   the fold at every width, and the LCP element of the site's
+                   front door — exactly the case the docs reserve `preload`
+                   for. (The masonry grids get `loading`/`fetchPriority`
+                   instead; see the note in `ArchiveGrid`.) */
+                preload
               />
               {/* Only needed where the copy actually sits on the picture. */}
               {overlaid && (

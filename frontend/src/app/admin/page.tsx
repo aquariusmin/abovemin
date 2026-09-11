@@ -19,6 +19,7 @@ interface Order {
   name: string;
   email: string;
   phone: string | null;
+  zipcode: string | null;
   address: string;
   note: string | null;
   items: OrderItem[];
@@ -66,6 +67,12 @@ export default function AdminPage() {
   const [pwError, setPwError] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
+  // 쿠키 세션이 살아 있는지 아직 모르는 동안의 상태. `false`로 시작해 바로
+  // 로그인 폼을 그리면, 새로고침할 때마다 멀쩡한 세션을 두고 비밀번호를 다시
+  // 받게 된다. 첫 렌더에서 한 번 물어보고 그 답이 올 때까지는 아무것도 그리지
+  // 않는다.
+  const [sessionChecked, setSessionChecked] = useState(false);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -80,7 +87,7 @@ export default function AdminPage() {
   const [heroSubtitle, setHeroSubtitle] = useState('');
   const [heroSaving, setHeroSaving] = useState(false);
   const [heroSaved, setHeroSaved] = useState(false);
-  const [heroError, setHeroError] = useState(false);
+  const [heroError, setHeroError] = useState<string | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -138,7 +145,7 @@ export default function AdminPage() {
 
   async function saveHero() {
     setHeroSaving(true);
-    setHeroError(false);
+    setHeroError(null);
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
@@ -149,16 +156,49 @@ export default function AdminPage() {
         setHeroSaved(true);
         setTimeout(() => setHeroSaved(false), 2000);
       } else {
-        setHeroError(true);
-        setTimeout(() => setHeroError(false), 3000);
+        // 히어로 주소는 서버에서 호스트를 검증한다. "저장 실패"만 띄우면 무엇이
+        // 잘못됐는지 알 수 없어 같은 주소를 다시 붙여넣게 되므로, 서버가 준
+        // 이유를 그대로 보여준다.
+        const detail = await res
+          .json()
+          .then((body: unknown) =>
+            typeof (body as { error?: unknown })?.error === 'string'
+              ? (body as { error: string }).error
+              : null,
+          )
+          .catch(() => null);
+        setHeroError(detail ?? '저장에 실패했습니다.');
+        setTimeout(() => setHeroError(null), 6000);
       }
     } catch {
-      setHeroError(true);
-      setTimeout(() => setHeroError(false), 3000);
+      setHeroError('네트워크 오류로 저장하지 못했습니다.');
+      setTimeout(() => setHeroError(null), 6000);
     } finally {
       setHeroSaving(false);
     }
   }
+
+  // 세션 복원. 쿠키는 HttpOnly라 클라이언트가 직접 들여다볼 수 없으므로,
+  // 서버에 한 번 물어보는 것이 "이미 로그인돼 있는가"를 아는 유일한 방법이다.
+  // 이게 없으면 새로고침·탭 복원 때마다 유효한 8시간 세션을 두고 비밀번호를
+  // 다시 받는다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/auth');
+        const body = res.ok ? await res.json() : null;
+        if (!cancelled && body?.authed) setAuthed(true);
+      } catch {
+        // 네트워크 실패는 '로그인 안 됨'으로 취급하고 폼을 보여준다.
+      } finally {
+        if (!cancelled) setSessionChecked(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (authed) {
@@ -205,13 +245,21 @@ export default function AdminPage() {
       .reduce((s, o) => s + o.total_price, 0),
   };
 
+  // 세션 확인 전에는 아무것도 그리지 않는다. 로그인 폼을 먼저 그렸다가 곧바로
+  // 대시보드로 바꾸면, 이미 로그인한 사람에게 비밀번호 칸이 한 번 번쩍인다.
+  if (!sessionChecked) {
+    return <main className="min-h-screen bg-canvas" aria-hidden />;
+  }
+
   // ── 로그인 화면 ──
   if (!authed) {
     return (
       <main className="min-h-screen bg-canvas flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
           <p className="eyebrow text-muted-foreground mb-3 text-center">phorage</p>
-          <h2 className="font-serif text-3xl font-medium tracking-tight text-center text-ink mb-10">Admin</h2>
+          {/* 이 화면의 유일한 최상위 제목. `h2`였던 탓에 로그인 페이지에 h1이
+              아예 없었다 (axe: page-has-heading-one). */}
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-center text-ink mb-10">Admin</h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label htmlFor="admin-password" className="sr-only">Password</label>
@@ -303,10 +351,12 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center gap-3">
               <span role="status" aria-live="polite" className="sr-only">
-                {heroSaved ? '저장되었습니다' : heroError ? '저장에 실패했습니다' : ''}
+                {heroSaved ? '저장되었습니다' : heroError ?? ''}
               </span>
               {heroError && (
-                <span aria-hidden className="text-[11px] text-brick">저장 실패</span>
+                <span aria-hidden className="text-[11px] text-brick text-right max-w-xs break-keep">
+                  {heroError}
+                </span>
               )}
               <button
                 onClick={saveHero}
@@ -469,7 +519,10 @@ export default function AdminPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                         <div className="space-y-2 text-ink-body">
                           <p><span className="label-ko text-muted-foreground inline-block w-16">연락처</span>{order.phone || '-'}</p>
-                          <p><span className="label-ko text-muted-foreground inline-block w-16">주소</span>{order.address}</p>
+                          <p>
+                            <span className="label-ko text-muted-foreground inline-block w-16">주소</span>
+                            {order.zipcode ? `[${order.zipcode}] ` : ''}{order.address}
+                          </p>
                           {order.note && <p><span className="label-ko text-muted-foreground inline-block w-16">메모</span>{order.note}</p>}
                         </div>
                         <div>

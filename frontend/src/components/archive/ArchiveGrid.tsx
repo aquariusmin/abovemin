@@ -38,6 +38,12 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
         >
           {album.cover && (
             <div className="relative overflow-hidden rounded-lg">
+              {/* Next 16 deprecates `priority` in favour of `preload`, but a
+                  preload link is the wrong migration for a masonry grid: the
+                  column count changes with the viewport, so which tile is the
+                  LCP element is not knowable from the markup — the docs name
+                  this case explicitly and point at these two props instead.
+                  Same treatment the Lightbox already uses. */}
               <Image
                 src={cloudinary(album.cover, { width: 800 })}
                 alt={album.title}
@@ -45,11 +51,20 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
-                priority={i === 0}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
               />
               {/* Forest-black scrim rather than neutral black — keeps the
-                  photography warm and ties the overlay to the palette. */}
-              <div className="absolute inset-0 bg-gradient-to-t from-forest-black/70 via-forest-black/15 to-transparent transition-opacity duration-500 group-hover:from-forest-black/55" />
+                  photography warm and ties the overlay to the palette.
+
+                  The midpoint used to be `/15`, and that is where the caption
+                  actually sits: the "N pieces" eyebrow is the topmost line of
+                  the block, so it lands in the thinnest part of the gradient.
+                  Over a bright cover — the Japan album opens on a white sky —
+                  moss-green at 15% scrim was unreadable. These are the
+                  Lightbox caption's values (`/85 → /45`), which carry the same
+                  two-line treatment over arbitrary photographs. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent transition-opacity duration-500 group-hover:from-forest-black/70" />
 
               <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
                 <p className="eyebrow text-moss mb-2">{album.photo_count} pieces</p>

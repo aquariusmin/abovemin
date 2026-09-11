@@ -6,7 +6,9 @@ import {
   Tooltip, XAxis, YAxis,
 } from "recharts";
 
-import { parseBotName, parseEquityCurve, type FleetBot } from "@/lib/quant";
+import {
+  dayTicks, fmtDateKst, fmtDayKst, parseBotName, parseEquityCurve, type FleetBot,
+} from "@/lib/quant";
 import { LAB_AXIS, LAB_GRID, LAB_INK, LAB_TOOLTIP } from "@/components/quant/theme";
 
 /**
@@ -26,7 +28,7 @@ export function FleetEquityChart({
   bots: FleetBot[];
   colors: Map<string, string>;
 }) {
-  const { data, series, omitted } = useMemo(() => {
+  const { data, series, omitted, ticks } = useMemo(() => {
     const all = bots
       .map((b) => ({ bot: b, points: parseEquityCurve(b.equity_curve) }))
       .filter((x) => x.points.length >= 2);
@@ -76,6 +78,9 @@ export function FleetEquityChart({
     return {
       data: rows,
       omitted,
+      // 축에 `09/09 … 09/09`가 두 번 찍히던 자리. 왜 픽셀 간격이 아니라 날짜
+      // 경계로 고르는지는 `dayTicks`에 적어 두었다.
+      ticks: dayTicks(stamps),
       series: perBot.map((b, i) => ({
         id: b.bot.id,
         label: labels[i],
@@ -92,9 +97,6 @@ export function FleetEquityChart({
     );
   }
 
-  const fmtDate = (ts: number) =>
-    new Date(ts).toISOString().slice(5, 10).replace("-", "/");
-
   return (
     <div>
       {/* A legend is always present for >= 2 series, so identity never rests on
@@ -107,14 +109,18 @@ export function FleetEquityChart({
           </span>
         ))}
         <span className="lab-label ml-auto">
-          {omitted > 0 ? `${omitted} not plotted · ` : ""}indexed · first obs = 100
+          {omitted > 0 ? `${omitted} not plotted · ` : ""}indexed · first obs = 100 · KST
         </span>
       </div>
       <div className="h-56 w-full">
-        <ResponsiveContainer>
+        {/* 첫 페인트에는 아직 레이아웃이 없어 ResponsiveContainer가 기본값
+            `{width:-1,height:-1}`로 측정하고 recharts가 콘솔에 경고를 찍는다.
+            컨테이너가 실제로 차지하는 크기를 미리 알려주면 사라진다 — 높이는
+            위의 `h-56`(224px)과 같은 값이어야 한다. */}
+        <ResponsiveContainer initialDimension={{ width: 640, height: 224 }}>
           <LineChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke={LAB_GRID} vertical={false} />
-            <XAxis dataKey="ts" tickFormatter={fmtDate} {...LAB_AXIS} minTickGap={40} />
+            <XAxis dataKey="ts" ticks={ticks} tickFormatter={fmtDateKst} {...LAB_AXIS} minTickGap={32} />
             <YAxis {...LAB_AXIS} width={44} domain={["auto", "auto"]}
                    tickFormatter={(v: number) => v.toFixed(0)} />
             {/* Break-even. A solid hairline — a dashed rule would read as a
@@ -123,7 +129,7 @@ export function FleetEquityChart({
             <Tooltip
               contentStyle={LAB_TOOLTIP}
               cursor={{ stroke: LAB_INK.muted, strokeWidth: 1 }}
-              labelFormatter={(l) => new Date(Number(l)).toISOString().slice(0, 10)}
+              labelFormatter={(l) => `${fmtDayKst(Number(l))} KST`}
               formatter={(value, name) => [
                 Number(value).toFixed(1),
                 series.find((s) => s.id === name)?.label ?? String(name),

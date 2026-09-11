@@ -40,6 +40,25 @@ function isCloudinaryUrl(url: string): boolean {
   }
 }
 
+/**
+ * `next/image`가 실제로 로드할 수 있는 주소인지 확인한다. 목록은
+ * `next.config.ts`의 `images.remotePatterns`와 **같이 움직여야 한다** — 한쪽만
+ * 늘리면 통과했는데 렌더에서 터지거나, 그 반대가 된다.
+ *
+ * 저장 시점에 막는 이유: `next/image`는 허용되지 않은 호스트를 만나면 렌더
+ * 도중 throw하고, 홈 히어로가 그 대상이라 잘못된 값 하나가 홈 전체를 error
+ * 바운더리로 떨어뜨린다. 관리자만 쓰는 입력이라도 오타 한 번의 결과가 그렇다.
+ */
+export function isRenderableImageUrl(url: string): boolean {
+  if (isCloudinaryUrl(url)) return true;
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && hostname === 'images.unsplash.com';
+  } catch {
+    return false;
+  }
+}
+
 export function cloudinary(url: string, { width = 1600, watermark = false }: OptimizeOptions = {}): string {
   if (!isCloudinaryUrl(url)) return url;
 

@@ -38,7 +38,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
   // One page-level live region instead of one per card, so a screen reader
   // announces the addition once rather than re-reading every card.
   const [announcement, setAnnouncement] = useState('');
-  const { addItem } = useCartStore();
+  const addItem = useCartStore(state => state.addItem);
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The button is no longer inside the product link, so there is nothing to
@@ -160,6 +160,12 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                     {item.tag}
                   </span>
                 )}
+                {/* Next 16 deprecates `priority` in favour of `preload`, but a
+                    preload link is the wrong migration for a masonry grid: the
+                    column count changes with the viewport, so which tile is the
+                    LCP element is not knowable from the markup — the docs name
+                    this case explicitly and point at these two props instead.
+                    Same treatment the Lightbox already uses. */}
                 <Image
                   src={item.image_url}
                   alt={item.name}
@@ -168,7 +174,8 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   draggable={false}
-                  priority={i === 0}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : 'auto'}
                 />
               </div>
 
