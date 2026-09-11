@@ -121,3 +121,60 @@ export async function cloudinaryAspect(url: string): Promise<number | null> {
 export function withWatermark(url: string, width = 1600): string {
   return cloudinary(url, { watermark: true, width });
 }
+
+/**
+ * Cloudinary 변환 컴포넌트의 키.
+ *
+ * 목록으로 두는 이유: 변환 세그먼트(`f_auto,q_auto`)와 밑줄이 들어간 폴더
+ * 이름(`my_folder`)은 모양만으로 구분되지 않는다. "1~3글자 + 밑줄"로 판정하면
+ * 폴더를 변환으로 오해해 잘라낸다. Cloudinary가 자기 키를 알고 있는 것처럼,
+ * 여기서도 아는 키만 자른다.
+ */
+const TRANSFORM_KEYS = new Set([
+  'a', 'ar', 'b', 'bo', 'c', 'co', 'cs', 'd', 'dl', 'dn', 'dpr', 'du', 'e',
+  'eo', 'f', 'fl', 'fn', 'g', 'h', 'if', 'ki', 'l', 'o', 'p', 'pg', 'q', 'r',
+  'so', 't', 'u', 'vc', 'w', 'x', 'y', 'z',
+]);
+
+/** 이 경로 세그먼트가 변환 체인의 한 컴포넌트인가. */
+function isTransformSegment(segment: string): boolean {
+  const parts = segment.split(',');
+  return parts.every(part => {
+    const key = part.split('_')[0].split(':')[0];
+    return part.includes('_') && TRANSFORM_KEYS.has(key);
+  });
+}
+
+/**
+ * 딜리버리 URL에서 Cloudinary의 `public_id`를 꺼낸다.
+ *
+ * 같은 파일이라도 변환 파라미터가 붙으면 URL이 달라지므로, "이 자산이 아직
+ * 쓰이는가"를 URL 문자열로 비교할 수 없다. public_id가 그 질문의 유일한
+ * 안정적인 열쇠다.
+ *
+ * 형태: `/<cloud>/image/upload[/<변환들>][/v<버전>]/<폴더>/<이름>.<확장자>`
+ *
+ * **버전 세그먼트가 없는 URL이 실제로 있다.** 앨범 커버가 그렇다:
+ * `/upload/f_auto,q_auto/phorage/archive/photo_17.jpg`. 버전만 찾아 자르는
+ * 방식은 여기서 `f_auto,q_auto/phorage/archive/photo_17`을 내놓았고, 그래서
+ * 쓰이고 있는 커버가 "미사용 자산"으로 잡혔다 — 그 목록을 믿고 지웠으면
+ * 앨범 표지가 사라졌을 것이다. 변환은 변환대로 걷어낸다.
+ */
+export function publicIdFromUrl(url: string): string | null {
+  try {
+    const { pathname } = new URL(url);
+    const marker = '/upload/';
+    const at = pathname.indexOf(marker);
+    if (at === -1) return null;
+
+    let segments = pathname.slice(at + marker.length).split('/').filter(Boolean);
+    // 앞쪽의 변환 체인을 걷어낸다.
+    while (segments.length > 1 && isTransformSegment(segments[0])) segments = segments.slice(1);
+    // 그 다음이 버전이면 그것도 건너뛴다.
+    if (segments.length > 1 && /^v\d+$/.test(segments[0])) segments = segments.slice(1);
+
+    return decodeURIComponent(segments.join('/')).replace(/\.[^./]+$/, '') || null;
+  } catch {
+    return null;
+  }
+}
