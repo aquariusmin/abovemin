@@ -71,7 +71,26 @@ export default function CheckoutPage() {
       });
 
       if (!res.ok) {
-        setOrderError('주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        // The server distinguishes its failures — a sold-out item, an item that
+        // no longer exists, too many attempts — and a blanket "try again later"
+        // hides all of them. Worse, it invites a retry loop for the one case
+        // that retrying can never fix: a product that went out of stock while
+        // it sat in this cart. Show what the server said, and fall back to the
+        // generic line only when it said nothing useful.
+        const detail = await res
+          .json()
+          .then((body: unknown) =>
+            typeof (body as { error?: unknown })?.error === 'string'
+              ? (body as { error: string }).error
+              : null,
+          )
+          .catch(() => null);
+        setOrderError(
+          detail ??
+            (res.status === 429
+              ? '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.'
+              : '주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+        );
         setSubmitting(false);
         return;
       }

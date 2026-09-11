@@ -70,6 +70,88 @@ export function fmtPct(n: number | null | undefined, digits = 2): string {
   return `${sign}${n.toFixed(digits)}%`;
 }
 
+/* Absolute dates on this console are KST, and they say so where they appear.
+ *
+ * Everything else here is relative ("3m ago"), which is timezone-free — the
+ * chart axis and its tooltip were the only absolute dates, and they were built
+ * from `toISOString()`, i.e. UTC. The fleet trades Korean accounts (TOSS·REAL,
+ * KIS), so a cycle at 2026-09-12 06:00 KST was being labelled 09/11: the nine
+ * hours between 00:00 and 09:00 KST always landed on the previous day, which
+ * is the half of the trading morning that matters most here.
+ *
+ * `Intl` does the conversion properly, DST-free zone or not, and the formatter
+ * objects are built once rather than per tick. */
+const KST = "Asia/Seoul";
+
+const KST_MONTH_DAY = new Intl.DateTimeFormat("en-US", {
+  timeZone: KST,
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const KST_YEAR_MONTH_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: KST,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** `09/12` — axis ticks. */
+export function fmtDateKst(ts: number): string {
+  return KST_MONTH_DAY.format(ts);
+}
+
+/** `2026-09-12` — tooltip headings, and the key that decides "same day". */
+export function fmtDayKst(ts: number): string {
+  return KST_YEAR_MONTH_DAY.format(ts);
+}
+
+const KST_DATE_TIME = new Intl.DateTimeFormat("en-CA", {
+  timeZone: KST,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** `2026-09-12 06:00` — the per-point tooltip on a single bot's chart. */
+export function fmtDateTimeKst(ts: number): string {
+  // en-CA gives `2026-09-12, 06:00`; the comma is noise in a mono tooltip.
+  return KST_DATE_TIME.format(ts).replace(", ", " ");
+}
+
+/**
+ * 날짜 축의 눈금을 KST 하루에 하나씩 고른다.
+ *
+ * recharts에 맡기면 `minTickGap`이 픽셀 간격만 보기 때문에, 한 날짜 안의 두
+ * 지점이 함께 뽑히면 같은 라벨이 두 번 찍힌다 (축에 `09/09 … 09/09`가 나와
+ * 있었다). 날이 바뀌는 첫 지점만 후보로 남기면 라벨은 정의상 유일해지고
+ * 격자도 달력 경계에 맞는다. 마지막 날은 "지금"이라 솎임에 걸리더라도 항상
+ * 남긴다.
+ *
+ * 좁은 화면에서 라벨이 서로 붙는 것은 여기서 처리하지 않는다 — 후보를 넘겨
+ * 주고 `minTickGap`으로 겹치는 것을 recharts가 걸러내게 둔다. 후보가 이미
+ * 날짜별로 유일하므로 무엇이 걸러지든 중복은 다시 생기지 않는다.
+ */
+export function dayTicks(stamps: number[], max = 8): number[] {
+  const starts: number[] = [];
+  let prevDay = "";
+  for (const ts of stamps) {
+    const day = fmtDayKst(ts);
+    if (day !== prevDay) {
+      starts.push(ts);
+      prevDay = day;
+    }
+  }
+  const step = Math.ceil(starts.length / max);
+  const ticks = step > 1 ? starts.filter((_, i) => i % step === 0) : starts;
+  const last = starts.at(-1);
+  if (last !== undefined && ticks.at(-1) !== last) ticks.push(last);
+  return ticks;
+}
+
 export function fmtRelative(iso: string): string {
   const then = new Date(iso).getTime();
   const diffSec = Math.round((Date.now() - then) / 1000);

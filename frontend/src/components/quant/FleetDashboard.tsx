@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquitySparkline } from "@/components/quant/EquitySparkline";
 import { FleetEquityChart } from "@/components/quant/FleetEquityChart";
-import { Bar, Frame, Metric, Pill, Section, cx } from "@/components/quant/Panel";
+import { Bar, Frame, Metric, Pill, RelativeTime, Section, cx } from "@/components/quant/Panel";
 import { LAB_SERIES } from "@/components/quant/theme";
 import {
   books, buildSeriesColors, fmtAmount, fmtPct, fmtRelative, lastCycle,
@@ -16,8 +16,16 @@ const REFRESH_MS = 60_000;
 
 type SortKey = "equity" | "pnl_pct" | "updated_at" | "bot_name";
 
-export function FleetDashboard() {
-  const [bots, setBots] = useState<FleetBot[] | null>(null);
+export function FleetDashboard({
+  /** Server-rendered first paint. See `getFleet` in `app/lab/page.tsx`. */
+  initialBots = null,
+}: {
+  initialBots?: FleetBot[] | null;
+}) {
+  // Seeded from the server so the console has numbers in the HTML itself; the
+  // effect below still refreshes on mount, so what you read is never older
+  // than the page's own ISR window.
+  const [bots, setBots] = useState<FleetBot[] | null>(initialBots);
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("equity");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -264,7 +272,9 @@ export function FleetDashboard() {
                       <EquitySparkline points={points} positive={positive} />
                     </td>
                     <Td right mono muted>
-                      {fmtRelative(new Date(lastCycle(points, b.updated_at)).toISOString())}
+                      <RelativeTime>
+                        {fmtRelative(new Date(lastCycle(points, b.updated_at)).toISOString())}
+                      </RelativeTime>
                     </Td>
                   </tr>
                 );

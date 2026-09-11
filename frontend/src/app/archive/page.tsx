@@ -9,7 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/archive" },
 };
 
-export const revalidate = 0;
+// 업로드/삭제 시 `revalidateArchive()`가 이 경로를 무효화한다. 300초는
+// 그 신호를 놓쳤을 때의 안전망.
+export const revalidate = 300;
 
 export default async function Archive() {
   const albumsWithCount = await getAlbumsWithCounts();

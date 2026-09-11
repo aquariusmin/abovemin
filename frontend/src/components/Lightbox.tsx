@@ -98,11 +98,117 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // ── Swipe ───────────────────────────────────────────────────────────────
+  // On a phone the arrows were the only way through an album of 45 photos,
+  // and the obvious gesture did the wrong thing twice over: a swipe across
+  // the picture did nothing (globals.css sets `pointer-events: none` on every
+  // <img>, so the image never sees a touch), and a swipe across the letterbox
+  // bands — 162px above and below a landscape photo on a 390×844 screen —
+  // registered as a backdrop click and CLOSED the lightbox.
+  //
+  // So the dialog, not the image, owns the gesture. One pointer handler pair
+  // decides between the two meanings a press can have:
+  //
+  //   moved sideways  → previous / next
+  //   barely moved    → a tap, which closes only if it landed on backdrop
+  //
+  // That is also why `onClick={onClose}` is gone from this element: a click
+  // fires at the end of a drag too, which is exactly the bug.
+  const press = useRef<{
+    x: number;
+    y: number;
+    lastX: number;
+    lastY: number;
+    onPhoto: boolean;
+  } | null>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
+
+  /** Past this many px a horizontal drag is a swipe, not a sloppy tap. */
+  const SWIPE_PX = 45;
+
+  /**
+   * Decide what a finished press meant. Shared by `pointerup` and
+   * `pointercancel`, because a swipe does not reliably end in `pointerup`:
+   * the browser cancels the pointer when the thing under it changes mid-drag,
+   * which here is the photo itself resizing the frame as the previous swipe
+   * lands. Measured: every other swipe in a run arrived as `pointercancel`
+   * with zeroed coordinates and was dropped. Hence the running `last*`, and
+   * hence deciding from those rather than from the event.
+   */
+  const finishPress = useCallback(
+    (dx: number, dy: number, onPhoto: boolean, cancelled: boolean) => {
+      if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) onNext();
+        else onPrev();
+        return;
+      }
+      // A cancelled pointer is never a tap — the browser took it away, the
+      // reader did not lift a finger to dismiss anything.
+      if (cancelled) return;
+      // A tap on the photo does nothing: dismissing the thing you are looking
+      // at because you touched it is not a gesture anyone means.
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && !onPhoto) onClose();
+    },
+    [onClose, onNext, onPrev],
+  );
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    // Controls handle themselves; don't let their press become a swipe.
+    if ((e.target as HTMLElement).closest('button')) {
+      press.current = null;
+      return;
+    }
+    press.current = {
+      x: e.clientX,
+      y: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      onPhoto: !!mediaRef.current?.contains(e.target as Node),
+    };
+    // Keep the events coming to this element even if the frame under the
+    // pointer changes size mid-drag.
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!press.current) return;
+    press.current.lastX = e.clientX;
+    press.current.lastY = e.clientY;
+  }, []);
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      const start = press.current;
+      press.current = null;
+      if (!start) return;
+      // Horizontal enough to be deliberate: a vertical drag (a scroll attempt)
+      // must not flip the photo. Swiping left goes forward, matching the
+      // direction the pictures move.
+      finishPress(e.clientX - start.x, e.clientY - start.y, start.onPhoto, false);
+    },
+    [finishPress],
+  );
+
+  const onPointerCancel = useCallback(() => {
+    const start = press.current;
+    press.current = null;
+    if (!start) return;
+    // `pointercancel` carries no useful coordinates (Chromium zeroes them), so
+    // the last position seen by `pointermove` is what the gesture gets judged
+    // on.
+    finishPress(start.lastX - start.x, start.lastY - start.y, start.onPhoto, true);
+  }, [finishPress]);
+
   return (
     <motion.div
       ref={dialogRef}
-      className="fixed inset-0 z-[100] bg-forest-black/95 flex items-center justify-center"
-      onClick={onClose}
+      // `select-none` keeps a drag from turning into a text selection, which
+      // is one of the ways the browser takes the pointer away mid-swipe.
+      className="fixed inset-0 z-[100] bg-forest-black/95 flex items-center justify-center touch-pan-y select-none"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       role="dialog"
       aria-modal="true"
       aria-label={photo.title}
@@ -123,7 +229,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
       {/* Prev */}
       <button
-        onClick={(e) => { e.stopPropagation(); onPrev(); }}
+        onClick={onPrev}
         className={`absolute left-2 md:left-5 top-1/2 -translate-y-1/2 ${CONTROL}`}
         aria-label="Previous"
       >
@@ -132,14 +238,15 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
       {/* Image — sized to the viewport, not to a box inset within it.
           The wrapper is a flex item with no width of its own, so it shrinks to
-          exactly the rendered photo: everything around the picture is still
-          backdrop, and clicking there still closes. That is what keeps
-          click-outside-to-close working now that the photo reaches the edges,
-          without re-enabling pointer events on the <img> (globals.css turns
-          them off site-wide to blunt right-click saves). */}
+          exactly the rendered photo: everything around it is still backdrop,
+          which is what makes "tap outside to close" meaningful now that the
+          photo reaches the edges. The wrapper is also how the pointer handler
+          above tells photo from backdrop, since the <img> itself never
+          receives events (globals.css turns them off site-wide to blunt
+          right-click saves). */}
       <motion.div
+        ref={mediaRef}
         className="relative flex max-h-[100dvh] max-w-[100vw]"
-        onClick={(e) => e.stopPropagation()}
         initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
         animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
         exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
@@ -209,7 +316,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
       {/* Next */}
       <button
-        onClick={(e) => { e.stopPropagation(); onNext(); }}
+        onClick={onNext}
         className={`absolute right-2 md:right-5 top-1/2 -translate-y-1/2 ${CONTROL}`}
         aria-label="Next"
       >

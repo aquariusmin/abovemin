@@ -14,7 +14,10 @@ interface Props {
 }
 
 export default function AddToCartButton({ product }: Props) {
-  const { addItem } = useCartStore();
+  // Selector, not the whole store: destructuring subscribes this button to
+  // every cart change, so adding one item re-rendered every Add button on the
+  // page. `addItem` is a stable reference, so this never re-renders at all.
+  const addItem = useCartStore(state => state.addItem);
   const [added, setAdded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

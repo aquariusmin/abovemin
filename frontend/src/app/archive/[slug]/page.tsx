@@ -4,7 +4,10 @@ import { getAlbums, getAlbumWithPhotos } from '@/lib/supabase';
 import PhotoGrid from '@/components/PhotoGrid';
 import Reveal from '@/components/motion/Reveal';
 
-export const revalidate = 0;
+// 사진이 바뀌는 순간은 관리 화면이 알고 있고, 그때 `revalidateArchive()`가
+// 이 경로를 무효화한다. 그래서 방문마다 다시 읽을 이유가 없다 — 여기 숫자는
+// 그 신호를 놓쳤을 때를 위한 안전망이다.
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

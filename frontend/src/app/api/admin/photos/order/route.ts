@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { log } from '@/lib/logger';
+import { revalidateArchive } from '@/lib/cache-tags';
 
 const ALBUM_SLUG = /^[a-z0-9-]{1,64}$/;
 /** 한 앨범에 이보다 많은 사진이 쌓이면 순서 변경 UI 자체를 다시 생각해야 한다. */
@@ -104,5 +105,6 @@ export async function POST(request: Request) {
     }
   }
 
+  revalidateArchive();
   return NextResponse.json({ ok: true, updated: changes.length });
 }

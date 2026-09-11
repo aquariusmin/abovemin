@@ -73,7 +73,24 @@ export default function PhotoEditList({ albumSlug, refreshToken }: Props) {
       const rows: PhotoRow[] = Array.isArray(data) ? data : [];
       setPhotos(rows);
       setOrder(rows.map(row => row.id));
-      setDrafts(Object.fromEntries(rows.map(row => [row.id, toDraft(row)])));
+      // Unsaved edits survive a reload.
+      //
+      // This list reloads for reasons that have nothing to do with the row
+      // being typed in: saving a reorder calls `load()`, and so does saving an
+      // upload upstairs (via `refreshToken`). Rebuilding every draft from the
+      // server wiped whatever was half-typed, silently — and editing several
+      // captions and then fixing the order is an ordinary way to work.
+      //
+      // A draft is kept only while it still differs from the row that just
+      // came back. Once the server agrees with it, it is no longer an edit.
+      setDrafts(prev =>
+        Object.fromEntries(
+          rows.map(row => {
+            const pending = prev[row.id];
+            return [row.id, pending && isDirty(row, pending) ? pending : toDraft(row)];
+          }),
+        ),
+      );
       setRowMessage(null);
     } catch {
       setLoadError(true);

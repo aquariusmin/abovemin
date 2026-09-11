@@ -25,7 +25,9 @@ export default function CartPage() {
   if (items.length === 0) return (
     <main className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8 py-24">
       <p className="eyebrow text-muted-foreground mb-4">Cart</p>
-      <p className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</p>
+      {/* 빈 장바구니에도 제목은 있어야 한다. 담긴 게 있을 때의 "Ready to
+          collect?"와 같은 자리다 (axe: page-has-heading-one). */}
+      <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</h1>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>

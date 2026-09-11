@@ -3,6 +3,7 @@ import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
+import { revalidateArchive } from '@/lib/cache-tags';
 
 /** 한 번에 넣을 수 있는 장수. 업로드 UI가 배치로 보내므로 상한만 둔다. */
 const MAX_BATCH = 60;
@@ -193,7 +194,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
-  // 아카이브 페이지는 `revalidate = 0`이라 다음 요청에서 바로 반영된다.
+  revalidateArchive();
   return NextResponse.json({ ok: true, inserted: inserted?.length ?? rows.length });
 }
 
@@ -263,6 +264,7 @@ export async function PATCH(request: Request) {
   if (!data) {
     return NextResponse.json({ error: '사진을 찾을 수 없습니다.' }, { status: 404 });
   }
+  revalidateArchive();
   return NextResponse.json(data);
 }
 
@@ -314,5 +316,6 @@ export async function DELETE(request: Request) {
 
   // 남은 사진의 sort_order에 구멍이 생기지만 정렬 결과는 같다. 번호를 다시
   // 매기는 것은 순서 변경(`photos/order`)이 할 일이다.
+  revalidateArchive();
   return NextResponse.json({ ok: true, id: data.id });
 }

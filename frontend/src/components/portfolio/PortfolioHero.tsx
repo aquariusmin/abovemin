@@ -31,7 +31,13 @@ export default function PortfolioHero({
           {isKorean ? "포트폴리오 · 이상민" : "Portfolio · Sangmin Lee"}
         </p>
         <div className="space-y-5">
-          <h1 className="max-w-5xl break-keep font-serif text-4xl font-medium leading-[1.05] tracking-tight text-ink sm:text-5xl md:text-7xl">
+          {/* Fluid rather than three fixed steps. `md:text-7xl` fired at 768px, a
+              size tuned for a 1400px column: on a tablet this headline went
+              from three lines to six, ~460px tall, and pushed the CTA row off
+              screen. The clamp reaches the same 4.5rem at desktop but passes
+              through ~46px at 768px instead of jumping to 72. Every other page
+              tops out at `md:text-6xl`; this was the one outlier. */}
+          <h1 className="max-w-5xl break-keep font-serif text-[clamp(2.25rem,5vw+0.5rem,4.5rem)] font-medium leading-[1.05] tracking-tight text-ink">
             {isKoreanSubmission
               ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
               : isKorean

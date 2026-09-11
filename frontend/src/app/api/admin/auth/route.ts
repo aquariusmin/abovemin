@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { timingSafeEqual } from 'crypto';
-import { signSession, revoke, SESSION_COOKIE } from '@/lib/auth';
+import { signSession, revoke, SESSION_COOKIE, isAdminRequest } from '@/lib/auth';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
 
@@ -12,6 +12,21 @@ function passwordMatches(input: string): boolean {
   const b = Buffer.from(expected);
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
+}
+
+/**
+ * 지금 이 브라우저가 로그인 상태인지 묻는다.
+ *
+ * 세션 쿠키는 HttpOnly라 클라이언트가 직접 읽을 수 없고, 그래서 `/admin`은
+ * 새로고침할 때마다 멀쩡한 8시간 세션을 두고 비밀번호를 다시 받고 있었다.
+ *
+ * 401이 아니라 200 + `{ authed: false }`로 답하는 이유: "로그인 안 됨"은 이
+ * 질문에 대한 **정상 응답**이지 오류가 아니다. 401로 답하면 관리 화면을 열
+ * 때마다 콘솔과 네트워크 탭에 빨간 줄이 하나씩 남고, 진짜 인증 실패와
+ * 구분되지 않는다.
+ */
+export async function GET() {
+  return NextResponse.json({ authed: await isAdminRequest() });
 }
 
 export async function POST(request: Request) {

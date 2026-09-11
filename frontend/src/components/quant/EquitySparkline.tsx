@@ -27,7 +27,9 @@ export function EquitySparkline({
   const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
   return (
     <div className="h-[18px] w-20">
-      <ResponsiveContainer width="100%" height="100%">
+      {/* 컨테이너와 같은 크기(w-20 = 80px, h-[18px]). 기본값 -1로 첫 측정이
+          들어가면 recharts가 행마다 콘솔 경고를 찍는다. */}
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 80, height: 18 }}>
         <AreaChart data={points} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
           <YAxis hide domain={["dataMin", "dataMax"]} />
           <Area

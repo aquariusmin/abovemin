@@ -47,6 +47,12 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
             transition={{ duration: 0.6, ease: EASE }}
           >
             <div className="relative overflow-hidden rounded-md bg-stone">
+              {/* Next 16 deprecates `priority` in favour of `preload`, but a
+                  preload link is the wrong migration for a masonry grid: the
+                  column count changes with the viewport, so which tile is the
+                  LCP element is not knowable from the markup — the docs name
+                  this case explicitly and point at these two props instead.
+                  Same treatment the Lightbox already uses. */}
               <Image
                 src={cloudinary(photo.src, { watermark: true, width: 800 })}
                 alt={photo.title}
@@ -55,7 +61,8 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
                 draggable={false}
-                priority={i === 0}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
               />
             </div>
             <div className="mt-3">

@@ -16,12 +16,15 @@ import ThemeShell from '@/components/ThemeShell';
    Everything else  IBM Plex Sans · Sans KR · Mono — one designed superfamily.
 
    Korean is served by exactly ONE webfont family, deliberately. Google's Korean
-   faces ship ~2,500 glyphs split across unicode-range subsets, so each family
-   added costs roughly 150–330 KB on a Korean page. Plex Sans KR therefore does
-   both display and body duty; Fraunces stays Latin-only and never triggers a
-   Korean download. Korean headlines set in Plex Sans KR 600 sit beside Latin
-   headlines in Fraunces — the two voices alternate by section, not inside a
-   line, which is where a mixed pairing would actually show. */
+   faces ship ~2,500 glyphs split across ~94 unicode-range subsets, so a second
+   Korean family would roughly double both the @font-face count and the bytes a
+   Korean page pulls (measured: 157–393 KB per route for this one family, with
+   preloading off — see the note on `korean` below, which is what keeps that
+   number from being 1.8 MB). Plex Sans KR therefore does both display and body
+   duty; Fraunces stays Latin-only and never triggers a Korean download. Korean
+   headlines set in Plex Sans KR 600 sit beside Latin headlines in Fraunces —
+   the two voices alternate by section, not inside a line, which is where a
+   mixed pairing would actually show. */
 
 const display = Fraunces({
   subsets: ['latin'],
@@ -38,11 +41,29 @@ const body = IBM_Plex_Sans({
 });
 
 // The single Korean face — resolves Korean glyphs for both type stacks.
+//
+// `preload: false` is load-bearing, and it is the one setting on this page that
+// is worth more than every other byte decision here combined.
+//
+// Google splits its Korean faces into ~94 unicode-range subsets, so three
+// weights of this family alone emit 282 @font-face rules. next/font preloads
+// the whole set — `subsets: ['latin']` does not narrow it, measured — and a
+// `<link rel=preload>` is unconditional: it defeats the very unicode-range
+// mechanism that is supposed to keep a Korean page from downloading all of
+// Korean. Measured on a cold cache, every route shipped 187 preload tags and
+// pulled ~1.8 MB of woff2, roughly three quarters of the page's total weight.
+//
+// With preloading off the browser resolves the @font-face rules the ordinary
+// way and fetches only the subsets the page's glyphs actually land in:
+// ~12–44 files and 157–393 KB depending on the route, with the page total
+// falling from ~2.4 MB to ~0.85 MB on the home page. `display: 'swap'` is what
+// makes that safe — the fallback paints immediately and the real face swaps in.
 const korean = IBM_Plex_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-korean',
   display: 'swap',
+  preload: false,
 });
 
 // 600 is worth its bytes even though the weight budget is otherwise tight.

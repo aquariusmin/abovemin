@@ -78,7 +78,14 @@ export function Metric({
   }[tone];
   return (
     <div className="min-w-0 border-r border-[var(--lab-border)] px-4 py-3.5 last:border-r-0">
-      <div className="lab-label mb-2 truncate">{label}</div>
+      {/* The label wraps rather than truncating, and always reserves the two
+          lines it might need. `truncate` cost the unit on a phone — the
+          two-column grid left ~170px for "REAL EQUITY · USD" at 0.16em
+          tracking and it rendered as "REAL EQUITY · U…", which is the one word
+          in the string that cannot be inferred from the figure below it. The
+          fixed height is what keeps the values in a row on the same baseline
+          whether their labels take one line or two. */}
+      <div className="lab-label mb-2 min-h-[2.6em] [overflow-wrap:anywhere]">{label}</div>
       <div className={cx("truncate text-[22px] leading-none tnum", color)}>
         {value}
       </div>
@@ -101,6 +108,25 @@ const PILL: Record<PillTone, string> = {
   serious: "border-[var(--lab-serious)]/45 text-[var(--lab-serious)]",
   critical: "border-[var(--lab-critical)]/55 text-[var(--lab-critical)]",
 };
+
+/**
+ * A string computed from `Date.now()` — "3m ago", "feed 0s ago".
+ *
+ * These render on the server now (the console is server-seeded so that a
+ * crawler and the first paint both get real numbers), and a relative time at
+ * second granularity is a *different string* by the moment the browser
+ * hydrates. React reports that as a failed hydration (#418): it recovers by
+ * re-rendering the subtree on the client, so nothing is visibly broken, but it
+ * throws on every load and it discards the server HTML it was supposed to be
+ * reusing.
+ *
+ * `suppressHydrationWarning` is React's sanctioned escape hatch for precisely
+ * this case — the client's value wins, quietly. It only covers one element's
+ * own text, which is why the wrapper sits as close to the string as it does.
+ */
+export function RelativeTime({ children }: { children: React.ReactNode }) {
+  return <span suppressHydrationWarning>{children}</span>;
+}
 
 /** Status is never colour alone — each pill carries its own text, so the state
  *  survives colour-blindness, greyscale and a screenshot. */

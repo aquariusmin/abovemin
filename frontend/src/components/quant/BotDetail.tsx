@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquityChart } from "@/components/quant/EquityChart";
 import { HoldingsTable } from "@/components/quant/HoldingsTable";
-import { Bar, Frame, Metric, Pill, Section } from "@/components/quant/Panel";
+import { Bar, Frame, Metric, Pill, RelativeTime, Section } from "@/components/quant/Panel";
 import {
   fmtAmount, fmtPct, fmtRelative, lastCycle, parseBotName,
   parseEquityCurve, staleness, type FleetBot,
@@ -13,10 +13,19 @@ import {
 
 const REFRESH_MS = 60_000;
 
-export function BotDetail({ botId }: { botId: string }) {
-  const [bot, setBot] = useState<FleetBot | null>(null);
+export function BotDetail({
+  botId,
+  /** Server-rendered first paint. See `getBot` in this route's page. */
+  initialBot = null,
+}: {
+  botId: string;
+  initialBot?: FleetBot | null;
+}) {
+  const [bot, setBot] = useState<FleetBot | null>(initialBot);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // Seeded rows are already "loaded": showing the spinner over numbers the
+  // server just delivered would be a step backwards.
+  const [loaded, setLoaded] = useState(initialBot !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,8 +171,11 @@ export function BotDetail({ botId }: { botId: string }) {
               <KV k="market" v={`${bot.market} · ${bot.currency ?? "USD"}`} />
               <KV k="total fills" v={bot.fills_count !== null ? String(bot.fills_count) : "—"} />
               <KV k="last action" v={bot.last_fill ?? "—"} />
-              <KV k="last cycle" v={fmtRelative(new Date(seen).toISOString())} />
-              <KV k="row synced" v={fmtRelative(bot.updated_at)} />
+              {/* Server-rendered, so these have to survive hydration — see
+                  `RelativeTime`. This page had the same latent mismatch as the
+                  fleet table. */}
+              <KV k="last cycle" v={<RelativeTime>{fmtRelative(new Date(seen).toISOString())}</RelativeTime>} />
+              <KV k="row synced" v={<RelativeTime>{fmtRelative(bot.updated_at)}</RelativeTime>} />
             </div>
           </div>
         </Section>
@@ -181,7 +193,7 @@ function BackLink() {
   );
 }
 
-function KV({ k, v }: { k: string; v: string }) {
+function KV({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 px-4 py-2">
       <span className="lab-label shrink-0">{k}</span>

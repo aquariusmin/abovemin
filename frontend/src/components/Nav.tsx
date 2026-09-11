@@ -68,14 +68,16 @@ export default function Nav() {
 
   // About and Portfolio are deliberately absent.
   //
-  // Both pages are live, indexed, in the sitemap and linked from the footer —
-  // they are simply not in the top bar. The bar is the shop-side path through
-  // the site (browse, collect, buy); the portfolio is handed out by URL, and
-  // its own closing CTA is what carries a reader on to /about.
+  // Both pages are live, indexed and in the sitemap; they are simply not in
+  // the site's chrome. The bar is the shop-side path through the site (browse,
+  // collect, buy), and the portfolio is handed out by URL.
   //
-  // Keep this list and the footer's in mind together: the footer is where
-  // these two are still reachable from any page, so dropping them there too
-  // would make them URL-only.
+  // To be precise about what that means today: NOTHING on the site links to
+  // either page except `/about`'s own body copy (which links to /portfolio)
+  // and the portfolio's closing CTA (which links to /about). They are not in
+  // this list, not in the footer's, and not in the home page's closing band.
+  // URL-only is the actual state, and it is the intended one — if that ever
+  // changes, the footer is the place to put them back.
   const navLinks = [
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },

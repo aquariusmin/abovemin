@@ -196,9 +196,20 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker));
   }, [albumSlug, rows.length, updateRow]);
 
+  /**
+   * 한 줄로 모든 행의 장소 또는 연도를 채운다.
+   *
+   * 예전에는 `onChange`에 걸려 있어서 키를 누를 때마다 전체 행을 덮어썼다.
+   * "Seoul"을 치면 S → Se → Seo … 가 차례로 모든 행에 적용되고, 그 과정에서
+   * 개별로 손봐 둔 값이 되돌릴 방법 없이 사라진다. 이제는 입력을 마쳤다는
+   * 신호(blur 또는 Enter)에만 적용한다 — 일괄 적용은 한 번의 의도이지 타이핑
+   * 도중의 연속 동작이 아니다.
+   */
   function applyToAll(field: 'location' | 'year', value: string) {
-    if (!value) return;
-    setRows(prev => prev.map(row => ({ ...row, [field]: value })));
+    const next = value.trim();
+    if (!next) return;
+    setRows(prev => prev.map(row => ({ ...row, [field]: next })));
+    setMessage({ tone: 'ok', text: `${field === 'location' ? '장소' : '연도'}를 ${rows.length}장에 적용했습니다.` });
   }
 
   async function save() {
@@ -300,7 +311,12 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
               <button
                 type="button"
                 onClick={() => { dropRows(() => false); setMessage(null); }}
-                disabled={saving}
+                // Also disabled while uploads are in flight. Clearing the list
+                // mid-upload does not cancel anything — the files keep landing
+                // in Cloudinary with nothing on screen pointing at them, and
+                // they are only findable from the console afterwards. Save is
+                // already gated on `uploading`; this button was not.
+                disabled={saving || uploading}
                 className="text-[11px] uppercase tracking-widest text-slate hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-sm px-1 disabled:opacity-50"
               >
                 비우기
@@ -316,15 +332,22 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
             </div>
           </div>
 
-          {/* 한 번에 올리는 사진은 대개 장소와 연도가 같다 — 한 줄로 전체에 적용한다. */}
+          {/* 한 번에 올리는 사진은 대개 장소와 연도가 같다 — 한 줄로 전체에 적용한다.
+              적용 시점이 타이핑 도중에서 Enter/blur로 바뀌었으므로(→ `applyToAll`),
+              언제 반영되는지 화면에도 적어 둔다. 그러지 않으면 값을 넣어 놓고
+              아무 일도 일어나지 않는 것처럼 보인다. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <p className="sm:col-span-2 -mb-1 text-[11px] text-muted-foreground">
+              입력한 뒤 Enter를 누르거나 칸 밖을 클릭하면 아래 전체에 적용됩니다.
+            </p>
             <div>
               <label htmlFor="bulk-location" className="block label-ko text-muted-foreground mb-1.5">장소 일괄 적용</label>
               <input
                 id="bulk-location"
                 className={INPUT_CLASS}
                 placeholder="Seoul"
-                onChange={e => applyToAll('location', e.target.value)}
+                onBlur={e => applyToAll('location', e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyToAll('location', e.currentTarget.value); } }}
               />
             </div>
             <div>
@@ -334,7 +357,8 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
                 inputMode="numeric"
                 className={INPUT_CLASS}
                 placeholder="2025"
-                onChange={e => applyToAll('year', e.target.value)}
+                onBlur={e => applyToAll('year', e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyToAll('year', e.currentTarget.value); } }}
               />
             </div>
           </div>
