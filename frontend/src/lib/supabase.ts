@@ -90,6 +90,33 @@ export const getSiteSettings = unstable_cache(
   { tags: [SETTINGS_CACHE_TAG], revalidate: 300 },
 );
 
+/**
+ * 아카이브 전체의 사진. 앨범을 가로지르는 필터·검색용이다.
+ *
+ * 290장이 다섯 앨범에 흩어져 있는데, 지금까지는 앨범을 하나씩 열어 보는
+ * 것 말고는 방법이 없었다. `location`과 `year`는 이미 모든 행에 있으므로,
+ * "2019년에 찍은 것" 같은 질문은 새 데이터 없이 답할 수 있다.
+ *
+ * 한 번에 다 가져오는 것이 맞다: 290행 × 몇 개 컬럼이고, 필터가 바뀔 때마다
+ * 왕복하는 것보다 낫다. 앨범 제목은 사진마다 출처를 표시하려고 같이 읽는다.
+ */
+export const getAllPhotos = cache(
+  async (): Promise<Array<Photo & { album_title: string }>> => {
+    const [{ data: photos, error: pErr }, { data: albums, error: aErr }] = await Promise.all([
+      supabase.from('photos').select('*').order('year', { ascending: false }).order('sort_order'),
+      supabase.from('albums').select('slug, title'),
+    ]);
+    if (pErr) { log.error('getAllPhotos.photos', pErr); throw pErr; }
+    if (aErr) log.warn('getAllPhotos.albums', aErr);
+
+    const titles = new Map((albums ?? []).map(a => [a.slug as string, a.title as string]));
+    return (photos ?? []).map(photo => ({
+      ...photo,
+      album_title: titles.get(photo.album_slug) ?? photo.album_slug,
+    }));
+  },
+);
+
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase.from('products').select('*').order('id');
   if (error) { log.error('getProducts', error); throw error; }
