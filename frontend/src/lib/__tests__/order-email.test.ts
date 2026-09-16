@@ -45,6 +45,21 @@ describe('order-email', () => {
     expect(buildOwnerEmail(order).subject).toContain('#12');
   });
 
+  it('옵션을 고른 줄은 옵션 이름을 같이 적고(이스케이프), 옛 주문은 이름만', () => {
+    const withOption: EmailOrder = {
+      ...order,
+      items: [
+        { id: 3, name: '숲 포스터', option_id: 'a3', option_label: 'A3 <매트지>', price: 38000, quantity: 1 },
+        { id: 1, name: '엽서', price: 2000, quantity: 2 },
+      ],
+    };
+    for (const message of [buildBuyerEmail(withOption), buildOwnerEmail(withOption)]) {
+      expect(message.html).toContain('숲 포스터 · A3 &lt;매트지&gt;');
+      expect(message.html).not.toContain('<매트지>');
+      expect(message.html).toContain('엽서');
+    }
+  });
+
   it('금액과 우편번호가 본문에 들어간다', () => {
     expect(buildBuyerEmail(order).html).toContain('₩ 60,000');
     expect(buildOwnerEmail(order).html).toContain('[04524]');

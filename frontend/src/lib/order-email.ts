@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { orderItemLabel, type OrderItemRecord } from './order-items';
 
 /**
  * 주문 메일 본문. **주문 접수(`api/orders`)와 관리 화면의 재발송이 같은 함수를
@@ -16,12 +17,11 @@ export const OWNER_EMAIL = process.env.OWNER_EMAIL ?? 'owner@phorage.com';
 export const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.com>';
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
-export interface EmailOrderItem {
-  id?: number;
-  name: string;
-  price: number;
-  quantity: number;
-}
+/**
+ * 옵션을 고른 줄은 `option_label`을 함께 적는다("포스터 · A3 · 매트지"). 옵션
+ * 이전의 주문(키 자체가 없음)은 이름만 — 관리 화면의 재발송이 옛 주문도 보낸다.
+ */
+export type EmailOrderItem = OrderItemRecord;
 
 export interface EmailOrder {
   id: number;
@@ -52,7 +52,7 @@ export function buildBuyerEmail(order: EmailOrder): EmailMessage {
 
   const itemRows = order.items
     .map(i => `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${escapeHtml(i.name)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${escapeHtml(orderItemLabel(i))}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center;">×${i.quantity}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;">₩ ${(i.price * i.quantity).toLocaleString()}</td>
     </tr>`)
@@ -124,7 +124,7 @@ export function buildOwnerEmail(order: EmailOrder): EmailMessage {
         <tr><td style="padding:4px 8px;color:#999;">메모</td><td style="padding:4px 8px;">${safeNote}</td></tr>
         <tr><td style="padding:4px 8px;color:#999;">총액</td><td style="padding:4px 8px;font-weight:bold;">₩ ${total_price.toLocaleString()}</td></tr>
       </table>
-      <p style="font-size:12px;color:#999;margin-top:16px;">상품: ${order.items.map(i => `${escapeHtml(i.name)} ×${i.quantity}`).join(', ')}</p>
+      <p style="font-size:12px;color:#999;margin-top:16px;">상품: ${order.items.map(i => `${escapeHtml(orderItemLabel(i))} ×${i.quantity}`).join(', ')}</p>
     </div>
   `;
 

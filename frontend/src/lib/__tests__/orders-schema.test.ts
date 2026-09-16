@@ -54,3 +54,35 @@ describe('OrderInput', () => {
     expect(OrderInput.safeParse({ ...valid, items: [{ id: -1, quantity: 1 }] }).success).toBe(false);
   });
 });
+
+describe('OrderInput — 옵션', () => {
+  const base: OrderInputValues = {
+    name: '홍길동',
+    email: 'hong@example.com',
+    address: '서울시 중구 세종대로 110',
+    items: [{ id: 3, option_id: 'a3-matte', quantity: 1 }],
+  };
+
+  it('옵션 id를 서버까지 보낸다', () => {
+    expect(OrderInput.parse(base).items[0]).toEqual({ id: 3, option_id: 'a3-matte', quantity: 1 });
+  });
+
+  it('옵션 없는 줄(옛 장바구니 포함)은 키가 없거나 null', () => {
+    expect(OrderInput.safeParse({ ...base, items: [{ id: 3, quantity: 1 }] }).success).toBe(true);
+    expect(OrderInput.safeParse({ ...base, items: [{ id: 3, option_id: null, quantity: 1 }] }).success).toBe(true);
+  });
+
+  it('형식이 틀린 옵션 id는 막는다', () => {
+    for (const option_id of ['', 'A3', 'a3:x', 'a'.repeat(33), ' a3']) {
+      expect(OrderInput.safeParse({ ...base, items: [{ id: 3, option_id, quantity: 1 }] }).success).toBe(false);
+    }
+  });
+
+  it('옵션 가격을 실어 보내도 서버로 넘어가지 않는다', () => {
+    const parsed = OrderInput.parse({
+      ...base,
+      items: [{ id: 3, option_id: 'a3-matte', option_label: 'A3', price: 1, quantity: 1 }],
+    });
+    expect(parsed.items[0]).toEqual({ id: 3, option_id: 'a3-matte', quantity: 1 });
+  });
+});

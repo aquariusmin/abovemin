@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OPTION_ID_RE } from './product';
 
 /**
  * 주문 요청의 형태. **체크아웃 폼과 API가 이 파일 하나를 같이 본다.**
@@ -15,6 +16,12 @@ import { z } from 'zod';
  */
 export const OrderItemInput = z.object({
   id: z.number().int().positive(),
+  /**
+   * 옵션이 있는 상품이면 고른 옵션의 id. **가격은 받지 않는다** — 서버가 이
+   * id로 `products.options`에서 가격을 다시 읽는다(`lib/order-items.ts`).
+   * 옵션이 생기기 전의 장바구니는 이 키 없이 오므로 optional이다.
+   */
+  option_id: z.string().regex(OPTION_ID_RE).nullable().optional(),
   quantity: z.number().int().positive().max(99),
 });
 
