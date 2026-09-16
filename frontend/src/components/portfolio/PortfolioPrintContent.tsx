@@ -11,6 +11,7 @@ import {
   type PortfolioRoute,
 } from "@/data/portfolioRouting";
 import PrintControls from "@/components/portfolio/PrintControls";
+import { SITE_URL } from "@/lib/site";
 
 export default function PortfolioPrintContent({
   locale,
@@ -30,7 +31,7 @@ export default function PortfolioPrintContent({
     : isKorean
       ? koreanPortfolioProjects
       : portfolioProjects;
-  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, route)}`;
+  const portfolioUrl = `${SITE_URL}${getPortfolioBasePath(locale, route)}`;
   const githubUrl = "https://github.com/aquariusmin";
 
   return (

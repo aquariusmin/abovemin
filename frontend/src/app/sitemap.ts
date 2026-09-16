@@ -1,8 +1,9 @@
+import { SITE_URL } from '@/lib/site';
 import { getAlbums, getProducts } from '@/lib/supabase';
 import { portfolioProjects } from '@/data/portfolio';
 import { getNotes } from '@/data/notes';
 
-const BASE = 'https://abovemin.com';
+const BASE = SITE_URL;
 
 export default async function sitemap() {
   const [albums, products] = await Promise.all([

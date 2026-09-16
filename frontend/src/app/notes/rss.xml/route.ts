@@ -1,6 +1,7 @@
+import { SITE_URL } from '@/lib/site';
 import { getNotes } from '@/data/notes';
 
-const BASE = 'https://abovemin.com';
+const BASE = SITE_URL;
 
 /**
  * Notes의 RSS.
