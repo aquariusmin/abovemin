@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
@@ -6,6 +6,10 @@ import { log } from '@/lib/logger';
 import { revalidateArchive } from '@/lib/cache-tags';
 import { withColumnFallback } from '@/lib/db-compat';
 import { dbErrorResponse } from '@/lib/admin/route-helpers';
+import { fillPhotoMetadata } from '@/lib/admin/metadata-fill';
+
+// 저장 뒤 촬영 정보 채우기(`after`)가 이 함수의 시간 안에서 돈다.
+export const maxDuration = 30;
 
 /** 한 번에 넣을 수 있는 장수. 업로드 UI가 배치로 보내므로 상한만 둔다. */
 const MAX_BATCH = 60;
@@ -215,6 +219,34 @@ export async function POST(request: Request) {
   }
 
   revalidateArchive();
+
+  // 방금 넣은 사진의 촬영 정보를 **응답을 보낸 뒤에** 채운다(`after`). 저장은
+  // 이미 끝났으므로, 여기서 무엇이 실패해도 저장 결과는 바뀌지 않는다 — 실패한
+  // 사진은 `exif_checked_at`이 비어 남고, 설정 탭의 "촬영 정보 채우기"가 나중에
+  // 가져간다. 마이그레이션 전이면 조회가 42703으로 끝나고 조용히 지나간다.
+  //
+  // 함수 시간 상한(Hobby 기본 수십 초)을 넘지 않도록 새 요청은 15초에서 멈춘다.
+  // 한 번에 최대 60장이라 보통은 그 안에 끝나고, 못 끝낸 몫은 버튼이 맡는다.
+  const insertedIds = (inserted ?? []).map(row => row.id as number);
+  if (insertedIds.length > 0) {
+    after(async () => {
+      try {
+        const outcome = await fillPhotoMetadata(supabase, getCloudinaryConfig(), {
+          ids: insertedIds,
+          limit: insertedIds.length,
+          deadline: Date.now() + 15_000,
+        });
+        if (!outcome.ok) {
+          if (!outcome.migration) log.warn('admin_photos_metadata_after', outcome.error);
+          return;
+        }
+        if (outcome.result.processed > 0) revalidateArchive();
+      } catch (error) {
+        log.warn('admin_photos_metadata_after', String(error));
+      }
+    });
+  }
+
   return NextResponse.json({ ok: true, inserted: inserted?.length ?? rows.length });
 }
 
