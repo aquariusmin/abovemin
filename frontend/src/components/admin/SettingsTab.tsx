@@ -6,15 +6,22 @@ import { adminFetch, errorMessage } from '@/lib/admin/client';
 import { SectionHeader, StatusLine, type Message } from './AdminUi';
 import PhotoPicker from './PhotoPicker';
 import OrphanScan from './OrphanScan';
+import MetadataFill from './MetadataFill';
+import PlacesEditor from './PlacesEditor';
 import { BTN_SM, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 
 /**
- * 설정 — 홈 히어로, 그리고 Cloudinary 정리.
+ * 설정 — 홈 히어로, 사진 데이터(촬영 정보·장소 좌표), 그리고 Cloudinary 정리.
+ *
+ * 촬영 정보 채우기가 장소 좌표를 새로 넣으면 아래 좌표 목록이 다시 읽는다.
  */
 export default function SettingsTab() {
+  const [placesKey, setPlacesKey] = useState(0);
   return (
     <div className="space-y-10">
       <HeroSettings />
+      <MetadataFill onPlacesAdded={() => setPlacesKey(k => k + 1)} />
+      <PlacesEditor reloadKey={placesKey} />
       <OrphanScan />
     </div>
   );
