@@ -170,7 +170,7 @@ export default function HomeContent({
                   제목 길이와 상관없이 eyebrow가 항상 어두운 쪽에 앉는다.
                   사진은 자르지 않는다 — 프레임 규칙은 그대로다. */}
               {overlaid && (
-                <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-16 lg:-top-20 -z-10 hidden md:block rounded-b-xl" />
+                <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-20 lg:-top-24 -z-10 hidden md:block rounded-b-xl" />
               )}
               <p className={`eyebrow eyebrow-marked text-primary ${onPhoto('md:text-moss')} mb-4 md:mb-6`}>
                 phorage studio — Seoul
