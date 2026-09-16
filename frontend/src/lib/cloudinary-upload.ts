@@ -24,6 +24,13 @@ export function uploadFolder(albumSlug: string): string {
   return `phorage/archive/${albumSlug}`;
 }
 
+/**
+ * 샵 상품 이미지가 들어갈 Cloudinary 폴더. 아카이브(`phorage/archive/`)와 나눠
+ * 두는 이유: 미사용 원본 정리(`lib/admin/orphans.ts`)가 폴더 단위로 범위를 잡고,
+ * 콘솔에서도 사진첩과 상품 사진이 섞이지 않는다.
+ */
+export const SHOP_UPLOAD_FOLDER = 'phorage/shop';
+
 export function getCloudinaryConfig(): CloudinaryConfig {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;

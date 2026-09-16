@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { revalidateArchive } from '@/lib/cache-tags';
+import { withColumnFallback } from '@/lib/db-compat';
+import { dbErrorResponse } from '@/lib/admin/route-helpers';
 
 /** 한 번에 넣을 수 있는 장수. 업로드 UI가 배치로 보내므로 상한만 둔다. */
 const MAX_BATCH = 60;
@@ -41,14 +43,26 @@ function isError<T>(value: T | { error: string }): value is { error: string } {
 
 // ── 목록 ──────────────────────────────────────────────────────────────────────
 
-/** 한 앨범의 사진 전부. 관리 화면에서 정보를 고치기 위한 목록이다. */
+const LIST_COLUMNS = 'id, album_slug, src, title, location, year, sort_order, hidden, created_at';
+const LEGACY_LIST_COLUMNS = 'id, album_slug, src, title, location, year, sort_order';
+
+/**
+ * 사진 목록. 두 가지로 부른다.
+ *  - `?album=<slug>`: 한 앨범의 사진 전부. 정보 수정·순서·일괄 작업 화면.
+ *  - `?scope=all`: 아카이브 전체. 히어로 이미지 고르기처럼 앨범을 가로지르는 곳.
+ *
+ * 숨긴 사진도 **포함한다** — 관리 화면은 숨긴 것을 다시 보이게 하는 곳이다.
+ * 마이그레이션 전에는 `hidden`/`created_at` 없이 읽고 `migrationPending`을 켠다.
+ */
 export async function GET(request: Request) {
   if (!(await isAdminRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const albumSlug = new URL(request.url).searchParams.get('album');
-  if (!albumSlug || !ALBUM_SLUG.test(albumSlug)) {
+  const params = new URL(request.url).searchParams;
+  const albumSlug = params.get('album');
+  const all = params.get('scope') === 'all';
+  if (!all && (!albumSlug || !ALBUM_SLUG.test(albumSlug))) {
     return NextResponse.json({ error: 'Invalid album' }, { status: 400 });
   }
 
@@ -60,17 +74,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Admin database is not configured' }, { status: 503 });
   }
 
-  const { data, error } = await supabase
-    .from('photos')
-    .select('id, src, title, location, year, sort_order')
-    .eq('album_slug', albumSlug)
-    .order('sort_order');
+  const query = (columns: string) => {
+    const base = supabase.from('photos').select(columns);
+    return all
+      ? base.order('album_slug').order('sort_order')
+      : base.eq('album_slug', albumSlug!).order('sort_order');
+  };
+  const { data, error, migrationPending } = await withColumnFallback(
+    'admin_photos_list',
+    () => query(LIST_COLUMNS),
+    () => query(LEGACY_LIST_COLUMNS),
+  );
 
   if (error) {
     log.error('admin_photos_list', error);
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
-  return NextResponse.json(data ?? []);
+  return NextResponse.json({ photos: data ?? [], migrationPending });
 }
 
 // ── 추가 ──────────────────────────────────────────────────────────────────────
@@ -215,14 +235,20 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { id, title, location, year } = body as Record<string, unknown>;
+  const { id, title, location, year, hidden } = body as Record<string, unknown>;
 
   const photoId = Number(id);
   if (!Number.isInteger(photoId) || photoId <= 0) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const updates: Record<string, string | number> = {};
+  const updates: Record<string, string | number | boolean> = {};
+  if (hidden !== undefined) {
+    // 숨김은 공개 화면에서만 빼는 스위치다. 불리언이 아닌 값(`"false"`)을
+    // 진릿값으로 읽으면 반대로 동작하므로 타입을 엄격히 본다.
+    if (typeof hidden !== 'boolean') return NextResponse.json({ error: '숨김 값이 올바르지 않습니다.' }, { status: 400 });
+    updates.hidden = hidden;
+  }
   if (title !== undefined) {
     const parsed = parseTitle(title);
     if (isError(parsed)) return NextResponse.json({ error: parsed.error }, { status: 400 });
@@ -250,16 +276,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Admin database is not configured' }, { status: 503 });
   }
 
+  // `select('*')`: 돌려주는 행의 컬럼을 이름으로 고르면 마이그레이션 전후로
+  // 한쪽에서 실패한다. 화면은 받은 행으로 목록을 갈아 끼운다.
   const { data, error } = await supabase
     .from('photos')
     .update(updates)
     .eq('id', photoId)
-    .select('id, src, title, location, year, sort_order')
+    .select('*')
     .maybeSingle();
 
   if (error) {
-    log.error('admin_photos_update', error);
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+    return dbErrorResponse('admin_photos_update', error);
   }
   if (!data) {
     return NextResponse.json({ error: '사진을 찾을 수 없습니다.' }, { status: 404 });
