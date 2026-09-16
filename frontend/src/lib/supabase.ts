@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
 import { SETTINGS_CACHE_TAG } from './cache-tags';
-import { withColumnFallback } from './db-compat';
+import { isMissingSchemaError, withColumnFallback } from './db-compat';
+import { placeFromRow, type PlaceCoord } from './places';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -37,6 +38,22 @@ export interface Photo {
   /** 마이그레이션(20260916) 이후 컬럼. 공개 조회는 이미 `hidden = false`만 받는다. */
   hidden?: boolean;
   created_at?: string;
+  /**
+   * 마이그레이션(20260916100000_archive_extras) 이후 컬럼. 촬영 정보 채우기가
+   * 채우기 전에는 null이고, 적용 전 DB에는 아예 없다.
+   *
+   * `width`/`height`는 **비율로만** 쓴다(그리드가 이미지보다 먼저 자리를
+   * 잡는다). 원본이 1500px 안팎으로 줄어 있어 크기 자체는 뜻이 없다.
+   * 좌표는 여기에 없다 — 장소 단위로 `places`에만 있다.
+   */
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 }
 
 export interface Product {
@@ -120,7 +137,7 @@ export const getAlbumWithPhotos = cache(
     if (aErr) { log.error('getAlbumWithPhotos.album', aErr); throw aErr; }
     if (pErr) { log.error('getAlbumWithPhotos.photos', pErr); throw pErr; }
     if (!album) return null;
-    return { album, photos: photos ?? [] };
+    return { album, photos: (photos ?? []).map(publicPhoto) };
   },
 );
 
@@ -177,11 +194,61 @@ export const getAllPhotos = cache(
     return (photos ?? [])
       .filter(photo => !visible || visible.has(photo.album_slug))
       .map(photo => ({
-        ...photo,
+        ...publicPhoto(photo),
         album_title: titles.get(photo.album_slug) ?? photo.album_slug,
       }));
   },
 );
+
+/**
+ * 공개 화면이 실제로 그리는 컬럼만 남긴다.
+ *
+ * `/archive`의 필터는 290장을 **클라이언트 컴포넌트에** props로 넘기므로, 행의
+ * 모든 컬럼이 HTML의 RSC 페이로드에 한 번씩 실린다. 촬영 정보 컬럼이 아홉 개
+ * 늘면서 `select('*')`를 그대로 넘기면 쓰지도 않는 `lens`, `exif_checked_at`,
+ * `updated_at`까지 290번 반복된다. 조회는 `*`로 두고(마이그레이션 전후 모두
+ * 성공해야 한다) 내보낼 때 고른다.
+ */
+function publicPhoto(row: Photo): Photo {
+  const photo: Photo = {
+    id: row.id,
+    album_slug: row.album_slug,
+    src: row.src,
+    title: row.title,
+    location: row.location,
+    year: row.year,
+    sort_order: row.sort_order,
+  };
+  // 값이 있는 것만 싣는다 — null 아홉 개도 290번이면 무게다.
+  if (row.width && row.height) {
+    photo.width = row.width;
+    photo.height = row.height;
+  }
+  if (row.taken_at) photo.taken_at = row.taken_at;
+  if (row.camera) photo.camera = row.camera;
+  if (row.focal_length) photo.focal_length = row.focal_length;
+  if (row.aperture) photo.aperture = row.aperture;
+  if (row.shutter) photo.shutter = row.shutter;
+  if (row.iso) photo.iso = row.iso;
+  return photo;
+}
+
+/**
+ * 장소 좌표(소수점 한 자리). `/archive` 지도가 쓴다.
+ *
+ * 테이블이 아직 없으면(마이그레이션 전) 빈 목록 — 지도 토글이 숨는다. 다른
+ * 오류도 빈 목록으로 읽는다: 지도는 부가 기능이라, 그것 때문에 아카이브 전체가
+ * 재생성에 실패할 이유가 없다.
+ */
+export const getPlaces = cache(async (): Promise<PlaceCoord[]> => {
+  const { data, error } = await supabase.from('places').select('name, lat, lng');
+  if (error) {
+    if (isMissingSchemaError(error)) log.warn('getPlaces.migration_pending', error);
+    else log.error('getPlaces', error);
+    return [];
+  }
+  return (data ?? []).map(placeFromRow).filter((place): place is PlaceCoord => place !== null);
+});
 
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.
 // 마이그레이션 전에는 `sort_order`가 없으므로 id 순으로만 읽는다.

@@ -108,6 +108,36 @@ export const LocationRename = z
   })
   .refine(body => body.from !== body.to, '바꿀 이름이 지금과 같습니다.');
 
+// ── 장소 좌표 ─────────────────────────────────────────────────────────────────
+
+/**
+ * 좌표는 받자마자 소수점 한 자리로 자른다(`places`의 `numeric(4,1)`과 같은
+ * 규칙). 관리자가 지도 앱에서 복사한 `37.566535`를 붙여 넣어도 정밀한 값은
+ * 서버를 통과하지 못한다 — `places`는 anon이 읽는 테이블이다.
+ */
+function coordinate(limit: number, label: string) {
+  return z
+    .number({ error: `${label}는 숫자여야 합니다.` })
+    .refine(Number.isFinite, `${label}는 숫자여야 합니다.`)
+    .min(-limit, `${label}는 -${limit}~${limit} 사이여야 합니다.`)
+    .max(limit, `${label}는 -${limit}~${limit} 사이여야 합니다.`)
+    .transform(value => {
+      const rounded = Math.round(value * 10) / 10;
+      return Object.is(rounded, -0) ? 0 : rounded;
+    });
+}
+
+/** 장소 이름은 `photos.location`을 공개 화면이 읽는 모양(앞뒤 공백 없음)으로. */
+const PlaceName = z.string().trim().min(1, '장소 이름이 비어 있습니다.').max(200, '장소가 너무 깁니다.');
+
+export const PlaceUpsert = z.strictObject({
+  name: PlaceName,
+  lat: coordinate(90, '위도'),
+  lng: coordinate(180, '경도'),
+});
+
+export const PlaceDelete = z.strictObject({ name: PlaceName });
+
 // ── 상품 ──────────────────────────────────────────────────────────────────────
 
 const ProductFields = {
