@@ -22,6 +22,7 @@ interface Photo {
   title: string;
   location: string;
   year: number;
+  album_slug?: string;
 }
 
 interface LightboxProps {
@@ -47,6 +48,44 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   // still be sizing the frame while the new photo decoded, showing one visible
   // frame at the wrong shape. Keeping the map also makes stepping back to a
   // photo already seen size correctly on the first paint.
+  // ── 링크 복사 ────────────────────────────────────────────────────────────
+  // `?p=`가 생긴 이유가 "이 사진 한 장을 보여 주기"인데, 폰에서는 주소창을
+  // 여는 것부터가 라이트박스를 가리는 일이었다. 버튼 하나로 링크를 넘긴다.
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+  }, []);
+
+  const copyLink = useCallback(async () => {
+    // 앨범을 아는 사진이면 앨범 주소로 만든다. `/archive`의 전체 필터 그리드는
+    // 조건을 URL에 싣지 않으므로, 거기서 연 사진의 현재 주소(`/archive?p=`)를
+    // 받은 사람은 그 사진이 목록에 없는 화면에 도착한다.
+    const url = photo.album_slug
+      ? `${window.location.origin}/archive/${photo.album_slug}?p=${photo.id}`
+      : window.location.href;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      // Clipboard API는 보안 컨텍스트와 권한이 필요하다(인앱 브라우저,
+      // 오래된 iOS). 그때는 선택 영역 복사로 한 번 더 시도한다.
+      const field = document.createElement('textarea');
+      field.value = url;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      try { ok = document.execCommand('copy'); } catch { ok = false; }
+      field.remove();
+    }
+    setCopyState(ok ? 'copied' : 'failed');
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopyState('idle'), 2000);
+  }, [photo.album_slug, photo.id]);
+
   const [ratios, setRatios] = useState<Record<number, number>>({});
   const ratio = ratios[photo.id];
 
@@ -207,7 +246,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       ref={dialogRef}
       // `select-none` keeps a drag from turning into a text selection, which
       // is one of the ways the browser takes the pointer away mid-swipe.
-      className="fixed inset-0 z-[100] bg-forest-black/95 flex items-center justify-center touch-pan-y select-none"
+      // Opaque on phones. Any translucency let the neighbouring masonry
+      // cards ghost through the letterbox bands above and below a landscape
+      // photo — on a 390×844 screen those bands are 40% of the view.
+      className="fixed inset-0 z-[100] bg-forest-black md:bg-forest-black/95 flex items-center justify-center touch-pan-y select-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -225,16 +267,39 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         ref={closeRef}
         onClick={onClose}
         className={`absolute top-3 right-3 md:top-5 md:right-5 ${CONTROL}`}
-        aria-label="Close"
+        aria-label="닫기"
       >
         &times;
       </button>
 
+      {/* Copy link — mirrors Close in the other corner. The label itself
+          changes to the result, and the live region says it aloud. */}
+      <button
+        type="button"
+        onClick={copyLink}
+        className="absolute top-3 left-3 md:top-5 md:left-5 z-20 inline-flex h-11 items-center gap-2 rounded-full px-4
+                   bg-forest-black/45 backdrop-blur-sm text-sm font-medium text-cream/85 hover:text-cream hover:bg-forest-black/70 transition-colors"
+      >
+        <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+          {copyState === 'copied' ? (
+            <path d="M3 8.5 6.5 12 13 4.5" strokeLinecap="round" strokeLinejoin="round" />
+          ) : (
+            <path d="M6.5 9.5a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.6.6M9.5 6.5a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.6-.6" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+        </svg>
+        {copyState === 'copied' ? '복사됨' : copyState === 'failed' ? '복사하지 못했어요' : '링크 복사'}
+      </button>
+      <span aria-live="polite" className="sr-only">
+        {copyState === 'copied' ? '사진 링크를 복사했습니다.' : copyState === 'failed' ? '링크를 복사하지 못했습니다. 주소창의 주소를 사용해 주세요.' : ''}
+      </span>
+
       {/* Prev */}
       <button
         onClick={onPrev}
-        className={`absolute left-2 md:left-5 top-1/2 -translate-y-1/2 ${CONTROL}`}
-        aria-label="Previous"
+        // Phones: down in the caption row, not across the middle of the
+        // photo — a full-width picture had a dark disc on each side of it.
+        className={`absolute left-3 bottom-4 md:bottom-auto md:left-5 md:top-1/2 md:-translate-y-1/2 ${CONTROL}`}
+        aria-label="이전 사진"
       >
         &lsaquo;
       </button>
@@ -308,7 +373,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
           photo gets the whole screen and the metadata still reads, carried by
           a scrim that fades out well before the middle of the frame. */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-6 pb-6 pt-16 text-center
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-16 md:px-6 pb-6 pt-16 text-center
                    bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent"
       >
         {caption.title && (
@@ -322,8 +387,8 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       {/* Next */}
       <button
         onClick={onNext}
-        className={`absolute right-2 md:right-5 top-1/2 -translate-y-1/2 ${CONTROL}`}
-        aria-label="Next"
+        className={`absolute right-3 bottom-4 md:bottom-auto md:right-5 md:top-1/2 md:-translate-y-1/2 ${CONTROL}`}
+        aria-label="다음 사진"
       >
         &rsaquo;
       </button>

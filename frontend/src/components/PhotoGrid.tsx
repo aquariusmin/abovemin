@@ -15,6 +15,8 @@ interface Photo {
   title: string;
   location: string;
   year: number;
+  /** 앨범을 가로지르는 목록에서만 온다. 라이트박스의 공유 링크가 쓴다. */
+  album_slug?: string;
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
