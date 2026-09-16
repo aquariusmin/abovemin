@@ -1,4 +1,4 @@
-import { ALBUM_SLUG_RE } from './schemas';
+import { ALBUM_SLUG_RE } from './limits';
 
 /**
  * 앨범 제목 → 슬러그 제안. 제안일 뿐이고 관리자가 고칠 수 있다.

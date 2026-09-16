@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR } from './limits';
+
+export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
 
 /**
  * 관리 API가 받는 본문의 형태. **라우트와 테스트가 이 파일 하나를 같이 본다.**
@@ -14,19 +17,11 @@ import { z } from 'zod';
 
 // ── 공통 조각 ─────────────────────────────────────────────────────────────────
 
-export const ALBUM_SLUG_RE = /^[a-z0-9-]{1,64}$/;
-
 export const Id = z.number({ error: 'id가 올바르지 않습니다.' }).int().positive();
 
 export const AlbumSlug = z
   .string()
   .regex(ALBUM_SLUG_RE, '슬러그는 영문 소문자·숫자·하이픈 1~64자여야 합니다.');
-
-/** 한 번에 다루는 사진 수. 가장 큰 앨범(112장)을 통째로 고를 수 있으면서, 실수로 전체를 날리지는 않을 정도. */
-export const MAX_BULK = 200;
-
-/** 사진술의 시작(1826) ~ 내년. `api/admin/photos`의 연도 규칙과 같다. */
-export const MIN_YEAR = 1826;
 
 function uniqueIds(max: number) {
   return z
@@ -179,9 +174,6 @@ export const OrderEmail = z.strictObject({
 });
 
 // ── Cloudinary 정리 ───────────────────────────────────────────────────────────
-
-/** Cloudinary Admin API의 `DELETE resources`가 한 번에 받는 상한. */
-export const MAX_ORPHAN_DELETE = 100;
 
 export const OrphanDelete = z.strictObject({
   public_ids: z
