@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { cloudinary, isRenderableImageUrl, publicIdFromUrl, DEFAULT_ASPECT } from '@/lib/cloudinary';
+import {
+  cloudinary,
+  cloudinaryOgImage,
+  cloudinaryPlaceholder,
+  isRenderableImageUrl,
+  publicIdFromUrl,
+  DEFAULT_ASPECT,
+  OG_HEIGHT,
+  OG_WIDTH,
+} from '@/lib/cloudinary';
 import { isOwnCloudinaryUrl, signUploadParams, uploadFolder } from '@/lib/cloudinary-upload';
 
 const CLOUD = 'dmljaqqzc';
@@ -39,6 +48,55 @@ describe('cloudinary()', () => {
 
   it('DEFAULT_ASPECT는 3:2다', () => {
     expect(DEFAULT_ASPECT).toBeCloseTo(1.5);
+  });
+});
+
+describe('cloudinaryPlaceholder()', () => {
+  it('32px로 줄이고 흐린 한 장을 만든다', () => {
+    expect(cloudinaryPlaceholder(real)).toBe(
+      `https://res.cloudinary.com/${CLOUD}/image/upload/w_32,q_auto:low,e_blur:400,f_auto/v1/photo.jpg`,
+    );
+  });
+
+  it('저장된 주소의 변환을 걷어 낸다 — 뒤에 남은 q_auto가 q_auto:low를 되돌리지 않게', () => {
+    const stored = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/phorage/archive/photo_17.jpg`;
+    expect(cloudinaryPlaceholder(stored)).toBe(
+      `https://res.cloudinary.com/${CLOUD}/image/upload/w_32,q_auto:low,e_blur:400,f_auto/phorage/archive/photo_17.jpg`,
+    );
+    // 밑줄 든 폴더 이름은 변환이 아니다.
+    const folder = `https://res.cloudinary.com/${CLOUD}/image/upload/v2/my_folder/a.jpg`;
+    expect(cloudinaryPlaceholder(folder)).toContain(',e_blur:400,f_auto/v2/my_folder/a.jpg');
+  });
+
+  it('Cloudinary가 아니면 null — 배경 없이 둔다', () => {
+    expect(cloudinaryPlaceholder('https://images.unsplash.com/photo-1')).toBeNull();
+  });
+});
+
+describe('cloudinaryOgImage()', () => {
+  const og = cloudinaryOgImage(real)!;
+
+  it('자르지 않는다 — c_fill도 g_auto도 없다', () => {
+    // 세로 사진이 카드의 가운데 띠로 잘리면 "프레임이 사진에 맞춘다"가 깨진다.
+    expect(og).not.toContain('c_fill');
+    expect(og).not.toContain('c_crop');
+    expect(og).not.toContain('g_auto');
+  });
+
+  it('줄이고 → 워터마크 → 페이지 바탕색으로 1200×630을 채운다', () => {
+    expect(og).toContain('/upload/c_limit,w_1200,h_630/l_text:');
+    expect(og.endsWith('/c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg,q_auto/v1/photo.jpg')).toBe(true);
+    expect(og.indexOf('l_text')).toBeLessThan(og.indexOf('c_pad'));
+    expect([OG_WIDTH, OG_HEIGHT]).toEqual([1200, 630]);
+  });
+
+  it('저장된 f_auto가 f_jpg 뒤에 남지 않는다', () => {
+    const stored = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/v1783782467/DSC03534_dhyyrk.jpg`;
+    expect(cloudinaryOgImage(stored)!.endsWith(',f_jpg,q_auto/v1783782467/DSC03534_dhyyrk.jpg')).toBe(true);
+  });
+
+  it('Cloudinary가 아니면 null', () => {
+    expect(cloudinaryOgImage('/local.jpg')).toBeNull();
   });
 });
 
