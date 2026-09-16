@@ -1,8 +1,22 @@
 "use client";
 
 import { useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import PhotoGrid from '@/components/PhotoGrid';
 import { cleanCaptionField } from '@/lib/caption';
+import type { MapPlace } from '@/lib/places';
+
+/**
+ * 지도는 "지도로 보기"를 누를 때만 불러온다. d3-geo + 세계 윤곽(55 KB)이
+ * 아카이브 첫 화면 번들에 실리지 않고, 지도를 안 여는 방문자는 받지 않는다.
+ * `ssr: false`: 지도는 컨테이너 폭을 재서 그리므로 서버에서 그릴 것이 없다.
+ */
+const PlaceMap = dynamic(() => import('./PlaceMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full rounded-lg border border-border bg-surface aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2/1] max-h-[560px] animate-pulse" />
+  ),
+});
 
 /**
  * 아카이브 전체를 연도·장소로 좁혀 본다.
@@ -57,10 +71,11 @@ const PAGE = 48;
  */
 const PREVIEW = 12;
 
-export default function PhotoFilter({ photos }: { photos: Photo[] }) {
+export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[]; mapPlaces?: MapPlace[] }) {
   const [year, setYear] = useState<string>(ALL);
   const [place, setPlace] = useState<string>(ALL);
   const [limit, setLimit] = useState(PAGE);
+  const [mapOpen, setMapOpen] = useState(false);
 
   // 목록은 데이터에서 만든다. 비어 있는 값은 선택지로 두지 않는다.
   const years = useMemo(
@@ -150,6 +165,23 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
               </svg>
             </span>
 
+            {/* 좌표가 하나도 없으면(마이그레이션 전이거나 아직 채우지 않았으면)
+                토글 자체가 없다 — 빈 세계 지도를 여는 버튼은 고장처럼 보인다. */}
+            {mapPlaces.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMapOpen(open => !open)}
+                aria-expanded={mapOpen}
+                aria-controls="archive-map-panel"
+                className="btn-outline gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.4">
+                  <path d="M1.5 3.5 5.5 2l5 1.5 4-1.5v10.5l-4 1.5-5-1.5-4 1.5z M5.5 2v10.5 M10.5 3.5V14" strokeLinejoin="round" />
+                </svg>
+                {mapOpen ? '지도 닫기' : '지도로 보기'}
+              </button>
+            )}
+
             {active && (
               <button
                 type="button"
@@ -161,6 +193,18 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
             )}
           </div>
         </div>
+
+        {mapOpen && mapPlaces.length > 0 && (
+          <div id="archive-map-panel">
+            {/* 점을 누르면 위의 장소 선택과 **같은** 상태를 바꾼다. 같은 점을 다시
+                누르면 풀린다. 연도 조건은 그대로 둔다. */}
+            <PlaceMap
+              places={mapPlaces}
+              selected={place === ALL ? null : place}
+              onSelect={name => narrow(() => setPlace(current => (current === name ? ALL : name)))}
+            />
+          </div>
+        )}
 
         {/* 결과 수는 본문 글씨로. 한국어에 모노 대문자 자간을 걸면 글자가
             흩어져 숫자가 읽히지 않았다. */}
