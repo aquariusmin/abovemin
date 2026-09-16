@@ -27,7 +27,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const result = await getAlbumWithPhotos(slug);
   if (!result || result.photos.length === 0) return { title: 'Collection Not Found' };
-  const description = `${result.album.title} — ${result.photos.length} pieces in this collection.`;
+  // 관리 화면에서 쓴 소개가 있으면 그것이 검색 결과의 한 줄이 된다.
+  const description =
+    result.album.description?.trim() || `${result.album.title} — ${result.photos.length} pieces in this collection.`;
   return {
     title: result.album.title,
     description,
@@ -75,6 +77,7 @@ export default async function CollectionPage({
   // 200으로 내보내면 검색엔진에게는 빈 페이지 하나가 색인할 문서가 된다.
   if (!result || result.photos.length === 0) notFound();
   const { album, photos } = result;
+  const description = album.description?.trim() || null;
 
   // 빈 앨범을 건너뛴 순서 안에서 앞뒤를 고른다. 목록이 비었거나 이 앨범이
   // 그 안에 없으면(조회 실패) 링크를 빼는 쪽이 맞다 — `albums[NaN]`은 터진다.
@@ -98,6 +101,15 @@ export default async function CollectionPage({
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
               {album.title}
             </h1>
+            {/* 앨범 소개(관리 화면의 "설명"). 없으면 줄 자체가 없다. 평문이다 —
+                관리자가 넣은 줄바꿈만 살리고(`pre-line`), 마크업은 해석하지 않는다.
+                줄 나눔은 body의 `keep-all`을 그대로 받는다. `max-w-[60ch]`: 제목 폭이
+                아니라 읽는 폭으로 자른다. */}
+            {description && (
+              <p className="max-w-[60ch] pt-1 text-base md:text-lg leading-relaxed text-slate whitespace-pre-line">
+                {description}
+              </p>
+            )}
           </div>
           <div className="rule-accent" />
         </header>
