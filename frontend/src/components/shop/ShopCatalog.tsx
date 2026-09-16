@@ -84,6 +84,10 @@ export default function ShopCatalog({ products, loadError }: { products: Product
   const categories = [ALL, ...Array.from(new Set(products.map(i => i.category)))];
   const filtered = (selectedCategory === ALL ? products : products.filter(i => i.category === selectedCategory))
     .toSorted((a, b) => {
+      // 품절은 어느 정렬에서든 살 수 있는 것 뒤로. 아카이브로 남기는 것이지
+      // 목록 맨 위를 차지하게 두는 것이 아니다 — 최신순이면 새로 품절된 상품이
+      // 가장 먼저 보인다.
+      if (a.state !== b.state) return a.state === 'available' ? -1 : 1;
       // 옵션 상품은 "얼마부터"로 보이므로 그 값(최저가)으로 줄 세운다.
       if (sortBy === 'price-asc') return a.priceMin - b.priceMin;
       if (sortBy === 'price-desc') return b.priceMin - a.priceMin;
