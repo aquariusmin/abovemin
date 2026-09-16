@@ -235,10 +235,14 @@ export function isYearMismatch(photo: Pick<CheckPhoto, 'year' | 'taken_at'>): bo
 }
 
 /**
- * 긴 변이 이 값보다 짧으면 저해상도. 원본 대부분이 1500px 안팎으로 줄어 있어
- * 그보다 한참 작은 것만 잡는다 — 라이트박스에서 흐리게 보이기 시작하는 크기.
+ * 긴 변이 이 값보다 짧으면 저해상도.
+ *
+ * 1200으로 두었더니 실제 데이터 294장 중 224장이 걸렸다. 초기 원본 대부분이
+ * 886×886, 724×1086 정도로 줄어서 올라왔기 때문이다 — 전부 다시 올리기 전에는
+ * 고칠 수 없는 목록이라 "고칠 곳"이 경고로서 의미를 잃는다. 800이면 SNS·메신저를
+ * 거쳐 저장된 것으로 보이는 310~725px 사진만 남는다.
  */
-export const LOW_RES_LONG_SIDE = 1200;
+export const LOW_RES_LONG_SIDE = 800;
 
 export function isLowResolution(photo: Pick<CheckPhoto, 'width' | 'height'>): boolean {
   const { width, height } = photo;

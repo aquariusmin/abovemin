@@ -43,11 +43,11 @@ describe('사진 단위 규칙', () => {
     expect(isYearMismatch({})).toBe(false);
   });
 
-  it('저해상도: 긴 변이 1200px 미만', () => {
-    expect(isLowResolution({ width: 1080, height: 720 })).toBe(true);
-    expect(isLowResolution({ width: 720, height: 1199 })).toBe(true);
-    expect(isLowResolution({ width: 1200, height: 800 })).toBe(false);
-    expect(isLowResolution({ width: 1500, height: 1124 })).toBe(false);
+  it('저해상도: 긴 변이 800px 미만', () => {
+    expect(isLowResolution({ width: 725, height: 483 })).toBe(true);
+    expect(isLowResolution({ width: 310, height: 799 })).toBe(true);
+    expect(isLowResolution({ width: 800, height: 600 })).toBe(false);
+    expect(isLowResolution({ width: 886, height: 886 })).toBe(false);
     expect(isLowResolution({ width: null, height: 600 })).toBe(false);
     expect(isLowResolution({ width: 0, height: 0 })).toBe(false);
   });
@@ -119,9 +119,9 @@ describe('runDataChecks — 사진 단위 점검', () => {
   const base = { title: 'x', location: 'y', exif_checked_at: '2026-09-16T00:00:00Z', camera: 'Apple iPhone 7' };
   const photos: CheckPhoto[] = [
     { ...base, id: 3, album_slug: 'japan', src: src(3), year: 2018, taken_at: '2019-04-01T09:00:00.000Z', width: 1500, height: 1000, gps_in_original: false },
-    { ...base, id: 1, album_slug: 'korea', src: src(1), title: 'Namsan', year: 2019, taken_at: '2019-07-31T14:55:19.000Z', width: 1080, height: 720, gps_in_original: true },
+    { ...base, id: 1, album_slug: 'korea', src: src(1), title: 'Namsan', year: 2019, taken_at: '2019-07-31T14:55:19.000Z', width: 725, height: 483, gps_in_original: true },
     { ...base, id: 2, album_slug: 'korea', src: src(2), year: 2020, taken_at: '2019-12-31T23:00:00.000Z', width: 1500, height: 1000, camera: null, gps_in_original: null },
-    { ...base, id: 4, album_slug: 'korea', src: src(4), year: 2019, taken_at: null, width: 900, height: 1100, camera: null, gps_in_original: null },
+    { ...base, id: 4, album_slug: 'korea', src: src(4), year: 2019, taken_at: null, width: 520, height: 780, camera: null, gps_in_original: null },
   ];
   const report = runDataChecks({ albums, photos, products: [] });
 
@@ -134,8 +134,8 @@ describe('runDataChecks — 사진 단위 점검', () => {
 
   it('저해상도는 크기와 함께', () => {
     expect(report.lowResolution).toEqual([
-      { id: 1, album_slug: 'korea', album_title: 'Korea', title: 'Namsan', width: 1080, height: 720 },
-      { id: 4, album_slug: 'korea', album_title: 'Korea', title: 'x', width: 900, height: 1100 },
+      { id: 1, album_slug: 'korea', album_title: 'Korea', title: 'Namsan', width: 725, height: 483 },
+      { id: 4, album_slug: 'korea', album_title: 'Korea', title: 'x', width: 520, height: 780 },
     ]);
   });
 
