@@ -1,4 +1,5 @@
 import { publicIdFromUrl } from '@/lib/cloudinary';
+import { MIN_YEAR } from './limits';
 
 /**
  * 개요 탭의 "데이터 점검". 공개 화면에서 티가 나는 빈칸과 어긋남을 찾는다.
@@ -148,6 +149,15 @@ export interface CheckPhoto {
   src: string;
   title: string | null;
   location: string | null;
+  // 아래는 마이그레이션이 더하는 컬럼이다. 적용 전에는 행에 키 자체가 없고,
+  // 그 점검은 아무것도 찾지 않는다(없는 값으로 "문제 있음"을 만들지 않는다).
+  year?: number | null;
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  exif_checked_at?: string | null;
+  gps_in_original?: boolean | null;
 }
 
 export interface CheckProduct {
@@ -173,6 +183,24 @@ export interface CoverIssue {
   sharedWith?: string[];
 }
 
+/** 사진 한 장 단위의 점검 항목. 화면은 앨범 제목과 사진 제목으로 어느 것인지 알린다. */
+export interface PhotoIssue {
+  id: number;
+  album_slug: string;
+  album_title: string;
+  title: string | null;
+}
+
+export interface YearMismatch extends PhotoIssue {
+  year: number;
+  taken_year: number;
+}
+
+export interface LowResolution extends PhotoIssue {
+  width: number;
+  height: number;
+}
+
 export interface DataCheckReport {
   placeholderTitles: AlbumCount[];
   placeholderLocations: AlbumCount[];
@@ -180,6 +208,72 @@ export interface DataCheckReport {
   coverIssues: CoverIssue[];
   locationVariants: LocationVariantGroup[];
   unpricedProducts: Array<{ id: number; name: string }>;
+  yearMismatches: YearMismatch[];
+  lowResolution: LowResolution[];
+  missingExif: AlbumCount[];
+  locationInOriginal: PhotoIssue[];
+}
+
+// ── 사진 단위 규칙 ────────────────────────────────────────────────────────────
+// 개요의 점검과 아카이브 탭의 필터가 같은 함수를 쓴다.
+
+/**
+ * `taken_at`의 **UTC** 연도. `taken_at`은 카메라 시계의 벽시계 시각을 UTC 자리에
+ * 적은 값이라(`photo-metadata.ts`의 `parseTakenAt`), 로컬 시간대로 읽으면 12월
+ * 31일 밤 사진이 이듬해가 된다.
+ */
+export function takenYear(takenAt: string | null | undefined): number | null {
+  if (!takenAt) return null;
+  const time = Date.parse(takenAt);
+  return Number.isNaN(time) ? null : new Date(time).getUTCFullYear();
+}
+
+/** 적힌 연도와 촬영일의 연도가 다르다. 둘 중 하나라도 없으면 비교하지 않는다. */
+export function isYearMismatch(photo: Pick<CheckPhoto, 'year' | 'taken_at'>): boolean {
+  const taken = takenYear(photo.taken_at);
+  return taken !== null && typeof photo.year === 'number' && photo.year !== taken;
+}
+
+/**
+ * 긴 변이 이 값보다 짧으면 저해상도. 원본 대부분이 1500px 안팎으로 줄어 있어
+ * 그보다 한참 작은 것만 잡는다 — 라이트박스에서 흐리게 보이기 시작하는 크기.
+ */
+export const LOW_RES_LONG_SIDE = 1200;
+
+export function isLowResolution(photo: Pick<CheckPhoto, 'width' | 'height'>): boolean {
+  const { width, height } = photo;
+  if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) return false;
+  return Math.max(width, height) < LOW_RES_LONG_SIDE;
+}
+
+/** 촬영 정보 채우기가 **이미 확인했는데** 카메라도 촬영일도 없다. 확인 전인 사진은 아니다. */
+export function isMissingExif(photo: Pick<CheckPhoto, 'exif_checked_at' | 'camera' | 'taken_at'>): boolean {
+  return Boolean(photo.exif_checked_at) && !photo.camera && !photo.taken_at;
+}
+
+/** 원본에 위치 정보가 남았다고 채우기가 표시한 사진. null(아직 모름)은 아니다. */
+export function hasLocationInOriginal(photo: Pick<CheckPhoto, 'gps_in_original'>): boolean {
+  return photo.gps_in_original === true;
+}
+
+/**
+ * "촬영일 기준으로 연도 맞추기"가 실제로 쓸 값. 어긋난 사진만, 바꿀 연도별로
+ * 묶는다 — 같은 연도로 가는 사진은 update 한 번이다. 연도 규칙(`MIN_YEAR` ~
+ * 내년) 밖의 촬영일은 카메라 시계가 틀린 것이라 건너뛴다.
+ */
+export function planYearSync(
+  photos: ReadonlyArray<Pick<CheckPhoto, 'id' | 'year' | 'taken_at'>>,
+  now: Date = new Date(),
+): Array<{ year: number; ids: number[] }> {
+  const maxYear = now.getUTCFullYear() + 1;
+  const groups = new Map<number, number[]>();
+  for (const photo of photos) {
+    if (!isYearMismatch(photo)) continue;
+    const year = takenYear(photo.taken_at)!;
+    if (year < MIN_YEAR || year > maxYear) continue;
+    groups.set(year, [...(groups.get(year) ?? []), photo.id]);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a - b).map(([year, ids]) => ({ year, ids }));
 }
 
 function perAlbum(
@@ -255,6 +349,20 @@ export function runDataChecks(input: {
     }
   }
 
+  // 사진 단위 목록은 앨범 순서, 앨범 안에서는 id 순.
+  const albumTitle = new Map(albums.map(album => [album.slug, album.title]));
+  const albumOrder = new Map(albums.map((album, i) => [album.slug, i]));
+  const photoIssues = (predicate: (photo: CheckPhoto) => boolean) =>
+    photos
+      .filter(predicate)
+      .sort((a, b) => (albumOrder.get(a.album_slug) ?? 1e9) - (albumOrder.get(b.album_slug) ?? 1e9) || a.id - b.id);
+  const issue = (photo: CheckPhoto): PhotoIssue => ({
+    id: photo.id,
+    album_slug: photo.album_slug,
+    album_title: albumTitle.get(photo.album_slug) ?? photo.album_slug,
+    title: photo.title,
+  });
+
   return {
     placeholderTitles: perAlbum(albums, photos, photo => isPlaceholderText(photo.title)),
     placeholderLocations: perAlbum(albums, photos, photo => isPlaceholderText(photo.location)),
@@ -268,7 +376,27 @@ export function runDataChecks(input: {
     unpricedProducts: products
       .filter(product => product.in_stock && product.price <= 0)
       .map(({ id, name }) => ({ id, name })),
+    yearMismatches: photoIssues(isYearMismatch).map(photo => ({
+      ...issue(photo),
+      year: photo.year as number,
+      taken_year: takenYear(photo.taken_at) as number,
+    })),
+    lowResolution: photoIssues(isLowResolution).map(photo => ({
+      ...issue(photo),
+      width: photo.width as number,
+      height: photo.height as number,
+    })),
+    missingExif: perAlbum(albums, photos, isMissingExif),
+    locationInOriginal: photoIssues(hasLocationInOriginal).map(issue),
   };
+}
+
+/** 긴 id 목록을 요청 상한(`MAX_BULK` 등)에 맞춰 나눈다. */
+export function chunkIds(ids: readonly number[], size: number): number[][] {
+  if (size <= 0) throw new Error('chunk size must be positive');
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+  return chunks;
 }
 
 export function issueCount(report: DataCheckReport): number {
@@ -278,6 +406,10 @@ export function issueCount(report: DataCheckReport): number {
     report.emptyAlbums.length +
     report.coverIssues.length +
     report.locationVariants.length +
-    report.unpricedProducts.length
+    report.unpricedProducts.length +
+    report.yearMismatches.length +
+    report.lowResolution.length +
+    report.missingExif.length +
+    report.locationInOriginal.length
   );
 }

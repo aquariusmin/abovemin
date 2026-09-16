@@ -3,6 +3,7 @@ import { withColumnFallback } from '@/lib/db-compat';
 import { runDataChecks, type CheckAlbum, type CheckPhoto, type CheckProduct } from '@/lib/admin/data-checks';
 import { ORDER_STATUSES, type OrderStatus } from '@/lib/admin/schemas';
 import { adminDb, dbErrorResponse, guardRead } from '@/lib/admin/route-helpers';
+import { PHOTO_COLUMN_LEVEL, photoColumnSets, selectWithColumnSets } from '@/lib/admin/photo-columns';
 
 /**
  * 개요 탭 한 화면에 필요한 것을 한 번에: 숫자, 최근 사진, 데이터 점검.
@@ -31,10 +32,10 @@ export async function GET() {
       () => db.value.from('albums').select('id, slug, title, cover, published').order('sort_order'),
       () => db.value.from('albums').select('id, slug, title, cover').order('sort_order'),
     ),
-    withColumnFallback(
-      'admin_overview.photos',
-      () => db.value.from('photos').select('id, album_slug, src, title, location, year, hidden, created_at'),
-      () => db.value.from('photos').select('id, album_slug, src, title, location, year'),
+    // 촬영 정보·위치 플래그 컬럼까지 읽는다. 마이그레이션이 빠진 만큼 내려가며
+    // 읽고, 그 점검들은 빈 목록이 된다(`CheckPhoto`의 선택 필드).
+    selectWithColumnSets('admin_overview.photos', photoColumnSets('id, album_slug, src, title, location, year'), columns =>
+      db.value.from('photos').select(columns),
     ),
     db.value.from('products').select('id, name, price, in_stock'),
     db.value.from('orders').select('status'),
@@ -87,6 +88,10 @@ export async function GET() {
       created_at: photo.created_at ?? null,
     })),
     report: runDataChecks({ albums: albumRows, photos: photoRows, products: productRows }),
-    migrationPending: albums.migrationPending || photos.migrationPending,
+    migrationPending: albums.migrationPending || photos.level >= PHOTO_COLUMN_LEVEL.legacy,
+    /** 촬영 정보 점검(연도·저해상도·촬영 정보 없음)에 필요한 archive-extras가 없다. */
+    extrasMigrationPending: photos.level >= PHOTO_COLUMN_LEVEL.noExtras,
+    /** "위치 정보가 남은 원본" 점검에 필요한 upload-privacy가 없다. */
+    privacyMigrationPending: photos.level >= PHOTO_COLUMN_LEVEL.noPrivacy,
   });
 }
