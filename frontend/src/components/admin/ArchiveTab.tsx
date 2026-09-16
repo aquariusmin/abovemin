@@ -27,7 +27,7 @@ export interface AlbumOption {
   photo_count: number;
 }
 
-const FILTERS: PhotoFilter[] = ['all', 'untitled', 'nolocation', 'hidden'];
+const FILTERS: PhotoFilter[] = ['all', 'untitled', 'nolocation', 'hidden', 'yearmismatch', 'lowres', 'noexif', 'gps'];
 
 function isFilter(value: string | null): value is PhotoFilter {
   return FILTERS.includes(value as PhotoFilter);

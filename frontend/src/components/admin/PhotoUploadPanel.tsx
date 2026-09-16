@@ -2,17 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { adminFetch, errorMessage, uploadToCloudinary, type SignResponse } from '@/lib/admin/client';
+import { CONVERTED_NOTICE, prepareUpload, type PrivacyStatus } from '@/lib/admin/upload-privacy';
+import type { RoundedCoord } from '@/lib/exif-strip';
 import { StatusLine, type Message } from './AdminUi';
-import { BTN_SM, INPUT_COMPACT, LABEL_CLASS, INPUT_CLASS } from './adminStyles';
+import { BTN_SM, CHIP_KO, INPUT_COMPACT, LABEL_CLASS, INPUT_CLASS } from './adminStyles';
 
 /**
  * 새 사진 업로드.
  *
  * 흐름은 두 단계다.
- *  1) 파일을 놓으면 **곧바로** Cloudinary로 올라간다 (서버를 거치지 않는다 —
+ *  1) 파일을 놓으면 먼저 브라우저에서 위치 정보를 지우고(`lib/admin/upload-privacy.ts`)
+ *     **곧바로** Cloudinary로 올라간다 (서버를 거치지 않는다 —
  *     `lib/cloudinary-upload.ts` 참고). 업로드 응답의 EXIF로 촬영 연도가 미리
  *     채워지므로, 관리자가 타이핑을 시작할 때 이미 대부분 채워져 있다.
  *  2) 제목/장소/연도를 확인한 뒤 "저장"을 눌러야 `photos` 행이 생긴다.
+ *     지우기 전에 읽어 둔 GPS는 소수점 한 자리로 반올림된 채 함께 보내져,
+ *     장소 좌표(`places`)가 비어 있을 때만 그 근거가 된다.
  *
  * 저장하지 않고 화면을 떠나면 Cloudinary에는 파일이 남는다. 사이트에는 노출되지
  * 않고, 설정 탭의 "쓰이지 않는 원본"에서 찾아 지울 수 있다.
@@ -28,6 +33,10 @@ interface Row {
   status: RowStatus;
   error?: string;
   src?: string;
+  /** 위치 정보를 어떻게 처리했는가. 올리기 전 단계가 끝나야 생긴다. */
+  privacy?: PrivacyStatus;
+  /** 반올림된 좌표(약 11km). 정밀한 좌표는 이 컴포넌트에 들어오지 않는다. */
+  coord?: RoundedCoord | null;
   title: string;
   location: string;
   year: string;
@@ -46,6 +55,20 @@ interface Props {
 const CONCURRENCY = 3;
 const MAX_BATCH = 60;
 
+/**
+ * Chrome·Windows는 HEIC에 MIME 타입을 붙이지 않는다(`file.type === ''`). 타입만
+ * 보면 HEIC는 조용히 걸러져 "JPEG로 내보내 달라"는 안내조차 보이지 않는다.
+ */
+function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/') || /\.(heic|heif|avif|tiff?)$/i.test(file.name);
+}
+
+const PRIVACY_BADGE: Record<PrivacyStatus, string> = {
+  removed: '위치 정보 제거됨',
+  converted: '위치 정보 제거됨',
+  none: '위치 정보 없음',
+};
+
 function titleFromFileName(name: string): string {
   const base = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
   return (base || 'Untitled').slice(0, 200);
@@ -56,7 +79,7 @@ function titleFromFileName(name: string): string {
  * 돌려준다. 촬영일이 없는 파일(스캔본, 스크린샷 등)은 올해로 채우고 관리자가
  * 고치도록 둔다 — `year`는 비워 둘 수 없는 값이다.
  */
-function exifYear(metadata: unknown): string {
+function exifYear(metadata: unknown, fallback: number | null = null): string {
   const meta = (metadata ?? {}) as Record<string, unknown>;
   for (const key of ['DateTimeOriginal', 'DateTimeDigitized', 'DateTime', 'CreateDate']) {
     const value = meta[key];
@@ -65,7 +88,7 @@ function exifYear(metadata: unknown): string {
       if (match) return match[1];
     }
   }
-  return String(new Date().getFullYear());
+  return String(fallback ?? new Date().getFullYear());
 }
 
 export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChange, onSaved }: Props) {
@@ -105,7 +128,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
     if (!fileList || !albumSlug) return;
     setMessage(null);
 
-    const files = Array.from(fileList).filter(file => file.type.startsWith('image/'));
+    const files = Array.from(fileList).filter(isImageFile);
     if (files.length === 0) {
       setMessage({ tone: 'error', text: '이미지 파일만 올릴 수 있습니다.' });
       return;
@@ -152,11 +175,15 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
         const job = queue.shift();
         if (!job) return;
         try {
-          const uploaded = await uploadToCloudinary(job.file, sign);
+          // 위치 정보를 지운 파일만 올라간다. 지울 수 없으면 여기서 멈추고 행에 이유가 뜬다.
+          const prepared = await prepareUpload(job.file);
+          updateRow(job.row.key, { privacy: prepared.status, coord: prepared.coord });
+          const uploaded = await uploadToCloudinary(prepared.file, sign);
           updateRow(job.row.key, {
             status: 'ready',
             src: uploaded.secure_url,
-            year: exifYear(uploaded.image_metadata),
+            // JPEG로 변환한 파일은 EXIF가 없어 Cloudinary가 촬영일을 모른다 — 미리 읽어 둔 연도.
+            year: exifYear(uploaded.image_metadata, prepared.takenYear),
           });
         } catch (error) {
           updateRow(job.row.key, { status: 'error', error: errorMessage(error, '업로드 실패') });
@@ -210,6 +237,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
           title: row.title.trim(),
           location: row.location.trim(),
           year: Number(row.year),
+          ...(row.coord ? { place_coord: row.coord } : {}),
         })),
       });
       // 업로드에 실패한 행은 남겨 둔다 — 다시 시도할 대상이 화면에 보여야 한다.
@@ -262,6 +290,10 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
         />
         <p className="mt-3 text-[12px] text-muted-foreground">
           촬영 연도는 EXIF에서 자동으로 채웁니다. 없으면 올해로 들어가니 확인해 주세요.
+        </p>
+        <p className="mx-auto mt-1 max-w-md text-[12px] text-muted-foreground">
+          올리기 전에 브라우저에서 사진의 위치 정보(GPS)를 지웁니다. 원본은 주소만 알면 누구나 받을 수
+          있어서입니다. 장소 좌표는 소수점 한 자리(약 11km)로만 남깁니다.
         </p>
       </div>
 
@@ -335,7 +367,16 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
                 />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="truncate font-mono text-[11px] text-muted-foreground">{row.fileName}</p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate font-mono text-[11px] text-muted-foreground">{row.fileName}</p>
+                      {row.privacy && (
+                        <span
+                          className={`chip ${CHIP_KO} shrink-0 ${row.privacy === 'none' ? 'text-muted-foreground' : 'border-forest/30 text-forest'}`}
+                        >
+                          {PRIVACY_BADGE[row.privacy]}
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => dropRows(r => r.key !== row.key)}
@@ -349,6 +390,9 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
                     <p className="label-ko animate-pulse text-muted-foreground">올리는 중…</p>
                   )}
                   {row.status === 'error' && <p className="text-[13px] text-brick">{row.error}</p>}
+                  {row.privacy === 'converted' && row.status !== 'error' && (
+                    <p className="text-[12px] text-slate">{CONVERTED_NOTICE}</p>
+                  )}
                   {row.status === 'ready' && (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-[2fr_1.5fr_0.8fr]">
                       <input

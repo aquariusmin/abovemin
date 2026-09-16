@@ -3,6 +3,7 @@ import { getCloudinaryConfig } from '@/lib/cloudinary-upload';
 import { revalidateArchive } from '@/lib/cache-tags';
 import { log } from '@/lib/logger';
 import { fillPhotoMetadata, metadataProgress } from '@/lib/admin/metadata-fill';
+import { MetadataRecheck, firstIssue } from '@/lib/admin/schemas';
 import {
   ARCHIVE_EXTRAS_MIGRATION,
   adminDb,
@@ -46,10 +47,31 @@ export async function GET() {
   return NextResponse.json({ total: progress.total, remaining: progress.remaining, migrationPending: false });
 }
 
-/** 한 배치를 처리하고 남은 장수를 돌려준다. 본문은 받지 않는다. */
+/**
+ * 한 배치를 처리하고 남은 장수를 돌려준다.
+ *
+ * 본문이 없으면 아직 시도하지 않은 사진을 채운다(설정 탭의 버튼). `{ ids }`를
+ * 주면 그 사진들을 이미 확인했더라도 다시 묻는다 — 개요의 "위치 정보가 남은
+ * 원본"에서 원본을 고친 뒤 표시를 갱신하는 경로다.
+ */
 export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
+
+  const raw = await request.text().catch(() => '');
+  let recheckIds: number[] | undefined;
+  if (raw.trim()) {
+    let json: unknown;
+    try {
+      json = JSON.parse(raw);
+    } catch {
+      return jsonError('요청 본문이 올바르지 않습니다.', 400);
+    }
+    const parsed = MetadataRecheck.safeParse(json);
+    if (!parsed.success) return jsonError(firstIssue(parsed.error), 400);
+    recheckIds = parsed.data.ids;
+  }
+
   const db = adminDb('admin_photo_metadata');
   if (!db.ok) return db.response;
 
@@ -61,7 +83,10 @@ export async function POST(request: Request) {
     return jsonError('Cloudinary is not configured', 503);
   }
 
-  const outcome = await fillPhotoMetadata(db.value, config, { deadline: Date.now() + DEADLINE_MS });
+  const outcome = await fillPhotoMetadata(db.value, config, {
+    deadline: Date.now() + DEADLINE_MS,
+    ...(recheckIds ? { ids: recheckIds, limit: recheckIds.length, recheck: true } : {}),
+  });
   if (!outcome.ok) {
     if (outcome.migration) return migrationResponse();
     log.error('admin_photo_metadata_fill', outcome.error);
