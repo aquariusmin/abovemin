@@ -22,3 +22,4 @@ export const MIN_YEAR = 1826;
  */
 export const ADMIN_STUDIO_MIGRATION = 'supabase/migrations/20260916000000_admin_studio.sql';
 export const ARCHIVE_EXTRAS_MIGRATION = 'supabase/migrations/20260916100000_archive_extras.sql';
+export const UPLOAD_PRIVACY_MIGRATION = 'supabase/migrations/20260917010000_upload_privacy.sql';

@@ -4,9 +4,12 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { revalidateArchive } from '@/lib/cache-tags';
-import { withColumnFallback } from '@/lib/db-compat';
+import { PHOTO_COLUMN_LEVEL, photoColumnSets, selectWithColumnSets } from '@/lib/admin/photo-columns';
 import { dbErrorResponse } from '@/lib/admin/route-helpers';
-import { fillPhotoMetadata } from '@/lib/admin/metadata-fill';
+import { addMissingPlaces, fillPhotoMetadata } from '@/lib/admin/metadata-fill';
+import { groupCoordsByPlace, type RoundedCoord } from '@/lib/admin/photo-metadata';
+import { PlaceCoord } from '@/lib/admin/schemas';
+import { cleanCaptionField } from '@/lib/caption';
 
 // 저장 뒤 촬영 정보 채우기(`after`)가 이 함수의 시간 안에서 돈다.
 export const maxDuration = 30;
@@ -47,8 +50,12 @@ function isError<T>(value: T | { error: string }): value is { error: string } {
 
 // ── 목록 ──────────────────────────────────────────────────────────────────────
 
-const LIST_COLUMNS = 'id, album_slug, src, title, location, year, sort_order, hidden, created_at';
-const LEGACY_LIST_COLUMNS = 'id, album_slug, src, title, location, year, sort_order';
+/**
+ * 목록이 읽는 컬럼. 크기·촬영일·카메라·위치 플래그까지 읽어, 아카이브 탭의
+ * 점검 필터(연도 불일치·저해상도·촬영 정보 없음·위치가 남은 원본)가 개요와 같은
+ * 규칙(`lib/admin/data-checks.ts`)으로 거른다.
+ */
+const LIST_COLUMN_SETS = photoColumnSets('id, album_slug, src, title, location, year, sort_order');
 
 /**
  * 사진 목록. 두 가지로 부른다.
@@ -56,7 +63,8 @@ const LEGACY_LIST_COLUMNS = 'id, album_slug, src, title, location, year, sort_or
  *  - `?scope=all`: 아카이브 전체. 히어로 이미지 고르기처럼 앨범을 가로지르는 곳.
  *
  * 숨긴 사진도 **포함한다** — 관리 화면은 숨긴 것을 다시 보이게 하는 곳이다.
- * 마이그레이션 전에는 `hidden`/`created_at` 없이 읽고 `migrationPending`을 켠다.
+ * 마이그레이션 전에는 없는 컬럼을 빼고 읽는다. `migrationPending`은 `hidden`/
+ * `created_at`까지 없을 때(admin-studio 전)만 켠다 — 화면의 안내가 그 기능이다.
  */
 export async function GET(request: Request) {
   if (!(await isAdminRequest())) {
@@ -84,11 +92,8 @@ export async function GET(request: Request) {
       ? base.order('album_slug').order('sort_order')
       : base.eq('album_slug', albumSlug!).order('sort_order');
   };
-  const { data, error, migrationPending } = await withColumnFallback(
-    'admin_photos_list',
-    () => query(LIST_COLUMNS),
-    () => query(LEGACY_LIST_COLUMNS),
-  );
+  const { data, error, level } = await selectWithColumnSets('admin_photos_list', LIST_COLUMN_SETS, query);
+  const migrationPending = level >= PHOTO_COLUMN_LEVEL.legacy;
 
   if (error) {
     log.error('admin_photos_list', error);
@@ -104,11 +109,16 @@ interface IncomingPhoto {
   title: string;
   location: string;
   year: number;
+  /**
+   * 업로드 화면이 위치 정보를 지우기 **전에** 읽어 반올림한 좌표. 사진 행에는
+   * 저장하지 않는다 — 장소마다 중앙값 하나로만 `places`에 들어간다.
+   */
+  placeCoord: RoundedCoord | null;
 }
 
 function parsePhoto(raw: unknown, cloudName: string): IncomingPhoto | { error: string } {
   if (typeof raw !== 'object' || raw === null) return { error: '사진 항목이 올바르지 않습니다.' };
-  const { src, title, location, year } = raw as Record<string, unknown>;
+  const { src, title, location, year, place_coord: placeCoord } = raw as Record<string, unknown>;
 
   if (typeof src !== 'string' || !isOwnCloudinaryUrl(src, cloudName)) {
     return { error: '이 사이트의 Cloudinary 주소가 아닙니다.' };
@@ -119,8 +129,12 @@ function parsePhoto(raw: unknown, cloudName: string): IncomingPhoto | { error: s
   if (isError(parsedLocation)) return parsedLocation;
   const parsedYear = parseYear(year);
   if (isError(parsedYear)) return parsedYear;
+  // 브라우저가 이미 반올림했더라도 서버가 다시 자른다(`PlaceCoord`). 좌표가 틀리면
+  // 사진 저장까지 막지 않고 좌표만 버린다 — 좌표는 지도용 부가 정보다.
+  const coord = placeCoord === undefined || placeCoord === null ? null : PlaceCoord.safeParse(placeCoord);
+  const parsedCoord = coord?.success && !(coord.data.lat === 0 && coord.data.lng === 0) ? coord.data : null;
 
-  return { src, title: parsedTitle, location: parsedLocation, year: parsedYear };
+  return { src, title: parsedTitle, location: parsedLocation, year: parsedYear, placeCoord: parsedCoord };
 }
 
 /**
@@ -218,6 +232,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 
+  // 좌표가 없는 장소에만 이번 사진들의 중앙값을 넣는다(`addMissingPlaces` — 이미
+  // 있는 행은 덮어쓰지 않는다). 실패해도 사진은 이미 저장됐으므로 응답은 성공이다.
+  // `places`가 없으면(archive-extras 마이그레이션 전) 조용히 건너뛴다.
+  const coordsByPlace = groupCoordsByPlace(
+    photos.map(photo => ({ place: cleanCaptionField(photo.location), coord: photo.placeCoord })),
+  );
+  let placesAdded = 0;
+  if (coordsByPlace.size > 0) {
+    try {
+      placesAdded = (await addMissingPlaces(supabase, coordsByPlace)).added.length;
+    } catch (error) {
+      log.warn('admin_photos_places', String(error));
+    }
+  }
+
   revalidateArchive();
 
   // 방금 넣은 사진의 촬영 정보를 **응답을 보낸 뒤에** 채운다(`after`). 저장은
@@ -247,7 +276,7 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true, inserted: inserted?.length ?? rows.length });
+  return NextResponse.json({ ok: true, inserted: inserted?.length ?? rows.length, placesAdded });
 }
 
 // ── 수정 ──────────────────────────────────────────────────────────────────────

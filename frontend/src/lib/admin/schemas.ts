@@ -139,6 +139,35 @@ export const PlaceUpsert = z.strictObject({
 
 export const PlaceDelete = z.strictObject({ name: PlaceName });
 
+/**
+ * 새 사진 저장에 딸려 오는 좌표(`api/admin/photos` POST의 `place_coord`).
+ * 브라우저가 이미 반올림해 보내지만 **서버가 다시 자른다** — 이 값은 사진별로
+ * 저장되지 않고 장소마다 중앙값 하나로만 `places`에 들어간다.
+ */
+export const PlaceCoord = z.strictObject(
+  {
+    lat: coordinate(90, '위도'),
+    lng: coordinate(180, '경도'),
+  },
+  { error: '좌표가 올바르지 않습니다.' },
+);
+
+// ── 데이터 점검 고치기 ────────────────────────────────────────────────────────
+
+/** 촬영일 기준으로 연도 맞추기. 개요가 어긋난 사진의 id를 보낸다(전체는 여러 번에 나눠). */
+export const YearSync = z.strictObject({
+  ids: uniqueIds(MAX_BULK),
+});
+
+/**
+ * 촬영 정보 다시 확인. 본문 없이 부르면 아직 시도하지 않은 사진을 채우고,
+ * `ids`를 주면 이미 확인한 사진도 다시 묻는다(원본을 고친 뒤 표시 갱신용).
+ * Admin API 호출이 장당 한 번이라 한 요청에 20장까지.
+ */
+export const MetadataRecheck = z.strictObject({
+  ids: uniqueIds(20),
+});
+
 // ── 노트 ──────────────────────────────────────────────────────────────────────
 
 /** `YYYY-MM-DD`이면서 달력에 있는 날짜. `2026-02-30`은 정규식만으로는 통과한다. */
