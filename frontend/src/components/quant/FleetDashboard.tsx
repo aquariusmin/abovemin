@@ -159,7 +159,7 @@ export function FleetDashboard({
         </Section>
       ) : null}
 
-      <Section className="grid grid-cols-2 lg:grid-cols-4">
+      <Section className="lab-stats grid grid-cols-2 lg:grid-cols-4">
         {/* One cell per book. There is deliberately no single fleet figure:
             KRW and USD are not addable, and mock equity is not addable to real
             money — a paper profit must never flatter a real loss. */}
@@ -204,7 +204,7 @@ export function FleetDashboard({
           title="fleet"
           right={<span className="lab-label">{sorted.length} row{sorted.length === 1 ? "" : "s"}</span>}
         />
-        <div className="overflow-x-auto">
+        <div className="lab-scroll overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="glass-inset border-b border-[var(--lab-border)]">
