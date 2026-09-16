@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
         <p className="text-[15px] text-ink-body mb-10 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
-        <Link href="/shop" className="btn-primary">Continue Shopping</Link>
+        <Link href="/shop" className="btn-primary">계속 둘러보기</Link>
       </main>
     );
   }
@@ -153,9 +154,7 @@ export default function CheckoutPage() {
       >
 
         <header className="mb-10 border-b border-hairline pb-6">
-          <Link href="/cart" className="link-underline text-sm text-slate">
-            ← Back to Cart
-          </Link>
+          <BackLink href="/cart">장바구니로</BackLink>
           <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
           <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해주세요.</h1>
         </header>
@@ -264,7 +263,7 @@ export default function CheckoutPage() {
               disabled={submitting}
               className="btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Processing…' : 'Place Order'}
+              {submitting ? '주문 중…' : '주문하기'}
             </button>
           </form>
 

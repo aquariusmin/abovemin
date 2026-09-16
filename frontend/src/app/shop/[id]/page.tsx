@@ -125,8 +125,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               <p className="eyebrow text-muted-foreground">{product.category}</p>
               <span aria-hidden className="h-3 w-px bg-hairline" />
               {/* Hangul은 eyebrow의 대문자·0.24em 자간을 받지 않는다 → label-ko. */}
-              <span className={available ? 'eyebrow text-accent' : 'label-ko text-muted-foreground'}>
-                {available ? 'In stock' : UNAVAILABLE_LABEL}
+              <span className={`label-ko ${available ? 'text-accent' : 'text-muted-foreground'}`}>
+                {available ? '판매 중' : UNAVAILABLE_LABEL}
               </span>
             </div>
             {/* 이름이 이 페이지의 제목이고 가격은 그 아래의 정보다. 가격이
