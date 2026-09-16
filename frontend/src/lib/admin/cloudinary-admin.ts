@@ -42,7 +42,9 @@ export async function loadReferencedPublicIds(
   const [photos, albums, products, settings] = await Promise.all([
     db.from('photos').select('src'),
     db.from('albums').select('cover'),
-    db.from('products').select('image_url'),
+    // `*`: `images`(20260917020000_shop_ready)는 마이그레이션 전 DB에 없다. 이름으로
+    // 고르면 스캔 자체가 실패한다.
+    db.from('products').select('*'),
     db.from('site_settings').select('value'),
   ]);
   const failed = [photos, albums, products, settings].find(result => result.error);
@@ -52,6 +54,11 @@ export async function loadReferencedPublicIds(
     ...(photos.data ?? []).map(row => row.src),
     ...(albums.data ?? []).map(row => row.cover),
     ...(products.data ?? []).map(row => row.image_url),
+    // 상품 갤러리의 나머지 장. 커버(`image_url`)만 보면 두 번째 장부터가 전부
+    // "쓰이지 않는 원본"으로 잡혀 지워진다.
+    ...(products.data ?? []).flatMap(row =>
+      Array.isArray(row.images) ? row.images.map((image: { url?: unknown }) => image?.url) : [],
+    ),
     // key/value라 어느 키가 이미지인지 가정하지 않는다.
     ...(settings.data ?? []).map(row => row.value),
   ];
