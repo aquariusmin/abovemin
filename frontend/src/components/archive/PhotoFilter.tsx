@@ -38,6 +38,17 @@ const ALL = '__all__';
  */
 const PAGE = 48;
 
+/**
+ * 조건을 고르기 전에 보여 줄 최근 사진 장수.
+ *
+ * 예전에는 이 자리가 점선 상자 하나였다("연도나 장소를 고르면…"). 섹션의
+ * 절반이 안내문뿐이라 기능이 있다는 것조차 잘 보이지 않았다. 최근 올라온
+ * 사진을 한 화면 분량만 보여 주면, 아래 그리드가 무엇을 거르는지 먼저
+ * 보이고 위의 칩이 그것을 좁히는 도구로 읽힌다. 전체 290장이 아니라 12장인
+ * 이유는 PAGE 주석의 무게 문제와 같다.
+ */
+const PREVIEW = 12;
+
 export default function PhotoFilter({ photos }: { photos: Photo[] }) {
   const [year, setYear] = useState<string>(ALL);
   const [place, setPlace] = useState<string>(ALL);
@@ -69,57 +80,93 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
   const active = year !== ALL || place !== ALL;
   const shown = filtered.slice(0, limit);
 
+  // "최근"은 id 순서다 — 홈의 최근 아카이브 띠와 같은 기준.
+  const recent = useMemo(
+    () => photos.toSorted((a, b) => b.id - a.id).slice(0, PREVIEW),
+    [photos],
+  );
+
   // 조건을 바꾸면 처음부터 다시 센다.
   function narrow(next: () => void) {
     next();
     setLimit(PAGE);
   }
 
-  const selectClass =
-    'appearance-none bg-transparent pr-6 text-sm font-medium text-ink cursor-pointer rounded-sm ' +
-    'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
-
   return (
     <div className="max-w-[1400px] mx-auto">
-      <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-hairline py-4">
-        <label className="flex items-center gap-2">
-          <span className="label-ko text-muted-foreground">연도</span>
-          <select value={year} onChange={e => narrow(() => setYear(e.target.value))} className={selectClass} aria-label="연도로 거르기">
-            <option value={ALL}>전체</option>
-            {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
-          </select>
-        </label>
+      {/* 필터 패널. 연도는 열 개 남짓이라 전부 칩으로 펼친다 — 무엇이 있는지가
+          곧 정보다. 장소는 36곳이라 칩으로 펼치면 패널이 사진보다 길어지므로,
+          같은 pill 모양의 select로 접는다. */}
+      <div className="mb-8 md:mb-10 space-y-5 border-y border-hairline py-6">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
+          <span className="label-ko text-muted-foreground sm:w-10 sm:pt-2.5 shrink-0" id="filter-year-label">연도</span>
+          <div role="group" aria-labelledby="filter-year-label" className="flex flex-wrap gap-2">
+            {[ALL, ...years.map(String)].map(y => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => narrow(() => setYear(y))}
+                data-active={year === y}
+                aria-pressed={year === y}
+                className="btn-outline tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {y === ALL ? '전체' : y}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <label className="flex items-center gap-2">
-          <span className="label-ko text-muted-foreground">장소</span>
-          <select value={place} onChange={e => narrow(() => setPlace(e.target.value))} className={selectClass} aria-label="장소로 거르기">
-            <option value={ALL}>전체</option>
-            {places.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </label>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+          <label htmlFor="filter-place" className="label-ko text-muted-foreground sm:w-10 shrink-0">장소</label>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <span className="relative inline-flex items-center">
+              <select
+                id="filter-place"
+                value={place}
+                onChange={e => narrow(() => setPlace(e.target.value))}
+                data-active={place !== ALL}
+                className="btn-outline appearance-none cursor-pointer pr-10 max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <option value={ALL}>전체 장소</option>
+                {places.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <svg
+                aria-hidden
+                viewBox="0 0 12 12"
+                className={`pointer-events-none absolute right-4 h-3 w-3 ${place !== ALL ? 'text-primary-foreground' : 'text-muted-foreground'}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
 
-        <p className="eyebrow text-muted-foreground ml-auto" aria-live="polite">
-          {active ? `${filtered.length}장` : `${photos.length}장 전체`}
+            {active && (
+              <button
+                type="button"
+                onClick={() => narrow(() => { setYear(ALL); setPlace(ALL); })}
+                className="btn-ghost focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                조건 초기화
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 결과 수는 본문 글씨로. 한국어에 모노 대문자 자간을 걸면 글자가
+            흩어져 숫자가 읽히지 않았다. */}
+        <p className="text-sm text-slate" aria-live="polite">
+          {active
+            ? <>전체 {photos.length}장 중 <span className="font-medium text-ink tabular-nums">{filtered.length}장</span></>
+            : <>최근 올라온 {recent.length}장을 보여 드립니다. 연도나 장소를 고르면 전체 {photos.length}장에서 찾습니다.</>}
         </p>
-
-        {active && (
-          <button
-            type="button"
-            onClick={() => narrow(() => { setYear(ALL); setPlace(ALL); })}
-            className="eyebrow text-slate hover:text-ink transition-colors rounded-sm px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            초기화
-          </button>
-        )}
       </div>
 
       {!active ? (
-        // 조건을 고르기 전에는 아무것도 그리지 않는다. 이 섹션의 목적은
-        // 좁히는 것이고, 좁히지 않은 상태의 "전체"는 바로 위 컬렉션 그리드가
-        // 이미 더 나은 방식으로 보여 주고 있다.
-        <p className="py-16 text-center text-sm text-muted-foreground border border-dashed border-hairline rounded-lg break-keep">
-          연도나 장소를 고르면 사진 {photos.length}장 중에서 찾아 보여 드립니다.
-        </p>
+        // 조건을 고르기 전: 최근 사진 한 화면 분량. 컬렉션 전체는 바로 위
+        // 그리드가 이미 더 나은 방식으로 보여 주고 있다.
+        <PhotoGrid key="recent" photos={recent} />
       ) : filtered.length > 0 ? (
         <>
           {/* 조건이 바뀌면 그리드를 새로 만든다. 재사용하면 사진이 자리만
@@ -130,7 +177,7 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
               <button
                 type="button"
                 onClick={() => setLimit(n => n + PAGE)}
-                className="btn-outline text-[11px] uppercase tracking-widest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 더 보기 ({filtered.length - shown.length}장 남음)
               </button>
@@ -138,9 +185,16 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
           )}
         </>
       ) : (
-        <p className="py-20 text-center text-sm text-muted-foreground border border-dashed border-hairline rounded-lg">
-          조건에 맞는 사진이 없습니다.
-        </p>
+        <div className="py-16 text-center space-y-4">
+          <p className="text-base text-slate">조건에 맞는 사진이 없습니다.</p>
+          <button
+            type="button"
+            onClick={() => narrow(() => { setYear(ALL); setPlace(ALL); })}
+            className="btn-outline"
+          >
+            조건 초기화
+          </button>
+        </div>
       )}
     </div>
   );

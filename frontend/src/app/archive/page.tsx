@@ -53,12 +53,13 @@ export default async function Archive() {
           "Seoul"처럼 이야기를 가로지르는 질문을 위한 것이다. 앨범 아래에 두는
           이유도 그것이다 — 이 사이트가 먼저 제안하는 것은 컬렉션이다. */}
       {allPhotos.length > 0 && (
-        <section className="mt-20 md:mt-28">
-          <Reveal className="max-w-[1400px] mx-auto mb-8" y={16}>
-            <h2 className="font-serif text-2xl md:text-3xl font-medium tracking-tight text-ink">
+        <section className="mt-20 md:mt-28" aria-labelledby="archive-search">
+          <Reveal className="max-w-[1400px] mx-auto mb-8 md:mb-10 space-y-4" y={16}>
+            <p className="eyebrow eyebrow-marked text-primary">Across the archive</p>
+            <h2 id="archive-search" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
               전체에서 찾기
             </h2>
-            <p className="mt-2 text-sm text-slate break-keep">
+            <p className="text-[15px] text-slate">
               컬렉션과 상관없이 연도와 장소로 좁혀 봅니다.
             </p>
           </Reveal>

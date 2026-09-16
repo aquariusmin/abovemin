@@ -27,6 +27,25 @@ export function cleanCaptionField(value: string | number | null | undefined): st
   return trimmed;
 }
 
+/**
+ * 카메라·사진 앱이 붙인 파일명이 그대로 제목이 된 경우.
+ *
+ * 업로드 위젯이 제목 칸을 파일명으로 미리 채우기 때문에, 확인 없이 저장하면
+ * "54D43E53 EFB0 401D 99C9 3ED986C7238C 1 201 a"(iOS 사진 앱 내보내기의
+ * UUID)나 "DSC03534" 같은 문자열이 제목으로 남는다. 사람에게는 "-"와 같은
+ * 뜻이다 — 제목이 없다. 제목에만 적용한다: 장소가 이런 모양일 리는 없다.
+ */
+const FILENAME_TITLE = [
+  /^[0-9a-f]{8}[\s_-][0-9a-f]{4}[\s_-][0-9a-f]{4}[\s_-][0-9a-f]{4}[\s_-][0-9a-f]{12}\b/i,
+  /^(img|dsc|dscf|dscn|pxl|mvimg)[\s_-]?\d{3,}/i,
+  // 파일명이 비었을 때 업로드 위젯이 넣는 기본값.
+  /^untitled$/i,
+];
+
+export function looksLikeFilename(title: string): boolean {
+  return FILENAME_TITLE.some(re => re.test(title));
+}
+
 export interface CaptionSource {
   title?: string | null;
   location?: string | null;
@@ -42,7 +61,8 @@ export interface Caption {
 }
 
 export function photoCaption(photo: CaptionSource): Caption {
-  const title = cleanCaptionField(photo.title);
+  const rawTitle = cleanCaptionField(photo.title);
+  const title = rawTitle && !looksLikeFilename(rawTitle) ? rawTitle : null;
   let location = cleanCaptionField(photo.location);
   const year = cleanCaptionField(photo.year);
 
