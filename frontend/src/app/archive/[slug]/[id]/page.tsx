@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getAllPhotos, getPhotoInAlbum, type Photo } from '@/lib/supabase';
 import { cloudinary, cloudinaryAspect, cloudinaryOgImage, DEFAULT_ASPECT, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { displayCamera, exifParts, joinCaption, photoCaption, photoLabel, takenDate } from '@/lib/caption';
@@ -109,10 +109,30 @@ async function frameRatio(photo: Photo): Promise<number> {
 /** 프레임 높이의 상한(뷰포트 비율). 사진이 먼저 보이고, 캡션은 스크롤 한 번 아래. */
 const FRAME_VH = 74;
 
+/**
+ * 주소의 앨범에는 없지만 다른 공개 앨범에 있는 사진이면 그 주소.
+ *
+ * 관리 화면에서 사진을 다른 앨범으로 옮길 수 있다. 옮기기 전에 건넨 링크가
+ * 404가 되면 공유한 사람이 잘못한 것처럼 보이므로, id가 같은 사진의 새 주소로
+ * 보낸다. 숨긴 사진·비공개 앨범은 `getAllPhotos`에 없으니 여기서도 404로 남는다.
+ */
+async function movedPhotoPath(params: Params): Promise<string | null> {
+  const { id } = await params;
+  const photoId = parsePhotoId(id);
+  if (photoId === null) return null;
+  const photos = await getAllPhotos().catch(() => []);
+  const moved = photos.find(photo => photo.id === photoId);
+  return moved ? photoPagePath(moved) : null;
+}
+
 export default async function PhotoPage({ params }: { params: Params }) {
   const found = await findPhoto(params);
-  // 숨긴 사진, 비공개 앨범, 모르는 id, 다른 앨범의 사진 — 모두 여기서 404.
-  if (!found) notFound();
+  if (!found) {
+    const path = await movedPhotoPath(params);
+    if (path) permanentRedirect(path);
+    // 숨긴 사진, 비공개 앨범, 모르는 id — 여기서 404.
+    notFound();
+  }
   const { album, photo, index, total, prev, next } = found;
 
   const ratio = await frameRatio(photo);
