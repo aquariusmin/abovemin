@@ -294,11 +294,18 @@ export async function getNoteBySlug(slug: string): Promise<Note | null> {
 /**
  * 푸터의 Notes 링크를 켤지. 목록과 **다른 태그**로 캐시한다(`cache-tags.ts`의
  * `NOTES_PRESENCE_TAG` 주석) — 모든 페이지가 이 값을 읽기 때문이다.
+ *
+ * `revalidate: false`(시간으로 만료하지 않음)가 중요하다. 캐시의 revalidate는
+ * 그것을 읽는 페이지의 ISR 주기가 된다 — 3600을 주었더니 `/about`, 포트폴리오,
+ * `/admin`까지 정적 페이지 전부가 "1시간마다 다시 굽기"로 바뀌었다(빌드 출력으로
+ * 확인). 이 값은 관리 화면이 노트를 저장할 때 태그로 무효화하므로 시계가 필요
+ * 없다. 대가: Supabase 대시보드에서 직접 공개 여부를 바꾸면 다음 배포나 다음
+ * 노트 저장까지 푸터가 따라오지 않는다.
  */
 export const hasPublishedNotes = unstable_cache(
   async (): Promise<boolean> => (await readPublishedNotes()).length > 0,
   ['has-published-notes'],
-  { tags: [NOTES_PRESENCE_TAG], revalidate: 3600 },
+  { tags: [NOTES_PRESENCE_TAG], revalidate: false },
 );
 
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.
