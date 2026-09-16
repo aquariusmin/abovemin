@@ -4,9 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { hidesSiteChrome } from '@/lib/chrome';
 import { CONTACT_EMAIL } from '@/lib/site';
-import { notes } from '@/data/notes';
-
-const hasNotes = notes.length > 0;
 
 // About and Portfolio are deliberately absent here, as they are in `Nav`.
 // Neither page is gone: both stay live, indexed and in the sitemap. What
@@ -16,15 +13,18 @@ const hasNotes = notes.length > 0;
 // The home page's closing band does NOT link to them (it used to, by name,
 // and this comment outlived that). Between here and `Nav`, URL-only is the
 // whole truth.
-// Notes는 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
+// Notes는 공개된 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
 // `notFound()`를 부르므로, 조건 없이 링크하면 푸터에서 404로 가는 길이 생긴다.
-// 첫 글을 `data/notes.ts`에 넣는 순간 여기와 sitemap과 RSS가 같이 살아난다.
-const NAV = [
-  { href: '/archive', label: 'Archive' },
-  { href: '/shop', label: 'Shop' },
-  ...(hasNotes ? [{ href: '/notes', label: 'Notes' }] : []),
-  { href: '/lab', label: 'The Lab', italic: true },
-];
+// 글은 DB에 있고 이 컴포넌트는 클라이언트라 직접 읽지 못한다 — 루트 레이아웃이
+// 서버에서 `hasPublishedNotes()`를 읽어 `hasNotes`로 넘긴다.
+function navItems(hasNotes: boolean) {
+  return [
+    { href: '/archive', label: 'Archive' },
+    { href: '/shop', label: 'Shop' },
+    ...(hasNotes ? [{ href: '/notes', label: 'Notes' }] : []),
+    { href: '/lab', label: 'The Lab', italic: true },
+  ];
+}
 
 const CONNECT = [
   { href: `mailto:${CONTACT_EMAIL}`, label: CONTACT_EMAIL, external: false },
@@ -32,7 +32,7 @@ const CONNECT = [
   { href: 'https://instagram.com/sangmin__02', label: 'Instagram / @sangmin__02', external: true },
 ];
 
-export default function Footer() {
+export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
   const pathname = usePathname();
   if (hidesSiteChrome(pathname)) return null;
 
@@ -76,7 +76,7 @@ export default function Footer() {
           <nav className="col-span-2 md:col-span-3 space-y-3" aria-label="Footer">
             <h3 className="eyebrow text-cream/50">Index</h3>
             <ul className="space-y-2 text-[13px]">
-              {NAV.map(item => (
+              {navItems(hasNotes).map(item => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

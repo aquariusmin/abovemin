@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR } from './limits';
+import { NOTE_SLUG_RE } from '@/lib/notes';
 
 export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
 
@@ -137,6 +138,67 @@ export const PlaceUpsert = z.strictObject({
 });
 
 export const PlaceDelete = z.strictObject({ name: PlaceName });
+
+// ── 노트 ──────────────────────────────────────────────────────────────────────
+
+/** `YYYY-MM-DD`이면서 달력에 있는 날짜. `2026-02-30`은 정규식만으로는 통과한다. */
+const NoteDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜는 YYYY-MM-DD 형식이어야 합니다.')
+  .refine(value => {
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }, '없는 날짜입니다.');
+
+const NoteFields = {
+  slug: z.string().regex(NOTE_SLUG_RE, '슬러그는 영문 소문자·숫자·하이픈 1~80자여야 합니다.'),
+  title: z.string().trim().min(1, '제목이 비어 있습니다.').max(200, '제목이 너무 깁니다.'),
+  date: NoteDate,
+  summary: z.string().trim().min(1, '요약이 비어 있습니다.').max(1000, '요약이 너무 깁니다.'),
+  tags: z
+    .array(z.string().trim().min(1, '빈 태그가 있습니다.').max(40, '태그가 너무 깁니다.'))
+    .max(12, '태그는 12개까지 붙일 수 있습니다.')
+    .transform(tags => [...new Set(tags)]),
+  body: z.string().trim().min(1, '본문이 비어 있습니다.').max(50_000, '본문이 너무 깁니다.'),
+  /**
+   * 해석 범위. 비워 둘 수 없다 — 노트가 존재하는 이유가 "무엇을 말하지
+   * 않는지"를 먼저 긋는 데 있다(`lib/notes.ts` 머리 주석). DB도 not null이지만
+   * 빈 문자열은 not null을 통과하므로 여기서 막는다.
+   */
+  boundary: z.string().trim().min(1, '해석 범위(이 글이 주장하지 않는 것)는 필수입니다.').max(2000, '해석 범위가 너무 깁니다.'),
+  related_project: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{0,80}$/, '관련 프로젝트 슬러그가 올바르지 않습니다.')
+    .nullable()
+    .transform(value => (value ? value : null)),
+  published: z.boolean(),
+};
+
+export const NoteCreate = z.strictObject({
+  ...NoteFields,
+  tags: NoteFields.tags.optional().transform(tags => tags ?? []),
+  related_project: NoteFields.related_project.optional().transform(value => value ?? null),
+  published: NoteFields.published.optional().transform(value => value ?? false),
+});
+export type NoteCreateInput = z.output<typeof NoteCreate>;
+
+export const NoteUpdate = z
+  .strictObject({
+    id: Id,
+    slug: NoteFields.slug.optional(),
+    title: NoteFields.title.optional(),
+    date: NoteFields.date.optional(),
+    summary: NoteFields.summary.optional(),
+    tags: NoteFields.tags.optional(),
+    body: NoteFields.body.optional(),
+    boundary: NoteFields.boundary.optional(),
+    related_project: NoteFields.related_project.optional(),
+    published: NoteFields.published.optional(),
+  })
+  .refine(body => Object.keys(body).length > 1, '변경할 내용이 없습니다.');
+
+export const NoteDelete = z.strictObject({ id: Id });
 
 // ── 상품 ──────────────────────────────────────────────────────────────────────
 

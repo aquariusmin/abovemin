@@ -2,9 +2,10 @@ import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
-import { SETTINGS_CACHE_TAG } from './cache-tags';
+import { NOTES_CACHE_TAG, NOTES_PRESENCE_TAG, SETTINGS_CACHE_TAG } from './cache-tags';
 import { isMissingSchemaError, withColumnFallback } from './db-compat';
 import { placeFromRow, type PlaceCoord } from './places';
+import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -249,6 +250,56 @@ export const getPlaces = cache(async (): Promise<PlaceCoord[]> => {
   }
   return (data ?? []).map(placeFromRow).filter((place): place is PlaceCoord => place !== null);
 });
+
+// ── 노트 ──────────────────────────────────────────────────────────────────────
+//
+// 공개 읽기 정책이 `published = true`만 돌려주지만, 필터도 같이 건다 — 정책이
+// 바뀌어도 초안이 새지 않게 두 겹으로.
+//
+// 테이블이 없으면(마이그레이션 전) "글 없음"이다. 그 상태의 사이트는 원래
+// 노트가 잠들어 있던 사이트와 똑같이 보인다. 다른 오류는 던진다 — 여기서
+// 빈 목록을 돌려주면 DB가 흔들린 순간의 "글 없음"(= /notes 404)이 캐시에 앉는다.
+// 부르는 쪽이 빌드를 지키려고 잡을지 정한다.
+
+async function readPublishedNotes(): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('slug, title, date, summary, tags, body, boundary, related_project')
+    .eq('published', true);
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      log.warn('getPublishedNotes.migration_pending', error);
+      return [];
+    }
+    log.error('getPublishedNotes', error);
+    throw error;
+  }
+  const notes = ((data ?? []) as Array<Partial<NoteRow>>)
+    .map(noteFromRow)
+    .filter((note): note is Note => note !== null);
+  return sortNotes(notes);
+}
+
+/** 공개된 글, 최신순. 목록·글·RSS·sitemap이 같이 쓴다. */
+export const getPublishedNotes = unstable_cache(readPublishedNotes, ['published-notes'], {
+  tags: [NOTES_CACHE_TAG],
+  revalidate: 3600,
+});
+
+/** 공개된 글 하나. 글이 몇 편뿐이라 목록 캐시에서 찾는다 — 캐시 항목이 하나로 끝난다. */
+export async function getNoteBySlug(slug: string): Promise<Note | null> {
+  return (await getPublishedNotes()).find(note => note.slug === slug) ?? null;
+}
+
+/**
+ * 푸터의 Notes 링크를 켤지. 목록과 **다른 태그**로 캐시한다(`cache-tags.ts`의
+ * `NOTES_PRESENCE_TAG` 주석) — 모든 페이지가 이 값을 읽기 때문이다.
+ */
+export const hasPublishedNotes = unstable_cache(
+  async (): Promise<boolean> => (await readPublishedNotes()).length > 0,
+  ['has-published-notes'],
+  { tags: [NOTES_PRESENCE_TAG], revalidate: 3600 },
+);
 
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.
 // 마이그레이션 전에는 `sort_order`가 없으므로 id 순으로만 읽는다.

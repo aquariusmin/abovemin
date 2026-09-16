@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getNote, getNotes } from '@/data/notes';
+import { getNoteBySlug, getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 
-export function generateStaticParams() {
-  return getNotes().map(n => ({ slug: n.slug }));
+export const revalidate = 3600;
+
+// 빌드 때 공개된 글만 굽는다. 그 뒤에 공개된 글은 첫 요청 때 그려진다
+// (`dynamicParams` 기본값). 초안의 슬러그는 `getNoteBySlug`가 null이라 404다.
+export async function generateStaticParams() {
+  const notes = await getPublishedNotes().catch(() => []);
+  return notes.map(n => ({ slug: n.slug }));
 }
 
 export async function generateMetadata({
@@ -13,7 +18,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const note = getNote((await params).slug);
+  const note = await getNoteBySlug((await params).slug).catch(() => null);
   if (!note) return { title: 'Note not found' };
   return {
     title: note.title,
@@ -29,10 +34,12 @@ export async function generateMetadata({
 }
 
 export default async function NotePage({ params }: { params: Promise<{ slug: string }> }) {
-  const note = getNote((await params).slug);
+  const { slug } = await params;
+  const notes = await getPublishedNotes().catch(() => []);
+  const note = notes.find(n => n.slug === slug) ?? null;
   if (!note) notFound();
 
-  const others = getNotes().filter(n => n.slug !== note.slug).slice(0, 2);
+  const others = notes.filter(n => n.slug !== note.slug).slice(0, 2);
 
   return (
     <main className="px-5 sm:px-6 md:px-10 py-12 md:py-20 min-h-screen bg-canvas text-ink-body">
