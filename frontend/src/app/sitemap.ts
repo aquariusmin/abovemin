@@ -1,5 +1,6 @@
 import { SITE_URL } from '@/lib/site';
-import { getAlbumsWithCounts, getProducts } from '@/lib/supabase';
+import { getAlbumsWithCounts, getAllPhotos, getProducts } from '@/lib/supabase';
+import { photoPagePath } from '@/lib/photo-share';
 import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getPublishedNotes } from '@/lib/supabase';
@@ -7,10 +8,11 @@ import { getPublishedNotes } from '@/lib/supabase';
 const BASE = SITE_URL;
 
 export default async function sitemap() {
-  const [albums, products, notes] = await Promise.all([
+  const [albums, products, notes, photos] = await Promise.all([
     getAlbumsWithCounts().catch(() => []),
     getProducts().catch(() => []),
     getPublishedNotes().catch(() => []),
+    getAllPhotos().catch(() => []),
   ]);
 
   // Single stable timestamp per generation for content without its own date,
@@ -30,6 +32,10 @@ export default async function sitemap() {
     { url: `${BASE}/portfolio`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${BASE}/en/portfolio`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${BASE}/archive`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.8 },
+    // 사진이 없으면 타임라인은 빈 페이지다 — 없는 내용을 신고하지 않는다.
+    ...(photos.length > 0
+      ? [{ url: `${BASE}/archive/timeline`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 }]
+      : []),
     // 살 수 있는 물건이 하나도 없으면 /shop은 상점이 아니라 예고편이다.
     // 지금 카탈로그는 전부 ₩0 · 품절 자리표시자인데 sitemap은 이 페이지를
     // 주간 갱신 0.9로 신고하고 있었다. 값을 데이터에서 끌어오면 진짜 상품이
@@ -47,6 +53,18 @@ export default async function sitemap() {
     lastModified: rowDate(a),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
+  }));
+
+  // 사진 한 장의 페이지. `getAllPhotos`가 이미 숨긴 사진과 비공개 앨범을 거르므로,
+  // 여기 오르는 주소는 모두 200이다(`archive/[slug]/[id]`가 404를 내는 조건과 같다).
+  //
+  // `lastModified`는 적지 않는다. 공개 조회는 행의 수정 시각을 싣지 않고
+  // (`publicPhoto`), 만들 때마다 바뀌는 `now`를 300개에 붙이면 검색엔진은 그
+  // 신호를 믿지 않게 된다 — 틀린 날짜보다 없는 날짜가 낫다.
+  const photoPages = photos.map(photo => ({
+    url: `${BASE}${photoPagePath(photo)}`,
+    changeFrequency: 'yearly' as const,
+    priority: 0.5,
   }));
 
   // 상품 상세는 **초안이 아닌 것**만 올린다 — 초안은 404다(`getProducts`가
@@ -97,5 +115,5 @@ export default async function sitemap() {
     },
   ]);
 
-  return [...staticPages, ...notePages, ...portfolioPages, ...albumPages, ...productPages];
+  return [...staticPages, ...notePages, ...portfolioPages, ...albumPages, ...photoPages, ...productPages];
 }

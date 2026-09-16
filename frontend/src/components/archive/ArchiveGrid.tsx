@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { cloudinary } from '@/lib/cloudinary';
+import { placeholderStyle } from '@/components/photo-placeholder';
 import { motion, useReducedMotion } from 'framer-motion';
 
 const MotionLink = motion.create(Link);
@@ -14,6 +15,9 @@ interface AlbumCard {
   cover: string;
   title: string;
   photo_count: number;
+  /** 표지 사진의 저장된 크기. 비율로만 쓴다 — 표지가 오기 전에 칸을 잡는다. */
+  width?: number | null;
+  height?: number | null;
 }
 
 /**
@@ -37,7 +41,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
           transition={{ duration: 0.6, ease: EASE }}
         >
           {album.cover && (
-            <div className="relative overflow-hidden rounded-lg">
+            <div className="relative overflow-hidden rounded-lg" style={placeholderStyle(album.cover)}>
               {/* Next 16 deprecates `priority` in favour of `preload`, but a
                   preload link is the wrong migration for a masonry grid: the
                   column count changes with the viewport, so which tile is the
@@ -51,6 +55,8 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
+                // 비율만 쓴다. `auto`가 앞에 있어 표지가 오면 실제 비율이 이긴다.
+                style={album.width && album.height ? { aspectRatio: `auto ${album.width} / ${album.height}` } : undefined}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'auto'}
               />

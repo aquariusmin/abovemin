@@ -76,6 +76,70 @@ export function cloudinary(url: string, { width = 1600, watermark = false }: Opt
   return url.replace('/upload/', `/upload/${transform}/`);
 }
 
+/**
+ * 이미지가 오기 전에 프레임 배경으로 까는 흐린 미리보기.
+ *
+ * 폭 32px에 품질을 낮추고 흐림을 세게 건 한 장이라 1KB 안팎이다. 프레임은
+ * 저장된 비율로 이미 자리를 잡고 있으므로, 이 배경은 "빈 칸"을 "곧 올 사진의
+ * 색"으로 바꾸는 일만 한다. 모양을 정하는 데는 관여하지 않는다.
+ *
+ * 워터마크를 싣지 않는 이유: 32px로 줄인 뒤 흐린 것이라 내려받을 가치가 없고,
+ * 오버레이를 얹으면 그 글자까지 번져 얼룩이 된다. Cloudinary가 아니면 null —
+ * 부르는 쪽은 배경 없이(bg 토큰만) 둔다.
+ */
+export function cloudinaryPlaceholder(url: string): string | null {
+  if (!isCloudinaryUrl(url)) return null;
+  return withTransform(url, 'w_32,q_auto:low,e_blur:400,f_auto');
+}
+
+/**
+ * 저장된 주소에 이미 붙어 있는 변환(`/upload/f_auto,q_auto/phorage/…` — 앨범
+ * 커버와 옛 사진들이 그렇다)을 걷어 내고 `transform`만 남긴다.
+ *
+ * 체인은 **뒤의 것이 이긴다**. 걷어 내지 않으면 `…/q_auto:low,e_blur:400/f_auto,q_auto/`
+ * 에서 저장된 `q_auto`가 미리보기의 `q_auto:low`를 되돌리고, 공유 카드의
+ * `f_jpg`는 저장된 `f_auto`에 밀려 AVIF를 읽지 못하는 크롤러에게 WebP가 간다.
+ * 저장된 변환은 전달 최적화뿐이라 걷어도 사진은 같다. 버전과 경로는 그대로 둔다.
+ */
+function withTransform(url: string, transform: string): string {
+  const parsed = new URL(url);
+  const marker = '/upload/';
+  const at = parsed.pathname.indexOf(marker);
+  const head = parsed.pathname.slice(0, at + marker.length);
+  let segments = parsed.pathname.slice(at + marker.length).split('/');
+  while (segments.length > 1 && isTransformSegment(segments[0])) segments = segments.slice(1);
+  parsed.pathname = `${head}${transform}/${segments.join('/')}`;
+  return parsed.toString();
+}
+
+/** Open Graph 카드 크기. 페이스북·카카오톡·슬랙이 모두 1.91:1로 자른다. */
+export const OG_WIDTH = 1200;
+export const OG_HEIGHT = 630;
+
+/**
+ * 사진 한 장의 공유 카드(1200×630).
+ *
+ * 카드 규격은 1.91:1로 고정인데 사진은 세로도 파노라마도 있다. `c_fill`로 채우면
+ * 세로 사진은 가운데 띠만 남는다 — "프레임이 사진에 맞춘다"는 원칙(DESIGN.md
+ * § Image Treatment)이 링크 미리보기에서 깨진다. 그래서 **자르지 않고 채운다**:
+ * `c_pad`는 사진 전체를 카드 안에 넣고 남는 자리를 배경색으로 칠한다. 배경은
+ * 페이지 바탕(`--background`, #fcfaf4)이라, 여백이 "잘못 채운 띠"가 아니라
+ * 사이트의 종이 위에 사진을 올려 둔 모양으로 읽힌다.
+ *
+ * 체인 순서가 요구사항이다: 먼저 카드 안에 들어가게 줄이고(`c_limit`), 그
+ * 작은 이미지에 워터마크를 얹고, 마지막에 여백을 붙인다. 여백을 먼저 붙이면
+ * 워터마크가 사진이 아니라 크림색 여백 위에 앉아(흰 글자) 보이지 않고, 원본에
+ * 바로 오버레이를 얹으면 25MP 한도에 걸린다(`cloudinary()`의 주석).
+ *
+ * `f_jpg`: 카드를 긁어 가는 크롤러 상당수가 AVIF/WebP를 읽지 못한다.
+ */
+export function cloudinaryOgImage(url: string): string | null {
+  if (!isCloudinaryUrl(url)) return null;
+  const fit = `c_limit,w_${OG_WIDTH},h_${OG_HEIGHT}`;
+  const pad = `c_pad,w_${OG_WIDTH},h_${OG_HEIGHT},b_rgb:fcfaf4,f_jpg,q_auto`;
+  return withTransform(url, `${fit}/${WATERMARK}/${pad}`);
+}
+
 /** 비율을 못 읽었을 때 쓰는 프레임 기본값 (3:2). */
 export const DEFAULT_ASPECT = 1.5;
 

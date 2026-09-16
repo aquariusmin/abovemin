@@ -252,6 +252,20 @@ Forest-black gradient ramp — 92% alpha at the baseline, clear by the top quart
 
 An inline-SVG world map, not a tile map: `moss-wash` land with a `forest/25` hairline on a `surface` frame, a `canvas` sphere behind the world view, and no labels baked into the geography. Places are real `<button>`s laid over the SVG in screen pixels — `forest` fill, 2px `cream` stroke, area proportional to photo count, a 28px minimum hit target — so they stay tappable and keyboard-reachable at 390px. The selected place turns `forest-deep` with a `moss` ring and keeps its forest-black pill label visible; others show the label on hover/focus. Dots whose circles overlap are merged into one with an inner cream ring; pressing it zooms to a region preset or opens a small card list. Region presets are `.btn-outline` pills. The frame is 16:10 for the world and square for a region on phones (Korea and Japan are tall), 16:9 / 2:1 from `sm` / `lg`. Coordinates are one decimal (~11 km): the map says "near here", never where a photo was taken.
 
+### Photo page (`/archive/[slug]/[id]`)
+
+One photograph per URL — the address the lightbox's "링크 복사" and print inquiry now hand out (old `?p=` album deep links still open the lightbox). The frame follows the Image Treatment rule: its width is `min(100%, ratio × 74svh)`, so a landscape fills the 1400px container and a portrait becomes a centred column; the caption shares that width (`@container` on the `<figure>`). Below the photo: album name as `.eyebrow-marked`, the caption as a display `h1` (falls back to the place, then "무제"), `.btn-outline` "링크 복사" beside the page's single `.btn-primary` print inquiry, a `.rule-accent`, then a `<dl>` of Korean `label-ko` terms — 촬영일, 장소, 카메라 (a `.link-leaf` to `/archive?camera=…`), 설정 in mono, 컬렉션. Previous/next are `.card-hair` cards with a fixed-height thumbnail whose width comes from the ratio; ←/→ do the same.
+
+The share card is **padded, not cropped**: Cloudinary `c_limit` to 1200×630, watermark, then `c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg`. The fill is the paper canvas, so a portrait reads as a print laid on the site's page rather than a band cut from the middle.
+
+### Image placeholder
+
+While a photo loads its frame shows a 32px blurred preview of the same picture (`w_32,q_auto:low,e_blur:400,f_auto`, ~1 KB) as a **background of the frame**, not a second `<img>`. The frame's height comes from the image's stored ratio (`aspect-ratio: auto w / h`), so there is no layout shift, and because the box is the picture's own box the preview is always exactly covered once the photo arrives — nothing to remove, no double image. Grid tiles and home strips fade the photo in over the preview (`FadeImage`, opacity only; `motion-reduce` and the global reduced-motion block make it instant). The photo page does not fade — it is the LCP element. The timeline deliberately has no previews: CSS backgrounds are not lazy, and 300 of them would all download on first paint.
+
+### Timeline (`/archive/timeline`)
+
+Photos by year → month from `taken_at` (read in UTC — it is the camera's wall clock), newest first; photos with only a `year` gather under "날짜 미상" at the end of that year. A sticky year index sits under the fixed nav: compact `.btn-outline` pills with counts, the year being read inverted via `data-active`, horizontally scrollable to the screen edge on phones. Month headings sit in a sticky left column from `md`. Thumbnails are small, uncropped masonry (3 → 4 → 6 columns), each linking to its photo page. Reached from a `.btn-outline` beside "전체에서 찾기" on `/archive`, not from the top nav.
+
 ### **`.texture-grain`**
 
 Inline-SVG `feTurbulence` noise at 50% opacity, `mix-blend-mode: multiply`, painted behind content via a `z-index: -1` pseudo-element inside an isolated stacking context. No network request, CSP-safe, and suppressed in print. Use on large flat bands only — never on text-dense surfaces.

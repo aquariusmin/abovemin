@@ -165,6 +165,38 @@ export const getAlbumWithPhotos = cache(
   },
 );
 
+/**
+ * 사진 페이지(`/archive/[slug]/[id]`)에 필요한 것: 사진, 그 앨범, 앨범 안의 앞뒤.
+ *
+ * 따로 조회하지 않고 `getAlbumWithPhotos`를 그대로 쓴다. 앞뒤 사진과 "12 / 45"를
+ * 알려면 어차피 앨범의 공개 사진 목록이 필요하고, 그 목록에서 찾으면 **공개 규칙이
+ * 한 곳에 모인다**: 숨긴 사진은 목록에 없고, 비공개 앨범은 `null`이고, 다른
+ * 앨범의 사진 id를 이 앨범 주소에 붙이면 목록에서 찾지 못한다 — 셋 다 404다.
+ * `cache()` 덕에 `generateMetadata`와 본문이 한 번만 읽는다.
+ *
+ * 조회 실패는 던진다(`getAlbumWithPhotos`의 주석). 404가 ISR 캐시에 앉지 않게.
+ */
+export async function getPhotoInAlbum(
+  slug: string,
+  id: number,
+): Promise<{ album: Album; photo: Photo; index: number; total: number; prev: Photo | null; next: Photo | null } | null> {
+  const result = await getAlbumWithPhotos(slug);
+  if (!result) return null;
+  const { album, photos } = result;
+  const index = photos.findIndex(photo => photo.id === id);
+  if (index === -1) return null;
+  // 라이트박스와 같이 끝에서 처음으로 돈다. 한 장뿐이면 앞뒤가 자기 자신이라 뺀다.
+  const many = photos.length > 1;
+  return {
+    album,
+    photo: photos[index],
+    index,
+    total: photos.length,
+    prev: many ? photos[(index - 1 + photos.length) % photos.length] : null,
+    next: many ? photos[(index + 1) % photos.length] : null,
+  };
+}
+
 export const getSiteSettings = unstable_cache(
   async (): Promise<Record<string, string>> => {
     const { data, error } = await supabase.from('site_settings').select('key, value');

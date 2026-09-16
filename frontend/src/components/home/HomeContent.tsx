@@ -6,6 +6,10 @@ import { motion, MotionConfig, type Variants } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
 import { formatPrice } from '@/lib/price';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
+import { photoPagePath } from '@/lib/photo-share';
+import { monthDayLabel } from '@/lib/timeline';
+import FadeImage from '@/components/FadeImage';
+import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 
 const MotionLink = motion.create(Link);
 
@@ -25,6 +29,17 @@ interface RecentPhoto {
   location: string;
   year: number;
   album_slug: string;
+  /** 비율로만 쓴다. 흐린 미리보기 칸을 사진보다 먼저 잡는다. */
+  width: number | null;
+  height: number | null;
+}
+
+interface MemoryPhoto extends RecentPhoto {
+  taken_at: string | null;
+  /** 서버가 서울 날짜로 센 "몇 년 전". 1 이상. */
+  yearsAgo: number;
+  /** 월·일이 오늘과 같다. false면 앞뒤 사흘 안에서 넓혀 찾은 사진. */
+  exact: boolean;
 }
 
 // Shared editorial easing — slow settle, no bounce.
@@ -67,6 +82,8 @@ interface HomeContentProps {
   heroSubtitle: string;
   /** 가장 최근에 올라온 아카이브 사진 (id 내림차순). */
   recent: RecentPhoto[];
+  /** 몇 년 전 오늘(서버가 서울 날짜로 고른 것). 비어 있으면 섹션이 없다. */
+  onThisDay: MemoryPhoto[];
   photoCount: number;
   albumCount: number;
   /** 판매 중인 상품만. 비어 있으면 소품 섹션과 소품 CTA가 모두 빠진다. */
@@ -80,6 +97,7 @@ export default function HomeContent({
   titleTail,
   heroSubtitle,
   recent,
+  onThisDay,
   photoCount,
   albumCount,
   featured,
@@ -221,8 +239,8 @@ export default function HomeContent({
         {/* ── 최근 아카이브 ─────────────────────────────────────────────────────
              DESIGN.md § Rhythm: canvas → cream 띠 → canvas → forest 띠 → 푸터.
              홈은 히어로 한 장 뒤에 바로 푸터였고, 이 사이트의 본문인 사진은
-             홈 어디에도 없었다. 사진마다 `?p=` 딥링크로 앨범 안의 그 사진을
-             곧장 연다(PhotoGrid가 첫 진입에 주소창을 읽는다). */}
+             홈 어디에도 없었다. 사진마다 그 사진의 페이지(`/archive/[slug]/[id]`)로
+             간다 — 예전에는 `?p=`로 앨범 전체를 내려받은 뒤 라이트박스를 열었다. */}
         {recent.length > 0 && (
           <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
             <div className="max-w-[1400px] mx-auto">
@@ -256,17 +274,18 @@ export default function HomeContent({
                   return (
                     <motion.li key={photo.id} variants={rise} className="break-inside-avoid">
                       <Link
-                        href={`/archive/${photo.album_slug}?p=${photo.id}`}
+                        href={photoPagePath(photo)}
                         className="group block"
                       >
-                        <div className="overflow-hidden rounded-md bg-cream-deep">
-                          <Image
+                        <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
+                          <FadeImage
                             src={cloudinary(photo.src, { watermark: true, width: 600 })}
                             alt={photoLabel(photo)}
                             width={0}
                             height={0}
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                            className="w-full h-auto block transition-transform duration-700 group-hover:scale-[1.03]"
+                            className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
+                            style={storedRatioStyle(photo)}
                             draggable={false}
                             loading="lazy"
                           />
@@ -276,6 +295,73 @@ export default function HomeContent({
                             {meta}
                           </p>
                         )}
+                      </Link>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+            </div>
+          </section>
+        )}
+
+        {/* ── 몇 년 전 오늘 ─────────────────────────────────────────────────────
+             작은 섹션이다: 제목 한 줄과 사진 한 줄. 사진 수(최대 6)보다 칸을
+             많이 두지 않아서, 두세 장뿐인 날에도 띠가 비어 보이지 않는다.
+             cream 띠 다음이라 canvas 위에 둔다(DESIGN.md § Rhythm).
+
+             라벨은 사진마다 붙인다. 날짜가 딱 맞는 날은 "3년 전 오늘", 앞뒤 사흘로
+             넓혀 찾은 날은 "3년 전 · 9월 19일" — 오늘이 아닌 사진을 오늘이라고
+             부르지 않는다. */}
+        {onThisDay.length > 0 && (
+          // 아래에 소품 섹션(같은 canvas)이 이어지면 그쪽의 위 여백이 간격을 맡는다.
+          <section
+            className={`px-5 sm:px-6 md:px-10 pt-16 md:pt-24 ${hasShop ? 'pb-4 md:pb-8' : 'pb-16 md:pb-24'}`}
+            aria-labelledby="on-this-day-title"
+          >
+            <div className="max-w-[1400px] mx-auto">
+              <motion.div {...inViewProps} variants={rise} className="mb-8 md:mb-10 space-y-3">
+                <p className="eyebrow eyebrow-marked text-primary">On this day</p>
+                <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                  몇 년 전 오늘
+                </h2>
+                {!onThisDay.some(photo => photo.exact) && (
+                  <p className="text-[15px] text-slate">딱 오늘 찍은 사진이 없어, 앞뒤 사흘 사이에서 골랐습니다.</p>
+                )}
+              </motion.div>
+
+              <motion.ul
+                {...inViewProps}
+                viewport={{ once: true, amount: 0.1 }}
+                variants={scrollStagger}
+                className={`columns-2 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5 ${
+                  onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : onThisDay.length >= 3 ? 'md:columns-3 lg:columns-4' : 'md:columns-3'
+                }`}
+              >
+                {onThisDay.map(photo => {
+                  const when = photo.exact
+                    ? `${photo.yearsAgo}년 전 오늘`
+                    : joinCaption([`${photo.yearsAgo}년 전`, monthDayLabel(photo.taken_at)].filter((v): v is string => Boolean(v)));
+                  const place = photoCaption({ location: photo.location }).location;
+                  return (
+                    <motion.li key={photo.id} variants={rise} className="break-inside-avoid">
+                      <Link href={photoPagePath(photo)} className="group block">
+                        <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
+                          <FadeImage
+                            src={cloudinary(photo.src, { watermark: true, width: 600 })}
+                            alt={photoLabel(photo)}
+                            width={0}
+                            height={0}
+                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 17vw"
+                            className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
+                            style={storedRatioStyle(photo)}
+                            draggable={false}
+                            loading="lazy"
+                          />
+                        </div>
+                        <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
+                          {when}
+                        </p>
+                        {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
                       </Link>
                     </motion.li>
                   );

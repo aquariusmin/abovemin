@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
+import FadeImage from './FadeImage';
+import { placeholderStyle } from './photo-placeholder';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Lightbox from './Lightbox';
 import { cloudinary } from '@/lib/cloudinary';
@@ -126,20 +127,22 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: EASE }}
           >
-            <div className="relative overflow-hidden rounded-md bg-stone">
+            {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`). 프레임 크기는
+                아래 이미지가 정하므로, 사진이 오면 판을 정확히 덮는다. */}
+            <div className="relative overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
               {/* Next 16 deprecates `priority` in favour of `preload`, but a
                   preload link is the wrong migration for a masonry grid: the
                   column count changes with the viewport, so which tile is the
                   LCP element is not knowable from the markup — the docs name
                   this case explicitly and point at these two props instead.
                   Same treatment the Lightbox already uses. */}
-              <Image
+              <FadeImage
                 src={cloudinary(photo.src, { watermark: true, width: 800 })}
                 alt={label}
                 width={0}
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-auto block duration-700 group-hover:scale-105"
                 // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
                 // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
                 // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
