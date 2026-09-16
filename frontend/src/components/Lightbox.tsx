@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
+import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -33,6 +34,8 @@ interface LightboxProps {
 
 export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext }: LightboxProps) {
   const photo = photos[currentIndex];
+  const caption = photoCaption(photo);
+  const label = photoLabel(photo);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const reduce = useReducedMotion();
@@ -211,7 +214,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       onPointerCancel={onPointerCancel}
       role="dialog"
       aria-modal="true"
-      aria-label={photo.title}
+      aria-label={label}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -254,7 +257,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       >
         <Image
           src={cloudinary(photo.src, { watermark: true, width: 2400 })}
-          alt={photo.title}
+          alt={label}
           width={0}
           height={0}
           sizes="100vw"
@@ -308,9 +311,11 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-6 pb-6 pt-16 text-center
                    bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent"
       >
-        <p className="text-white text-sm font-serif font-medium tracking-tight">{photo.title}</p>
-        <p className="eyebrow text-white/70 mt-1.5">
-          {photo.location}&nbsp;&middot; {photo.year}&nbsp;&middot; {currentIndex + 1} / {photos.length}
+        {caption.title && (
+          <p className="text-white text-sm font-serif font-medium tracking-tight">{caption.title}</p>
+        )}
+        <p className={`eyebrow text-white/70 ${caption.title ? 'mt-1.5' : ''}`}>
+          {joinCaption([...caption.meta, `${currentIndex + 1} / ${photos.length}`])}
         </p>
       </div>
 

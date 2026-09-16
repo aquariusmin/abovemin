@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import PhotoGrid from '@/components/PhotoGrid';
+import { cleanCaptionField } from '@/lib/caption';
 
 /**
  * 아카이브 전체를 연도·장소로 좁혀 본다.
@@ -48,7 +49,10 @@ export default function PhotoFilter({ photos }: { photos: Photo[] }) {
     [photos],
   );
   const places = useMemo(
-    () => [...new Set(photos.map(p => p.location?.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    // "-"도 빈 값이다 — 선택지에 "-"가 뜨면 고를 수 있는 장소처럼 보인다.
+    () =>
+      [...new Set(photos.map(p => cleanCaptionField(p.location)).filter((v): v is string => v !== null))]
+        .sort((a, b) => a.localeCompare(b)),
     [photos],
   );
 
