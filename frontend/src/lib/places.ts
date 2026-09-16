@@ -97,6 +97,56 @@ export function availableRegions(places: readonly PlaceCoord[]): Region[] {
 }
 
 /**
+ * 화면 위에서 겹치는 점을 한 묶음으로.
+ *
+ * 세계 지도에서 한국의 열네 곳은 지름 30px 안에 겹친다. 겹친 채로 두면 위에
+ * 그려진 작은 점("청송" 1장)의 터치 영역이 가장 큰 점("서울" 58장)을 덮어서,
+ * 서울을 누르면 청송이 골라졌다(측정). 원이 겹치는 점은 묶어서 하나로 그리고,
+ * 누르면 확대하거나 목록을 연다.
+ *
+ * 탐욕적 한 번 훑기: 사진이 많은 점부터, 이미 만든 묶음과 원이 `overlap`
+ * 비율 이상 겹치면 거기에 넣는다. 묶음의 중심은 사진 수로 가중한 평균이다.
+ */
+export interface ScreenDot<T> {
+  item: T;
+  x: number;
+  y: number;
+  count: number;
+}
+
+export interface DotCluster<T> {
+  x: number;
+  y: number;
+  count: number;
+  r: number;
+  /** 사진이 많은 순. 첫 번째가 묶음의 이름이 된다. */
+  members: T[];
+}
+
+export function clusterDots<T>(
+  dots: ReadonlyArray<ScreenDot<T>>,
+  radius: (count: number) => number,
+  overlap = 0.75,
+): DotCluster<T>[] {
+  const clusters: Array<DotCluster<T>> = [];
+  for (const dot of [...dots].sort((a, b) => b.count - a.count)) {
+    const r = radius(dot.count);
+    const home = clusters.find(c => Math.hypot(c.x - dot.x, c.y - dot.y) < (c.r + r) * overlap);
+    if (!home) {
+      clusters.push({ x: dot.x, y: dot.y, count: dot.count, r, members: [dot.item] });
+      continue;
+    }
+    const total = home.count + dot.count;
+    home.x = (home.x * home.count + dot.x * dot.count) / total;
+    home.y = (home.y * home.count + dot.y * dot.count) / total;
+    home.count = total;
+    home.r = radius(total);
+    home.members.push(dot.item);
+  }
+  return clusters;
+}
+
+/**
  * 점 반지름(px). 넓이가 사진 수에 비례하도록 제곱근 척도 — 반지름을 개수에
  * 비례시키면 58장짜리 "서울"이 1장짜리의 58배가 아니라 3,364배 넓이로 보인다.
  */

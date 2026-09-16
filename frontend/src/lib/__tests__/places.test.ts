@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS, availableRegions, buildMapPlaces, dotRadius, inRegion, placeFromRow } from '@/lib/places';
+import { REGIONS, availableRegions, buildMapPlaces, clusterDots, dotRadius, inRegion, placeFromRow } from '@/lib/places';
 
 /**
  * 이 파일이 지키는 것: 지도에 나가는 좌표는 소수점 한 자리를 넘지 않고,
@@ -71,5 +71,37 @@ describe('dotRadius', () => {
   it('최솟값 아래로 내려가지 않는다', () => {
     expect(dotRadius(0, 10)).toBe(4);
     expect(dotRadius(1, 0)).toBe(4);
+  });
+});
+
+describe('clusterDots', () => {
+  const radius = (count: number) => dotRadius(count, 58, { min: 5, maxRadius: 18 });
+
+  it('원이 겹치는 점은 한 묶음 — 큰 점이 이름이 되고 사진 수는 더한다', () => {
+    const clusters = clusterDots(
+      [
+        { item: '청송', x: 102, y: 100, count: 1 },
+        { item: '서울', x: 100, y: 100, count: 58 },
+        { item: 'NYC', x: 400, y: 120, count: 51 },
+      ],
+      radius,
+    );
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0].members).toEqual(['서울', '청송']);
+    expect(clusters[0].count).toBe(59);
+    // 중심은 사진 수로 가중 — 1장짜리가 58장짜리를 끌고 가지 않는다.
+    expect(clusters[0].x).toBeCloseTo(100.03, 1);
+    expect(clusters[1].members).toEqual(['NYC']);
+  });
+
+  it('떨어진 점은 그대로', () => {
+    const clusters = clusterDots(
+      [
+        { item: 'a', x: 0, y: 0, count: 1 },
+        { item: 'b', x: 60, y: 0, count: 1 },
+      ],
+      radius,
+    );
+    expect(clusters.map(c => c.members)).toEqual([['a'], ['b']]);
   });
 });

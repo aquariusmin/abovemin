@@ -14,7 +14,7 @@ import type { MapPlace } from '@/lib/places';
 const PlaceMap = dynamic(() => import('./PlaceMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full rounded-lg border border-border bg-surface aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2/1] max-h-[560px] animate-pulse" />
+    <div className="w-full rounded-lg border border-border bg-surface aspect-[16/10] sm:aspect-[16/9] lg:aspect-[2/1] max-h-[560px] animate-pulse" />
   ),
 });
 
