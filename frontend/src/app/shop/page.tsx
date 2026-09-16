@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getProducts } from '@/lib/supabase';
-import ShopCatalog from '@/components/shop/ShopCatalog';
+import ShopCatalog, { type CatalogItem } from '@/components/shop/ShopCatalog';
+import { priceRange, publicState } from '@/lib/product';
 
 export const revalidate = 60;
 
@@ -11,10 +12,28 @@ export const metadata: Metadata = {
 };
 
 export default async function Shop() {
-  let products: Awaited<ReturnType<typeof getProducts>> = [];
+  let products: CatalogItem[] = [];
   let loadError = false;
   try {
-    products = await getProducts();
+    // `getProducts`는 초안을 이미 뺐다. 여기서는 카드가 그리는 값만 남긴다 —
+    // 옵션 배열·설명 전문을 클라이언트 컴포넌트의 props(= HTML 속 RSC
+    // 페이로드)로 실을 이유가 없다.
+    products = (await getProducts()).map(product => {
+      const { min, max } = priceRange(product);
+      return {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        tag: product.tag,
+        image_url: product.images?.[0]?.url ?? product.image_url,
+        edition: product.edition ?? null,
+        state: publicState(product) === 'available' ? 'available' : 'sold_out',
+        price: product.price,
+        priceMin: min,
+        priceMax: max,
+        hasOptions: (product.options?.length ?? 0) > 0,
+      };
+    });
   } catch {
     loadError = true;
   }

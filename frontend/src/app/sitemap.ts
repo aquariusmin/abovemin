@@ -49,14 +49,19 @@ export default async function sitemap() {
     priority: 0.7,
   }));
 
-  // 같은 이유로 상품 상세도 판매 가능한 것만 올린다. 살 수 없는 페이지를
-  // 색인에 밀어 넣으면 검색에서 들어온 사람이 품절 화면에 도착한다.
-  const productPages = sellable.map(p => ({
-    url: `${BASE}/shop/${p.id}`,
-    lastModified: rowDate(p),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }));
+  // 상품 상세는 **초안이 아닌 것**만 올린다 — 초안은 404다(`getProducts`가
+  // 이미 뺐다). 품절 상품은 페이지가 살아 있는 아카이브라 싣되, 살 수 있는
+  // 상품보다 낮게 둔다. 검색에서 들어온 사람이 먼저 닿아야 하는 곳은 살 수
+  // 있는 물건이다.
+  const productPages = products.map(p => {
+    const available = isAvailable(p);
+    return {
+      url: `${BASE}/shop/${p.id}`,
+      lastModified: rowDate(p),
+      changeFrequency: available ? ('weekly' as const) : ('monthly' as const),
+      priority: available ? 0.8 : 0.4,
+    };
+  });
 
   // 글이 없는 동안 `/notes`는 404다(그 페이지가 `notFound()`를 부른다).
   // 없는 URL을 sitemap에 싣지 않도록 목록에서 끌어온다.
