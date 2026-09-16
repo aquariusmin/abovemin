@@ -82,6 +82,7 @@ Directional colour in editorial contexts uses `trend.up` = moss and `trend.down`
 - **Display**: `Fraunces` — an old-style serif with a little optical wonk. **Latin only.**
 - **Body/UI**: `IBM Plex Sans`, with `IBM Plex Sans KR` resolving every Hangul glyph.
 - **Technical labels**: `IBM Plex Mono`.
+- **Japanese** (kanji/kana in album captions): system faces only — Hiragino Sans / Hiragino Kaku Gothic ProN / Yu Gothic / Noto Sans JP / Noto Sans CJK JP, listed as `--font-japanese` after the Korean face and emoji in the body and display stacks; no webfont is downloaded.
 
 `font-serif` in markup means "the display voice", not a CSS generic — it resolves to `--font-display-stack`.
 

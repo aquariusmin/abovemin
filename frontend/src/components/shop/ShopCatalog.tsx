@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/lib/price';
+import { isAvailable, UNAVAILABLE_LABEL } from '@/lib/product';
 
 interface Product {
   id: number;
@@ -20,6 +21,16 @@ interface Product {
 // Sentinel for "no category filter". Kept distinct from a real category name
 // because category values come from the DB; the Korean label is display-only.
 const ALL = '__all__';
+
+// 카테고리 값은 DB의 영문 키다. 필터 칩은 누르는 컨트롤이라 한국어로 보여 주고,
+// 옆의 "전체"와 같은 언어로 맞춘다. 모르는 값은 그대로 둔다 — 관리 화면에서
+// 새 카테고리를 넣었을 때 칩이 사라지는 것보다 영문으로라도 보이는 편이 낫다.
+const CATEGORY_LABELS: Record<string, string> = {
+  Poster: '포스터',
+  Postcard: '엽서',
+  Stationery: '문구',
+};
+const categoryLabel = (cat: string) => CATEGORY_LABELS[cat] ?? cat;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -45,7 +56,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
   // The button is no longer inside the product link, so there is nothing to
   // preventDefault — a plain click handler is enough.
   const handleAddToCart = (item: Product) => {
-    if (!item.in_stock) return;
+    if (!isAvailable(item)) return;
     addItem({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
     setAddedId(item.id);
     setAnnouncement(`${item.name} 장바구니에 담았습니다.`);
@@ -87,7 +98,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 aria-pressed={selectedCategory === cat}
                 className="btn-outline"
               >
-                {cat === ALL ? '전체' : cat}
+                {cat === ALL ? '전체' : categoryLabel(cat)}
               </button>
             ))}
           </div>
@@ -142,7 +153,9 @@ export default function ShopCatalog({ products, loadError }: { products: Product
           animate="visible"
           variants={containerVariants}
         >
-          {filtered.map((item, i) => (
+          {filtered.map((item, i) => {
+            const available = isAvailable(item);
+            return (
             // The card is a plain container, not an <a>. The product link
             // stretches over the whole card via `.card-link`, and the add-to-cart
             // button sits above that overlay — so the two controls are siblings
@@ -156,11 +169,18 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               <div className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary">
                 {/* Sits above the stretched link but must not swallow its
                     clicks, hence pointer-events-none. */}
-                {item.tag && (
+                {/* 판매 중이 아니면 태그 대신 상태를 단다. DB의 태그("Coming
+                    Soon")와 상태 문구가 한 카드에서 두 번 같은 말을 하던 것을
+                    하나로 줄였다. Hangul은 대문자·자간 규칙을 받지 않는다. */}
+                {!available ? (
+                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-[11px]">
+                    {UNAVAILABLE_LABEL}
+                  </span>
+                ) : item.tag ? (
                   <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20">
                     {item.tag}
                   </span>
-                )}
+                ) : null}
                 {/* Next 16 deprecates `priority` in favour of `preload`, but a
                     preload link is the wrong migration for a masonry grid: the
                     column count changes with the viewport, so which tile is the
@@ -189,30 +209,31 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                       {item.name}
                     </Link>
                   </h2>
-                  <p className="mt-1.5 text-sm font-semibold text-primary">
+                  <p className={`mt-1.5 text-sm ${item.price > 0 ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                     {formatPrice(item.price)}
                   </p>
                 </div>
 
+                {/* 살 수 없는 상품에는 담기 버튼을 두지 않는다. 비활성 원형
+                    버튼에 "—"를 넣어 두었더니 "빼기"로 읽혔고, 상태는 이미
+                    사진 위 배지가 말하고 있다. */}
+                {available && (
                 <button
                   onClick={() => handleAddToCart(item)}
-                  disabled={!item.in_stock}
-                  aria-label={
-                    item.in_stock ? `${item.name} 장바구니에 담기` : `${item.name} 품절`
-                  }
+                  aria-label={`${item.name} 장바구니에 담기`}
                   className={`relative z-10 shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                    !item.in_stock
-                      ? 'border-border-light text-muted-foreground cursor-not-allowed'
-                      : addedId === item.id
+                    addedId === item.id
                       ? 'bg-primary border-primary text-primary-foreground'
                       : 'border-border text-forest hover:border-primary hover:bg-moss-wash hover:-translate-y-0.5 active:translate-y-0'
                   }`}
                 >
-                  {!item.in_stock ? '—' : addedId === item.id ? '✓' : '+'}
+                  {addedId === item.id ? '✓' : '+'}
                 </button>
+                )}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </motion.div>
       )}
     </>

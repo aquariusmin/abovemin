@@ -5,6 +5,8 @@ import { getProducts, getProductById } from '@/lib/supabase';
 import AddToCartButton from '@/components/AddToCartButton';
 import Reveal from '@/components/motion/Reveal';
 import { formatPrice } from '@/lib/price';
+import { isAvailable, UNAVAILABLE_LABEL } from '@/lib/product';
+import BackLink from '@/components/BackLink';
 
 export const revalidate = 60;
 
@@ -57,6 +59,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   // one carries `price: 0`, and an Offer saying a thing costs ₩0 is a claim,
   // not a placeholder — search engines render it as free. Omitting the node
   // says "no offer yet", which is what is true.
+  const available = isAvailable(product);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -78,7 +82,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   };
 
   return (
-    <main className="min-h-screen bg-canvas px-4 sm:px-6 md:px-8 py-12 md:py-20">
+    <main className="min-h-screen bg-canvas px-5 sm:px-6 md:px-10 py-12 md:py-20">
       {/* `JSON.stringify` does not escape `<`, and the contents of a <script>
           element are not HTML-parsed — the browser just scans for the closing
           tag. A product name containing "</script>" would therefore end this
@@ -92,9 +96,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
       {/* Back link */}
       <div className="max-w-6xl mx-auto mb-8 md:mb-12">
-        <Link href="/shop" className="link-underline text-sm text-slate">
-          ← Back to Shop
-        </Link>
+        <BackLink href="/shop">샵으로</BackLink>
       </div>
 
       {/* Detail layout */}
@@ -122,14 +124,20 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <div className="flex items-center gap-3">
               <p className="eyebrow text-muted-foreground">{product.category}</p>
               <span aria-hidden className="h-3 w-px bg-hairline" />
-              <span className={`eyebrow ${product.in_stock ? 'text-accent' : 'text-muted-foreground'}`}>
-                {product.in_stock ? 'In stock' : 'Sold out'}
+              {/* Hangul은 eyebrow의 대문자·0.24em 자간을 받지 않는다 → label-ko. */}
+              <span className={`label-ko ${available ? 'text-accent' : 'text-muted-foreground'}`}>
+                {available ? '판매 중' : UNAVAILABLE_LABEL}
               </span>
             </div>
-            <h1 className="font-serif text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink break-keep">
+            {/* 이름이 이 페이지의 제목이고 가격은 그 아래의 정보다. 가격이
+                초록 굵은 2xl로 이름과 거의 같은 무게를 갖고 있어서, "가격
+                미정"이 제목처럼 읽혔다. */}
+            <h1 className="font-serif text-5xl sm:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
               {product.name}
             </h1>
-            <p className="text-2xl font-semibold text-accent tabular-nums">{formatPrice(product.price)}</p>
+            <p className={`text-lg tabular-nums ${product.price > 0 ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}>
+              {formatPrice(product.price)}
+            </p>
           </div>
 
           <hr className="rule" />
@@ -145,12 +153,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
           <AddToCartButton product={product} />
 
+          {/* 담을 수 없는 상품에서 "장바구니 보기"는 갈 이유가 없는 길이다. */}
           <div className="flex items-center gap-5 pt-1">
-            <Link href="/cart" className="link-underline text-sm text-slate">
-              View Cart →
-            </Link>
+            {available && (
+              <Link href="/cart" className="link-underline text-sm text-slate">
+                장바구니 보기 →
+              </Link>
+            )}
             <Link href="/shop" className="link-underline text-sm text-slate">
-              Continue browsing
+              계속 둘러보기
             </Link>
           </div>
         </Reveal>

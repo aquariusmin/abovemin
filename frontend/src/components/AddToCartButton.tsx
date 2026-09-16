@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useCartStore } from '@/store/cartStore';
+import { isAvailable, UNAVAILABLE_LABEL } from '@/lib/product';
 
 interface Props {
   product: {
@@ -21,8 +22,10 @@ export default function AddToCartButton({ product }: Props) {
   const [added, setAdded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const available = isAvailable(product);
+
   const handleAddToCart = () => {
-    if (!product.in_stock) return;
+    if (!available) return;
     addItem({ id: product.id, name: product.name, price: product.price, image_url: product.image_url });
     setAdded(true);
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -37,7 +40,7 @@ export default function AddToCartButton({ product }: Props) {
   // shadow) but carries three states, so the state styles live here.
   const base =
     'inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] px-6 py-4 text-sm font-medium tracking-[-0.01em] transition-[transform,background-color,box-shadow] duration-200';
-  const stateClass = !product.in_stock
+  const stateClass = !available
     ? 'bg-muted text-muted-foreground cursor-not-allowed'
     : added
     ? 'bg-moss text-forest-black'
@@ -47,16 +50,16 @@ export default function AddToCartButton({ product }: Props) {
     <div className="pt-2">
       <button
         onClick={handleAddToCart}
-        disabled={!product.in_stock}
+        disabled={!available}
         className={`${base} ${stateClass}`}
       >
         {added && (
           <span aria-hidden className="text-base leading-none">✓</span>
         )}
-        {!product.in_stock ? 'Out of Stock' : added ? 'Added to Cart' : 'Add to Cart'}
+        {!available ? UNAVAILABLE_LABEL : added ? '장바구니에 담았어요' : '장바구니에 담기'}
       </button>
       <span aria-live="polite" className="sr-only">
-        {added ? `${product.name} added to cart` : ''}
+        {added ? `${product.name} 장바구니에 담았습니다.` : ''}
       </span>
     </div>
   );

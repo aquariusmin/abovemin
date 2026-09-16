@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
-import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
+import { hidesSiteChrome } from '@/lib/chrome';
 
 export default function Nav() {
   const pathname = usePathname();
-  const isPortfolioFocused = isPortfolioFocusedPath(pathname);
+  const chromeless = hidesSiteChrome(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -86,7 +86,7 @@ export default function Nav() {
 
   const isActiveLink = (href: string) => pathname?.startsWith(href);
 
-  if (isPortfolioFocused) return null;
+  if (chromeless) return null;
 
   // Nav labels scale with the viewport instead of sitting at a fixed 11px:
   // cramped where the row is tightest (they only appear from `lg`) and
@@ -95,25 +95,33 @@ export default function Nav() {
   // the mobile bar is unchanged. Tracking is in `em`, so it follows along.
   const fluidLabel = 'text-[clamp(0.6875rem,0.52vw+0.35rem,0.875rem)]';
 
+  // The badge hangs off the label, not off the link: the link's box is padded
+  // out to a 44px tap target on touch, and a corner of THAT would put the
+  // count nowhere near the word it counts.
   const cartBadge = (className: string) => (
-    <Link href="/cart" className={`relative ${className}`} onClick={() => setMenuOpen(false)}>
-      <span className={`eyebrow ${fluidLabel} tracking-[0.18em] ${pathname === '/cart' ? activeLink : idleLink} hover:opacity-60 transition-opacity`}>
-        Bag
-      </span>
-      {displayCount > 0 && (
-        <span className="absolute -top-2.5 -right-3.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-mono flex items-center justify-center">
-          {displayCount}
+    <Link href="/cart" className={className} onClick={() => setMenuOpen(false)}>
+      <span className="relative">
+        <span className={`eyebrow ${fluidLabel} tracking-[0.18em] ${pathname === '/cart' ? activeLink : idleLink} hover:opacity-60 transition-opacity`}>
+          Bag
         </span>
-      )}
+        {displayCount > 0 && (
+          <span className="absolute -top-2.5 -right-3.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-mono flex items-center justify-center">
+            {displayCount}
+          </span>
+        )}
+      </span>
     </Link>
   );
 
   return (
-    <nav ref={navRef} className={`fixed top-0 left-0 w-full z-50 border-b ${shell} backdrop-blur-xl transition-colors duration-500`}>
+    // Open, the bar and its dropdown become one opaque sheet with a hairline
+    // and `shadow-xs` under it. Translucent, the hero photo showed through the
+    // blur behind the menu rows and the links read as floating on the picture.
+    <nav ref={navRef} className={`fixed top-0 left-0 w-full z-50 border-b transition-colors duration-500 ${menuOpen ? 'bg-canvas border-border shadow-xs' : `${shell} backdrop-blur-xl`}`}>
       {/* 3-column flex: equal-width outer zones keep the wordmark optically
           centered while reserving real space, so nothing can overlap. Desktop
           nav appears at lg; below that we fall back to the hamburger. */}
-      <div className="flex items-center gap-4 px-5 sm:px-6 md:px-10 py-4 md:py-6 max-w-[1920px] mx-auto">
+      <div className="flex items-center gap-4 px-5 sm:px-6 md:px-10 py-2.5 md:py-5 lg:py-6 max-w-[1920px] mx-auto">
 
         {/* Left: wordmark (mobile/tablet). Empty at `lg` on purpose — the zone
             still reserves its width so the centre wordmark stays centred. */}
@@ -167,12 +175,15 @@ export default function Nav() {
             {cartBadge('')}
           </div>
 
-          <div className="flex lg:hidden items-center gap-5">
-            {cartBadge('')}
+          {/* Touch controls are 44×44 (WCAG 2.5.5 / Apple HIG): the glyphs
+              stay the size they were, the hit area grows around them. The
+              negative margin keeps the toggle's lines on the page gutter. */}
+          <div className="flex lg:hidden items-center gap-1">
+            {cartBadge('inline-flex h-11 min-w-11 items-center justify-center px-2')}
             <button
               ref={toggleRef}
               onClick={() => setMenuOpen(prev => !prev)}
-              className={`flex flex-col gap-[5px] p-2 -mr-2 text-forest`}
+              className={`flex h-11 w-11 flex-col items-center justify-center gap-[5px] -mr-3 text-forest`}
               aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
@@ -193,7 +204,7 @@ export default function Nav() {
         inert={!menuOpen}
         className={`lg:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}
       >
-        <div className={`border-t border-border/70 px-6 py-6 flex flex-col gap-1`}>
+        <div className={`border-t border-border/70 px-5 sm:px-6 md:px-10 py-3 flex flex-col`}>
           {navLinks.map(link => {
             const active = isActiveLink(link.href);
             return (
@@ -202,7 +213,7 @@ export default function Nav() {
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 py-2.5 eyebrow text-xs tracking-[0.2em] transition-colors ${link.italic ? 'italic' : ''} ${
+                className={`flex min-h-12 items-center gap-3 eyebrow text-xs tracking-[0.2em] transition-colors ${link.italic ? 'italic' : ''} ${
                   active ? activeLink : idleLink
                 }`}
               >

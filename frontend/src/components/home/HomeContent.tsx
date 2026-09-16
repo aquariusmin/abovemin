@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, MotionConfig, type Variants } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
+import { formatPrice } from '@/lib/price';
+import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const MotionLink = motion.create(Link);
 
@@ -14,6 +16,15 @@ interface FeaturedProduct {
   name: string;
   price: number;
   image_url: string;
+}
+
+interface RecentPhoto {
+  id: number;
+  src: string;
+  title: string;
+  location: string;
+  year: number;
+  album_slug: string;
 }
 
 // Shared editorial easing — slow settle, no bounce.
@@ -54,6 +65,11 @@ interface HomeContentProps {
   titleHead: string;
   titleTail: string;
   heroSubtitle: string;
+  /** 가장 최근에 올라온 아카이브 사진 (id 내림차순). */
+  recent: RecentPhoto[];
+  photoCount: number;
+  albumCount: number;
+  /** 판매 중인 상품만. 비어 있으면 소품 섹션과 소품 CTA가 모두 빠진다. */
   featured: FeaturedProduct[];
 }
 
@@ -63,8 +79,13 @@ export default function HomeContent({
   titleHead,
   titleTail,
   heroSubtitle,
+  recent,
+  photoCount,
+  albumCount,
   featured,
 }: HomeContentProps) {
+  const hasShop = featured.length > 0;
+
   // Whether the copy can sit ON the photograph. A panorama leaves a frame too
   // short to carry it: at `md` a 3:1 photo is ~230px tall while the copy needs
   // ~300, and the absolutely-positioned block would spill out of the top of the
@@ -98,7 +119,10 @@ export default function HomeContent({
              Copy is laid over the lower band from `md` up, and sits below the
              photo on phones, where a landscape shot is far too short to carry
              it. Type scales in `cqw` so it fits the frame at any orientation. */}
-        <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-14 md:pb-20">
+        {/* 아래 여백은 짧게. 다음 장이 cream 띠로 바뀌므로 간격이 아니라
+            면의 전환이 구분을 맡는다 — 예전에는 빈 canvas가 데스크톱에서
+            ~180px 이어졌다. */}
+        <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
           <motion.div
             className="@container relative mx-auto w-full"
             style={{ maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }}
@@ -134,8 +158,20 @@ export default function HomeContent({
 
             <motion.div
               variants={rise}
-              className={`mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14')}`}
+              className={`mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
             >
+              {/* 문구 블록이 자기 scrim을 들고 다닌다.
+
+                  프레임 전체에 깔린 `.scrim-hero`는 사진 높이의 비율로 옅어지는데,
+                  문구 블록의 높이는 사진이 아니라 글자 크기가 정한다. 그래서
+                  맨 위의 eyebrow가 ramp의 옅은 구간(~30%)에 걸려, 밝은 노을
+                  하늘 위에서 moss 11px 글자가 읽히지 않았다. 이 층은 블록의
+                  실제 높이에 붙어 있고 위로 한 뼘 더 올라가므로, 사진의 비율이나
+                  제목 길이와 상관없이 eyebrow가 항상 어두운 쪽에 앉는다.
+                  사진은 자르지 않는다 — 프레임 규칙은 그대로다. */}
+              {overlaid && (
+                <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-20 lg:-top-24 -z-10 hidden md:block rounded-b-xl" />
+              )}
               <p className={`eyebrow eyebrow-marked text-primary ${onPhoto('md:text-moss')} mb-4 md:mb-6`}>
                 phorage studio — Seoul
               </p>
@@ -168,18 +204,93 @@ export default function HomeContent({
                 >
                   사진 아카이브 보기
                 </Link>
-                <Link
-                  href="/shop"
-                  className={`link-underline text-ink text-sm ${onPhoto('md:text-cream/85 md:hover:text-moss')}`}
-                >
-                  소품 보러 가기
-                </Link>
+                {/* 살 수 있는 것이 없으면 소품으로 가는 길을 앞에 내지 않는다. */}
+                {hasShop && (
+                  <Link
+                    href="/shop"
+                    className={`link-underline text-ink text-sm ${onPhoto('md:text-cream/85 md:hover:text-moss')}`}
+                  >
+                    소품 보러 가기
+                  </Link>
+                )}
               </div>
             </motion.div>
           </motion.div>
         </section>
 
-        {/* ── New collectibles preview ─────────────────────────────────────── */}
+        {/* ── 최근 아카이브 ─────────────────────────────────────────────────────
+             DESIGN.md § Rhythm: canvas → cream 띠 → canvas → forest 띠 → 푸터.
+             홈은 히어로 한 장 뒤에 바로 푸터였고, 이 사이트의 본문인 사진은
+             홈 어디에도 없었다. 사진마다 `?p=` 딥링크로 앨범 안의 그 사진을
+             곧장 연다(PhotoGrid가 첫 진입에 주소창을 읽는다). */}
+        {recent.length > 0 && (
+          <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
+            <div className="max-w-[1400px] mx-auto">
+              <motion.div
+                {...inViewProps}
+                variants={rise}
+                className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14"
+              >
+                <div className="space-y-3">
+                  <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
+                  <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                    최근 아카이브
+                  </h2>
+                </div>
+                <Link href="/archive" className="btn-outline">아카이브 전체 보기</Link>
+              </motion.div>
+
+              {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
+                  사진에 맞춘다"는 원칙이 홈에서 깨진다. */}
+              <motion.ul
+                {...inViewProps}
+                viewport={{ once: true, amount: 0.1 }}
+                variants={scrollStagger}
+                className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5"
+              >
+                {recent.map(photo => {
+                  // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
+                  // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
+                  // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
+                  const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
+                  return (
+                    <motion.li key={photo.id} variants={rise} className="break-inside-avoid">
+                      <Link
+                        href={`/archive/${photo.album_slug}?p=${photo.id}`}
+                        className="group block"
+                      >
+                        <div className="overflow-hidden rounded-md bg-cream-deep">
+                          <Image
+                            src={cloudinary(photo.src, { watermark: true, width: 600 })}
+                            alt={photoLabel(photo)}
+                            width={0}
+                            height={0}
+                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            className="w-full h-auto block transition-transform duration-700 group-hover:scale-[1.03]"
+                            draggable={false}
+                            loading="lazy"
+                          />
+                        </div>
+                        {meta && (
+                          <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
+                            {meta}
+                          </p>
+                        )}
+                      </Link>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+            </div>
+          </section>
+        )}
+
+        {/* ── New collectibles preview ─────────────────────────────────────────
+             살 수 있는 소품이 하나라도 있을 때만. 카탈로그가 전부 자리표시자인
+             동안 이 섹션은 "이번 달 새로 나온 소품" 아래 ₩ 0짜리 카드 세 장을
+             걸고 있었다 — 홈에서 가장 큰 거짓말이었다. `featured`는 서버에서
+             이미 판매 중인 것만 거른 목록이다. */}
+        {featured.length > 0 && (
         <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
           <div className="max-w-[1400px] mx-auto">
             <motion.div
@@ -196,8 +307,7 @@ export default function HomeContent({
               <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
             </motion.div>
 
-            {featured.length > 0 ? (
-              <motion.div
+            <motion.div
                 {...inViewProps}
                 variants={scrollStagger}
                 className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
@@ -227,16 +337,48 @@ export default function HomeContent({
                       )}
                     </div>
                     <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
-                    <p className="text-sm font-mono text-primary">₩&nbsp;{item.price.toLocaleString()}</p>
+                    <p className="text-sm font-mono text-primary">{formatPrice(item.price)}</p>
                   </MotionLink>
                 ))}
               </motion.div>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground py-16 border border-dashed border-hairline rounded-lg">
-                새로운 소품을 준비 중입니다.
-              </p>
-            )}
           </div>
+        </section>
+        )}
+
+        {/* ── 닫는 띠 ──────────────────────────────────────────────────────────
+             페이지마다 forest 띠는 하나. 가장 앞에 내세울 행동은 아카이브이고,
+             소품은 살 수 있는 것이 있을 때만 두 번째로 붙는다. */}
+        <section className="band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
+          <motion.div
+            {...inViewProps}
+            variants={rise}
+            className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12"
+          >
+            <div className="space-y-4 max-w-2xl">
+              <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
+              <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
+                {photoCount > 0
+                  ? `${albumCount}개의 컬렉션, ${photoCount.toLocaleString()}장의 빛`
+                  : '어제의 빛을 모아 둡니다'}
+              </h2>
+              <p className="text-[15px] md:text-base leading-relaxed text-cream/75 max-w-[46ch]">
+                여행지와 동네에서 모은 사진을 컬렉션별로, 또는 연도와 장소로 찾아볼 수 있습니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
+              <Link
+                href="/archive"
+                className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
+              >
+                아카이브 둘러보기
+              </Link>
+              {hasShop && (
+                <Link href="/shop" className="link-underline text-sm text-cream/85 hover:text-moss">
+                  소품 보러 가기
+                </Link>
+              )}
+            </div>
+          </motion.div>
         </section>
       </main>
     </MotionConfig>

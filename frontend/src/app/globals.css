@@ -146,12 +146,23 @@
   --font-emoji: "Apple Color Emoji", "Noto Color Emoji", "Twemoji Country Flags",
     "Segoe UI Emoji", "Segoe UI Symbol";
 
+  /* Japanese: system faces only, no webfont. Album captions carry Japanese
+     place names ("嵐山 (아라시야마)"), and Plex Sans KR covers neither kana nor
+     those kanji, so the glyphs fell through to whatever the OS reached first —
+     tofu boxes on a machine without a CJK default (measured: headless Chromium
+     on Linux). Named after the emoji families for
+     the same reason the Korean system faces are: these fonts carry the old
+     monochrome symbol block too, and must never be asked about ✈ before a
+     colour emoji face is. */
+  --font-japanese: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    "Noto Sans JP", "Noto Sans CJK JP";
+
   --font-display-stack: var(--font-display), var(--font-korean),
-    var(--font-emoji), "Apple SD Gothic Neo", "Malgun Gothic", ui-serif,
-    Georgia, serif;
+    var(--font-emoji), var(--font-japanese), "Apple SD Gothic Neo",
+    "Malgun Gothic", ui-serif, Georgia, serif;
   --font-body-stack: var(--font-body), var(--font-korean), Pretendard,
-    var(--font-emoji), "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif,
-    system-ui, sans-serif;
+    var(--font-emoji), var(--font-japanese), "Apple SD Gothic Neo",
+    "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
   --font-mono-stack: var(--font-mono), var(--font-korean), var(--font-emoji),
     ui-monospace, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
 }
@@ -721,6 +732,22 @@ body {
   );
 }
 
+/* Companion to `.scrim-hero`, attached to the copy block rather than the frame.
+   The frame scrim fades by the photo's height, but the copy's height is set by
+   its type, so on a short frame the eyebrow landed in the ~30% part of the ramp
+   and moss-on-sunset went unreadable. This layer spans the copy block plus a
+   little headroom: a held plateau under the whole block, fading only above the
+   eyebrow. Stacked on the frame scrim, the text band stays dark at any ratio. */
+.scrim-hero-copy {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--forest-black) 58%, transparent) 0%,
+    color-mix(in srgb, var(--forest-black) 58%, transparent) 72%,
+    color-mix(in srgb, var(--forest-black) 28%, transparent) 88%,
+    transparent 100%
+  );
+}
+
 /* Organic paper grain — a whisper of texture on large flat bands.
    Inline SVG so it costs no request and never breaks a strict CSP. */
 .texture-grain {
@@ -742,7 +769,8 @@ body {
 
 /* ── Print (portfolio) — preserved ─────────────────────────────────────── */
 
-body.portfolio-focused-route > div {
+/* No Nav on these routes (see `lib/chrome`), so no room reserved for one. */
+body.chromeless-route > div {
   padding-top: 0;
 }
 

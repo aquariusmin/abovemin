@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Lightbox from './Lightbox';
 import { cloudinary } from '@/lib/cloudinary';
+import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -14,6 +15,8 @@ interface Photo {
   title: string;
   location: string;
   year: number;
+  /** 앨범을 가로지르는 목록에서만 온다. 라이트박스의 공유 링크가 쓴다. */
+  album_slug?: string;
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
@@ -97,14 +100,18 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
   return (
     <>
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
-        {photos.map((photo, i) => (
+        {photos.map((photo, i) => {
+          // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
+          const caption = photoCaption(photo);
+          const label = photoLabel(photo);
+          return (
           <motion.button
             key={photo.id}
             type="button"
             id={`photo-${photo.id}`}
             className="break-inside-avoid group block w-full text-left cursor-pointer"
             onClick={() => open(i)}
-            aria-label={`${photo.title} 크게 보기`}
+            aria-label={`${label} 크게 보기`}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
             whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
@@ -119,7 +126,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                   Same treatment the Lightbox already uses. */}
               <Image
                 src={cloudinary(photo.src, { watermark: true, width: 800 })}
-                alt={photo.title}
+                alt={label}
                 width={0}
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -129,16 +136,23 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 fetchPriority={i === 0 ? 'high' : 'auto'}
               />
             </div>
-            <div className="mt-3">
-              <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
-                {photo.title}
-              </p>
-              <p className="eyebrow text-muted-foreground mt-1">
-                {photo.location}&nbsp;&middot; {photo.year}
-              </p>
-            </div>
+            {(caption.title || caption.meta.length > 0) && (
+              <div className="mt-3">
+                {caption.title && (
+                  <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
+                    {caption.title}
+                  </p>
+                )}
+                {caption.meta.length > 0 && (
+                  <p className={`eyebrow text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
+                    {joinCaption(caption.meta)}
+                  </p>
+                )}
+              </div>
+            )}
           </motion.button>
-        ))}
+          );
+        })}
       </div>
 
       <AnimatePresence>

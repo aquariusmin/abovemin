@@ -26,8 +26,8 @@ export default function NotFound() {
         </h1>
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
           <Link href="/" className="btn-primary">홈으로 가기</Link>
-          <Link href="/archive" className="btn-outline">Archive</Link>
-          <Link href="/shop" className="btn-outline">Shop</Link>
+          <Link href="/archive" className="btn-outline">아카이브</Link>
+          <Link href="/shop" className="btn-outline">샵</Link>
         </div>
       </div>
     </div>

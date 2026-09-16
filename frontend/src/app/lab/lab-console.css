@@ -228,6 +228,55 @@
   background: linear-gradient(to bottom, var(--forest), var(--moss));
 }
 
+/* A bar is one line at every width. At 390px "RELATIVE PERFORMANCE" and "ALL
+   BOTS · ONE AXIS" each wrapped inside a fixed 36px strip — four lines of
+   label spilling out of the bar. The title keeps its line; the right-hand
+   annotation is the part that can lose its tail. */
+.lab-console .bar > .lab-label:first-child {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lab-console .bar > :last-child:not(:first-child) {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Stat cells below `lg` sit two to a row, and the fleet shows three or five
+   of them — an odd count left one cell alone with an empty half-row beside it
+   and a hairline on its open side. The last odd cell takes the whole row
+   instead, rows get a rule between them, and the right-hand cell of each row
+   drops its outer edge (the pane already draws that one). */
+@media (max-width: 1023.98px) {
+  .lab-console .lab-stats > :nth-child(even) {
+    border-right-width: 0;
+  }
+  .lab-console .lab-stats > :nth-child(n + 3) {
+    border-top: 1px solid var(--lab-border);
+  }
+  .lab-console .lab-stats > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* A table wider than the phone scrolls sideways, but nothing said so: the
+   columns simply ended at the pane edge as if that were the whole table.
+   Pure-CSS scroll shadows — two `local` covers in the panel colour ride with
+   the content, two `scroll` shades stay pinned to the edges, so a shade shows
+   only on a side that still has more table behind it. No listener, no
+   wrapper element. The head row's own glass fill paints over the shade,
+   which is fine: the body rows are what carry the cue. */
+.lab-console .lab-scroll {
+  background:
+    linear-gradient(to right, var(--lab-surface-1) 40%, transparent) left center / 2.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--lab-surface-1) 40%, transparent) right center / 2.5rem 100% no-repeat local,
+    linear-gradient(to right, color-mix(in oklab, var(--lab-ink-1) 16%, transparent), transparent) left center / 1rem 100% no-repeat scroll,
+    linear-gradient(to left, color-mix(in oklab, var(--lab-ink-1) 16%, transparent), transparent) right center / 1rem 100% no-repeat scroll;
+  background-color: var(--lab-surface-1);
+}
+
 /* The tracked micro-label heading every panel, column and field. Same
    construction as the site's `.eyebrow`, one notch tighter: `.eyebrow` sits at
    0.24em, which is right for a line of three words and falls apart across ten

@@ -1,19 +1,21 @@
-import { getAlbums, getProducts } from '@/lib/supabase';
+import { SITE_URL } from '@/lib/site';
+import { getAlbumsWithCounts, getProducts } from '@/lib/supabase';
+import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getNotes } from '@/data/notes';
 
-const BASE = 'https://abovemin.com';
+const BASE = SITE_URL;
 
 export default async function sitemap() {
   const [albums, products] = await Promise.all([
-    getAlbums().catch(() => []),
+    getAlbumsWithCounts().catch(() => []),
     getProducts().catch(() => []),
   ]);
 
   // Single stable timestamp per generation for content without its own date,
   // so lastmod doesn't jitter across entries within one build.
   const now = new Date();
-  const sellable = products.filter(p => p.in_stock);
+  const sellable = products.filter(isAvailable);
   // Use a row's DB timestamp when present (Supabase default columns), else `now`.
   const rowDate = (row: unknown): Date => {
     const ts = (row as { updated_at?: string; created_at?: string });
@@ -37,7 +39,9 @@ export default async function sitemap() {
     { url: `${BASE}/lab`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.6 },
   ];
 
-  const albumPages = albums.map(a => ({
+  // 빈 앨범은 404다(`archive/[slug]`가 `notFound()`를 부른다). 없는 URL을
+  // 신고하지 않는다.
+  const albumPages = albums.filter(a => a.photo_count > 0).map(a => ({
     url: `${BASE}/archive/${a.slug}`,
     lastModified: rowDate(a),
     changeFrequency: 'monthly' as const,

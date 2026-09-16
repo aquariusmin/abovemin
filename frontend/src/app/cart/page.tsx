@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/lib/price';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -33,7 +34,7 @@ export default function CartPage() {
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Link href="/shop" className="btn-primary">소품 보러 가기</Link>
-        <Link href="/archive" className="link-underline text-ink text-sm">Browse the archive</Link>
+        <Link href="/archive" className="link-underline text-ink text-sm">아카이브 둘러보기</Link>
       </div>
     </main>
   );
@@ -79,7 +80,7 @@ export default function CartPage() {
                   <Link href={`/shop/${item.id}`} className="text-[15px] font-medium text-ink-body leading-snug hover:text-accent transition-colors">
                     {item.name}
                   </Link>
-                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">₩&nbsp;{item.price.toLocaleString()}</p>
+                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">{formatPrice(item.price)}</p>
                 </div>
 
                 {/* Quantity */}
@@ -109,9 +110,9 @@ export default function CartPage() {
                   </p>
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="eyebrow text-muted-foreground hover:text-brick transition-colors"
+                    className="label-ko text-muted-foreground hover:text-brick transition-colors"
                   >
-                    Remove
+                    삭제
                   </button>
                 </div>
               </motion.div>
@@ -124,19 +125,19 @@ export default function CartPage() {
           {confirmingClear ? (
             <span className="flex items-center gap-3 text-sm text-slate">
               모두 비울까요?
-              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="eyebrow text-brick hover:opacity-70 transition-opacity">
-                Yes, clear
+              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="label-ko text-brick hover:opacity-70 transition-opacity">
+                비우기
               </button>
-              <button onClick={() => setConfirmingClear(false)} className="eyebrow text-muted-foreground hover:text-ink transition-colors">
-                Cancel
+              <button onClick={() => setConfirmingClear(false)} className="label-ko text-muted-foreground hover:text-ink transition-colors">
+                취소
               </button>
             </span>
           ) : (
             <button
               onClick={() => setConfirmingClear(true)}
-              className="eyebrow text-muted-foreground hover:text-slate transition-colors"
+              className="label-ko text-muted-foreground hover:text-slate transition-colors"
             >
-              Clear All
+              모두 비우기
             </button>
           )}
 
@@ -148,7 +149,7 @@ export default function CartPage() {
               </span>
             </div>
             <Link href="/cart/checkout" className="btn-primary w-full">
-              Checkout
+              주문하기
             </Link>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import type { PortfolioProject } from "@/data/portfolio";
 import type { PortfolioLocale } from "@/data/portfolioRouting";
+import { SITE_URL } from "@/lib/site";
 
-const SITE = "https://abovemin.com";
+const SITE = SITE_URL;
 const EMAIL = "aquariusmin01@naver.com";
 const GITHUB = "https://github.com/aquariusmin";
 
