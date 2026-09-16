@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { hidesSiteChrome } from '@/lib/chrome';
+import { CONTACT_EMAIL } from '@/lib/site';
 import { notes } from '@/data/notes';
 
 const hasNotes = notes.length > 0;
@@ -26,7 +27,7 @@ const NAV = [
 ];
 
 const CONNECT = [
-  { href: 'mailto:aquariusmin01@naver.com', label: 'aquariusmin01@naver.com', external: false },
+  { href: `mailto:${CONTACT_EMAIL}`, label: CONTACT_EMAIL, external: false },
   { href: 'https://github.com/aquariusmin', label: 'GitHub / aquariusmin', external: true },
   { href: 'https://instagram.com/sangmin__02', label: 'Instagram / @sangmin__02', external: true },
 ];

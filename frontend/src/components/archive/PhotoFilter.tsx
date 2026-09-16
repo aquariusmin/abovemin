@@ -23,6 +23,14 @@ type Photo = {
   year: number;
   album_slug: string;
   album_title: string;
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 };
 
 const ALL = '__all__';
