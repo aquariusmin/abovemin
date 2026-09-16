@@ -20,6 +20,10 @@ export const SETTINGS_CACHE_TAG = 'site-settings';
  * 앨범이 몇 개든 한 번에 여러 번 다시 굽지 않는다.
  */
 export function revalidateArchive(): void {
+  // 홈이 "최근 아카이브" 띠에 최신 사진을 싣는다. 여기서 같이 무효화하지
+  // 않으면 삭제한 사진이 홈에서만 최대 60초 더 살아 있고, 그 사진의 `?p=`
+  // 링크는 앨범에서 아무것도 열지 못한다.
+  revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/archive/[slug]', 'page');
 }

@@ -721,6 +721,22 @@ body {
   );
 }
 
+/* Companion to `.scrim-hero`, attached to the copy block rather than the frame.
+   The frame scrim fades by the photo's height, but the copy's height is set by
+   its type, so on a short frame the eyebrow landed in the ~30% part of the ramp
+   and moss-on-sunset went unreadable. This layer spans the copy block plus a
+   little headroom: a held plateau under the whole block, fading only above the
+   eyebrow. Stacked on the frame scrim, the text band stays dark at any ratio. */
+.scrim-hero-copy {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--forest-black) 50%, transparent) 0%,
+    color-mix(in srgb, var(--forest-black) 50%, transparent) 62%,
+    color-mix(in srgb, var(--forest-black) 22%, transparent) 84%,
+    transparent 100%
+  );
+}
+
 /* Organic paper grain — a whisper of texture on large flat bands.
    Inline SVG so it costs no request and never breaks a strict CSP. */
 .texture-grain {
