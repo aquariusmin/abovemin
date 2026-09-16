@@ -82,10 +82,16 @@ begin
 end
 $$;
 
--- 참고: 초안을 공개 읽기 정책(RLS)으로 막지는 않는다. products의 공개 읽기
--- 정책은 이 저장소의 마이그레이션 밖에서 만들어져 이름을 확정할 수 없고, 이름을
--- 모른 채 새 정책을 더하면 기존 `using (true)`와 OR로 합쳐져 아무것도 막지
--- 못한다. 초안은 공개 조회 코드(`lib/supabase.ts`)가 거른다. 초안에 비밀은
--- 없다 — 이름·가격·이미지뿐이다.
+-- 초안은 공개 읽기 정책(RLS)에서도 뺀다. 공개 페이지는 코드(`lib/supabase.ts`)
+-- 에서 초안을 거르지만, anon 키는 브라우저에 실려 있어 `/rest/v1/products`를
+-- 누구나 직접 부를 수 있다 — 사진의 `hidden`과 같은 이유다. 이 정책은 대시보드에서
+-- 만들어져 마이그레이션에 없지만, 이름은 프로덕션에서 확인했다(2026-09-17,
+-- "public read products", using (true)). 같은 이름을 지우고 다시 거는 것이라
+-- 기존 정책과 OR로 합쳐지는 일이 없다. 주문 API와 관리 화면은 service-role이라
+-- RLS를 거치지 않는다.
+drop policy if exists "public read products" on public.products;
+create policy "public read products" on public.products
+  for select to anon, authenticated
+  using (status <> 'draft');
 
 commit;
