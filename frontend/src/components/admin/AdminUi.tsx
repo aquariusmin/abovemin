@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ADMIN_STUDIO_MIGRATION } from '@/lib/admin/limits';
 import { EYEBROW_CLASS, MESSAGE_CLASS, SECTION_TITLE_CLASS, BTN_SM } from './adminStyles';
 
 /**
@@ -56,13 +57,13 @@ export function StatusLine({ message, className = '' }: { message: Message | nul
  * 새 컬럼을 쓰는 기능이 아직 DB에 없을 때. 화면을 막지 않고, 무엇이 안 되는지와
  * 무엇을 하면 되는지를 적는다.
  */
-export function MigrationNotice({ feature }: { feature?: string }) {
+export function MigrationNotice({ feature, file = ADMIN_STUDIO_MIGRATION }: { feature?: string; file?: string }) {
   return (
     <div role="note" className="rounded-lg border border-brick-soft bg-brick/[0.05] px-4 py-3 text-sm text-ink-body">
       <p className="font-medium text-brick">마이그레이션 적용 필요</p>
       <p className="mt-1 text-[13px] text-slate">
         {feature ? `${feature}은(는) ` : '일부 기능은 '}
-        <code className="font-mono text-[12px]">supabase/migrations/20260916000000_admin_studio.sql</code>을
+        <code className="font-mono text-[12px]">{file}</code>을
         적용한 뒤에 동작합니다. 나머지 기능은 그대로 쓸 수 있습니다.
       </p>
     </div>

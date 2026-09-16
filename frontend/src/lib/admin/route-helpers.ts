@@ -4,8 +4,9 @@ import type { z } from 'zod';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { log } from '@/lib/logger';
-import { isMissingColumnError } from '@/lib/db-compat';
+import { isMissingSchemaError } from '@/lib/db-compat';
 import { firstIssue } from './schemas';
+import { ADMIN_STUDIO_MIGRATION, ARCHIVE_EXTRAS_MIGRATION } from './limits';
 
 /**
  * 관리 API 라우트의 공통 관문. **서버 전용.**
@@ -59,17 +60,23 @@ export async function parseBody<S extends z.ZodType>(
   return { ok: true, value: parsed.data };
 }
 
-export const MIGRATION_NOTICE =
-  '마이그레이션 적용 필요 — supabase/migrations/20260916000000_admin_studio.sql을 먼저 적용해 주세요.';
+export { ADMIN_STUDIO_MIGRATION, ARCHIVE_EXTRAS_MIGRATION };
+
+export function migrationNotice(file: string = ADMIN_STUDIO_MIGRATION): string {
+  return `마이그레이션 적용 필요 — ${file}을 먼저 적용해 주세요.`;
+}
+
+export const MIGRATION_NOTICE = migrationNotice();
 
 /**
- * DB 오류 → 응답. 컬럼이 없어서 난 오류면 409 + `migration: true`로 구분한다 —
- * 관리 화면은 그걸 보고 "다시 시도"가 아니라 "마이그레이션 적용 필요"를 띄운다.
+ * DB 오류 → 응답. 컬럼이나 테이블이 없어서 난 오류면 409 + `migration: true`로
+ * 구분한다 — 관리 화면은 그걸 보고 "다시 시도"가 아니라 "마이그레이션 적용
+ * 필요"를 띄운다. 어느 파일이 빠졌는지는 라우트가 안다(`file`).
  */
-export function dbErrorResponse(label: string, error: unknown): NextResponse {
-  if (isMissingColumnError(error)) {
+export function dbErrorResponse(label: string, error: unknown, file: string = ADMIN_STUDIO_MIGRATION): NextResponse {
+  if (isMissingSchemaError(error)) {
     log.warn(`${label}.migration_pending`, error);
-    return jsonError(MIGRATION_NOTICE, 409, { migration: true });
+    return jsonError(migrationNotice(file), 409, { migration: true });
   }
   log.error(label, error);
   return jsonError('DB error', 500);
