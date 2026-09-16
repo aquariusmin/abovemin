@@ -1,11 +1,10 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProducts, getProductById } from '@/lib/supabase';
-import AddToCartButton from '@/components/AddToCartButton';
 import Reveal from '@/components/motion/Reveal';
-import { formatPrice } from '@/lib/price';
-import { isAvailable, UNAVAILABLE_LABEL } from '@/lib/product';
+import ProductGallery from '@/components/shop/ProductGallery';
+import ProductPurchase from '@/components/shop/ProductPurchase';
+import { cloudinaryAspect } from '@/lib/cloudinary';
+import { isOptionAvailable, parseImages, priceRange, publicState, SOLD_OUT_LABEL } from '@/lib/product';
 import BackLink from '@/components/BackLink';
 
 export const revalidate = 60;
@@ -23,6 +22,7 @@ export const revalidate = 60;
  * 있어 첫 요청 때 서버에서 그려지고, 그 뒤로는 평소의 ISR을 탄다. 미리 굽지
  * 못하는 것이 배포에 실패하는 것보다 낫다.
  */
+// 초안은 `getProducts`가 이미 뺐다 — 미리 굽지 않고, 요청이 와도 404다.
 export async function generateStaticParams() {
   const products = await getProducts().catch(() => []);
   return products.map(p => ({ id: String(p.id) }));
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: product.name,
       description,
-      ...(product.image_url ? { images: [{ url: product.image_url }] } : {}),
+      ...(product.image_url ? { images: [{ url: product.images?.[0]?.url ?? product.image_url }] } : {}),
     },
   };
 }
@@ -52,33 +52,51 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const numId = Number(id);
   if (!Number.isInteger(numId) || numId <= 0) notFound();
 
+  // 초안이면 null이 온다(`getProductById`) — 주소를 알아도 열리지 않는다.
   const product = await getProductById(numId);
   if (!product) notFound();
+
+  const state = publicState(product);
+  const soldOut = state !== 'available';
+  const options = product.options ?? [];
+  const range = priceRange(product);
+  const images = parseImages(product.images, product.image_url);
+
+  // 사진마다 비율을 서버에서 읽는다(하루 캐시). 프레임을 사진 모양으로 만들고
+  // 이미지보다 먼저 자리를 잡기 위해서다. Cloudinary가 아닌 주소(자리표시자의
+  // Unsplash)는 null — 갤러리가 이미지 자신의 크기로 그린다.
+  const aspects = await Promise.all(images.map(image => cloudinaryAspect(image.url)));
+  const gallery = images.map((image, i) => ({ ...image, aspect: aspects[i] }));
 
   // `offers` only when there is a price to offer. A product still waiting on
   // one carries `price: 0`, and an Offer saying a thing costs ₩0 is a claim,
   // not a placeholder — search engines render it as free. Omitting the node
   // says "no offer yet", which is what is true.
-  const available = isAvailable(product);
+  //
+  // 옵션 상품은 옵션마다 Offer 하나. 가격이 정해진 옵션만 싣는다.
+  const availability = (inStock: boolean) =>
+    inStock && !soldOut ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  const offers = options.length
+    ? options
+        .filter(option => option.price > 0)
+        .map(option => ({
+          '@type': 'Offer',
+          name: option.label,
+          price: option.price,
+          priceCurrency: 'KRW',
+          availability: availability(isOptionAvailable(option)),
+        }))
+    : product.price > 0
+    ? [{ '@type': 'Offer', price: product.price, priceCurrency: 'KRW', availability: availability(true) }]
+    : [];
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: product.image_url,
+    image: images.map(image => image.url),
     description: product.description || `${product.name} — phorage shop`,
-    ...(product.price > 0
-      ? {
-          offers: {
-            '@type': 'Offer',
-            price: product.price,
-            priceCurrency: 'KRW',
-            availability: product.in_stock
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-          },
-        }
-      : {}),
+    ...(offers.length === 1 ? { offers: offers[0] } : offers.length > 1 ? { offers } : {}),
   };
 
   return (
@@ -102,68 +120,54 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       {/* Detail layout */}
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
 
-        {/* Media */}
-        <Reveal className="md:col-span-7 overflow-hidden rounded-lg border border-border-light bg-stone" y={16}>
-          <Image
-            src={product.image_url}
-            alt={product.name}
-            width={0}
-            height={0}
-            sizes="(max-width: 768px) 100vw, 58vw"
-            className="w-full h-auto object-cover"
-            /* The product shot is this page's LCP element at every width, so
-               `preload` is the correct Next 16 replacement for the deprecated
-               `priority` — unlike the grids, where it is not. */
-            preload
-          />
+        {/* Media — 프레임은 사진을 따른다(ProductGallery 주석). */}
+        <Reveal className="md:col-span-7" y={16}>
+          <ProductGallery images={gallery} name={product.name} />
         </Reveal>
 
         {/* Info */}
         <Reveal className="md:col-span-5 space-y-6 md:space-y-8" delay={0.08} y={16}>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <p className="eyebrow text-muted-foreground">{product.category}</p>
-              <span aria-hidden className="h-3 w-px bg-hairline" />
-              {/* Hangul은 eyebrow의 대문자·0.24em 자간을 받지 않는다 → label-ko. */}
-              <span className={`label-ko ${available ? 'text-accent' : 'text-muted-foreground'}`}>
-                {available ? '판매 중' : UNAVAILABLE_LABEL}
+              {product.category && (
+                <>
+                  <p className="eyebrow text-muted-foreground">{product.category}</p>
+                  <span aria-hidden className="h-3 w-px bg-hairline" />
+                </>
+              )}
+              {/* Hangul은 eyebrow의 대문자·0.24em 자간을 받지 않는다 → label-ko.
+                  초안은 이 페이지에 오지 않으므로 상태는 둘뿐이다. */}
+              <span className={`label-ko ${soldOut ? 'text-muted-foreground' : 'text-accent'}`}>
+                {soldOut ? SOLD_OUT_LABEL : '판매 중'}
               </span>
             </div>
-            {/* 이름이 이 페이지의 제목이고 가격은 그 아래의 정보다. 가격이
-                초록 굵은 2xl로 이름과 거의 같은 무게를 갖고 있어서, "가격
-                미정"이 제목처럼 읽혔다. */}
             <h1 className="font-serif text-5xl sm:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
               {product.name}
             </h1>
-            <p className={`text-lg tabular-nums ${product.price > 0 ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}>
-              {formatPrice(product.price)}
-            </p>
+            {product.edition && (
+              <p className="text-[15px] text-slate">{product.edition}</p>
+            )}
           </div>
 
-          <hr className="rule" />
+          <ProductPurchase
+            product={{ id: product.id, name: product.name, price: product.price, image_url: images[0]?.url ?? product.image_url }}
+            options={options}
+            priceMin={range.min}
+            priceMax={range.max}
+            soldOut={soldOut}
+          />
 
           {product.description && (
-            <div className="space-y-3">
-              <p className="eyebrow text-muted-foreground">Story</p>
-              <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
-                {product.description}
-              </p>
-            </div>
+            <>
+              <hr className="rule" />
+              <div className="space-y-3">
+                <p className="eyebrow text-muted-foreground">Story</p>
+                <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
+                  {product.description}
+                </p>
+              </div>
+            </>
           )}
-
-          <AddToCartButton product={product} />
-
-          {/* 담을 수 없는 상품에서 "장바구니 보기"는 갈 이유가 없는 길이다. */}
-          <div className="flex items-center gap-5 pt-1">
-            {available && (
-              <Link href="/cart" className="link-underline text-sm text-slate">
-                장바구니 보기 →
-              </Link>
-            )}
-            <Link href="/shop" className="link-underline text-sm text-slate">
-              계속 둘러보기
-            </Link>
-          </div>
         </Reveal>
       </section>
     </main>

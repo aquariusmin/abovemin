@@ -6,6 +6,15 @@ import { NOTES_CACHE_TAG, NOTES_PRESENCE_TAG, SETTINGS_CACHE_TAG } from './cache
 import { isMissingSchemaError, withColumnFallback } from './db-compat';
 import { placeFromRow, type PlaceCoord } from './places';
 import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
+import {
+  isListed,
+  parseImages,
+  parseOptions,
+  productStatus,
+  type ProductImage,
+  type ProductOption,
+  type ProductStatus,
+} from './product';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -60,13 +69,27 @@ export interface Photo {
 export interface Product {
   id: number;
   name: string;
+  /** 옵션이 있으면 가장 싼 옵션의 가격(관리 API가 맞춘다). 주문 금액은 옵션 가격이다. */
   price: number;
+  /** 커버. `images`의 첫 장과 같다(관리 API가 맞춘다). */
   image_url: string;
   category: string;
   tag: string | null;
   description: string;
+  /** 호환용. 상태의 원본은 `status`다(`lib/product.ts`). */
   in_stock: boolean;
   sort_order?: number;
+  /**
+   * 마이그레이션(20260917020000_shop_ready) 이후 컬럼. 공개 조회(`publicProduct`)는
+   * 적용 전에도 채워서 돌려준다 — 상태는 옛 규칙으로 계산하고, 이미지는
+   * `image_url` 한 장, 옵션은 빈 목록.
+   */
+  status?: ProductStatus;
+  images?: ProductImage[];
+  options?: ProductOption[];
+  edition?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
@@ -308,6 +331,38 @@ export const hasPublishedNotes = unstable_cache(
   { tags: [NOTES_PRESENCE_TAG], revalidate: false },
 );
 
+// ── 상품 ──────────────────────────────────────────────────────────────────────
+//
+// 공개 조회는 **초안을 돌려주지 않는다.** 목록·홈·sitemap·상세가 모두 이
+// 함수들을 거치므로, 초안이 새는 길은 여기 하나만 막으면 된다. 공개 읽기
+// 정책(RLS)이 아니라 코드에서 거르는 이유는 마이그레이션 파일 끝의 주석에 있다.
+//
+// `select('*')`를 유지한다: 새 컬럼(`status`, `images`, `options`, `edition`)을
+// 이름으로 고르면 마이그레이션 전 DB에서 조회가 실패한다. `publicProduct`가
+// 있으면 쓰고 없으면 옛 규칙으로 채운다.
+
+/** DB 행 → 공개 화면의 상품. jsonb 안쪽은 믿지 않고 다시 읽는다. */
+function publicProduct(row: Product & { status?: unknown; images?: unknown; options?: unknown }): Product {
+  const edition = typeof row.edition === 'string' ? row.edition.trim() : '';
+  return {
+    id: row.id,
+    name: row.name,
+    price: row.price,
+    image_url: row.image_url,
+    category: row.category ?? '',
+    tag: row.tag ?? null,
+    description: row.description ?? '',
+    in_stock: row.in_stock,
+    sort_order: row.sort_order,
+    status: productStatus(row as Parameters<typeof productStatus>[0]),
+    images: parseImages(row.images, row.image_url),
+    options: parseOptions(row.options),
+    edition: edition || null,
+    ...(row.created_at ? { created_at: row.created_at } : {}),
+    ...(row.updated_at ? { updated_at: row.updated_at } : {}),
+  };
+}
+
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.
 // 마이그레이션 전에는 `sort_order`가 없으므로 id 순으로만 읽는다.
 export async function getProducts(): Promise<Product[]> {
@@ -317,23 +372,18 @@ export async function getProducts(): Promise<Product[]> {
     () => supabase.from('products').select('*').order('id'),
   );
   if (error) { log.error('getProducts', error); throw error; }
-  return data ?? [];
+  return (data ?? []).map(publicProduct).filter(isListed);
 }
 
 // Single product by id. Wrapped in cache() so generateMetadata + the page body
 // share one query per request instead of fetching the same product twice.
+//
+// 초안이면 `null` — 페이지는 404가 된다. 주소를 안다고 초안이 열리면 초안이
+// 아니다. `.maybeSingle()`: 없는 id는 오류가 아니라 "없음"이다.
 export const getProductById = cache(async (id: number): Promise<Product | null> => {
-  const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
-  if (error) return null;
-  return data;
+  const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+  if (error) { log.warn('getProductById', error); return null; }
+  if (!data) return null;
+  const product = publicProduct(data);
+  return isListed(product) ? product : null;
 });
-
-export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(limit);
-  if (error) { log.warn('getFeaturedProducts', error); return []; }
-  return data ?? [];
-}

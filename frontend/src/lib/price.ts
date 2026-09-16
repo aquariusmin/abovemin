@@ -12,5 +12,16 @@
 export const PRICE_TBD = '가격 미정';
 
 export function formatPrice(krw: number): string {
-  return krw > 0 ? `₩ ${krw.toLocaleString()}` : PRICE_TBD;
+  // `\u00a0`: 줄바꿈 없는 공백. "₩"만 윗줄에 남지 않게(DESIGN.md § Line Breaking).
+  return krw > 0 ? `₩\u00a0${krw.toLocaleString()}` : PRICE_TBD;
+}
+
+/**
+ * 옵션마다 가격이 다른 상품의 가격 한 줄. 값이 하나면 그 값, 여럿이면
+ * "₩ 32,000부터". 최고가까지 적은 범위("₩ 32,000 – ₩ 58,000")는 카드 폭에서
+ * 두 줄로 꺾이고, 방문자가 먼저 묻는 것은 "얼마부터인가"다.
+ */
+export function formatPriceRange({ min, max }: { min: number; max: number }): string {
+  if (min <= 0) return PRICE_TBD;
+  return max > min ? `${formatPrice(min)}부터` : formatPrice(min);
 }

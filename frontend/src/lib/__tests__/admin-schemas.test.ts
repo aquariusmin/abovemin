@@ -184,3 +184,69 @@ describe('PlaceUpsert', () => {
     expect(PlaceDelete.safeParse({ name: '서울' }).success).toBe(true);
   });
 });
+
+describe('ProductCreate / ProductUpdate — 상태·이미지·옵션', () => {
+  const IMG = 'https://res.cloudinary.com/dmljaqqzc/image/upload/v1/phorage/shop/';
+  const full = {
+    name: '숲 포스터',
+    status: 'available',
+    edition: '한정 30부',
+    images: [
+      { url: `${IMG}front.jpg`, label: '앞면' },
+      { url: `${IMG}back.jpg`, label: '' },
+    ],
+    options: [
+      { id: 'a3', label: 'A3 · 매트지', price: 38000, in_stock: true },
+      { id: 'a2', label: 'A2 · 매트지', price: 58000, in_stock: false },
+    ],
+  };
+
+  it('image_url 없이 이미지 목록만으로 만들 수 있고, 빈 설명은 null', () => {
+    const parsed = ProductCreate.parse(full);
+    expect(parsed.images?.[1]).toEqual({ url: `${IMG}back.jpg`, label: null });
+  });
+
+  it('이미지가 한 장도 없으면 만들 수 없다', () => {
+    expect(ProductCreate.safeParse({ ...full, images: [] }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, images: [] }).success).toBe(false);
+  });
+
+  it('상태는 셋뿐이고, in_stock은 받지 않는다(서버가 상태에서 계산한다)', () => {
+    expect(ProductUpdate.safeParse({ id: 1, status: 'sold_out' }).success).toBe(true);
+    expect(ProductUpdate.safeParse({ id: 1, status: 'hidden' }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, in_stock: true }).success).toBe(false);
+  });
+
+  it('이미지 설명은 40자까지, 같은 이미지는 두 번 못 넣는다', () => {
+    expect(ProductUpdate.safeParse({ id: 1, images: [{ url: `${IMG}a.jpg`, label: 'ㄱ'.repeat(41) }] }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, images: [{ url: `${IMG}a.jpg` }, { url: `${IMG}a.jpg` }] }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, images: [{ url: `${IMG}a.jpg`, extra: 1 }] }).success).toBe(false);
+  });
+
+  it('옵션 id 형식·중복, 가격, 이름을 본다', () => {
+    const withOption = (patch: Record<string, unknown>) => ({
+      id: 1,
+      options: [{ id: 'a3', label: 'A3', price: 38000, in_stock: true, ...patch }],
+    });
+    expect(ProductUpdate.safeParse(withOption({})).success).toBe(true);
+    expect(ProductUpdate.safeParse(withOption({ id: 'A3' })).success).toBe(false);
+    expect(ProductUpdate.safeParse(withOption({ id: 'a3:x' })).success).toBe(false);
+    expect(ProductUpdate.safeParse(withOption({ label: ' ' })).success).toBe(false);
+    expect(ProductUpdate.safeParse(withOption({ price: -1 })).success).toBe(false);
+    expect(ProductUpdate.safeParse(withOption({ price: 1.5 })).success).toBe(false);
+    expect(ProductUpdate.safeParse(withOption({ in_stock: 'yes' })).success).toBe(false);
+    expect(
+      ProductUpdate.safeParse({
+        id: 1,
+        options: [
+          { id: 'a3', label: 'A3', price: 1, in_stock: true },
+          { id: 'a3', label: 'A3 다시', price: 2, in_stock: true },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('빈 에디션은 null', () => {
+    expect(ProductUpdate.parse({ id: 1, edition: '  ' })).toEqual({ id: 1, edition: null });
+  });
+});

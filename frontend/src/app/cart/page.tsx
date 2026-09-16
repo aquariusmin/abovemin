@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/lib/price';
+import { MAX_LINE_QUANTITY } from '@/lib/cart-lines';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -57,9 +58,11 @@ export default function CartPage() {
         {/* Line items */}
         <div className="mb-12">
           <AnimatePresence initial={false}>
+            {/* 줄의 열쇠는 상품 id가 아니라 `key`(상품 + 옵션)다. 같은 포스터의
+                A3와 A2가 한 줄로 합쳐지면 안 된다(`lib/cart-lines.ts`). */}
             {items.map(item => (
               <motion.div
-                key={item.id}
+                key={item.key}
                 layout={!reduce}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -67,12 +70,23 @@ export default function CartPage() {
                 transition={{ duration: 0.4, ease: EASE }}
                 className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6 border-b border-hairline py-5 overflow-hidden"
               >
-                {/* Image */}
+                {/* Image — 높이만 맞추고 폭은 사진 비율대로. 정사각에 채워
+                    자르지 않는다(DESIGN.md § Image Treatment). 칸은 가장 넓은
+                    가로 사진까지 받도록 폭만 예약한다. */}
                 <Link
                   href={`/shop/${item.id}`}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-md bg-stone border border-border-light overflow-hidden shrink-0 relative transition-colors hover:border-accent"
+                  className="flex w-24 md:w-28 shrink-0 justify-center"
                 >
-                  <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="96px" />
+                  {item.image_url && (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      width={0}
+                      height={0}
+                      sizes="112px"
+                      className="h-20 md:h-24 w-auto max-w-full rounded-md border border-border-light bg-stone transition-colors hover:border-accent"
+                    />
+                  )}
                 </Link>
 
                 {/* Name + unit price */}
@@ -80,13 +94,16 @@ export default function CartPage() {
                   <Link href={`/shop/${item.id}`} className="text-[15px] font-medium text-ink-body leading-snug hover:text-accent transition-colors">
                     {item.name}
                   </Link>
+                  {item.option_label && (
+                    <p className="mt-0.5 text-[13px] text-slate">{item.option_label}</p>
+                  )}
                   <p className="mt-1 text-sm font-semibold text-accent tabular-nums">{formatPrice(item.price)}</p>
                 </div>
 
                 {/* Quantity */}
                 <div className="flex items-center gap-2 order-3 sm:order-none">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.key, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     aria-label="수량 줄이기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent disabled:opacity-40 disabled:hover:border-hairline disabled:hover:text-slate disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -95,7 +112,8 @@ export default function CartPage() {
                   </button>
                   <span className="text-sm font-semibold w-6 text-center tabular-nums">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.key, item.quantity + 1)}
+                    disabled={item.quantity >= MAX_LINE_QUANTITY}
                     aria-label="수량 늘리기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
@@ -109,7 +127,7 @@ export default function CartPage() {
                     ₩&nbsp;{(item.price * item.quantity).toLocaleString()}
                   </p>
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.key)}
                     className="label-ko text-muted-foreground hover:text-brick transition-colors"
                   >
                     삭제

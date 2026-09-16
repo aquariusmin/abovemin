@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import type { OrderInputValues } from '@/lib/orders-schema';
+import { toOrderItems } from '@/lib/cart-lines';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -65,6 +66,9 @@ export default function CheckoutPage() {
     // at runtime. `total_price` is gone for the same reason — the server has
     // always recomputed it from the products table, and sending it suggested
     // otherwise.
+    //
+    // 항목도 같은 이유로 id·옵션 id·수량만 싣는다(`toOrderItems`). 장바구니 줄의
+    // 가격은 화면 표시용이고, 서버는 옵션 가격까지 DB에서 다시 읽는다.
     const payload: OrderInputValues = {
       name: form.name.trim(),
       email: form.email.trim(),
@@ -72,7 +76,7 @@ export default function CheckoutPage() {
       zipcode: form.zipcode.trim() || null,
       address: form.address.trim(),
       note: form.note.trim() || null,
-      items,
+      items: toOrderItems(items),
     };
 
     try {
@@ -273,14 +277,26 @@ export default function CheckoutPage() {
               <p className="eyebrow text-muted-foreground">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex justify-between items-center gap-3">
+                  <div key={item.key} className="flex justify-between items-center gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="relative w-11 h-11 shrink-0 rounded-md overflow-hidden bg-canvas border border-border-light">
-                        <Image src={item.image_url} alt="" fill className="object-cover" sizes="44px" />
+                      {/* 높이만 맞추고 폭은 사진 비율대로 — 자르지 않는다. */}
+                      <span className="flex w-14 shrink-0 justify-center">
+                        {item.image_url && (
+                          <Image
+                            src={item.image_url}
+                            alt=""
+                            width={0}
+                            height={0}
+                            sizes="56px"
+                            className="h-11 w-auto max-w-full rounded-md bg-canvas border border-border-light"
+                          />
+                        )}
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink-body leading-snug truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">× {item.quantity}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.option_label && <>{item.option_label}&nbsp;· </>}× {item.quantity}
+                        </p>
                       </div>
                     </div>
                     <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</p>

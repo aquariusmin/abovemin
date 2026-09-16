@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR } from './limits';
 import { NOTE_SLUG_RE } from '@/lib/notes';
+import {
+  MAX_IMAGE_LABEL,
+  MAX_IMAGES,
+  MAX_OPTION_LABEL,
+  MAX_OPTIONS,
+  OPTION_ID_RE,
+  PRODUCT_STATUSES,
+} from '@/lib/product';
 
 export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
 
@@ -231,29 +239,74 @@ export const NoteDelete = z.strictObject({ id: Id });
 
 // ── 상품 ──────────────────────────────────────────────────────────────────────
 
+const Price = z
+  .number({ error: '가격은 숫자여야 합니다.' })
+  .int('가격은 원 단위 정수여야 합니다.')
+  .min(0, '가격은 0 이상이어야 합니다.')
+  .max(100_000_000, '가격이 너무 큽니다.');
+
+/**
+ * 갤러리 한 장. 주소가 이 사이트의 Cloudinary인지는 라우트가 본다(클라우드
+ * 이름이 환경 변수라 스키마가 모른다). 설명은 비우면 null.
+ */
+export const ProductImageInput = z.strictObject({
+  url: z.string().trim().min(1, '이미지 주소가 비어 있습니다.').max(1000, '이미지 주소가 너무 깁니다.'),
+  label: optionalText(MAX_IMAGE_LABEL, '이미지 설명').optional().transform(value => value ?? null),
+});
+
+/**
+ * 옵션 하나. id는 장바구니와 주문 기록에 남는 열쇠라 형식을 엄격히 본다
+ * (`OPTION_ID_RE`). 가격 0은 저장할 수 있다 — "가격 미정" 옵션은 담기지 않을
+ * 뿐이다(`isOptionAvailable`).
+ */
+export const ProductOptionInput = z.strictObject({
+  id: z.string().regex(OPTION_ID_RE, '옵션 id는 영문 소문자·숫자·하이픈 1~32자여야 합니다.'),
+  label: z.string().trim().min(1, '옵션 이름이 비어 있습니다.').max(MAX_OPTION_LABEL, '옵션 이름이 너무 깁니다.'),
+  price: Price,
+  in_stock: z.boolean({ error: '옵션 재고 여부가 올바르지 않습니다.' }),
+});
+
 const ProductFields = {
   name: z.string().trim().min(1, '상품명이 비어 있습니다.').max(120, '상품명이 너무 깁니다.'),
-  price: z
-    .number({ error: '가격은 숫자여야 합니다.' })
-    .int('가격은 원 단위 정수여야 합니다.')
-    .min(0, '가격은 0 이상이어야 합니다.')
-    .max(100_000_000, '가격이 너무 큽니다.'),
+  price: Price,
   category: z.string().trim().max(60, '카테고리가 너무 깁니다.'),
   tag: optionalText(40, '태그'),
   description: z.string().trim().max(5000, '설명이 너무 깁니다.'),
-  in_stock: z.boolean(),
   sort_order: z.number().int().min(-100_000).max(100_000),
   image_url: z.string().trim().min(1, '상품 이미지가 없습니다.').max(1000),
+  status: z.enum(PRODUCT_STATUSES, { error: '상품 상태가 올바르지 않습니다.' }),
+  edition: optionalText(60, '에디션'),
+  images: z
+    .array(ProductImageInput)
+    .max(MAX_IMAGES, `이미지는 ${MAX_IMAGES}장까지 올릴 수 있습니다.`)
+    .refine(images => new Set(images.map(image => image.url)).size === images.length, '같은 이미지가 두 번 들어 있습니다.'),
+  options: z
+    .array(ProductOptionInput)
+    .max(MAX_OPTIONS, `옵션은 ${MAX_OPTIONS}개까지 둘 수 있습니다.`)
+    .refine(options => new Set(options.map(option => option.id)).size === options.length, '옵션 id가 겹칩니다.'),
 };
 
-export const ProductCreate = z.strictObject({
-  ...ProductFields,
-  tag: ProductFields.tag.optional(),
-  description: ProductFields.description.optional(),
-  category: ProductFields.category.optional(),
-  in_stock: ProductFields.in_stock.optional(),
-  sort_order: ProductFields.sort_order.optional(),
-});
+/**
+ * `in_stock`은 받지 않는다 — 서버가 `status`에서 계산해 맞춘다(`syncedColumns`).
+ * 둘을 따로 받으면 "초안인데 in_stock = true" 같은 어긋난 행이 생긴다.
+ * `image_url`도 `images`가 있으면 서버가 첫 장으로 덮어쓴다.
+ */
+export const ProductCreate = z
+  .strictObject({
+    name: ProductFields.name,
+    price: ProductFields.price.optional(),
+    tag: ProductFields.tag.optional(),
+    description: ProductFields.description.optional(),
+    category: ProductFields.category.optional(),
+    sort_order: ProductFields.sort_order.optional(),
+    image_url: ProductFields.image_url.optional(),
+    status: ProductFields.status.optional(),
+    edition: ProductFields.edition.optional(),
+    images: ProductFields.images.optional(),
+    options: ProductFields.options.optional(),
+  })
+  .refine(body => Boolean(body.image_url) || (body.images?.length ?? 0) > 0, '상품 이미지를 한 장 이상 올려 주세요.');
+export type ProductCreateInput = z.output<typeof ProductCreate>;
 
 export const ProductUpdate = z
   .strictObject({
@@ -263,11 +316,15 @@ export const ProductUpdate = z
     category: ProductFields.category.optional(),
     tag: ProductFields.tag.optional(),
     description: ProductFields.description.optional(),
-    in_stock: ProductFields.in_stock.optional(),
     sort_order: ProductFields.sort_order.optional(),
     image_url: ProductFields.image_url.optional(),
+    status: ProductFields.status.optional(),
+    edition: ProductFields.edition.optional(),
+    images: ProductFields.images.min(1, '상품 이미지를 한 장 이상 남겨 주세요.').optional(),
+    options: ProductFields.options.optional(),
   })
   .refine(body => Object.keys(body).length > 1, '변경할 내용이 없습니다.');
+export type ProductUpdateInput = z.output<typeof ProductUpdate>;
 
 // ── 주문 ──────────────────────────────────────────────────────────────────────
 

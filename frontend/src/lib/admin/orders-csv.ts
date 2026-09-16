@@ -1,3 +1,5 @@
+import { orderItemLabel, type OrderItemRecord } from '@/lib/order-items';
+
 /**
  * 주문 목록 → CSV. 관리 화면에서 지금 필터에 걸린 주문을 내려받는 데 쓴다.
  *
@@ -12,11 +14,8 @@
  * 줄 끝은 CRLF다. RFC 4180의 규정이고, 칸 안의 LF 줄바꿈과 구분된다.
  */
 
-export interface CsvOrderItem {
-  name: string;
-  price: number;
-  quantity: number;
-}
+/** 옵션 이전의 주문에는 `option_label`이 없다 — 이름만 적힌다. */
+export type CsvOrderItem = OrderItemRecord;
 
 export interface CsvOrder {
   id: number;
@@ -99,7 +98,7 @@ const HEADERS = [
 ];
 
 function itemsSummary(items: CsvOrderItem[] | null): string {
-  return (items ?? []).map(item => `${item.name} ×${item.quantity}`).join(' / ');
+  return (items ?? []).map(item => `${orderItemLabel(item)} ×${item.quantity}`).join(' / ');
 }
 
 export function ordersToCsv(orders: CsvOrder[]): string {
