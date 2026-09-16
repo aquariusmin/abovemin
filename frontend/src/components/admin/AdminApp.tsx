@@ -11,6 +11,7 @@ import AlbumsTab from './AlbumsTab';
 import ShopTab from './ShopTab';
 import OrdersTab from './OrdersTab';
 import SettingsTab from './SettingsTab';
+import NotesTab from './NotesTab';
 
 /**
  * 관리 화면의 셸 — 세션 확인, 로그인, 탭.
@@ -30,6 +31,7 @@ export const ADMIN_TABS = [
   { id: 'albums', label: '앨범' },
   { id: 'shop', label: '샵' },
   { id: 'orders', label: '주문' },
+  { id: 'notes', label: '노트' },
   { id: 'settings', label: '설정' },
 ] as const;
 
@@ -154,7 +156,7 @@ export default function AdminApp() {
           <hr className="rule-accent mt-6" />
         </header>
 
-        {/* 사이트 내비게이션(fixed) 바로 아래에 붙는다. 좁은 폭에서 여섯 탭이
+        {/* 사이트 내비게이션(fixed) 바로 아래에 붙는다. 좁은 폭에서 일곱 탭이
             한 줄에 안 들어가면 가로 스크롤로 둔다 — 줄바꿈하면 탭 바 높이가
             폭마다 달라져 아래 내용이 튄다. */}
         <div className="sticky z-30 border-b border-border bg-canvas/95 backdrop-blur" style={{ top: navOffset }}>
@@ -207,6 +209,7 @@ export default function AdminApp() {
                 {item.id === 'albums' && <AlbumsTab active={tab === 'albums'} />}
                 {item.id === 'shop' && <ShopTab />}
                 {item.id === 'orders' && <OrdersTab />}
+                {item.id === 'notes' && <NotesTab active={tab === 'notes'} />}
                 {item.id === 'settings' && <SettingsTab />}
               </section>
             ) : null,

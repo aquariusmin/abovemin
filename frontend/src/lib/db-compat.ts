@@ -27,6 +27,30 @@ export function isMissingColumnError(error: unknown): boolean {
 }
 
 /**
+ * 테이블 자체가 없을 때. `20260916100000_archive_extras.sql`은 컬럼만이 아니라
+ * 테이블(`places`, `notes`)을 새로 만든다.
+ *
+ *  - `42P01` (undefined_table): SQL 수준에서 테이블이 없다.
+ *  - `PGRST205`: PostgREST 스키마 캐시에 테이블이 없다. REST로 읽으면 실제로는
+ *    이쪽이 온다(2026-09-16, 프로덕션에서 `/rest/v1/places`로 확인).
+ */
+export function isMissingTableError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { code, message } = error as PgErrorLike;
+  if (code === '42P01' || code === 'PGRST205') return true;
+  if (typeof message !== 'string') return false;
+  return /relation .+ does not exist/i.test(message) || /could not find the table/i.test(message);
+}
+
+/**
+ * 컬럼이든 테이블이든 "마이그레이션이 아직 안 됐다"는 뜻의 오류. 공개 조회가
+ * "없음"으로 읽어도 되는 오류는 이것뿐이다 — 나머지는 진짜 장애다.
+ */
+export function isMissingSchemaError(error: unknown): boolean {
+  return isMissingColumnError(error) || isMissingTableError(error);
+}
+
+/**
  * 새 컬럼을 쓰는 쿼리를 먼저 보내고, 그 컬럼이 없다는 오류일 때만 예전
  * 쿼리로 한 번 더 보낸다. 다른 오류(네트워크, 권한)는 그대로 돌려준다 —
  * 그걸 삼키고 필터 없는 결과를 내면 진짜 장애가 가려진다.

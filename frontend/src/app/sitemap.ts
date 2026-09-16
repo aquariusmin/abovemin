@@ -2,14 +2,15 @@ import { SITE_URL } from '@/lib/site';
 import { getAlbumsWithCounts, getProducts } from '@/lib/supabase';
 import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
-import { getNotes } from '@/data/notes';
+import { getPublishedNotes } from '@/lib/supabase';
 
 const BASE = SITE_URL;
 
 export default async function sitemap() {
-  const [albums, products] = await Promise.all([
+  const [albums, products, notes] = await Promise.all([
     getAlbumsWithCounts().catch(() => []),
     getProducts().catch(() => []),
+    getPublishedNotes().catch(() => []),
   ]);
 
   // Single stable timestamp per generation for content without its own date,
@@ -59,7 +60,6 @@ export default async function sitemap() {
 
   // 글이 없는 동안 `/notes`는 404다(그 페이지가 `notFound()`를 부른다).
   // 없는 URL을 sitemap에 싣지 않도록 목록에서 끌어온다.
-  const notes = getNotes();
   const notePages = notes.length
     ? [
         {

@@ -1,5 +1,5 @@
 import { SITE_URL } from '@/lib/site';
-import { getNotes } from '@/data/notes';
+import { getPublishedNotes } from '@/lib/supabase';
 
 const BASE = SITE_URL;
 
@@ -21,8 +21,13 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;');
 }
 
-export function GET() {
-  const notes = getNotes();
+// 정적으로 굽고, 글을 저장할 때 `revalidateNotes()`가 무효화한다. GET 핸들러는
+// 기본이 동적이라(요청마다 DB 왕복) 명시한다.
+export const dynamic = 'force-static';
+export const revalidate = 3600;
+
+export async function GET() {
+  const notes = await getPublishedNotes().catch(() => []);
   const updated = notes[0]?.date;
 
   const items = notes

@@ -10,6 +10,8 @@ import {
   OrderUpdate,
   OrphanDelete,
   PhotoBulk,
+  PlaceDelete,
+  PlaceUpsert,
   ProductCreate,
   ProductUpdate,
   firstIssue,
@@ -160,5 +162,25 @@ describe('OrphanDelete', () => {
     expect(OrphanDelete.safeParse({ public_ids: list(MAX_ORPHAN_DELETE) }).success).toBe(true);
     expect(OrphanDelete.safeParse({ public_ids: list(MAX_ORPHAN_DELETE + 1) }).success).toBe(false);
     expect(OrphanDelete.safeParse({ public_ids: ['a', 'a'] }).success).toBe(false);
+  });
+});
+
+describe('PlaceUpsert', () => {
+  it('좌표를 소수점 한 자리로 자른다 — 정밀한 좌표는 서버를 통과하지 못한다', () => {
+    expect(PlaceUpsert.parse({ name: ' 서울 ', lat: 37.566535, lng: 126.977969 })).toEqual({
+      name: '서울',
+      lat: 37.6,
+      lng: 127,
+    });
+    expect(PlaceUpsert.parse({ name: 'x', lat: -0.04, lng: 180 })).toEqual({ name: 'x', lat: 0, lng: 180 });
+  });
+
+  it('범위 밖·문자열·빈 이름·모르는 키는 거절한다', () => {
+    expect(PlaceUpsert.safeParse({ name: 'x', lat: 90.1, lng: 0 }).success).toBe(false);
+    expect(PlaceUpsert.safeParse({ name: 'x', lat: 0, lng: -180.5 }).success).toBe(false);
+    expect(PlaceUpsert.safeParse({ name: 'x', lat: '37.5', lng: 127 }).success).toBe(false);
+    expect(PlaceUpsert.safeParse({ name: '  ', lat: 1, lng: 1 }).success).toBe(false);
+    expect(PlaceUpsert.safeParse({ name: 'x', lat: 1, lng: 1, source: 'gps' }).success).toBe(false);
+    expect(PlaceDelete.safeParse({ name: '서울' }).success).toBe(true);
   });
 });

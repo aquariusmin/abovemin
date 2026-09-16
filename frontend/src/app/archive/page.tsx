@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { getAlbumsWithCounts, getAllPhotos } from '@/lib/supabase';
+import { getAlbumsWithCounts, getAllPhotos, getPlaces } from '@/lib/supabase';
+import { buildMapPlaces } from '@/lib/places';
 import Reveal from '@/components/motion/Reveal';
 import ArchiveGrid from '@/components/archive/ArchiveGrid';
 import PhotoFilter from '@/components/archive/PhotoFilter';
@@ -18,9 +19,11 @@ export default async function Archive() {
   // 조회 실패도 "앨범 0개"로 다룬다. 아래에 이미 그 상태의 화면이 있는데,
   // 예외가 거기까지 가지 못하게 막고 있었다 — 프리렌더 단계에서 터지면
   // 배포 전체가 죽는다.
-  const [albumsWithCount, allPhotos] = await Promise.all([
+  const [albumsWithCount, allPhotos, places] = await Promise.all([
     getAlbumsWithCounts().catch(() => []),
     getAllPhotos().catch(() => []),
+    // 좌표가 없으면(테이블이 없어도) 빈 목록 — 지도 토글이 나타나지 않는다.
+    getPlaces().catch(() => []),
   ]);
 
   // 사진이 없는 앨범은 목록에 올리지 않는다. "2027 Calendar"가 "0 pieces"와
@@ -63,7 +66,7 @@ export default async function Archive() {
               컬렉션과 상관없이 연도와 장소로 좁혀 봅니다.
             </p>
           </Reveal>
-          <PhotoFilter photos={allPhotos} />
+          <PhotoFilter photos={allPhotos} mapPlaces={buildMapPlaces(allPhotos, places)} />
         </section>
       )}
 

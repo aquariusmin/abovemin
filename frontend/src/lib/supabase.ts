@@ -2,8 +2,10 @@ import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
-import { SETTINGS_CACHE_TAG } from './cache-tags';
-import { withColumnFallback } from './db-compat';
+import { NOTES_CACHE_TAG, NOTES_PRESENCE_TAG, SETTINGS_CACHE_TAG } from './cache-tags';
+import { isMissingSchemaError, withColumnFallback } from './db-compat';
+import { placeFromRow, type PlaceCoord } from './places';
+import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -37,6 +39,22 @@ export interface Photo {
   /** 마이그레이션(20260916) 이후 컬럼. 공개 조회는 이미 `hidden = false`만 받는다. */
   hidden?: boolean;
   created_at?: string;
+  /**
+   * 마이그레이션(20260916100000_archive_extras) 이후 컬럼. 촬영 정보 채우기가
+   * 채우기 전에는 null이고, 적용 전 DB에는 아예 없다.
+   *
+   * `width`/`height`는 **비율로만** 쓴다(그리드가 이미지보다 먼저 자리를
+   * 잡는다). 원본이 1500px 안팎으로 줄어 있어 크기 자체는 뜻이 없다.
+   * 좌표는 여기에 없다 — 장소 단위로 `places`에만 있다.
+   */
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 }
 
 export interface Product {
@@ -120,7 +138,7 @@ export const getAlbumWithPhotos = cache(
     if (aErr) { log.error('getAlbumWithPhotos.album', aErr); throw aErr; }
     if (pErr) { log.error('getAlbumWithPhotos.photos', pErr); throw pErr; }
     if (!album) return null;
-    return { album, photos: photos ?? [] };
+    return { album, photos: (photos ?? []).map(publicPhoto) };
   },
 );
 
@@ -177,10 +195,117 @@ export const getAllPhotos = cache(
     return (photos ?? [])
       .filter(photo => !visible || visible.has(photo.album_slug))
       .map(photo => ({
-        ...photo,
+        ...publicPhoto(photo),
         album_title: titles.get(photo.album_slug) ?? photo.album_slug,
       }));
   },
+);
+
+/**
+ * 공개 화면이 실제로 그리는 컬럼만 남긴다.
+ *
+ * `/archive`의 필터는 290장을 **클라이언트 컴포넌트에** props로 넘기므로, 행의
+ * 모든 컬럼이 HTML의 RSC 페이로드에 한 번씩 실린다. 촬영 정보 컬럼이 아홉 개
+ * 늘면서 `select('*')`를 그대로 넘기면 쓰지도 않는 `lens`, `exif_checked_at`,
+ * `updated_at`까지 290번 반복된다. 조회는 `*`로 두고(마이그레이션 전후 모두
+ * 성공해야 한다) 내보낼 때 고른다.
+ */
+function publicPhoto(row: Photo): Photo {
+  const photo: Photo = {
+    id: row.id,
+    album_slug: row.album_slug,
+    src: row.src,
+    title: row.title,
+    location: row.location,
+    year: row.year,
+    sort_order: row.sort_order,
+  };
+  // 값이 있는 것만 싣는다 — null 아홉 개도 290번이면 무게다.
+  if (row.width && row.height) {
+    photo.width = row.width;
+    photo.height = row.height;
+  }
+  if (row.taken_at) photo.taken_at = row.taken_at;
+  if (row.camera) photo.camera = row.camera;
+  if (row.focal_length) photo.focal_length = row.focal_length;
+  if (row.aperture) photo.aperture = row.aperture;
+  if (row.shutter) photo.shutter = row.shutter;
+  if (row.iso) photo.iso = row.iso;
+  return photo;
+}
+
+/**
+ * 장소 좌표(소수점 한 자리). `/archive` 지도가 쓴다.
+ *
+ * 테이블이 아직 없으면(마이그레이션 전) 빈 목록 — 지도 토글이 숨는다. 다른
+ * 오류도 빈 목록으로 읽는다: 지도는 부가 기능이라, 그것 때문에 아카이브 전체가
+ * 재생성에 실패할 이유가 없다.
+ */
+export const getPlaces = cache(async (): Promise<PlaceCoord[]> => {
+  const { data, error } = await supabase.from('places').select('name, lat, lng');
+  if (error) {
+    if (isMissingSchemaError(error)) log.warn('getPlaces.migration_pending', error);
+    else log.error('getPlaces', error);
+    return [];
+  }
+  return (data ?? []).map(placeFromRow).filter((place): place is PlaceCoord => place !== null);
+});
+
+// ── 노트 ──────────────────────────────────────────────────────────────────────
+//
+// 공개 읽기 정책이 `published = true`만 돌려주지만, 필터도 같이 건다 — 정책이
+// 바뀌어도 초안이 새지 않게 두 겹으로.
+//
+// 테이블이 없으면(마이그레이션 전) "글 없음"이다. 그 상태의 사이트는 원래
+// 노트가 잠들어 있던 사이트와 똑같이 보인다. 다른 오류는 던진다 — 여기서
+// 빈 목록을 돌려주면 DB가 흔들린 순간의 "글 없음"(= /notes 404)이 캐시에 앉는다.
+// 부르는 쪽이 빌드를 지키려고 잡을지 정한다.
+
+async function readPublishedNotes(): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('slug, title, date, summary, tags, body, boundary, related_project')
+    .eq('published', true);
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      log.warn('getPublishedNotes.migration_pending', error);
+      return [];
+    }
+    log.error('getPublishedNotes', error);
+    throw error;
+  }
+  const notes = ((data ?? []) as Array<Partial<NoteRow>>)
+    .map(noteFromRow)
+    .filter((note): note is Note => note !== null);
+  return sortNotes(notes);
+}
+
+/** 공개된 글, 최신순. 목록·글·RSS·sitemap이 같이 쓴다. */
+export const getPublishedNotes = unstable_cache(readPublishedNotes, ['published-notes'], {
+  tags: [NOTES_CACHE_TAG],
+  revalidate: 3600,
+});
+
+/** 공개된 글 하나. 글이 몇 편뿐이라 목록 캐시에서 찾는다 — 캐시 항목이 하나로 끝난다. */
+export async function getNoteBySlug(slug: string): Promise<Note | null> {
+  return (await getPublishedNotes()).find(note => note.slug === slug) ?? null;
+}
+
+/**
+ * 푸터의 Notes 링크를 켤지. 목록과 **다른 태그**로 캐시한다(`cache-tags.ts`의
+ * `NOTES_PRESENCE_TAG` 주석) — 모든 페이지가 이 값을 읽기 때문이다.
+ *
+ * `revalidate: false`(시간으로 만료하지 않음)가 중요하다. 캐시의 revalidate는
+ * 그것을 읽는 페이지의 ISR 주기가 된다 — 3600을 주었더니 `/about`, 포트폴리오,
+ * `/admin`까지 정적 페이지 전부가 "1시간마다 다시 굽기"로 바뀌었다(빌드 출력으로
+ * 확인). 이 값은 관리 화면이 노트를 저장할 때 태그로 무효화하므로 시계가 필요
+ * 없다. 대가: Supabase 대시보드에서 직접 공개 여부를 바꾸면 다음 배포나 다음
+ * 노트 저장까지 푸터가 따라오지 않는다.
+ */
+export const hasPublishedNotes = unstable_cache(
+  async (): Promise<boolean> => (await readPublishedNotes()).length > 0,
+  ['has-published-notes'],
+  { tags: [NOTES_PRESENCE_TAG], revalidate: false },
 );
 
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.

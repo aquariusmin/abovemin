@@ -4,7 +4,9 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
-import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
+import { exifParts, joinCaption, photoCaption, photoLabel } from '@/lib/caption';
+import { photoShareUrl, printInquiryMailto } from '@/lib/photo-share';
+import { CONTACT_EMAIL, SITE_URL } from '@/lib/site';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -23,6 +25,15 @@ interface Photo {
   location: string;
   year: number;
   album_slug?: string;
+  /** 촬영 정보 채우기 이후에만 있다(`lib/supabase`의 `Photo`). */
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 }
 
 interface LightboxProps {
@@ -37,6 +48,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   const photo = photos[currentIndex];
   const caption = photoCaption(photo);
   const label = photoLabel(photo);
+  const exif = exifParts(photo);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const reduce = useReducedMotion();
@@ -61,9 +73,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     // 앨범을 아는 사진이면 앨범 주소로 만든다. `/archive`의 전체 필터 그리드는
     // 조건을 URL에 싣지 않으므로, 거기서 연 사진의 현재 주소(`/archive?p=`)를
     // 받은 사람은 그 사진이 목록에 없는 화면에 도착한다.
-    const url = photo.album_slug
-      ? `${window.location.origin}/archive/${photo.album_slug}?p=${photo.id}`
-      : window.location.href;
+    const url = photoShareUrl(photo, window.location.origin, window.location.href);
     let ok = false;
     try {
       await navigator.clipboard.writeText(url);
@@ -84,10 +94,26 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     setCopyState(ok ? 'copied' : 'failed');
     if (copyTimer.current) clearTimeout(copyTimer.current);
     copyTimer.current = setTimeout(() => setCopyState('idle'), 2000);
-  }, [photo.album_slug, photo.id]);
+  }, [photo]);
+
+  // ── 프린트 문의 ──────────────────────────────────────────────────────────
+  // 마음에 든 사진을 "이거"라고 가리킬 방법이 메일에는 없었다. 복사 버튼과 같은
+  // 링크를 본문에 넣은 메일을 미리 채워 연다. 라이트박스는 클릭한 뒤에만
+  // 그려지므로 `window`가 있지만, 만약을 위해 서버에서는 정식 주소를 쓴다.
+  const inquiryHref = printInquiryMailto(
+    CONTACT_EMAIL,
+    photo,
+    typeof window === 'undefined'
+      ? photoShareUrl(photo, SITE_URL, SITE_URL)
+      : photoShareUrl(photo, window.location.origin, window.location.href),
+  );
 
   const [ratios, setRatios] = useState<Record<number, number>>({});
-  const ratio = ratios[photo.id];
+  // 촬영 정보 채우기가 저장한 크기가 있으면 첫 그림부터 그 비율로 프레임을
+  // 잡는다(아래 "Pre-load" 분기가 필요 없어진다). 비율만 쓴다 — 원본이 1500px
+  // 안팎으로 줄어 있어 크기 자체는 뜻이 없다. 실제로 읽은 비율이 오면 그쪽이 이긴다.
+  const storedRatio = photo.width && photo.height ? photo.width / photo.height : undefined;
+  const ratio = ratios[photo.id] ?? storedRatio;
 
   const rememberRatio = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight, dataset } = e.currentTarget;
@@ -106,7 +132,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     if (e.key === 'ArrowRight') { onNext(); return; }
     // Trap Tab focus inside the dialog so keyboard users can't escape it.
     if (e.key === 'Tab' && dialogRef.current) {
-      const focusable = dialogRef.current.querySelectorAll<HTMLElement>('button');
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>('button, a[href]');
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -196,7 +222,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     // Controls handle themselves; don't let their press become a swipe.
-    if ((e.target as HTMLElement).closest('button')) {
+    if ((e.target as HTMLElement).closest('button, a')) {
       press.current = null;
       return;
     }
@@ -382,6 +408,21 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         <p className={`eyebrow text-white/70 ${caption.title ? 'mt-1.5' : ''}`}>
           {joinCaption([...caption.meta, `${currentIndex + 1} / ${photos.length}`])}
         </p>
+        {/* 촬영 정보. 캡션보다 한 단계 더 조용하게 — 대문자 자간 없는 mono,
+            더 낮은 불투명도. 값이 하나도 없으면 줄을 그리지 않는다. */}
+        {exif.length > 0 && (
+          <p className="mt-1.5 font-mono text-[11px] leading-snug tracking-normal text-white/50">
+            {joinCaption(exif)}
+          </p>
+        )}
+        {/* 캡션 띠는 `pointer-events-none`이다(스와이프가 사진 위에서 끊기지
+            않게). 링크만 다시 받는다. */}
+        <a
+          href={inquiryHref}
+          className="pointer-events-auto mt-2.5 inline-block text-[13px] text-cream/80 underline decoration-cream/35 underline-offset-4 transition-colors hover:text-cream hover:decoration-moss"
+        >
+          이 사진으로 프린트 문의
+        </a>
       </div>
 
       {/* Next */}

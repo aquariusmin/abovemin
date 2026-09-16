@@ -11,3 +11,9 @@
  * `public/robots.txt`는 정적 파일이라 이 값을 읽지 못한다 — 바꿀 때 같이 고친다.
  */
 export const SITE_URL = 'https://www.abovemin.com';
+
+/**
+ * 공개 연락처. 푸터와 라이트박스의 "프린트 문의"가 같은 주소를 쓴다 — 한쪽만
+ * 바꾸면 문의가 옛 주소로 간다.
+ */
+export const CONTACT_EMAIL = 'aquariusmin01@naver.com';

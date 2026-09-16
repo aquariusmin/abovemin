@@ -95,3 +95,55 @@ export function photoLabel(photo: CaptionSource, fallback = '사진'): string {
   const c = photoCaption(photo);
   return c.title ?? c.location ?? fallback;
 }
+
+// ── 촬영 정보 ─────────────────────────────────────────────────────────────────
+
+export interface ExifSource {
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
+}
+
+/**
+ * 촬영일. `taken_at`은 카메라의 벽시계 시각을 UTC 자리에 적어 둔 값이라
+ * (마이그레이션 20260916100000 주석) **UTC로** 읽어야 찍은 곳의 날짜가 나온다.
+ * 보는 사람의 시간대로 바꾸면 밤 사진이 하루 밀린다.
+ */
+export function takenDate(takenAt: string | null | undefined): string | null {
+  if (!takenAt) return null;
+  const date = new Date(takenAt);
+  if (Number.isNaN(date.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getUTCFullYear()}.${pad(date.getUTCMonth() + 1)}.${pad(date.getUTCDate())}`;
+}
+
+/**
+ * 표시용 카메라 이름. 저장은 "Apple iPhone 7"로 하되, 한 줄 캡션에서는
+ * "iPhone 7"로 줄인다 — iPhone·iPad·iPod은 그것만으로 누구의 기기인지 분명하다.
+ * 다른 제조사는 모델명만으로 알아보기 어려워("ILCE-7RM3") 그대로 둔다.
+ */
+export function displayCamera(camera: string | null | undefined): string | null {
+  const value = cleanCaptionField(camera);
+  if (!value) return null;
+  return value.replace(/^Apple\s+(?=iP(?:hone|ad|od))/, '');
+}
+
+/**
+ * 라이트박스의 조용한 한 줄: "2019.07.31 · iPhone 7 · 4mm · f/1.8 · 1/1053s · ISO 20".
+ * 값이 없는 칸은 빠지고, 전부 없으면 빈 배열 — 줄 자체를 그리지 않는다.
+ */
+export function exifParts(photo: ExifSource): string[] {
+  const shutter = cleanCaptionField(photo.shutter);
+  return [
+    takenDate(photo.taken_at),
+    displayCamera(photo.camera),
+    cleanCaptionField(photo.focal_length),
+    cleanCaptionField(photo.aperture),
+    // 저장은 "1/1053"·"2s". 분수에는 단위를 붙여 읽히게 한다.
+    shutter ? (shutter.endsWith('s') ? shutter : `${shutter}s`) : null,
+    photo.iso ? `ISO ${photo.iso}` : null,
+  ].filter((part): part is string => part !== null);
+}

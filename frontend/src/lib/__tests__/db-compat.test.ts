@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isMissingColumnError, withColumnFallback } from '@/lib/db-compat';
+import {
+  isMissingColumnError,
+  isMissingSchemaError,
+  isMissingTableError,
+  withColumnFallback,
+} from '@/lib/db-compat';
 
 /**
  * 이 파일이 지키는 것: 마이그레이션보다 코드가 먼저 배포돼도 공개 페이지가
@@ -30,6 +35,43 @@ describe('isMissingColumnError', () => {
     ]) {
       expect(isMissingColumnError(error)).toBe(false);
     }
+  });
+});
+
+describe('isMissingTableError', () => {
+  it('Postgres undefined_table(42P01)과 PostgREST 스키마 캐시(PGRST205)를 알아본다', () => {
+    expect(isMissingTableError({ code: '42P01', message: 'relation "public.places" does not exist' })).toBe(true);
+    expect(
+      isMissingTableError({ code: 'PGRST205', message: "Could not find the table 'public.notes' in the schema cache" }),
+    ).toBe(true);
+  });
+
+  it('코드가 비어 와도 문구로 알아본다', () => {
+    expect(isMissingTableError({ message: 'relation "notes" does not exist' })).toBe(true);
+    expect(isMissingTableError({ message: "Could not find the table 'public.places' in the schema cache" })).toBe(true);
+  });
+
+  it('컬럼 오류나 다른 오류는 테이블 오류가 아니다', () => {
+    for (const error of [
+      { code: '42703', message: 'column photos.width does not exist' },
+      { code: 'PGRST204', message: "Could not find the 'width' column of 'photos' in the schema cache" },
+      { code: '42501', message: 'permission denied for table notes' },
+      null,
+      'relation x does not exist',
+    ]) {
+      expect(isMissingTableError(error)).toBe(false);
+    }
+  });
+});
+
+describe('isMissingSchemaError', () => {
+  it('컬럼·테이블 어느 쪽이 없어도 참, 그 밖의 오류는 거짓', () => {
+    expect(isMissingSchemaError({ code: '42703' })).toBe(true);
+    expect(isMissingSchemaError({ code: 'PGRST204' })).toBe(true);
+    expect(isMissingSchemaError({ code: '42P01' })).toBe(true);
+    expect(isMissingSchemaError({ code: 'PGRST205' })).toBe(true);
+    expect(isMissingSchemaError({ code: '08006', message: 'connection failure' })).toBe(false);
+    expect(isMissingSchemaError(new Error('fetch failed'))).toBe(false);
   });
 });
 

@@ -248,6 +248,10 @@ Full-width section fills: parchment, palest lime, forest-deep, forest-black.
 
 Forest-black gradient ramp — 92% alpha at the baseline, clear by the top quarter — laid over an arbitrary photograph so overlaid copy keeps its contrast without dimming the whole picture. Pair with cream/moss text; never with ink.
 
+### Place map (`/archive`)
+
+An inline-SVG world map, not a tile map: `moss-wash` land with a `forest/25` hairline on a `surface` frame, a `canvas` sphere behind the world view, and no labels baked into the geography. Places are real `<button>`s laid over the SVG in screen pixels — `forest` fill, 2px `cream` stroke, area proportional to photo count, a 28px minimum hit target — so they stay tappable and keyboard-reachable at 390px. The selected place turns `forest-deep` with a `moss` ring and keeps its forest-black pill label visible; others show the label on hover/focus. Dots whose circles overlap are merged into one with an inner cream ring; pressing it zooms to a region preset or opens a small card list. Region presets are `.btn-outline` pills. The frame is 16:10 for the world and square for a region on phones (Korea and Japan are tall), 16:9 / 2:1 from `sm` / `lg`. Coordinates are one decimal (~11 km): the map says "near here", never where a photo was taken.
+
 ### **`.texture-grain`**
 
 Inline-SVG `feTurbulence` noise at 50% opacity, `mix-blend-mode: multiply`, painted behind content via a `z-index: -1` pseudo-element inside an isolated stacking context. No network request, CSP-safe, and suppressed in print. Use on large flat bands only — never on text-dense surfaces.

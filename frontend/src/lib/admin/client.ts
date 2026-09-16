@@ -21,7 +21,7 @@ export class AdminApiError extends Error {
   }
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export async function adminFetch<T>(url: string, method: Method = 'GET', body?: unknown): Promise<T> {
   let res: Response;

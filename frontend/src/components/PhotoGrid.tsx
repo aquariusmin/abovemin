@@ -17,6 +17,15 @@ interface Photo {
   year: number;
   /** 앨범을 가로지르는 목록에서만 온다. 라이트박스의 공유 링크가 쓴다. */
   album_slug?: string;
+  /** 촬영 정보 채우기 이후에만 있다. 여기서는 비율로만 쓴다. */
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
@@ -131,6 +140,15 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
+                // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
+                // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
+                // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
+                //
+                // 비율만 쓴다. 폭은 `w-full`이 정하고, 원본 픽셀 크기(1500px 안팎으로
+                // 줄어 있다)는 프레임 크기에 관여하지 않는다. `auto`를 앞에 두는 이유:
+                // 이미지가 도착하면 **실제** 비율이 이긴다 — 저장된 값이 회전 전
+                // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
+                style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
                 draggable={false}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'auto'}

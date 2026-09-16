@@ -12,6 +12,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
 import { SITE_URL } from '@/lib/site';
+import { hasPublishedNotes } from '@/lib/supabase';
 
 /* Type system — see DESIGN.md § Typography.
 
@@ -105,7 +106,10 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // 푸터의 Notes 링크. 캐시된 값이고(`NOTES_PRESENCE_TAG`), 실패하면 링크를
+  // 숨긴다 — 푸터 한 줄 때문에 모든 페이지가 렌더에 실패할 수는 없다.
+  const hasNotes = await hasPublishedNotes().catch(() => false);
   return (
     <html
       lang="ko"
@@ -117,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div id="main-content" className="flex-grow pt-[72px] md:pt-[88px]">
           {children}
         </div>
-        <Footer />
+        <Footer hasNotes={hasNotes} />
         {/* 방문 통계와 실사용자 Core Web Vitals.
 
             /portfolio는 URL로만 건네는 페이지다 — 열렸는지, 어디까지 읽혔는지,

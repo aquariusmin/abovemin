@@ -15,3 +15,10 @@ export const MAX_ORPHAN_DELETE = 100;
 
 /** 사진술의 시작(1826) ~ 내년. `api/admin/photos`의 연도 규칙과 같다. */
 export const MIN_YEAR = 1826;
+
+/**
+ * 관리 화면이 "무엇을 적용하라"고 안내할 마이그레이션 파일. 서버의 409 메시지와
+ * 화면의 `MigrationNotice`가 같은 이름을 적는다.
+ */
+export const ADMIN_STUDIO_MIGRATION = 'supabase/migrations/20260916000000_admin_studio.sql';
+export const ARCHIVE_EXTRAS_MIGRATION = 'supabase/migrations/20260916100000_archive_extras.sql';

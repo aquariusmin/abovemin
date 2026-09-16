@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getNotes } from '@/data/notes';
+import { getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 
 export const metadata: Metadata = {
@@ -10,8 +10,14 @@ export const metadata: Metadata = {
   alternates: { canonical: '/notes', types: { 'application/rss+xml': '/notes/rss.xml' } },
 };
 
-export default function NotesPage() {
-  const notes = getNotes();
+// 관리 화면에서 글을 저장하면 `revalidateNotes()`가 이 경로를 무효화한다.
+// 한 시간은 그 신호를 놓쳤을 때의 안전망.
+export const revalidate = 3600;
+
+export default async function NotesPage() {
+  // 조회 실패는 "글 없음"으로 읽는다(아카이브·sitemap과 같은 선택). 빌드 중에
+  // DB가 흔들려 배포 전체가 죽는 것보다, 한 시간 동안 잠들어 있는 편이 낫다.
+  const notes = await getPublishedNotes().catch(() => []);
   // 글이 없으면 이 경로는 존재하지 않는다. 빈 목록 페이지를 색인시키고
   // 푸터에서 링크하는 것보다, 첫 글이 올라올 때까지 없는 편이 낫다.
   if (notes.length === 0) notFound();
