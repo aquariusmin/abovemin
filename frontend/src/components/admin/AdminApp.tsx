@@ -101,7 +101,10 @@ export default function AdminApp() {
   // 글자 크기가 뷰포트를 따라 변하는 유동 높이라(모바일 약 64px, 데스크톱 약
   // 77px) 숫자를 박아 두면 그 틈으로 아래 내용이 비치거나 탭 바 윗부분이
   // 가려진다. 직접 재고, 크기가 바뀌면 다시 잰다.
-  const [navOffset, setNavOffset] = useState(64);
+  //
+  // 기본값은 0이다. /admin은 공개 내비게이션을 그리지 않으므로(`lib/chrome.ts`)
+  // 보통은 잴 대상이 없고, 그때 64를 남겨 두면 탭 바 위로 빈 띠가 생긴다.
+  const [navOffset, setNavOffset] = useState(0);
   useEffect(() => {
     const nav = Array.from(document.querySelectorAll('nav')).find(
       el => getComputedStyle(el).position === 'fixed',

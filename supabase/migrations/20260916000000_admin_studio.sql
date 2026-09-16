@@ -97,8 +97,13 @@ create trigger orders_set_updated_at
 -- ── 6. photos.album_slug FK → on update cascade ──────────────────────────────
 -- 관리 화면에서 앨범 슬러그를 바꿀 수 있게 됐다. 기존 FK는 on update 동작이
 -- 없어(= no action), 사진이 한 장이라도 있는 앨범은 슬러그를 바꿀 수 없었다.
--- cascade로 다시 건다. 삭제는 여전히 restrict — 사진이 남은 앨범을 지우면
--- 사진이 딸려 사라지면 안 된다(서버도 사진 0장일 때만 삭제를 허용한다).
+-- cascade로 다시 건다.
+--
+-- 삭제 쪽은 **바뀐다**. 프로덕션의 기존 FK는 `on delete cascade`였다(2026-09-16
+-- 확인) — 대시보드에서 앨범 행 하나를 지우면 사진 행이 전부 따라 지워지는
+-- 설정이다. restrict로 바꾼다: 사진이 남은 앨범은 DB가 지우기를 거절한다.
+-- 관리 화면도 사진 0장일 때만 삭제를 허용하므로 정상 경로에는 영향이 없고,
+-- 막히는 것은 실수뿐이다.
 --
 -- 제약 이름을 `photos_album_slug_fkey`로 가정하지 않는다. 대시보드에서 만든
 -- 테이블이라 이름이 다를 수 있고, 이름만 보고 drop하면 옛 FK가 남은 채 새 FK가
@@ -127,5 +132,29 @@ alter table public.photos
   foreign key (album_slug) references public.albums (slug)
   on update cascade
   on delete restrict;
+
+-- ── 7. 공개 읽기 정책이 두 스위치를 따르게 한다 ──────────────────────────────
+-- 사이트의 공개 조회는 `hidden = false`, `published = true`로 걸러 읽지만, 그건
+-- 이 사이트 코드가 예의 바르게 굴 때의 이야기다. anon 키는 브라우저에 실려
+-- 있으므로 누구든 `/rest/v1/photos?select=*`를 직접 부를 수 있고, 정책이
+-- `using (true)`면 숨긴 사진이 그대로 나온다. "숨김"이 이름값을 하려면 DB가
+-- 거른다.
+--
+-- 관리 화면은 service-role로 읽으므로 RLS를 우회해 숨긴 것도 계속 본다.
+-- 지금 배포된 코드와도 호환된다: 적용 시점에는 숨긴 사진도 비공개 앨범도
+-- 없으므로 공개 조회 결과가 한 행도 달라지지 않는다.
+--
+-- 비공개 앨범의 **사진**까지 정책에서 막지는 않는다. 행마다 albums를 조인하는
+-- 정책은 목록 조회 전체를 느리게 만들고, 앨범 비공개는 "목록에서 내리기"에
+-- 가깝다 — 사진 단위로 감출 것은 `hidden`이 맡는다.
+drop policy if exists "public read photos" on public.photos;
+create policy "public read photos" on public.photos
+  for select to anon, authenticated
+  using (hidden = false);
+
+drop policy if exists "public read albums" on public.albums;
+create policy "public read albums" on public.albums
+  for select to anon, authenticated
+  using (published = true);
 
 commit;

@@ -113,8 +113,12 @@ export const getAlbumWithPhotos = cache(
         () => supabase.from('photos').select('*').eq('album_slug', slug).order('sort_order'),
       ),
     ]);
-    if (aErr) log.warn('getAlbumWithPhotos.album', aErr);
-    if (pErr) log.warn('getAlbumWithPhotos.photos', pErr);
+    // 조회 실패는 "없음"이 아니다. 앨범 페이지는 사진이 0장이면 `notFound()`를
+    // 부르는데, 오류를 빈 목록으로 바꿔 넘기면 DB가 잠깐 흔들린 순간의 404가
+    // ISR 캐시에 올라가 revalidate 주기 동안 멀쩡한 앨범이 사라진다. 던지면
+    // Next는 재생성에 실패한 것으로 보고 이전 페이지를 계속 내보낸다.
+    if (aErr) { log.error('getAlbumWithPhotos.album', aErr); throw aErr; }
+    if (pErr) { log.error('getAlbumWithPhotos.photos', pErr); throw pErr; }
     if (!album) return null;
     return { album, photos: photos ?? [] };
   },
@@ -157,15 +161,21 @@ export const getAllPhotos = cache(
     if (pErr) { log.error('getAllPhotos.photos', pErr); throw pErr; }
     if (aErr) log.warn('getAllPhotos.albums', aErr);
 
-    // 비공개 앨범의 사진은 앨범을 가로지르는 검색에서도 빠져야 한다. 앨범을
-    // `select('*')`로 읽는 이유: `published`를 이름으로 고르면 마이그레이션 전
-    // DB에서 이 조회가 실패한다. 컬럼이 없으면 `undefined`이고, 그건 공개로 친다.
+    // 비공개 앨범의 사진은 앨범을 가로지르는 검색에서도 빠져야 한다.
+    //
+    // "비공개 목록"이 아니라 "보이는 앨범 목록"으로 거른다. 공개 읽기 정책이
+    // `published = true`인 앨범만 돌려주므로, anon 클라이언트는 비공개 앨범이
+    // 있다는 것 자체를 모른다 — `published === false`를 찾는 필터는 늘 빈
+    // 집합이 되어 아무것도 거르지 못한다. 앨범을 `select('*')`로 읽는 이유는
+    // `published`를 이름으로 고르면 마이그레이션 전 DB에서 이 조회가 실패하기
+    // 때문이고, 그때는 모든 앨범이 보이므로 결과가 같다.
+    //
+    // 앨범 조회가 실패했으면 거르지 않는다. 빈 목록으로 거르면 사진이 전부
+    // 사라지는데, 그건 "앨범이 없다"가 아니라 "모른다"이기 때문이다.
     const titles = new Map((albums ?? []).map(a => [a.slug as string, a.title as string]));
-    const unpublished = new Set(
-      (albums ?? []).filter(a => a.published === false).map(a => a.slug as string),
-    );
+    const visible = aErr ? null : new Set((albums ?? []).map(a => a.slug as string));
     return (photos ?? [])
-      .filter(photo => !unpublished.has(photo.album_slug))
+      .filter(photo => !visible || visible.has(photo.album_slug))
       .map(photo => ({
         ...photo,
         album_title: titles.get(photo.album_slug) ?? photo.album_slug,
