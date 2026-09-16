@@ -3,10 +3,14 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
+import { hidesSiteChrome } from '@/lib/chrome';
 
 export default function ThemeShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPortfolioFocused = isPortfolioFocusedPath(pathname);
+  // Nav/Footer가 빠지는 경로(포트폴리오 제출본, /admin)는 Nav 높이만큼의
+  // 본문 여백도 같이 뺀다. 판정은 `lib/chrome` 한 곳에서.
+  const chromeless = hidesSiteChrome(pathname);
 
   // /lab used to force forest-black here. It no longer does: a dark console
   // between a light header and a light footer is a hole in the page, not a
@@ -49,7 +53,7 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <body className={`${bgColor} ${textColor} ${isPortfolioFocused ? 'portfolio-focused-route' : ''} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
+    <body className={`${bgColor} ${textColor} ${isPortfolioFocused ? 'portfolio-focused-route' : ''} ${chromeless ? 'chromeless-route' : ''} transition-colors duration-500 antialiased flex flex-col min-h-screen`}>
       {children}
     </body>
   );

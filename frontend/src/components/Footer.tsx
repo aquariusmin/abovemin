@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
+import { hidesSiteChrome } from '@/lib/chrome';
 import { notes } from '@/data/notes';
 
 const hasNotes = notes.length > 0;
@@ -33,8 +33,7 @@ const CONNECT = [
 
 export default function Footer() {
   const pathname = usePathname();
-  const isPortfolioFocused = isPortfolioFocusedPath(pathname);
-  if (isPortfolioFocused) return null;
+  if (hidesSiteChrome(pathname)) return null;
 
   return (
     // The page's deepest surface. Ending on forest-black lets the warm canvas

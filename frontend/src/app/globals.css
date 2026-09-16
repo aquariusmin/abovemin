@@ -769,7 +769,8 @@ body {
 
 /* ── Print (portfolio) — preserved ─────────────────────────────────────── */
 
-body.portfolio-focused-route > div {
+/* No Nav on these routes (see `lib/chrome`), so no room reserved for one. */
+body.chromeless-route > div {
   padding-top: 0;
 }
 
