@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "photos:add": "node --env-file-if-exists=.env.local scripts/add-photos.mjs"
+    "photos:add": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/add-photos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
