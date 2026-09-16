@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, MotionConfig, type Variants } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
+import { formatPrice } from '@/lib/price';
 
 const MotionLink = motion.create(Link);
 
@@ -179,7 +180,12 @@ export default function HomeContent({
           </motion.div>
         </section>
 
-        {/* ── New collectibles preview ─────────────────────────────────────── */}
+        {/* ── New collectibles preview ─────────────────────────────────────────
+             살 수 있는 소품이 하나라도 있을 때만. 카탈로그가 전부 자리표시자인
+             동안 이 섹션은 "이번 달 새로 나온 소품" 아래 ₩ 0짜리 카드 세 장을
+             걸고 있었다 — 홈에서 가장 큰 거짓말이었다. `featured`는 서버에서
+             이미 판매 중인 것만 거른 목록이다. */}
+        {featured.length > 0 && (
         <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
           <div className="max-w-[1400px] mx-auto">
             <motion.div
@@ -196,8 +202,7 @@ export default function HomeContent({
               <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
             </motion.div>
 
-            {featured.length > 0 ? (
-              <motion.div
+            <motion.div
                 {...inViewProps}
                 variants={scrollStagger}
                 className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
@@ -227,17 +232,13 @@ export default function HomeContent({
                       )}
                     </div>
                     <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
-                    <p className="text-sm font-mono text-primary">₩&nbsp;{item.price.toLocaleString()}</p>
+                    <p className="text-sm font-mono text-primary">{formatPrice(item.price)}</p>
                   </MotionLink>
                 ))}
               </motion.div>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground py-16 border border-dashed border-hairline rounded-lg">
-                새로운 소품을 준비 중입니다.
-              </p>
-            )}
           </div>
         </section>
+        )}
       </main>
     </MotionConfig>
   );

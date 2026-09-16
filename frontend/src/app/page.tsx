@@ -1,4 +1,5 @@
-import { getFeaturedProducts, getSiteSettings } from '@/lib/supabase';
+import { getProducts, getSiteSettings } from '@/lib/supabase';
+import { isAvailable } from '@/lib/product';
 import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
 import type { Metadata } from 'next';
@@ -16,10 +17,18 @@ const DEFAULT_HERO_IMAGE =
   'https://res.cloudinary.com/dmljaqqzc/image/upload/v1776151998/C92CC8C0-9B98-4F63-9331-674818552AD9_4_5005_c_rxmdjn.jpg';
 
 export default async function Home() {
-  const [featured, settings] = await Promise.all([
-    getFeaturedProducts(4),
+  const [products, settings] = await Promise.all([
+    getProducts().catch(() => []),
     getSiteSettings().catch((): Record<string, string> => ({})),
   ]);
+
+  // 홈의 소품 섹션은 살 수 있는 것만 보여 준다. 최신 4개를 가져와 거르면
+  // 판매 중인 상품이 오래된 id에 있을 때 섹션이 통째로 비므로, 전체에서
+  // 거른 뒤 최신순으로 자른다 — 카탈로그가 몇 행뿐이라 비용은 같다.
+  const featured = products
+    .filter(isAvailable)
+    .toSorted((a, b) => b.id - a.id)
+    .slice(0, 4);
 
   const heroImage = settings['hero_image'] || DEFAULT_HERO_IMAGE;
   const heroTitle = settings['hero_title'] || 'Collecting the Greenery';

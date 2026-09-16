@@ -1,5 +1,6 @@
 import { SITE_URL } from '@/lib/site';
 import { getAlbums, getProducts } from '@/lib/supabase';
+import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getNotes } from '@/data/notes';
 
@@ -14,7 +15,7 @@ export default async function sitemap() {
   // Single stable timestamp per generation for content without its own date,
   // so lastmod doesn't jitter across entries within one build.
   const now = new Date();
-  const sellable = products.filter(p => p.in_stock);
+  const sellable = products.filter(isAvailable);
   // Use a row's DB timestamp when present (Supabase default columns), else `now`.
   const rowDate = (row: unknown): Date => {
     const ts = (row as { updated_at?: string; created_at?: string });

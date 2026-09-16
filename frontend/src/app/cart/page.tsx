@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/lib/price';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -79,7 +80,7 @@ export default function CartPage() {
                   <Link href={`/shop/${item.id}`} className="text-[15px] font-medium text-ink-body leading-snug hover:text-accent transition-colors">
                     {item.name}
                   </Link>
-                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">₩&nbsp;{item.price.toLocaleString()}</p>
+                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">{formatPrice(item.price)}</p>
                 </div>
 
                 {/* Quantity */}
