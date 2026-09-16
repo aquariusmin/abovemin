@@ -23,6 +23,11 @@ export default async function Archive() {
     getAllPhotos().catch(() => []),
   ]);
 
+  // 사진이 없는 앨범은 목록에 올리지 않는다. "2027 Calendar"가 "0 pieces"와
+  // 호주 앨범의 표지를 빌려 달고 나와, 같은 사진이 그리드에 두 번 보였다.
+  // 관리 화면은 빈 앨범도 봐야 하므로 조회가 아니라 여기서 거른다.
+  const albums = albumsWithCount.filter(a => a.photo_count > 0);
+
   return (
     <main className="px-5 sm:px-6 md:px-10 py-14 md:py-24 min-h-screen bg-canvas text-ink-body">
 
@@ -36,8 +41,8 @@ export default async function Archive() {
         </header>
       </Reveal>
 
-      {albumsWithCount.length > 0 ? (
-        <ArchiveGrid albums={albumsWithCount} />
+      {albums.length > 0 ? (
+        <ArchiveGrid albums={albums} />
       ) : (
         <p className="max-w-[1400px] mx-auto text-center text-sm text-muted-foreground py-20 border border-dashed border-hairline rounded-lg">
           아직 공개된 컬렉션이 없습니다.

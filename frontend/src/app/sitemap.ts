@@ -1,5 +1,5 @@
 import { SITE_URL } from '@/lib/site';
-import { getAlbums, getProducts } from '@/lib/supabase';
+import { getAlbumsWithCounts, getProducts } from '@/lib/supabase';
 import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getNotes } from '@/data/notes';
@@ -8,7 +8,7 @@ const BASE = SITE_URL;
 
 export default async function sitemap() {
   const [albums, products] = await Promise.all([
-    getAlbums().catch(() => []),
+    getAlbumsWithCounts().catch(() => []),
     getProducts().catch(() => []),
   ]);
 
@@ -39,7 +39,9 @@ export default async function sitemap() {
     { url: `${BASE}/lab`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.6 },
   ];
 
-  const albumPages = albums.map(a => ({
+  // 빈 앨범은 404다(`archive/[slug]`가 `notFound()`를 부른다). 없는 URL을
+  // 신고하지 않는다.
+  const albumPages = albums.filter(a => a.photo_count > 0).map(a => ({
     url: `${BASE}/archive/${a.slug}`,
     lastModified: rowDate(a),
     changeFrequency: 'monthly' as const,
