@@ -136,7 +136,7 @@ export default function MetadataFill({ onPlacesAdded }: { onPlacesAdded: () => v
       {!progress ? (
         message ? null : <LoadingLine />
       ) : progress.migrationPending ? (
-        <MigrationNotice feature="촬영 정보 채우기" file={ARCHIVE_EXTRAS_MIGRATION} />
+        <MigrationNotice feature="촬영 정보 채우기 기능" file={ARCHIVE_EXTRAS_MIGRATION} />
       ) : (
         <div className="space-y-2">
           <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm text-ink-body">

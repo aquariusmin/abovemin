@@ -73,7 +73,7 @@ export default function PlacesEditor({ reloadKey }: { reloadKey: number }) {
       />
 
       {migrationPending ? (
-        <MigrationNotice feature="장소 좌표와 지도" file={ARCHIVE_EXTRAS_MIGRATION} />
+        <MigrationNotice feature="장소 좌표와 지도 기능" file={ARCHIVE_EXTRAS_MIGRATION} />
       ) : !rows ? (
         message ? null : <LoadingLine />
       ) : rows.length === 0 ? (

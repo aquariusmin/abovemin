@@ -131,7 +131,7 @@ export default function NotesTab({ active }: { active: boolean }) {
         }
       />
 
-      {migrationPending && <MigrationNotice feature="노트 쓰기" file={ARCHIVE_EXTRAS_MIGRATION} />}
+      {migrationPending && <MigrationNotice feature="노트 쓰기 기능" file={ARCHIVE_EXTRAS_MIGRATION} />}
       <StatusLine message={message} />
 
       {draft && (
@@ -331,7 +331,7 @@ function NoteEditor({
               <p id="note-slug-hint" className="mt-1.5 text-[12px] text-slate">
                 영문 소문자·숫자·하이픈. 주소가 됩니다: <span className="font-mono">/notes/{draft.slug || '…'}</span>
                 {isNew && !draft.slug && ' — 한글 제목은 제안하지 않으니 직접 적어 주세요.'}
-                {!isNew && ' 공개된 글의 슬러그를 바꾸면 옛 주소는 404가 됩니다.'}
+                {!isNew && ' — 공개된 글의 슬러그를 바꾸면 옛 주소는 404가 됩니다.'}
               </p>
             </div>
             <div>
@@ -342,7 +342,7 @@ function NoteEditor({
 
           <div>
             <label htmlFor="note-summary" className={LABEL_CLASS}>요약</label>
-            <textarea id="note-summary" rows={2} className={INPUT_CLASS} value={draft.summary} required onChange={event => set('summary', event.target.value)} />
+            <textarea id="note-summary" rows={3} className={INPUT_CLASS} value={draft.summary} required onChange={event => set('summary', event.target.value)} />
             <p className="mt-1.5 text-[12px] text-slate">한 문단. 목록과 RSS에 그대로 쓰입니다.</p>
           </div>
 
