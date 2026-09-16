@@ -99,7 +99,8 @@ describe('NoteCreate / NoteUpdate', () => {
 
   it('해석 범위는 필수다', () => {
     expect(NoteCreate.safeParse({ ...valid, boundary: '   ' }).success).toBe(false);
-    const { boundary: _boundary, ...withoutBoundary } = valid;
+    const withoutBoundary: Record<string, unknown> = { ...valid };
+    delete withoutBoundary.boundary;
     expect(NoteCreate.safeParse(withoutBoundary).success).toBe(false);
   });
 
