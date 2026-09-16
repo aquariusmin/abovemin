@@ -43,7 +43,8 @@ describe('withColumnFallback', () => {
 
   it('컬럼이 없을 때만 한 번 더 읽고 migrationPending을 켠다', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const result = await withColumnFallback(
+    type Response = { data: number[] | null; error: { code: string; message: string } | null };
+    const result = await withColumnFallback<Response>(
       't',
       async () => ({ data: null, error: { code: '42703', message: 'column x does not exist' } }),
       async () => ({ data: [2], error: null }),
