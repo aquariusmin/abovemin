@@ -191,7 +191,7 @@ export default function HomeContent({
                 <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-20 lg:-top-24 -z-10 hidden md:block rounded-b-xl" />
               )}
               <p className={`eyebrow eyebrow-marked text-primary ${onPhoto('md:text-moss')} mb-4 md:mb-6`}>
-                phorage studio — Seoul
+                phorage
               </p>
               {/* No hard <br/> between head and tail: the title is
                   admin-configurable, so a forced break turns any longer title
@@ -220,7 +220,7 @@ export default function HomeContent({
                   href="/archive"
                   className={`btn-primary ${onPhoto('md:bg-moss md:text-forest-black md:hover:bg-cream md:hover:text-forest-deep')}`}
                 >
-                  사진 아카이브 보기
+                  사진 보러 가기
                 </Link>
                 {/* 살 수 있는 것이 없으면 소품으로 가는 길을 앞에 내지 않는다. */}
                 {hasShop && (
@@ -252,10 +252,10 @@ export default function HomeContent({
                 <div className="space-y-3">
                   <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
                   <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
-                    최근 아카이브
+                    최근 올라온 사진
                   </h2>
                 </div>
-                <Link href="/archive" className="btn-outline">아카이브 전체 보기</Link>
+                <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
               </motion.div>
 
               {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
@@ -325,7 +325,7 @@ export default function HomeContent({
                   몇 년 전 오늘
                 </h2>
                 {!onThisDay.some(photo => photo.exact) && (
-                  <p className="text-[15px] text-slate">딱 오늘 찍은 사진이 없어, 앞뒤 사흘 사이에서 골랐습니다.</p>
+                  <p className="text-[15px] text-slate">이 즈음 찍은 사진은 이렇습니다.</p>
                 )}
               </motion.div>
 
@@ -444,11 +444,11 @@ export default function HomeContent({
               <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
               <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
                 {photoCount > 0
-                  ? `${albumCount}개의 컬렉션, ${photoCount.toLocaleString()}장의 빛`
-                  : '어제의 빛을 모아 둡니다'}
+                  ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
+                  : '큰 일은 작은 창고에서 시작하더라구요.'}
               </h2>
               <p className="text-[15px] md:text-base leading-relaxed text-cream/75 max-w-[46ch]">
-                여행지와 동네에서 모은 사진을 컬렉션별로, 또는 연도와 장소로 찾아볼 수 있습니다.
+                사진을 앨범별로, 연도 또는 장소로 찾아볼 수 있습니다.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
@@ -456,7 +456,7 @@ export default function HomeContent({
                 href="/archive"
                 className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
               >
-                아카이브 둘러보기
+                사진 보러 가기
               </Link>
               {hasShop && (
                 <Link href="/shop" className="link-underline text-sm text-cream/85 hover:text-moss">
