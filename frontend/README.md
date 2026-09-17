@@ -114,6 +114,82 @@ npm run photos:add -- --album=korea --location=Seoul ./photos/*.jpg
 
 저장하지 않고 화면을 떠나면 파일은 Cloudinary에 남되 사이트에는 노출되지 않습니다. 설정 탭의 "쓰이지 않는 원본 정리"에서 찾아 지울 수 있습니다.
 
+## 백업
+
+매일 03:17(KST)에 `.github/workflows/backup.yml`이 Supabase 데이터를 내보내 **age로 암호화**한 뒤 GitHub Actions 아티팩트로 남깁니다. Actions 탭 → **DB backup** → **Run workflow**로 언제든 수동 실행할 수 있습니다.
+
+### 무엇을, 어디에
+
+- **테이블**: `albums`, `photos`, `products`, `orders`, `site_settings`, `places`, `notes`, `quant_fleet`. PostgREST(service-role 키)로 기본키 순서대로 1000행씩 끝까지 읽고, 받은 행 수가 서버가 알려 준 총계와 다르거나 기본키가 겹치면 다시 받습니다. 앞의 다섯 테이블은 읽기에 실패하면 백업 전체가 실패하고, 뒤의 셋은 테이블이 없으면(404) 경고만 남기고 건너뜁니다. `albums`나 `photos`가 0행이면 "빈 백업이 성공처럼 보이는" 사고로 보고 실패시킵니다.
+- **아티팩트** `abovemin-backup-YYYYMMDD` (보관 **30일**):
+  - `abovemin-backup-YYYYMMDD.tar.age` — 암호문. 안에 `<table>.json`, `manifest.json`, `migrations/*.sql`, `schema/openapi.json`(컬럼·타입·기본키·FK), `schema/tables.sql`(기본 테이블 DDL 초안)이 있습니다.
+  - `manifest.json` — **평문**. 테이블 이름, 행 수, 시각, 마이그레이션 파일 이름만 담습니다. 같은 내용이 실행 요약(Summary)에도 찍힙니다.
+- **저장소가 공개**라서 로그와 아티팩트는 누구나 볼 수 있다고 가정합니다. `orders`에는 고객 이름·이메일·전화·주소가 있으므로 평문 JSON은 러너 임시 디렉터리에만 있다가 지워지고, 스크립트는 응답 본문을 찍지 않습니다(테이블 이름·행 수·HTTP 상태·오류 코드만).
+- DB 비밀번호가 없어 `pg_dump`는 쓰지 않습니다. 그래서 인덱스·트리거·check/unique 제약 같은 스키마 세부는 백업에 **없습니다** — `migrations/`와 `schema/tables.sql`이 그 자리를 대신합니다(아래 복원 참고).
+
+### 켜기 (한 번만)
+
+1. **age 키를 로컬에서 만듭니다.** age 1.3 이상이 필요합니다(`brew install age`).
+
+   ```bash
+   mkdir -p ~/.config/abovemin && chmod 700 ~/.config/abovemin
+   age-keygen -pq -o ~/.config/abovemin/backup-age.key
+   age-keygen -y ~/.config/abovemin/backup-age.key   # 공개 키(age1pq1…) 한 줄 출력
+   ```
+
+   `-pq`(포스트퀀텀 하이브리드)를 권합니다. 공개 저장소의 아티팩트는 누구나 내려받을 수 있으므로, "지금 받아 두고 나중에 푸는" 경우까지 막는 편이 낫습니다. `-pq` 없이 만든 일반 키(`age1…`)도 동작하지만 **두 종류를 한 파일에 섞을 수는 없습니다**.
+
+2. **개인 키는 오프라인에만 둡니다.** `backup-age.key` 파일 내용을 비밀번호 관리자(1Password 등)에 보안 노트로 저장합니다. 이 키를 잃으면 모든 백업을 풀 수 없고, 반대로 이 키는 GitHub 시크릿·저장소·Vercel 어디에도 넣지 않습니다.
+
+3. **공개 키를 커밋합니다.** `scripts/backup/recipients.txt`의 `REPLACE_ME_WITH_AGE_PUBLIC_KEY` 줄을 위에서 출력된 공개 키로 바꿉니다(공개 키라 커밋해도 안전합니다). 이 줄이 바뀌기 전까지 워크플로는 일부러 실패합니다.
+
+4. **GitHub 시크릿**(Settings → Secrets and variables → Actions → Repository secrets):
+   - `SUPABASE_URL` — `https://<project-ref>.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase 대시보드 → Project Settings → API의 service-role(또는 `sb_secret_…`) 키
+
+5. Actions 탭에서 **DB backup**을 한 번 수동 실행해 아티팩트와 요약의 행 수를 확인합니다.
+
+키를 바꿀 때는 새 공개 키로 `recipients.txt`를 교체하되, 옛 개인 키도 30일(마지막 옛 백업이 만료될 때)까지는 보관합니다.
+
+### 복원
+
+```bash
+# 1. 아티팩트를 내려받아 풀고(zip), 저장소 **밖**에서 복호화한다
+#    (저장소 안에 풀면 고객 정보가 든 JSON을 실수로 커밋할 수 있다)
+mkdir -p ~/abovemin-restore && chmod 700 ~/abovemin-restore
+age -d -i ~/.config/abovemin/backup-age.key abovemin-backup-20260917.tar.age | tar -C ~/abovemin-restore -xf -
+cat ~/abovemin-restore/abovemin-backup-20260917/manifest.json
+```
+
+복원이 끝나면 `rm -rf ~/abovemin-restore`로 평문을 지웁니다.
+
+2. **새 Supabase 프로젝트에 스키마를 세웁니다.** SQL Editor에서 순서대로 실행합니다.
+   1. `schema/tables.sql` — 대시보드에서 만든 기본 테이블(albums·photos·products·orders·site_settings·quant_fleet)과 그 RLS 정책의 **초안**입니다. OpenAPI에서 되살린 것이라 인덱스·check/unique 제약은 없으니 읽어 보고 실행합니다.
+   2. `migrations/*.sql` — 파일 이름 순서대로. `places`·`notes`와 트리거, albums/photos 공개 정책, `photos_album_slug_sort_order_idx` 인덱스가 여기서 생깁니다.
+
+3. **데이터를 넣습니다.** 먼저 계획만 봅니다(기본이 `--dry-run`이고, 네트워크 요청을 하지 않습니다).
+
+   ```bash
+   node scripts/backup/restore.mjs --dir ~/abovemin-restore/abovemin-backup-20260917 --url https://<new-ref>.supabase.co
+   ```
+
+   확인했으면 실제로 넣습니다. 대상은 **항상 명시**합니다 — URL은 `--url`로만, 키는 `RESTORE_SERVICE_ROLE_KEY`로만 받고 `.env.local`의 값은 읽지 않습니다(새 프로젝트에 넣으려다 프로덕션을 덮어쓰는 사고를 막기 위해서).
+
+   ```bash
+   RESTORE_SERVICE_ROLE_KEY='<new project service-role key>' \
+     node scripts/backup/restore.mjs --dir ~/abovemin-restore/abovemin-backup-20260917 --url https://<new-ref>.supabase.co --apply
+   ```
+
+   - 순서는 FK 의존 순서입니다: `albums` → `photos` → `products` → `orders` → `site_settings` → `places` → `notes` → `quant_fleet`. 500행씩 upsert(`resolution=merge-duplicates`)하므로 중간에 실패해도 다시 돌리면 됩니다. `--only photos,albums`로 일부만 넣을 수 있습니다.
+   - ⚠️ **`notes.id`는 `generated always as identity`**라 PostgREST로 id를 넣으면 거절됩니다(428C9). 스크립트는 id를 빼고 `slug`로 upsert합니다 — 노트 번호는 새로 매겨지지만 id를 참조하는 곳은 없습니다. 원래 id를 꼭 지켜야 하면 SQL Editor에서 `insert into public.notes (...) overriding system value select ...`로 넣습니다.
+   - `numeric` 값(`places` 좌표, `quant_fleet`)은 자릿수가 깎이지 않게 원문 그대로 보냅니다.
+
+4. **시퀀스를 맞춥니다.** albums·photos·products·orders의 id는 명시해 넣었으므로 시퀀스가 1에 머물러 있습니다. 스크립트가 마지막에 출력하는 `select setval(...)` 네 줄을 SQL Editor에서 실행하지 않으면 다음 사진 업로드·주문이 기본키 충돌로 실패합니다.
+
+5. Vercel 환경변수의 `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`와 GitHub 시크릿을 새 프로젝트 값으로 바꾸고 재배포합니다. 사진 파일 자체는 Cloudinary에 있으므로 DB 행만 돌아오면 그대로 보입니다.
+
+스크립트의 순수 로직 테스트: `node --test scripts/backup/lib.test.mjs` (저장소 루트에서, 의존성 없음). 이 파일이나 워크플로를 고치는 PR에서 자동으로 돕니다.
+
 ## Tech stack
 
 - Next.js App Router

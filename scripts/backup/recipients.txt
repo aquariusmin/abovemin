@@ -1,0 +1,16 @@
+# age 수신자(공개 키) 목록 — 나이틀리 백업은 여기 적힌 키로만 암호화된다.
+#
+# 공개 키라 커밋해도 안전하다. 짝이 되는 **개인 키는 절대 커밋하지 않는다**
+# (GitHub 시크릿에도 넣지 않는다 — 복호화는 오프라인에서만 한다).
+#
+# 채우는 법(한 번만):
+#   mkdir -p ~/.config/abovemin && chmod 700 ~/.config/abovemin
+#   age-keygen -pq -o ~/.config/abovemin/backup-age.key
+#   age-keygen -y ~/.config/abovemin/backup-age.key   # 출력된 한 줄을 아래에 붙인다
+#
+# 한 줄에 키 하나. 키를 여러 개 적으면 그중 아무 개인 키로나 풀 수 있다
+# (예: 노트북 키 + 비밀번호 관리자에 보관한 예비 키). 단, 포스트퀀텀 키
+# (age1pq1…)와 일반 키(age1…)는 섞을 수 없다 — age가 암호화를 거절한다.
+#
+# 아래 줄이 age1… 로 시작하는 실제 키로 바뀌기 전까지 백업 워크플로는 일부러 실패한다.
+REPLACE_ME_WITH_AGE_PUBLIC_KEY
