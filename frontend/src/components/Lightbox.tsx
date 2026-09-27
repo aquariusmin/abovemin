@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
 import { exifParts, joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 import { photoShareUrl, printInquiryMailto } from '@/lib/photo-share';
+import { copyToClipboard } from '@/lib/clipboard';
 import { CONTACT_EMAIL, SITE_URL } from '@/lib/site';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -70,27 +71,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   }, []);
 
   const copyLink = useCallback(async () => {
-    // 앨범을 아는 사진이면 앨범 주소로 만든다. `/archive`의 전체 필터 그리드는
-    // 조건을 URL에 싣지 않으므로, 거기서 연 사진의 현재 주소(`/archive?p=`)를
-    // 받은 사람은 그 사진이 목록에 없는 화면에 도착한다.
+    // 앨범을 아는 사진이면 그 사진의 페이지(`/archive/[slug]/[id]`) 주소를
+    // 건넨다. 받은 사람의 링크 미리보기에 앨범 표지가 아니라 이 사진이 뜨고,
+    // `/archive`의 필터 그리드에서 연 사진도 목록 조건과 상관없이 열린다.
+    // 예전에 건넨 `?p=` 링크는 `PhotoGrid`가 계속 연다.
     const url = photoShareUrl(photo, window.location.origin, window.location.href);
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(url);
-      ok = true;
-    } catch {
-      // Clipboard API는 보안 컨텍스트와 권한이 필요하다(인앱 브라우저,
-      // 오래된 iOS). 그때는 선택 영역 복사로 한 번 더 시도한다.
-      const field = document.createElement('textarea');
-      field.value = url;
-      field.setAttribute('readonly', '');
-      field.style.position = 'fixed';
-      field.style.opacity = '0';
-      document.body.appendChild(field);
-      field.select();
-      try { ok = document.execCommand('copy'); } catch { ok = false; }
-      field.remove();
-    }
+    const ok = await copyToClipboard(url);
     setCopyState(ok ? 'copied' : 'failed');
     if (copyTimer.current) clearTimeout(copyTimer.current);
     copyTimer.current = setTimeout(() => setCopyState('idle'), 2000);

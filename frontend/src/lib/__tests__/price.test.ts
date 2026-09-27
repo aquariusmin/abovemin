@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPrice, PRICE_TBD } from '@/lib/price';
+import { formatPrice, formatPriceRange, PRICE_TBD } from '@/lib/price';
 import { isAvailable } from '@/lib/product';
 
 describe('formatPrice()', () => {
@@ -22,5 +22,16 @@ describe('isAvailable()', () => {
     // 재고만 켜진 0원 상품이 장바구니에 들어가면 ₩0 주문이 된다.
     expect(isAvailable({ in_stock: true, price: 0 })).toBe(false);
     expect(isAvailable({ in_stock: false, price: 12000 })).toBe(false);
+  });
+});
+
+describe('formatPriceRange()', () => {
+  it('값이 하나면 그 가격, 여럿이면 최저가부터', () => {
+    expect(formatPriceRange({ min: 38000, max: 38000 })).toBe('₩\u00a038,000');
+    expect(formatPriceRange({ min: 38000, max: 58000 })).toBe('₩\u00a038,000부터');
+  });
+
+  it('가격이 정해진 옵션이 없으면 가격 미정', () => {
+    expect(formatPriceRange({ min: 0, max: 0 })).toBe(PRICE_TBD);
   });
 });

@@ -6,6 +6,8 @@
  * 화면이 "DB error"만 띄우고 멈춘다. 여기서 한 번에 처리한다.
  */
 
+import { isPrepared, prepareUpload } from './upload-privacy';
+
 export const UNAUTHORIZED_EVENT = 'admin:unauthorized';
 
 export class AdminApiError extends Error {
@@ -70,10 +72,17 @@ export interface UploadResult {
 /**
  * 서명받은 파라미터로 파일 하나를 Cloudinary에 올린다. 파일은 우리 서버를
  * 거치지 않는다(`lib/cloudinary-upload.ts` 참고). 서명 하나를 여러 장이 쓴다.
+ *
+ * 올라가는 파일은 **항상** 위치 정보를 지운 것이다. 사진 업로드 화면은 배지와
+ * 좌표 때문에 `prepareUpload`를 먼저 부르고, 그 결과는 여기서 다시 읽지 않는다.
+ * 그렇지 않은 호출(샵 상품 이미지)은 여기서 지운다 — 원본은 URL만 알면 누구나
+ * 받을 수 있으므로, 어느 화면에서 올리든 같은 관문을 지나야 한다. 지울 수
+ * 없는 파일이면 `UploadBlockedError`(메시지는 화면에 그대로 보인다).
  */
 export async function uploadToCloudinary(file: File, sign: SignResponse): Promise<UploadResult> {
+  const upload = isPrepared(file) ? file : (await prepareUpload(file)).file;
   const form = new FormData();
-  form.append('file', file);
+  form.append('file', upload);
   form.append('api_key', sign.apiKey);
   form.append('signature', sign.signature);
   for (const [key, value] of Object.entries(sign.params)) form.append(key, String(value));

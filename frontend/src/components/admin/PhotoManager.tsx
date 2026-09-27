@@ -3,11 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cloudinary } from '@/lib/cloudinary';
 import { adminFetch, errorMessage } from '@/lib/admin/client';
-import { isPlaceholderText } from '@/lib/admin/data-checks';
+import {
+  hasLocationInOriginal,
+  isLowResolution,
+  isMissingExif,
+  isPlaceholderText,
+  isYearMismatch,
+  takenYear,
+} from '@/lib/admin/data-checks';
 import { dropOnto, moveById, rangeBetween } from '@/lib/admin/reorder';
 import { MAX_BULK } from '@/lib/admin/limits';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import type { AlbumOption } from './ArchiveTab';
+import { useUnsavedGuard } from './UnsavedGuard';
+import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
@@ -30,7 +39,13 @@ import {
  * 고른다 — 112장짜리 앨범에서 "앞의 40장을 다른 앨범으로"가 두 번의 클릭이다.
  */
 
-export type PhotoFilter = 'all' | 'untitled' | 'nolocation' | 'hidden';
+export type PhotoFilter = 'all' | 'untitled' | 'nolocation' | 'hidden' | 'yearmismatch' | 'lowres' | 'noexif' | 'gps';
+
+/**
+ * 개요의 데이터 점검에서 넘어오는 필터. 해당하는 사진이 없는 앨범에서는 칩을
+ * 숨긴다 — 늘 보이면 필터 줄이 여덟 칸이 되고, 대부분 0이다.
+ */
+const CHECK_FILTERS: ReadonlySet<PhotoFilter> = new Set(['yearmismatch', 'lowres', 'noexif', 'gps']);
 
 interface PhotoRow {
   id: number;
@@ -41,6 +56,13 @@ interface PhotoRow {
   year: number | null;
   sort_order: number;
   hidden?: boolean;
+  // 마이그레이션 뒤에만 오는 컬럼. 없으면 점검 필터가 아무것도 고르지 않는다.
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  exif_checked_at?: string | null;
+  gps_in_original?: boolean | null;
 }
 
 interface Draft {
@@ -65,6 +87,10 @@ const FILTER_LABEL: Record<PhotoFilter, string> = {
   untitled: '제목 없음',
   nolocation: '장소 없음',
   hidden: '숨김',
+  yearmismatch: '연도 불일치',
+  lowres: '저해상도',
+  noexif: '촬영 정보 없음',
+  gps: '위치가 남은 원본',
 };
 
 function toDraft(photo: PhotoRow): Draft {
@@ -80,7 +106,19 @@ function matches(photo: PhotoRow, filter: PhotoFilter): boolean {
   if (filter === 'untitled') return isPlaceholderText(photo.title);
   if (filter === 'nolocation') return isPlaceholderText(photo.location);
   if (filter === 'hidden') return photo.hidden === true;
+  if (filter === 'yearmismatch') return isYearMismatch(photo);
+  if (filter === 'lowres') return isLowResolution(photo);
+  if (filter === 'noexif') return isMissingExif(photo);
+  if (filter === 'gps') return hasLocationInOriginal(photo);
   return true;
+}
+
+/** 점검 필터로 볼 때 행에 붙이는 근거 한 줄. 무엇이 어긋났는지 보여야 고칠 수 있다. */
+function checkNote(photo: PhotoRow, filter: PhotoFilter): string | null {
+  if (filter === 'yearmismatch' && isYearMismatch(photo)) return `촬영일 ${takenYear(photo.taken_at)}년`;
+  if (filter === 'lowres' && isLowResolution(photo)) return `${photo.width}×${photo.height}px`;
+  if (filter === 'gps' && hasLocationInOriginal(photo)) return '원본에 위치 정보가 남아 있습니다';
+  return null;
 }
 
 export default function PhotoManager({ albumSlug, albums, filter, onFilterChange, refreshToken, onChanged }: Props) {
@@ -148,20 +186,25 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
   }, [albumSlug]);
 
   useEffect(() => { void load(); }, [load, refreshToken]);
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError, () => void load());
 
   const byId = useMemo(() => new Map(photos.map(photo => [photo.id, photo])), [photos]);
   const serverOrder = useMemo(() => photos.map(photo => photo.id), [photos]);
   const orderDirty = order.length === serverOrder.length && order.some((id, i) => id !== serverOrder[i]);
+  // 적다 만 캡션이나 저장 안 한 순서가 있으면 페이지를 떠나기 전에 묻는다.
+  const captionsDirty = photos.some(photo => {
+    const draft = drafts[photo.id];
+    return draft !== undefined && isDirty(photo, draft);
+  });
+  useUnsavedGuard('photo-manager', orderDirty || captionsDirty);
   const visible = order.filter(id => {
     const photo = byId.get(id);
     return photo ? matches(photo, filter) : false;
   });
-  const counts: Record<PhotoFilter, number> = {
-    all: photos.length,
-    untitled: photos.filter(p => matches(p, 'untitled')).length,
-    nolocation: photos.filter(p => matches(p, 'nolocation')).length,
-    hidden: photos.filter(p => matches(p, 'hidden')).length,
-  };
+  const counts = Object.fromEntries(
+    (Object.keys(FILTER_LABEL) as PhotoFilter[]).map(key => [key, photos.filter(p => matches(p, key)).length]),
+  ) as Record<PhotoFilter, number>;
   const selectedInOrder = order.filter(id => selected.has(id));
   const allVisibleSelected = visible.length > 0 && visible.every(id => selected.has(id));
   // 필터로 일부만 보일 때 끌어 옮기면 "보이지 않는 사진 사이의 어디"인지가
@@ -415,7 +458,9 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
       {migrationPending && <MigrationNotice feature="사진 숨기기" />}
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="사진 필터">
-        {(Object.keys(FILTER_LABEL) as PhotoFilter[]).map(key => (
+        {(Object.keys(FILTER_LABEL) as PhotoFilter[])
+          .filter(key => !CHECK_FILTERS.has(key) || counts[key] > 0 || filter === key)
+          .map(key => (
           <button
             key={key}
             type="button"
@@ -581,7 +626,13 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
                     />
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
-                    {message && <span className={`mr-auto ${MESSAGE_CLASS[message.tone]}`}>{message.text}</span>}
+                    {message ? (
+                      <span className={`mr-auto ${MESSAGE_CLASS[message.tone]}`}>{message.text}</span>
+                    ) : (
+                      checkNote(photo, filter) && (
+                        <span className="mr-auto text-[12px] tabular-nums text-brick">{checkNote(photo, filter)}</span>
+                      )
+                    )}
                     {dirty && (
                       <button type="button" onClick={() => updateDraft(id, toDraft(photo))} disabled={rowBusy} className={`btn-ghost ${BTN_SM} text-slate`}>
                         되돌리기

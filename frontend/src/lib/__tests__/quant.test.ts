@@ -101,6 +101,15 @@ describe('staleness()', () => {
     expect(staleness(now - 200 * 3600_000)).toBe('stale');
     expect(staleness('garbage')).toBe('stale');
   });
+
+  it('넘겨받은 기준 시각으로 판단한다 — 서버와 하이드레이션이 같은 답을 내도록', () => {
+    const renderedAt = Date.parse('2026-09-12T00:00:00Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(renderedAt + 100 * 3600_000);
+    const seen = renderedAt - 1 * 3600_000;
+    expect(staleness(seen, renderedAt)).toBe('live');
+    expect(staleness(seen)).toBe('stale');
+  });
 });
 
 describe('lastCycle()', () => {
@@ -114,7 +123,7 @@ describe('lastCycle()', () => {
 describe('books()', () => {
   const bot = (over: Partial<FleetBot>): FleetBot => ({
     id: 'x', bot_name: 'T / s', strategy: 's', market: 'stock', equity: 100,
-    pnl_pct: 0, position_pct: null, holdings_count: null, holdings: null,
+    pnl_pct: 0, day_pnl_pct: null, position_pct: null, holdings_count: null, holdings: null,
     fills_count: null, last_fill: null, cash: null, currency: 'USD', mark: null,
     equity_curve: null, updated_at: '2026-09-12T00:00:00Z', ...over,
   });

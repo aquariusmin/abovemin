@@ -6,6 +6,15 @@ import { NOTES_CACHE_TAG, NOTES_PRESENCE_TAG, SETTINGS_CACHE_TAG } from './cache
 import { isMissingSchemaError, withColumnFallback } from './db-compat';
 import { placeFromRow, type PlaceCoord } from './places';
 import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
+import {
+  isListed,
+  parseImages,
+  parseOptions,
+  productStatus,
+  type ProductImage,
+  type ProductOption,
+  type ProductStatus,
+} from './product';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -60,13 +69,27 @@ export interface Photo {
 export interface Product {
   id: number;
   name: string;
+  /** 옵션이 있으면 가장 싼 옵션의 가격(관리 API가 맞춘다). 주문 금액은 옵션 가격이다. */
   price: number;
+  /** 커버. `images`의 첫 장과 같다(관리 API가 맞춘다). */
   image_url: string;
   category: string;
   tag: string | null;
   description: string;
+  /** 호환용. 상태의 원본은 `status`다(`lib/product.ts`). */
   in_stock: boolean;
   sort_order?: number;
+  /**
+   * 마이그레이션(20260917020000_shop_ready) 이후 컬럼. 공개 조회(`publicProduct`)는
+   * 적용 전에도 채워서 돌려준다 — 상태는 옛 규칙으로 계산하고, 이미지는
+   * `image_url` 한 장, 옵션은 빈 목록.
+   */
+  status?: ProductStatus;
+  images?: ProductImage[];
+  options?: ProductOption[];
+  edition?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
@@ -106,7 +129,9 @@ export const getAlbumsWithCounts = cache(async (): Promise<Array<Album & { photo
     ),
   ]);
   if (aErr) { log.error('getAlbumsWithCounts.albums', aErr); throw aErr; }
-  if (pErr) log.warn('getAlbumsWithCounts.photos', pErr);
+  // 사진 조회가 실패하면 모든 앨범이 "0 pieces"가 되고, 공개 목록은 사진 없는
+  // 앨범을 빼므로 `/archive`가 통째로 비어 캐시에 앉는다. 던진다.
+  if (pErr) { log.error('getAlbumsWithCounts.photos', pErr); throw pErr; }
   const counts: Record<string, number> = {};
   for (const p of photos ?? []) counts[p.album_slug] = (counts[p.album_slug] ?? 0) + 1;
   return (albums ?? []).map(a => ({ ...a, photo_count: counts[a.slug] ?? 0 }));
@@ -142,10 +167,48 @@ export const getAlbumWithPhotos = cache(
   },
 );
 
+/**
+ * 사진 페이지(`/archive/[slug]/[id]`)에 필요한 것: 사진, 그 앨범, 앨범 안의 앞뒤.
+ *
+ * 따로 조회하지 않고 `getAlbumWithPhotos`를 그대로 쓴다. 앞뒤 사진과 "12 / 45"를
+ * 알려면 어차피 앨범의 공개 사진 목록이 필요하고, 그 목록에서 찾으면 **공개 규칙이
+ * 한 곳에 모인다**: 숨긴 사진은 목록에 없고, 비공개 앨범은 `null`이고, 다른
+ * 앨범의 사진 id를 이 앨범 주소에 붙이면 목록에서 찾지 못한다 — 셋 다 404다.
+ * `cache()` 덕에 `generateMetadata`와 본문이 한 번만 읽는다.
+ *
+ * 조회 실패는 던진다(`getAlbumWithPhotos`의 주석). 404가 ISR 캐시에 앉지 않게.
+ */
+export async function getPhotoInAlbum(
+  slug: string,
+  id: number,
+): Promise<{ album: Album; photo: Photo; index: number; total: number; prev: Photo | null; next: Photo | null } | null> {
+  const result = await getAlbumWithPhotos(slug);
+  if (!result) return null;
+  const { album, photos } = result;
+  const index = photos.findIndex(photo => photo.id === id);
+  if (index === -1) return null;
+  // 라이트박스와 같이 끝에서 처음으로 돈다. 한 장뿐이면 앞뒤가 자기 자신이라 뺀다.
+  const many = photos.length > 1;
+  return {
+    album,
+    photo: photos[index],
+    index,
+    total: photos.length,
+    prev: many ? photos[(index - 1 + photos.length) % photos.length] : null,
+    next: many ? photos[(index + 1) % photos.length] : null,
+  };
+}
+
 export const getSiteSettings = unstable_cache(
   async (): Promise<Record<string, string>> => {
     const { data, error } = await supabase.from('site_settings').select('key, value');
-    if (error) log.warn('getSiteSettings', error);
+    // 테이블이 없으면(마이그레이션 전) 설정 없음 — 기본값으로 그린다. 다른 오류는
+    // 던진다: 빈 설정을 돌려주면 이 캐시와 홈의 ISR 캐시에 "기본 히어로"가 앉는다.
+    // `unstable_cache`는 던진 결과를 캐시하지 않는다.
+    if (error) {
+      if (!isMissingSchemaError(error)) { log.error('getSiteSettings', error); throw error; }
+      log.warn('getSiteSettings.migration_pending', error);
+    }
     const settings: Record<string, string> = {};
     for (const row of data ?? []) settings[row.key] = row.value;
     return settings;
@@ -177,7 +240,12 @@ export const getAllPhotos = cache(
       supabase.from('albums').select('*'),
     ]);
     if (pErr) { log.error('getAllPhotos.photos', pErr); throw pErr; }
-    if (aErr) log.warn('getAllPhotos.albums', aErr);
+    // 앨범 조회 실패도 던진다. 예전에는 거르지 않은 목록을 돌려줬는데, 그러면
+    // 비공개 앨범의 사진이 공개 페이지(`/archive`, 홈, 타임라인)에 실려 ISR
+    // 캐시에 앉고, 사진 페이지의 "옮겨진 사진" 리다이렉트가 비공개 앨범을
+    // 가리켰다. 빈 목록도 답이 아니다 — "앨범이 없다"가 아니라 "모른다"이므로.
+    // 던지면 Next가 마지막으로 성공한 페이지를 계속 내보낸다.
+    if (aErr) { log.error('getAllPhotos.albums', aErr); throw aErr; }
 
     // 비공개 앨범의 사진은 앨범을 가로지르는 검색에서도 빠져야 한다.
     //
@@ -187,13 +255,10 @@ export const getAllPhotos = cache(
     // 집합이 되어 아무것도 거르지 못한다. 앨범을 `select('*')`로 읽는 이유는
     // `published`를 이름으로 고르면 마이그레이션 전 DB에서 이 조회가 실패하기
     // 때문이고, 그때는 모든 앨범이 보이므로 결과가 같다.
-    //
-    // 앨범 조회가 실패했으면 거르지 않는다. 빈 목록으로 거르면 사진이 전부
-    // 사라지는데, 그건 "앨범이 없다"가 아니라 "모른다"이기 때문이다.
     const titles = new Map((albums ?? []).map(a => [a.slug as string, a.title as string]));
-    const visible = aErr ? null : new Set((albums ?? []).map(a => a.slug as string));
+    const visible = new Set((albums ?? []).map(a => a.slug as string));
     return (photos ?? [])
-      .filter(photo => !visible || visible.has(photo.album_slug))
+      .filter(photo => visible.has(photo.album_slug))
       .map(photo => ({
         ...publicPhoto(photo),
         album_title: titles.get(photo.album_slug) ?? photo.album_slug,
@@ -308,6 +373,38 @@ export const hasPublishedNotes = unstable_cache(
   { tags: [NOTES_PRESENCE_TAG], revalidate: false },
 );
 
+// ── 상품 ──────────────────────────────────────────────────────────────────────
+//
+// 공개 조회는 **초안을 돌려주지 않는다.** 목록·홈·sitemap·상세가 모두 이
+// 함수들을 거치므로, 초안이 새는 길은 여기 하나만 막으면 된다. 공개 읽기
+// 정책(RLS)이 아니라 코드에서 거르는 이유는 마이그레이션 파일 끝의 주석에 있다.
+//
+// `select('*')`를 유지한다: 새 컬럼(`status`, `images`, `options`, `edition`)을
+// 이름으로 고르면 마이그레이션 전 DB에서 조회가 실패한다. `publicProduct`가
+// 있으면 쓰고 없으면 옛 규칙으로 채운다.
+
+/** DB 행 → 공개 화면의 상품. jsonb 안쪽은 믿지 않고 다시 읽는다. */
+function publicProduct(row: Product & { status?: unknown; images?: unknown; options?: unknown }): Product {
+  const edition = typeof row.edition === 'string' ? row.edition.trim() : '';
+  return {
+    id: row.id,
+    name: row.name,
+    price: row.price,
+    image_url: row.image_url,
+    category: row.category ?? '',
+    tag: row.tag ?? null,
+    description: row.description ?? '',
+    in_stock: row.in_stock,
+    sort_order: row.sort_order,
+    status: productStatus(row as Parameters<typeof productStatus>[0]),
+    images: parseImages(row.images, row.image_url),
+    options: parseOptions(row.options),
+    edition: edition || null,
+    ...(row.created_at ? { created_at: row.created_at } : {}),
+    ...(row.updated_at ? { updated_at: row.updated_at } : {}),
+  };
+}
+
 // 관리 화면에서 정한 순서(`sort_order`)를 따르고, 같은 값끼리는 예전처럼 id 순.
 // 마이그레이션 전에는 `sort_order`가 없으므로 id 순으로만 읽는다.
 export async function getProducts(): Promise<Product[]> {
@@ -317,23 +414,24 @@ export async function getProducts(): Promise<Product[]> {
     () => supabase.from('products').select('*').order('id'),
   );
   if (error) { log.error('getProducts', error); throw error; }
-  return data ?? [];
+  return (data ?? []).map(publicProduct).filter(isListed);
 }
 
 // Single product by id. Wrapped in cache() so generateMetadata + the page body
 // share one query per request instead of fetching the same product twice.
+//
+// 초안이면 `null` — 페이지는 404가 된다. 주소를 안다고 초안이 열리면 초안이
+// 아니다. `.maybeSingle()`: 없는 id는 오류가 아니라 "없음"이다.
+//
+// 조회 실패는 던진다. `null`로 바꾸면 상세 페이지가 `notFound()`를 부르고, 그
+// 404가 ISR 캐시에 앉아 revalidate 주기 동안 멀쩡한 상품이 사라진다
+// (`getAlbumWithPhotos`와 같은 이유). 숫자가 아닌 id는 조회 전에 "없음"이다 —
+// 보내면 DB가 형식 오류를 돌려주고, 그건 장애가 아니다.
 export const getProductById = cache(async (id: number): Promise<Product | null> => {
-  const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
-  if (error) return null;
-  return data;
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
+  const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+  if (error) { log.error('getProductById', error); throw error; }
+  if (!data) return null;
+  const product = publicProduct(data);
+  return isListed(product) ? product : null;
 });
-
-export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(limit);
-  if (error) { log.warn('getFeaturedProducts', error); return []; }
-  return data ?? [];
-}

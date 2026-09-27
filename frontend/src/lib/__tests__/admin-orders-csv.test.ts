@@ -95,3 +95,27 @@ describe('ordersToCsv', () => {
     expect(ordersToCsv([])).toBe(`${CSV_BOM}${ordersToCsv([]).slice(1).split('\r\n')[0]}\r\n`);
   });
 });
+
+describe('ordersToCsv — 옵션', () => {
+  it('상품 칸에 옵션 이름을 같이 적는다(옛 줄은 이름만)', () => {
+    const csv = ordersToCsv([
+      {
+        id: 8,
+        created_at: '2026-09-17T01:00:00Z',
+        status: 'pending',
+        name: '이영희',
+        email: 'lee@example.com',
+        phone: null,
+        zipcode: null,
+        address: '부산',
+        note: null,
+        items: [
+          { id: 3, name: '숲 포스터', option_id: 'a3', option_label: 'A3 · 매트지', price: 38000, quantity: 2 },
+          { name: 'Postcard', price: 2000, quantity: 1 },
+        ],
+        total_price: 78000,
+      },
+    ]);
+    expect(csv).toContain('숲 포스터 · A3 · 매트지 ×2 / Postcard ×1');
+  });
+});

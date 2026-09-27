@@ -206,7 +206,7 @@ export function normalizeResource(resource: {
   width?: unknown;
   height?: unknown;
   image_metadata?: unknown;
-}): { fields: PhotoMetadataFields; gps: RoundedCoord | null } {
+}): { fields: PhotoMetadataFields; gps: RoundedCoord | null; hasLocation: boolean } {
   const metadata: ImageMetadata =
     typeof resource.image_metadata === 'object' && resource.image_metadata !== null
       ? (resource.image_metadata as ImageMetadata)
@@ -224,7 +224,23 @@ export function normalizeResource(resource: {
       iso: parseIso(metadata.ISO),
     },
     gps: parseGps(metadata),
+    hasLocation: hasLocationMetadata(metadata),
   };
+}
+
+/**
+ * 원본의 메타데이터에 위치 정보가 **남아 있는가**. 업로드 화면과 CLI는 올리기
+ * 전에 지우므로(`lib/exif-strip.ts`) 새 사진은 false여야 한다. true면 이 화면을
+ * 거치지 않고(콘솔 등) 올라온 원본이다 — 서버는 지우지 않고 표시만 한다.
+ *
+ * GPS 좌표뿐 아니라 XMP·IPTC의 도시·세부 위치도 본다. 나라 이름은 보지 않는다
+ * (`exif-strip.ts`의 XMP 규칙과 같다). 값이 빈 키는 없는 것으로 친다.
+ */
+const LOCATION_KEY_RE =
+  /^(?:GPS(?:Latitude|Longitude|Position|Coordinates|Altitude)|City|Sub-?location|Location(?:Created|Shown)?|State|Province-?State)$/i;
+
+export function hasLocationMetadata(metadata: ImageMetadata): boolean {
+  return Object.entries(metadata).some(([key, value]) => LOCATION_KEY_RE.test(key) && text(value) !== null);
 }
 
 export function hasExif(fields: PhotoMetadataFields): boolean {
@@ -246,6 +262,22 @@ function median(values: number[]): number {
  * 평균은 서해로 끌려가지만, 중앙값은 움직이지 않는다. 위도와 경도를 따로
  * 고른다 — 11km 격자에서는 그 차이가 보이지 않는다.
  */
+/**
+ * (장소 이름, 반올림된 좌표) 목록 → 장소별 좌표 묶음. 이름이 비었거나 좌표가
+ * 없는 항목은 뺀다. 이름은 호출하는 쪽이 공개 화면과 같은 모양으로 다듬어
+ * 넘긴다(`cleanCaptionField`) — `places`의 키가 `photos.location`과 같아야 한다.
+ */
+export function groupCoordsByPlace(
+  entries: Iterable<{ place: string | null | undefined; coord: RoundedCoord | null | undefined }>,
+): Map<string, RoundedCoord[]> {
+  const groups = new Map<string, RoundedCoord[]>();
+  for (const { place, coord } of entries) {
+    if (!place || !coord) continue;
+    groups.set(place, [...(groups.get(place) ?? []), coord]);
+  }
+  return groups;
+}
+
 export function placeFromCoords(coords: readonly RoundedCoord[]): RoundedCoord | null {
   if (coords.length === 0) return null;
   return roundCoord(median(coords.map(c => c.lat)), median(coords.map(c => c.lng)));

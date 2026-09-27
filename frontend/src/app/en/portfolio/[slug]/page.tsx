@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
-import { getPortfolioProject, portfolioProjects } from "@/data/portfolio";
+import {
+  getEnglishSubmissionPortfolioProject,
+  getEnglishSubmissionPortfolioProjects,
+  getPortfolioProject,
+  portfolioProjects,
+} from "@/data/portfolio";
 
 export const dynamicParams = false;
 
@@ -29,7 +34,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EnglishPortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = getPortfolioProject(slug);
+  // Curated ordering so case numbers and prev/next match /en/portfolio and the
+  // Korean page; `route="normal"` keeps the links on /en/portfolio.
+  const project = getEnglishSubmissionPortfolioProject(slug);
   if (!project) notFound();
-  return <PortfolioCaseStudy project={project} projects={portfolioProjects} locale="en" />;
+  return (
+    <PortfolioCaseStudy
+      project={project}
+      projects={getEnglishSubmissionPortfolioProjects()}
+      locale="en"
+      mode="submission"
+      route="normal"
+    />
+  );
 }

@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, downloadText, errorMessage } from '@/lib/admin/client';
 import { ordersToCsv } from '@/lib/admin/orders-csv';
+import type { OrderItemRecord } from '@/lib/order-items';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
+import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
@@ -26,12 +28,8 @@ import {
 
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
-interface OrderItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-}
+/** 옵션 이전의 주문에는 `option_*` 키가 없다 — 이름만 보인다. */
+type OrderItem = OrderItemRecord;
 
 interface Order {
   id: number;
@@ -102,6 +100,9 @@ export default function OrdersTab() {
       cancelled = true;
     };
   }, [reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError !== null && !orders, () => setReloadKey(k => k + 1));
 
   if (loadError && !orders) {
     return (
@@ -351,7 +352,11 @@ function OrderCard({
               <ul className="space-y-1">
                 {(order.items ?? []).map((item, i) => (
                   <li key={i} className="flex justify-between gap-3 text-[13px] text-ink-body">
-                    <span>{item.name} ×{item.quantity}</span>
+                    <span className="min-w-0">
+                      {item.name}
+                      {item.option_label && <span className="text-slate">&nbsp;· {item.option_label}</span>}
+                      {' '}×{item.quantity}
+                    </span>
                     <span className="tabular-nums text-forest">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</span>
                   </li>
                 ))}

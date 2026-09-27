@@ -20,21 +20,27 @@ export const revalidate = 60;
  *
  * 실패하면 `null`을 돌려 클라이언트가 평소의 "연결 중" 상태로 시작하게 둔다 —
  * 빈 배열은 "봇이 없다"는 뜻이라 의미가 다르다.
+ *
+ * `readAt`은 이 행들을 읽은 시각이다. 클라이언트는 첫 폴링 전까지 이 시각을
+ * 기준으로 봇의 staleness를 판단한다 — ISR 페이지는 렌더된 뒤 한참 있다가
+ * 서빙될 수 있어서, 하이드레이션 시점의 `Date.now()`로 판단하면 상태 필의
+ * 문구와 색이 서버 HTML과 달라진다.
  */
-async function getFleet(): Promise<FleetBot[] | null> {
+async function getFleet(): Promise<{ bots: FleetBot[] | null; readAt: number }> {
   const { data, error } = await supabase
     .from("quant_fleet")
     .select("*")
     .order("equity", { ascending: false });
+  const readAt = Date.now();
   if (error) {
     log.warn("lab.fleet_ssr", error);
-    return null;
+    return { bots: null, readAt };
   }
-  return (data ?? []) as FleetBot[];
+  return { bots: (data ?? []) as FleetBot[], readAt };
 }
 
 export default async function Lab() {
-  const initialBots = await getFleet();
+  const { bots: initialBots, readAt } = await getFleet();
 
   return (
     // Same page frame as every other route: `px-4 sm:px-6 md:px-10` and the
@@ -60,7 +66,7 @@ export default async function Lab() {
           <span className="lab-label ml-auto">abovemin.com/lab</span>
         </header>
 
-        <FleetDashboard initialBots={initialBots} />
+        <FleetDashboard initialBots={initialBots} renderedAt={readAt} />
 
         {/* The status of the money is stated in words, under the numbers, so
             nobody has to infer it from a badge. This used to read "paper

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getNoteBySlug, getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
+import { buildFallback } from '@/lib/build-phase';
 
 export const revalidate = 3600;
 
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const note = await getNoteBySlug((await params).slug).catch(() => null);
+  const note = await getNoteBySlug((await params).slug).catch(buildFallback(null));
   if (!note) return { title: 'Note not found' };
   return {
     title: note.title,
@@ -35,7 +36,8 @@ export async function generateMetadata({
 
 export default async function NotePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const notes = await getPublishedNotes().catch(() => []);
+  // 빌드 중에만 삼킨다. 실행 중에 삼키면 아래의 404가 캐시에 앉는다(`buildFallback`).
+  const notes = await getPublishedNotes().catch(buildFallback([]));
   const note = notes.find(n => n.slug === slug) ?? null;
   if (!note) notFound();
 

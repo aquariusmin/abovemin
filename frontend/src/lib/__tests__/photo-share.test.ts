@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { photoShareUrl, printInquiryMailto } from '@/lib/photo-share';
+import {
+  photoPageDescription,
+  photoPagePath,
+  photoPageTitle,
+  photoShareUrl,
+  printInquiryMailto,
+  UNTITLED,
+} from '@/lib/photo-share';
 import { displayCamera, exifParts, takenDate } from '@/lib/caption';
 
 /**
@@ -11,8 +18,12 @@ import { displayCamera, exifParts, takenDate } from '@/lib/caption';
 const photo = { id: 42, album_slug: 'japan', title: 'Morning', location: 'Kyoto', year: 2019 };
 
 describe('photoShareUrl', () => {
-  it('앨범 주소 + ?p=', () => {
-    expect(photoShareUrl(photo, 'https://www.abovemin.com', 'x')).toBe('https://www.abovemin.com/archive/japan?p=42');
+  it('사진 페이지 주소 — 앨범의 ?p= 딥링크가 아니다', () => {
+    expect(photoShareUrl(photo, 'https://www.abovemin.com', 'x')).toBe('https://www.abovemin.com/archive/japan/42');
+  });
+
+  it('photoPagePath는 origin 없는 경로', () => {
+    expect(photoPagePath({ id: 7, album_slug: 'korea' })).toBe('/archive/korea/7');
   });
 
   it('앨범을 모르면 지금 주소', () => {
@@ -20,8 +31,27 @@ describe('photoShareUrl', () => {
   });
 });
 
+describe('photoPageTitle / photoPageDescription', () => {
+  it('제목 → 장소 → 무제', () => {
+    expect(photoPageTitle(photo)).toEqual({ title: 'Morning', repeatsLocation: false });
+    expect(photoPageTitle({ title: 'IMG_1234', location: '여수' })).toEqual({ title: '여수', repeatsLocation: true });
+    expect(photoPageTitle({ title: '-', location: ' ' })).toEqual({ title: UNTITLED, repeatsLocation: false });
+  });
+
+  it('설명은 장소 · 촬영일(없으면 연도) · 카메라 — 앨범', () => {
+    expect(
+      photoPageDescription(
+        { title: 'Somewhere', location: '여수', year: 2018, taken_at: '2018-09-08T18:53:14+00:00', camera: 'Apple iPhone 7' },
+        'Korea',
+      ),
+    ).toBe('여수 · 2018.09.08 · iPhone 7 — Korea 컬렉션의 사진.');
+    expect(photoPageDescription({ title: '-', location: '-', year: 2020 }, 'Swiss')).toBe('2020 — Swiss 컬렉션의 사진.');
+    expect(photoPageDescription({}, 'Swiss')).toBe('Swiss 컬렉션의 사진.');
+  });
+});
+
 describe('printInquiryMailto', () => {
-  const href = printInquiryMailto('owner@example.com', photo, 'https://www.abovemin.com/archive/japan?p=42');
+  const href = printInquiryMailto('owner@example.com', photo, 'https://www.abovemin.com/archive/japan/42');
   const url = new URL(href);
 
   it('주소와 제목', () => {
@@ -33,7 +63,7 @@ describe('printInquiryMailto', () => {
   it('본문에 캡션과 링크가 들어간다', () => {
     const body = url.searchParams.get('body')!;
     expect(body).toContain('사진: Morning · Kyoto · 2019');
-    expect(body).toContain('링크: https://www.abovemin.com/archive/japan?p=42');
+    expect(body).toContain('링크: https://www.abovemin.com/archive/japan/42');
   });
 
   it('공백은 %20, 줄바꿈은 %0A — 폼 인코딩(+)이 아니다', () => {

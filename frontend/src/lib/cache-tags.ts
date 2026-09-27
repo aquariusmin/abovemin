@@ -54,4 +54,10 @@ export function revalidateArchive(): void {
   revalidatePath('/');
   revalidatePath('/archive');
   revalidatePath('/archive/[slug]', 'page');
+  // 사진 한 장의 페이지와 타임라인. 숨긴 사진의 페이지가 300초 동안 더 열리거나,
+  // 제목을 고쳤는데 링크 미리보기가 옛 제목을 들고 있지 않게.
+  revalidatePath('/archive/[slug]/[id]', 'page');
+  revalidatePath('/archive/timeline');
+  // sitemap이 사진 페이지를 싣는다. 지운 사진의 주소를 계속 신고하지 않게.
+  revalidatePath('/sitemap.xml');
 }

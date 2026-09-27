@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquityChart } from "@/components/quant/EquityChart";
 import { HoldingsTable } from "@/components/quant/HoldingsTable";
-import { Bar, Frame, Metric, Pill, RelativeTime, Section } from "@/components/quant/Panel";
+import { Bar, FeedStale, Frame, Metric, Pill, RelativeTime, Section } from "@/components/quant/Panel";
 import {
   fmtAmount, fmtPct, fmtRelative, lastCycle, parseBotName,
   parseEquityCurve, staleness, type FleetBot,
@@ -17,15 +17,22 @@ export function BotDetail({
   botId,
   /** Server-rendered first paint. See `getBot` in this route's page. */
   initialBot = null,
+  /** When the server read `initialBot` (epoch ms) — see `FleetDashboard`. */
+  renderedAt,
 }: {
   botId: string;
   initialBot?: FleetBot | null;
+  renderedAt: number;
 }) {
   const [bot, setBot] = useState<FleetBot | null>(initialBot);
   const [error, setError] = useState<string | null>(null);
   // Seeded rows are already "loaded": showing the spinner over numbers the
   // server just delivered would be a step backwards.
   const [loaded, setLoaded] = useState(initialBot !== null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  // Staleness is judged against the server's render time until the first
+  // poll, so the state pill hydrates as rendered. See `FleetDashboard`.
+  const [now, setNow] = useState(renderedAt);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,10 +46,14 @@ export function BotDetail({
         if (cancelled) return;
         setBot(data?.[0] ?? null);
         setError(null);
+        setLastFetched(new Date());
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) {
+          setLoaded(true);
+          setNow(Date.now());
+        }
       }
     };
     load();
@@ -76,7 +87,9 @@ export function BotDetail({
       </Frame>
     );
   }
-  if (error) {
+  // A failed poll over a bot already on screen keeps it and says so; only a
+  // page that never got the bot at all is a full-screen error.
+  if (error && !bot) {
     return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
   if (!bot) {
@@ -92,8 +105,9 @@ export function BotDetail({
 
   const name = parseBotName(bot.bot_name);
   const positive = (bot.pnl_pct ?? 0) >= 0;
+  const day = bot.day_pnl_pct;
   const seen = lastCycle(points, bot.updated_at);
-  const age = staleness(seen);
+  const age = staleness(seen, now);
   const positionValue =
     bot.cash !== null && bot.cash !== undefined
       ? Math.max(0, bot.equity - bot.cash)
@@ -103,6 +117,9 @@ export function BotDetail({
     <div className="space-y-3">
       <BackLink />
       <Frame>
+        {error ? (
+          <FeedStale error={error} since={lastFetched ? fmtRelative(lastFetched.toISOString()) : null} />
+        ) : null}
         {/* Identity first: the venue tag and halt state decide how to read
             every number below, and mock equity looks identical to real money
             otherwise. */}
@@ -140,6 +157,14 @@ export function BotDetail({
           <Metric label="equity" value={fmtAmount(bot.equity, bot.currency, 2)} />
           <Metric label="pnl" value={fmtPct(bot.pnl_pct)}
                   tone={positive ? "good" : "critical"} sub="vs initial equity" />
+          {/* Neutral tone when null: no baseline is not a flat day. */}
+          <Metric label="day" value={fmtPct(day)}
+                  tone={day === null || day === undefined
+                    ? "neutral"
+                    : day >= 0 ? "good" : "critical"}
+                  sub={day === null || day === undefined
+                    ? "no baseline — bot not cycling"
+                    : "since the previous cycle"} />
           <Metric label="cash" value={fmtAmount(bot.cash, bot.currency, 2)}
                   sub={positionValue !== null
                     ? `${fmtAmount(positionValue, bot.currency, 0)} deployed`

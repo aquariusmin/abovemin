@@ -17,7 +17,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.supabase.co",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com",
   "upgrade-insecure-requests",
 ].join('; ');
 
@@ -39,7 +39,6 @@ const nextConfig: NextConfig = {
     '/opengraph-image': ['./assets/**'],
     '/portfolio/opengraph-image': ['./assets/**'],
   },
-  serverExternalPackages: ['yahoo-finance2'],
   experimental: {
     // framer-motion re-exports its whole surface from one entry point, so a
     // component that imports `{ motion }` drags the gesture, layout-animation
@@ -78,8 +77,14 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Next 16 ignores any `quality` not listed here and silently falls back to
-    // 75. The hero asks for 90, so both values have to be declared.
+    // 원격 이미지는 이미 Cloudinary/Unsplash가 줄이고 포맷을 고른 것이라
+    // `/_next/image`로 한 번 더 통과시키지 않는다. 로더가 각 CDN에 폭과 품질을
+    // 직접 넘긴다(src/lib/image-loader.ts).
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    // Next 16 warns about any `quality` not listed here. The custom loader passes
+    // the prop straight to the CDN (hero: q_90), but the list stays so the
+    // warning stays meaningful if someone adds a new value.
     qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),

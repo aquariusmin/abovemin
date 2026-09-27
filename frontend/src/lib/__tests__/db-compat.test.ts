@@ -3,6 +3,7 @@ import {
   isMissingColumnError,
   isMissingSchemaError,
   isMissingTableError,
+  isUniqueViolation,
   withColumnFallback,
 } from '@/lib/db-compat';
 
@@ -102,5 +103,20 @@ describe('withColumnFallback', () => {
     expect(result.error).toBe(error);
     expect(result.migrationPending).toBe(false);
     expect(fallback).not.toHaveBeenCalled();
+  });
+});
+
+describe('isUniqueViolation', () => {
+  it('23505를 알아본다 — 같은 멱등 키로 동시에 들어온 주문의 늦은 쪽', () => {
+    expect(isUniqueViolation({ code: '23505', message: 'duplicate key value violates unique constraint "orders_idempotency_key_key"' })).toBe(true);
+    expect(isUniqueViolation({ code: null, message: 'duplicate key value violates unique constraint "x"' })).toBe(true);
+  });
+
+  it('다른 오류는 중복으로 보지 않는다', () => {
+    // 이걸 중복으로 읽으면 저장 실패를 "이미 있는 주문"으로 덮는다.
+    expect(isUniqueViolation({ code: '42703', message: 'column "idempotency_key" does not exist' })).toBe(false);
+    expect(isUniqueViolation({ code: '23503', message: 'violates foreign key constraint' })).toBe(false);
+    expect(isUniqueViolation(null)).toBe(false);
+    expect(isUniqueViolation('23505')).toBe(false);
   });
 });

@@ -16,13 +16,21 @@
  *
  * 필요한 환경변수 (.env.local): CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY /
  * CLOUDINARY_API_SECRET / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
+ *
+ * 위치 정보: 올리기 전에 파일에서 GPS·XMP·IPTC 위치를 지운다 — 관리 화면과 같은
+ * 코드(`src/lib/exif-strip.ts`)다. JPEG은 무손실로 지우고, 위치가 든 HEIC·PNG
+ * 같은 파일은 올리지 않는다(브라우저와 달리 여기에는 다시 인코딩할 도구가 없다).
+ * 지우기 전에 읽은 좌표는 소수점 한 자리로 반올림해 `places`의 빈 장소에만 쓴다.
+ *
+ * TS 파일을 그대로 import한다 — Node 22.18+/24의 타입 제거(type stripping).
  */
 
 import { createHash } from 'node:crypto';
-import { openAsBlob } from 'node:fs';
 import { basename } from 'node:path';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createClient } from '@supabase/supabase-js';
+import { planUpload } from '../src/lib/exif-strip.ts';
+import { groupCoordsByPlace, placeFromCoords } from '../src/lib/admin/photo-metadata.ts';
 
 /** 동시 업로드 수. 원본 사진은 장당 수 MB라 무제한으로 열면 회선만 막힌다. */
 const CONCURRENCY = 3;
@@ -94,7 +102,24 @@ function exifYear(metadata) {
   return new Date().getFullYear();
 }
 
-async function upload(path) {
+const PRIVACY_LABEL = { removed: '위치 정보 제거됨', none: '위치 정보 없음' };
+const BLOCKED_MESSAGE = '위치 정보가 들어 있는데 무손실로 지울 수 없는 형식입니다 — JPEG로 내보낸 뒤 다시 올려 주세요';
+
+/**
+ * 파일 → 올릴 바이트와 반올림된 좌표. 위치를 지울 수 없는 파일은 null.
+ * 판단은 관리 화면과 같다(`planUpload`).
+ */
+async function prepare(path) {
+  const bytes = new Uint8Array(await readFile(path));
+  const plan = planUpload(bytes);
+  if (plan.kind === 'jpeg') {
+    return { bytes: plan.bytes, coord: plan.coord, privacy: plan.locationRemoved ? 'removed' : 'none' };
+  }
+  if (plan.kind === 'unchanged') return { bytes, coord: null, privacy: 'none' };
+  return null;
+}
+
+async function upload(path, bytes) {
   const params = {
     folder: `phorage/archive/${options.album}`,
     image_metadata: 'true',
@@ -102,7 +127,7 @@ async function upload(path) {
   };
 
   const form = new FormData();
-  form.append('file', await openAsBlob(path), basename(path));
+  form.append('file', new Blob([bytes]), basename(path));
   form.append('api_key', apiKey);
   form.append('signature', signUploadParams(params));
   for (const [key, value] of Object.entries(params)) form.append(key, String(value));
@@ -152,9 +177,11 @@ const startOrder = (last?.sort_order ?? 0) + 1;
 console.log(`\n  ${album.title} (${options.album}) — ${files.length}장, sort_order ${startOrder}부터\n`);
 
 if (options.dryRun) {
-  files.forEach((path, i) => {
-    console.log(`  ${String(startOrder + i).padStart(3)}  ${titleFromFileName(path)}  ${basename(path)}`);
-  });
+  for (const [i, path] of files.entries()) {
+    const prepared = await prepare(path);
+    const privacy = prepared ? PRIVACY_LABEL[prepared.privacy] : `올리지 않음 — ${BLOCKED_MESSAGE}`;
+    console.log(`  ${String(startOrder + i).padStart(3)}  ${titleFromFileName(path)}  ${basename(path)}  (${privacy})`);
+  }
   console.log(`\n  --dry-run: 아무것도 업로드하지 않았습니다.\n`);
   process.exit(0);
 }
@@ -170,15 +197,20 @@ async function worker() {
     if (index >= files.length) return;
     const path = files[index];
     try {
-      const uploaded = await upload(path);
+      const prepared = await prepare(path);
+      if (!prepared) throw new Error(BLOCKED_MESSAGE);
+      const uploaded = await upload(path, prepared.bytes);
       results[index] = {
-        album_slug: options.album,
-        src: uploaded.secure_url,
-        title: titleFromFileName(path),
-        location: options.location,
-        year: options.year ? Number(options.year) : exifYear(uploaded.image_metadata),
+        row: {
+          album_slug: options.album,
+          src: uploaded.secure_url,
+          title: titleFromFileName(path),
+          location: options.location,
+          year: options.year ? Number(options.year) : exifYear(uploaded.image_metadata),
+        },
+        coord: prepared.coord,
       };
-      console.log(`  ✓ ${basename(path)}`);
+      console.log(`  ✓ ${basename(path)}  (${PRIVACY_LABEL[prepared.privacy]})`);
     } catch (error) {
       failures.push({ path, message: error.message });
       console.log(`  ✗ ${basename(path)} — ${error.message}`);
@@ -188,9 +220,8 @@ async function worker() {
 
 await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
 
-const rows = results
-  .filter(Boolean)
-  .map((row, i) => ({ ...row, sort_order: startOrder + i }));
+const uploadedResults = results.filter(Boolean);
+const rows = uploadedResults.map(({ row }, i) => ({ ...row, sort_order: startOrder + i }));
 
 if (rows.length === 0) fail('업로드에 성공한 사진이 없습니다.');
 
@@ -203,5 +234,23 @@ if (insertError) {
 }
 
 console.log(`\n  ${rows.length}장을 ${album.title} 앨범에 추가했습니다.`);
+
+// 장소 좌표: `api/admin/photos` POST와 같은 규칙 — 좌표가 **없는** 장소에만 이번
+// 사진들의 중앙값을 넣는다(ignoreDuplicates = on conflict do nothing). 공개 화면과
+// 같은 모양의 이름이어야 하므로 앞뒤 공백을 걷고, 자리표시자(`-`)는 건너뛴다.
+const place = options.location.trim();
+const coordsByPlace = groupCoordsByPlace(
+  uploadedResults.map(({ coord }) => ({ place: place && !['-', '—', '–'].includes(place) ? place : null, coord })),
+);
+for (const [name, coords] of coordsByPlace) {
+  const coord = placeFromCoords(coords);
+  if (!coord) continue;
+  const { data: added, error: placeError } = await supabase
+    .from('places')
+    .upsert([{ name, lat: coord.lat, lng: coord.lng, source: 'gps' }], { onConflict: 'name', ignoreDuplicates: true })
+    .select('name');
+  if (placeError) console.log(`  장소 좌표는 건너뛰었습니다: ${placeError.message}`);
+  else if (added?.length) console.log(`  장소 좌표를 추가했습니다: ${name} (${coord.lat}, ${coord.lng})`);
+}
 if (failures.length > 0) console.log(`  실패 ${failures.length}장은 다시 시도해 주세요.`);
 console.log('');

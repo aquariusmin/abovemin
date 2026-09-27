@@ -51,6 +51,18 @@ export function isMissingSchemaError(error: unknown): boolean {
 }
 
 /**
+ * 유니크 제약 위반(`23505`). 오류로 볼 일이 아닐 때가 있다 — 같은 멱등 키로
+ * 동시에 들어온 두 주문 중 늦은 쪽은 이 오류를 받고, 먼저 들어간 주문을 다시
+ * 읽어 답하면 된다(`api/orders`).
+ */
+export function isUniqueViolation(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { code, message } = error as PgErrorLike;
+  if (code === '23505') return true;
+  return typeof message === 'string' && /duplicate key value violates unique constraint/i.test(message);
+}
+
+/**
  * 새 컬럼을 쓰는 쿼리를 먼저 보내고, 그 컬럼이 없다는 오류일 때만 예전
  * 쿼리로 한 번 더 보낸다. 다른 오류(네트워크, 권한)는 그대로 돌려준다 —
  * 그걸 삼키고 필터 없는 결과를 내면 진짜 장애가 가려진다.

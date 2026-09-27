@@ -160,8 +160,8 @@ export const portfolioEvidenceHighlights = [
       ko: "브로커 추상화와 운영 제어, 그리고 인샘플 성과를 보고하지 않겠다는 검증 규칙을 함께 보여줍니다.",
     },
     caution: {
-      en: "Paper-trading validation only; backtests are historical simulations, not a real-money record.",
-      ko: "페이퍼 트레이딩 검증 단계이며, 백테스트는 과거 데이터 시뮬레이션이지 실거래 기록이 아닙니다.",
+      en: "Runs on paper and small real-money accounts, labelled on /lab; backtests are historical simulations, not a real-money record.",
+      ko: "모의 계좌와 소액 실계좌를 함께 운용하며(/lab에 구분 표시), 백테스트는 과거 데이터 시뮬레이션이지 실거래 기록이 아닙니다.",
     },
   },
 ];
@@ -195,7 +195,7 @@ export const portfolioCardChips: Record<string, LocalizedText[]> = {
   "quant-trading-fleet": [
     { en: "Walk-forward OOS", ko: "walk-forward 검증" },
     { en: "Measured costs", ko: "실측 비용 반영" },
-    { en: "Paper trading", ko: "페이퍼 트레이딩" },
+    { en: "Paper + small real accounts", ko: "모의·소액 실계좌" },
   ],
   "financial-ai-model-study": [
     { en: "4 assignments", ko: "4개 과제" },

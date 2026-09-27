@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
+import FadeImage from './FadeImage';
+import { placeholderStyle } from './photo-placeholder';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { revealTarget, useBelowFoldReveal } from './motion/useBelowFoldReveal';
 import Lightbox from './Lightbox';
 import { cloudinary } from '@/lib/cloudinary';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
@@ -29,8 +31,6 @@ interface Photo {
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
-  const reduce = useReducedMotion();
-
   // 열린 사진이 URL에 있다.
   //
   // 45장짜리 앨범에서 한 장을 누군가에게 보여 주려면 "japan 앨범 열고 열두
@@ -109,68 +109,9 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
   return (
     <>
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
-        {photos.map((photo, i) => {
-          // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
-          const caption = photoCaption(photo);
-          const label = photoLabel(photo);
-          return (
-          <motion.button
-            key={photo.id}
-            type="button"
-            id={`photo-${photo.id}`}
-            className="break-inside-avoid group block w-full text-left cursor-pointer"
-            onClick={() => open(i)}
-            aria-label={`${label} 크게 보기`}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
-            whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.6, ease: EASE }}
-          >
-            <div className="relative overflow-hidden rounded-md bg-stone">
-              {/* Next 16 deprecates `priority` in favour of `preload`, but a
-                  preload link is the wrong migration for a masonry grid: the
-                  column count changes with the viewport, so which tile is the
-                  LCP element is not knowable from the markup — the docs name
-                  this case explicitly and point at these two props instead.
-                  Same treatment the Lightbox already uses. */}
-              <Image
-                src={cloudinary(photo.src, { watermark: true, width: 800 })}
-                alt={label}
-                width={0}
-                height={0}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
-                // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
-                // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
-                // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
-                //
-                // 비율만 쓴다. 폭은 `w-full`이 정하고, 원본 픽셀 크기(1500px 안팎으로
-                // 줄어 있다)는 프레임 크기에 관여하지 않는다. `auto`를 앞에 두는 이유:
-                // 이미지가 도착하면 **실제** 비율이 이긴다 — 저장된 값이 회전 전
-                // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
-                style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
-                draggable={false}
-                loading={i === 0 ? 'eager' : 'lazy'}
-                fetchPriority={i === 0 ? 'high' : 'auto'}
-              />
-            </div>
-            {(caption.title || caption.meta.length > 0) && (
-              <div className="mt-3">
-                {caption.title && (
-                  <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
-                    {caption.title}
-                  </p>
-                )}
-                {caption.meta.length > 0 && (
-                  <p className={`eyebrow text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
-                    {joinCaption(caption.meta)}
-                  </p>
-                )}
-              </div>
-            )}
-          </motion.button>
-          );
-        })}
+        {photos.map((photo, i) => (
+          <PhotoTile key={photo.id} photo={photo} index={i} onOpen={open} />
+        ))}
       </div>
 
       <AnimatePresence>
@@ -186,5 +127,94 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+/**
+ * 그리드의 한 칸. 훅(`useBelowFoldReveal`)을 타일마다 써야 해서 따로 뺐다.
+ *
+ * 등장 애니메이션은 마운트 때 뷰포트 아래에 있던 타일에만 걸린다. 서버 HTML에서는
+ * 모든 타일이 보이므로, CSS columns의 둘째·셋째 열 맨 위 타일도 하이드레이션을
+ * 기다리지 않는다 — 판정 방식은 훅의 주석.
+ */
+function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOpen: (index: number) => void }) {
+  const reduce = useReducedMotion();
+  const { ref, deferred, hidden } = useBelowFoldReveal<HTMLButtonElement>();
+  // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
+  const caption = photoCaption(photo);
+  const label = photoLabel(photo);
+  const hasCaption = Boolean(caption.title || caption.meta.length > 0);
+  // 접근 가능한 이름은 **보이는 캡션 그대로** + "크게 보기".
+  //
+  // `aria-label="${label} 크게 보기"`는 보이는 글자와 어긋났다. 제목이 없으면
+  // 화면에는 "Somewhere · 2019"가 찍히는데 이름은 "Somewhere 크게 보기"였고,
+  // 음성 제어로 "Somewhere · 2019 누르기"라고 말하는 사람은 이 버튼을 부를 수
+  // 없었다(Lighthouse label-content-name-mismatch, WCAG 2.5.3). 그렇다고
+  // 이름을 내용에서 계산하게 두면 사진의 `alt`(= 제목)가 한 번 더 읽힌다.
+  // 그래서 캡션 블록과 숨긴 동작 문구를 `aria-labelledby`로 잇는다 — `alt`는
+  // 이미지 자체의 설명으로 그대로 남는다. 캡션이 하나도 없는 사진은 보이는
+  // 글자가 없으니 어긋날 것도 없어, 예전처럼 `aria-label`을 쓴다.
+  const captionId = `photo-${photo.id}-caption`;
+  const actionId = `photo-${photo.id}-action`;
+  return (
+    <motion.button
+      ref={ref}
+      type="button"
+      id={`photo-${photo.id}`}
+      className="break-inside-avoid group block w-full text-left cursor-pointer"
+      onClick={() => onOpen(index)}
+      aria-labelledby={hasCaption ? `${captionId} ${actionId}` : undefined}
+      aria-label={hasCaption ? undefined : `${label} 크게 보기`}
+      initial={false}
+      animate={revealTarget(hidden, reduce)}
+      transition={{ duration: 0.6, ease: EASE }}
+    >
+      {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`). 프레임 크기는
+          아래 이미지가 정하므로, 사진이 오면 판을 정확히 덮는다. */}
+      <div className="relative overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
+        {/* Next 16 deprecates `priority` in favour of `preload`, but a
+            preload link is the wrong migration for a masonry grid: the
+            column count changes with the viewport, so which tile is the
+            LCP element is not knowable from the markup — the docs name
+            this case explicitly and point at these two props instead.
+            Same treatment the Lightbox already uses. */}
+        <FadeImage
+          src={cloudinary(photo.src, { watermark: true, width: 800 })}
+          alt={label}
+          width={0}
+          height={0}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="w-full h-auto block duration-700 group-hover:scale-105"
+          // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
+          // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
+          // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
+          //
+          // 비율만 쓴다. 폭은 `w-full`이 정하고, 원본 픽셀 크기(1500px 안팎으로
+          // 줄어 있다)는 프레임 크기에 관여하지 않는다. `auto`를 앞에 두는 이유:
+          // 이미지가 도착하면 **실제** 비율이 이긴다 — 저장된 값이 회전 전
+          // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
+          style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
+          draggable={false}
+          fadeIn={deferred}
+          loading={index === 0 ? 'eager' : 'lazy'}
+          fetchPriority={index === 0 ? 'high' : 'auto'}
+        />
+      </div>
+      {hasCaption && (
+        <div id={captionId} className="mt-3">
+          {caption.title && (
+            <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
+              {caption.title}
+            </p>
+          )}
+          {caption.meta.length > 0 && (
+            <p className={`eyebrow text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
+              {joinCaption(caption.meta)}
+            </p>
+          )}
+        </div>
+      )}
+      {hasCaption && <span id={actionId} className="sr-only">크게 보기</span>}
+    </motion.button>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import PhotoGrid from '@/components/PhotoGrid';
 import { cleanCaptionField } from '@/lib/caption';
+import { CAMERA_PARAM, cameraOptions, matchesCamera } from '@/lib/camera';
 import type { MapPlace } from '@/lib/places';
 
 /**
@@ -19,7 +20,7 @@ const PlaceMap = dynamic(() => import('./PlaceMap'), {
 });
 
 /**
- * 아카이브 전체를 연도·장소로 좁혀 본다.
+ * 아카이브 전체를 연도·장소·카메라로 좁혀 본다.
  *
  * 290장이 다섯 앨범에 흩어져 있는데 앨범 단위 순회만 가능했다. 두 값 모두
  * 이미 모든 사진에 붙어 있으므로, 새로 입력할 것 없이 질문만 바꾸면 된다 —
@@ -76,6 +77,39 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
   const [place, setPlace] = useState<string>(ALL);
   const [limit, setLimit] = useState(PAGE);
   const [mapOpen, setMapOpen] = useState(false);
+  const [camera, setCameraState] = useState<string>(ALL);
+
+  // 카메라 선택지. 사진 페이지의 "카메라" 줄이 같은 값(`lib/camera`)으로 링크한다.
+  const cameras = useMemo(() => cameraOptions(photos), [photos]);
+
+  // `?camera=`는 사진 페이지에서 들어오는 길이다. `PhotoGrid`의 `?p=`와 같은 이유로
+  // `useSearchParams`가 아니라 히스토리 API로 읽는다 — 그 훅은 Suspense 경계를
+  // 요구하고, 그러면 `/archive`가 정적 프리렌더를 잃는다. 필터 결과는 어차피
+  // 클라이언트에서 그리므로 첫 진입에 한 번 읽으면 된다.
+  //
+  // 선택지에 없는 값(옛 링크, 그 카메라 사진을 모두 숨긴 뒤)은 조용히 무시한다 —
+  // "조건에 맞는 사진이 없습니다"보다 최근 사진이 낫다.
+  // 서버 HTML에는 조건 없는 화면이 들어 있고(주소창은 서버가 모른다), 하이드레이션
+  // 뒤에 주소창이라는 바깥 상태를 한 번 읽어 맞춘다 — `PhotoGrid`의 `read()`와 같은 모양.
+  useEffect(() => {
+    const read = () => {
+      const wanted = new URLSearchParams(window.location.search).get(CAMERA_PARAM);
+      if (wanted && cameras.some(option => option.value === wanted)) setCameraState(wanted);
+    };
+    read();
+  }, [cameras]);
+
+  // 카메라만 주소에 남긴다. 들어온 링크가 `?camera=`였는데 다른 카메라를 고른 뒤
+  // 새로고침하면 옛 조건으로 돌아가는 것은 이상하다. 연도·장소까지 주소에
+  // 싣는 것은 이 변경의 범위 밖이라 그대로 둔다. `?p=` 같은 다른 값은 지킨다.
+  function setCamera(next: string) {
+    setCameraState(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === ALL) params.delete(CAMERA_PARAM);
+    else params.set(CAMERA_PARAM, next);
+    const query = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }
 
   // 목록은 데이터에서 만든다. 비어 있는 값은 선택지로 두지 않는다.
   const years = useMemo(
@@ -95,12 +129,13 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
       photos.filter(
         p =>
           (year === ALL || String(p.year) === year) &&
-          (place === ALL || p.location?.trim() === place),
+          (place === ALL || p.location?.trim() === place) &&
+          (camera === ALL || matchesCamera(p, camera)),
       ),
-    [photos, year, place],
+    [photos, year, place, camera],
   );
 
-  const active = year !== ALL || place !== ALL;
+  const active = year !== ALL || place !== ALL || camera !== ALL;
   const shown = filtered.slice(0, limit);
 
   // "최근"은 id 순서다 — 홈의 최근 아카이브 띠와 같은 기준.
@@ -115,14 +150,23 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
     setLimit(PAGE);
   }
 
+  function reset() {
+    narrow(() => {
+      setYear(ALL);
+      setPlace(ALL);
+      setCamera(ALL);
+    });
+  }
+
   return (
     <div className="max-w-[1400px] mx-auto">
       {/* 필터 패널. 연도는 열 개 남짓이라 전부 칩으로 펼친다 — 무엇이 있는지가
           곧 정보다. 장소는 36곳이라 칩으로 펼치면 패널이 사진보다 길어지므로,
-          같은 pill 모양의 select로 접는다. */}
+          같은 pill 모양의 select로 접는다. 카메라도 같은 모양이다 — 여덟 대뿐이지만
+          모델명이 길어("iPhone 15 Pro Max · 100") 칩으로 펼치면 폰에서 네 줄이 된다. */}
       <div className="mb-8 md:mb-10 space-y-5 border-y border-hairline py-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
-          <span className="label-ko text-muted-foreground sm:w-10 sm:pt-2.5 shrink-0" id="filter-year-label">연도</span>
+          <span className="label-ko text-muted-foreground sm:w-12 sm:pt-2.5 shrink-0" id="filter-year-label">연도</span>
           <div role="group" aria-labelledby="filter-year-label" className="flex flex-wrap gap-2">
             {[ALL, ...years.map(String)].map(y => (
               <button
@@ -140,30 +184,14 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-          <label htmlFor="filter-place" className="label-ko text-muted-foreground sm:w-10 shrink-0">장소</label>
+          <label htmlFor="filter-place" className="label-ko text-muted-foreground sm:w-12 shrink-0">장소</label>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <span className="relative inline-flex items-center">
-              <select
-                id="filter-place"
-                value={place}
-                onChange={e => narrow(() => setPlace(e.target.value))}
-                data-active={place !== ALL}
-                className="btn-outline appearance-none cursor-pointer pr-10 max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                <option value={ALL}>전체 장소</option>
-                {places.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <svg
-                aria-hidden
-                viewBox="0 0 12 12"
-                className={`pointer-events-none absolute right-4 h-3 w-3 ${place !== ALL ? 'text-primary-foreground' : 'text-muted-foreground'}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
+            <PillSelect
+              id="filter-place"
+              value={place}
+              onChange={value => narrow(() => setPlace(value))}
+              options={[{ value: ALL, label: '전체 장소' }, ...places.map(p => ({ value: p, label: p }))]}
+            />
 
             {/* 좌표가 하나도 없으면(마이그레이션 전이거나 아직 채우지 않았으면)
                 토글 자체가 없다 — 빈 세계 지도를 여는 버튼은 고장처럼 보인다. */}
@@ -181,23 +209,13 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
                 {mapOpen ? '지도 닫기' : '지도로 보기'}
               </button>
             )}
-
-            {active && (
-              <button
-                type="button"
-                onClick={() => narrow(() => { setYear(ALL); setPlace(ALL); })}
-                className="btn-ghost focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                조건 초기화
-              </button>
-            )}
           </div>
         </div>
 
         {mapOpen && mapPlaces.length > 0 && (
           <div id="archive-map-panel">
             {/* 점을 누르면 위의 장소 선택과 **같은** 상태를 바꾼다. 같은 점을 다시
-                누르면 풀린다. 연도 조건은 그대로 둔다. */}
+                누르면 풀린다. 연도·카메라 조건은 그대로 둔다. */}
             <PlaceMap
               places={mapPlaces}
               selected={place === ALL ? null : place}
@@ -206,13 +224,44 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
           </div>
         )}
 
+        {/* 카메라가 기록된 사진이 없으면(촬영 정보 채우기 전) 줄 자체가 없다. */}
+        {cameras.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+            <label htmlFor="filter-camera" className="label-ko text-muted-foreground sm:w-12 shrink-0">카메라</label>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <PillSelect
+                id="filter-camera"
+                value={camera}
+                onChange={value => narrow(() => setCamera(value))}
+                options={[
+                  { value: ALL, label: '전체 카메라' },
+                  // 장수는 전체 기준이다. 연도·장소에 따라 바뀌는 숫자는 선택지가
+                  // 움직이는 것처럼 보이고, "0장"인 선택지를 따로 다뤄야 한다.
+                  ...cameras.map(option => ({ value: option.value, label: `${option.label} (${option.count})` })),
+                ]}
+              />
+            </div>
+          </div>
+        )}
+
         {/* 결과 수는 본문 글씨로. 한국어에 모노 대문자 자간을 걸면 글자가
             흩어져 숫자가 읽히지 않았다. */}
-        <p className="text-sm text-slate" aria-live="polite">
-          {active
-            ? <>전체 {photos.length}장 중 <span className="font-medium text-ink tabular-nums">{filtered.length}장</span></>
-            : <>최근 올라온 {recent.length}장을 보여 드립니다. 연도나 장소를 고르면 전체 {photos.length}장에서 찾습니다.</>}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <p className="text-sm text-slate" aria-live="polite">
+            {active
+              ? <>전체 {photos.length}장 중 <span className="font-medium text-ink tabular-nums">{filtered.length}장</span></>
+              : <>최근 올라온 {recent.length}장을 보여 드립니다. 연도·장소·카메라를 고르면 전체 {photos.length}장에서 찾습니다.</>}
+          </p>
+          {active && (
+            <button
+              type="button"
+              onClick={reset}
+              className="btn-ghost focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              조건 초기화
+            </button>
+          )}
+        </div>
       </div>
 
       {!active ? (
@@ -223,7 +272,7 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
         <>
           {/* 조건이 바뀌면 그리드를 새로 만든다. 재사용하면 사진이 자리만
               바뀌면서 스크롤 리빌 애니메이션이 어긋난다. */}
-          <PhotoGrid key={`${year}-${place}`} photos={shown} />
+          <PhotoGrid key={`${year}-${place}-${camera}`} photos={shown} />
           {filtered.length > shown.length && (
             <div className="mt-10 text-center">
               <button
@@ -239,15 +288,52 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
       ) : (
         <div className="py-16 text-center space-y-4">
           <p className="text-base text-slate">조건에 맞는 사진이 없습니다.</p>
-          <button
-            type="button"
-            onClick={() => narrow(() => { setYear(ALL); setPlace(ALL); })}
-            className="btn-outline"
-          >
+          <button type="button" onClick={reset} className="btn-outline">
             조건 초기화
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 필터용 pill select. 장소와 카메라가 같은 모양을 쓴다 — `.btn-outline`에
+ * 펼침 표시를 얹고, 고른 상태(`data-active`)면 forest로 뒤집힌다.
+ */
+function PillSelect({
+  id,
+  value,
+  onChange,
+  options,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  const active = value !== ALL;
+  return (
+    <span className="relative inline-flex items-center">
+      <select
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        data-active={active}
+        className="btn-outline appearance-none cursor-pointer pr-10 max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <svg
+        aria-hidden
+        viewBox="0 0 12 12"
+        className={`pointer-events-none absolute right-4 h-3 w-3 ${active ? 'text-primary-foreground' : 'text-muted-foreground'}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 }

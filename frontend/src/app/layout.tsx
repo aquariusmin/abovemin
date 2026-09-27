@@ -11,6 +11,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
+import MotionProvider from '@/components/motion/MotionProvider';
 import { SITE_URL } from '@/lib/site';
 import { hasPublishedNotes } from '@/lib/supabase';
 
@@ -75,11 +76,22 @@ const korean = IBM_Plex_Sans_KR({
 // actually downloads only `latin` — against the 150–330 KB a Korean weight
 // would cost. It earns that by carrying every emphasised mono label: table
 // headers, status chips, stat values, the Lab's whole data surface.
+//
+// Not preloaded. What stays preloaded is exactly what the first paint's large
+// text is set in: Fraunces (the hero <h1>) and Plex Sans (body, nav) — both
+// ship as one variable file each, so that is two requests. Mono is static, one
+// file per weight, and preloading it put three more High-priority woff2 in the
+// queue ahead of the hero photograph (Lighthouse: 5 preloads, ~106 KB, LCP
+// 4.9 s). Above the fold mono only carries the 11px eyebrow; `swap` paints it
+// in the fallback mono and the real face arrives through the ordinary
+// @font-face discovery a beat later — a shift nobody reads, against an LCP
+// image that no longer shares its first round trips with three font files.
 const mono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-mono',
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -119,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main-content" className="skip-link">본문 바로가기</a>
         <Nav />
         <div id="main-content" className="flex-grow pt-[72px] md:pt-[88px]">
-          {children}
+          <MotionProvider>{children}</MotionProvider>
         </div>
         <Footer hasNotes={hasNotes} />
         {/* 방문 통계와 실사용자 Core Web Vitals.

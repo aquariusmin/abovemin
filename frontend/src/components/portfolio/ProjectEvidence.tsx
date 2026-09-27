@@ -310,12 +310,14 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
   const checklist = locale === "ko"
     ? [
         ["라이브 서버 모의투자", "모의"],
+        ["소액 실계좌 운용 · /lab에 계좌 구분 표시", "실계좌"],
         ["봇 상태·설정 제어", "구현"],
         ["실행 이력·운영 로그", "구현"],
         ["사람이 멈출 수 있는 제어 흐름", "구현"],
       ]
     : [
         ["Live-server paper trading", "Paper"],
+        ["Small real-money accounts · labelled on /lab", "Real"],
         ["Bot state and setting controls", "Implemented"],
         ["Execution history and logs", "Implemented"],
         ["Human stop-and-control flow", "Implemented"],
@@ -330,8 +332,8 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
         source="Current FastAPI/React architecture and portfolio codebase"
         caption={
           locale === "ko"
-            ? "전략, 브로커 추상화 계층, 실행 데이터, 제어 API와 모니터링의 연결을 보여줍니다. 구조가 구현되어 있다는 근거이며, 실거래 운영이나 수익률·승률·수익성을 증명하지 않습니다."
-            : "The diagram shows the connection among strategies, broker abstraction, execution data, controls, and monitoring. It supports the implemented architecture; it does not evidence real-money operation, returns, win rate, or profitability."
+            ? "전략, 브로커 추상화 계층, 실행 데이터, 제어 API와 모니터링의 연결을 보여줍니다. 구조가 구현되어 있다는 근거이며, 수익률·승률·수익성을 증명하지 않습니다."
+            : "The diagram shows the connection among strategies, broker abstraction, execution data, controls, and monitoring. It supports the implemented architecture; it does not evidence returns, win rate, or profitability."
         }
       >
         <FlowDiagram items={architecture} compact />
@@ -340,12 +342,12 @@ function QuantEvidence({ locale }: { locale: EvidenceLocale }) {
       <EvidenceFigure
         locale={locale}
         status="verified"
-        title={locale === "ko" ? "모의투자 운영 범위" : "Paper-trading operating scope"}
+        title={locale === "ko" ? "모의·실계좌 운영 범위" : "Paper and real-money operating scope"}
         source="Implemented controls in the current FastAPI/React project"
         caption={
           locale === "ko"
-            ? "현재 구현된 운영 기능만 간단히 정리했습니다. 이 표는 실거래 성과나 수익률을 보여주는 자료가 아닙니다."
-            : "The table summarizes implemented operating controls only. It does not report or imply real-money performance."
+            ? "현재 구현된 운영 기능만 간단히 정리했습니다. 소액 실계좌가 돌고 있지만, 이 표는 실거래 성과나 수익률을 보여주는 자료가 아닙니다."
+            : "The table summarizes implemented operating controls only. Small real-money accounts are running, but the table does not report or imply their performance."
         }
       >
         <Checklist rows={checklist} locale={locale} />
@@ -733,7 +735,7 @@ function Checklist({ rows, locale }: { rows: string[][]; locale: EvidenceLocale 
         </li>
       ))}
       <li className="md:col-span-2 bg-brick/[0.05] p-4 font-sans text-xs leading-relaxed text-brick">
-        {locale === "ko" ? "Paper-trading 검증 전용 · 실거래 운영 및 수익 성과를 주장하지 않습니다." : "Paper-trading validation only · no real-money operation or return claim."}
+        {locale === "ko" ? "모의 계좌와 소액 실계좌 병행 · 수익률·승률·자본 증가를 주장하지 않습니다." : "Paper and small real-money accounts · no return, win-rate, or capital-growth claim."}
       </li>
     </ul>
   );

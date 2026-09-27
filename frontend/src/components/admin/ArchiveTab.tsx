@@ -8,6 +8,7 @@ import PhotoUploadPanel from './PhotoUploadPanel';
 import PhotoManager, { type PhotoFilter } from './PhotoManager';
 import LocationRename from './LocationRename';
 import { INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 아카이브 사진 관리. 앨범 하나를 골라 두고 그 아래에서 세 가지를 한다.
@@ -27,7 +28,7 @@ export interface AlbumOption {
   photo_count: number;
 }
 
-const FILTERS: PhotoFilter[] = ['all', 'untitled', 'nolocation', 'hidden'];
+const FILTERS: PhotoFilter[] = ['all', 'untitled', 'nolocation', 'hidden', 'yearmismatch', 'lowres', 'noexif', 'gps'];
 
 function isFilter(value: string | null): value is PhotoFilter {
   return FILTERS.includes(value as PhotoFilter);
@@ -58,6 +59,7 @@ export default function ArchiveTab() {
 
   // 앨범 선택지(장수 포함). 업로드·이동·삭제 뒤에 `albumsKey`를 올려 다시 읽는다.
   const [albumsKey, setAlbumsKey] = useState(0);
+  const [albumsFailed, setAlbumsFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +69,9 @@ export default function ArchiveTab() {
         if (cancelled) return;
         setAlbums(data.albums);
         setAlbumSlug(prev => prev || data.albums[0]?.slug || '');
+        setAlbumsFailed(false);
       } catch {
+        if (!cancelled) setAlbumsFailed(true);
         // 앨범을 못 불러오면 선택지가 비고, 업로드 영역이 잠긴 채로 남는다.
       }
     })();
@@ -75,6 +79,9 @@ export default function ArchiveTab() {
       cancelled = true;
     };
   }, [albumsKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(albumsFailed, () => setAlbumsKey(n => n + 1));
 
   const handleSaved = useCallback(() => {
     setRefreshToken(n => n + 1);

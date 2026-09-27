@@ -21,6 +21,15 @@ export interface FleetBot {
   market: Market;
   equity: number;
   pnl_pct: number;
+  /**
+   * Return since the bot's previous daily cycle (~the prior close).
+   *
+   * Null is a real, frequent answer, not just a pre-migration gap: the sync
+   * writes it only while the baseline it comes from is at most a day old, so a
+   * bot that stopped cycling reports nothing rather than a multi-day return
+   * labelled as today's. Render "—", never 0.
+   */
+  day_pnl_pct: number | null;
   position_pct: number | null;
   holdings_count: number | null;
   holdings: Record<string, Holding> | null;
@@ -247,11 +256,20 @@ export function lastCycle(points: EquityPoint[], syncedAt: string): number {
  * Deliberately not `updated_at` — that is stamped by the sync container, so a
  * bot dead for weeks keeps a fresh-looking row while the sync lives. Feed it
  * `lastCycle`. Thresholds match the daily cadence every bot here runs on.
+ *
+ * `now` is a parameter so a server-rendered page can judge against the same
+ * instant on the server and on the hydrating client. Unlike a relative-time
+ * string, this verdict picks a pill's words AND its tone, and
+ * `suppressHydrationWarning` only covers text — so it must not be allowed to
+ * differ between the two renders in the first place.
  */
-export function staleness(lastSeen: number | string): "live" | "lagging" | "stale" {
+export function staleness(
+  lastSeen: number | string,
+  now: number = Date.now(),
+): "live" | "lagging" | "stale" {
   const t = typeof lastSeen === "number" ? lastSeen : Date.parse(lastSeen);
   if (!Number.isFinite(t)) return "stale";
-  const hours = (Date.now() - t) / 3_600_000;
+  const hours = (now - t) / 3_600_000;
   if (hours <= 30) return "live";
   if (hours <= 72) return "lagging";
   return "stale";
