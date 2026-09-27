@@ -1,18 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { timingSafeEqual } from 'crypto';
-import { signSession, revoke, SESSION_COOKIE, isAdminRequest } from '@/lib/auth';
+import { signSession, revoke, SESSION_COOKIE, isAdminRequest, passwordMatches } from '@/lib/auth';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-
-function passwordMatches(input: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false;
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 
 /**
  * 지금 이 브라우저가 로그인 상태인지 묻는다.
@@ -41,12 +31,21 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({ password: '' }));
   const password = typeof body?.password === 'string' ? body.password : '';
 
-  if (!passwordMatches(password)) {
+  if (!passwordMatches(password, process.env.ADMIN_PASSWORD)) {
     log.warn('admin_auth_failed', { ip });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { token, expires } = signSession();
+  // 비밀번호는 맞았는데 세션 시크릿이 없다: 설정 문제다. 500으로 터지는 대신
+  // 무엇이 빠졌는지 로그에 남기고 503으로 답한다.
+  let session: ReturnType<typeof signSession>;
+  try {
+    session = signSession();
+  } catch (error) {
+    log.error('admin_session_secret_unavailable', error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: 'Admin session is not configured' }, { status: 503 });
+  }
+  const { token, expires } = session;
   const response = NextResponse.json({ ok: true });
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

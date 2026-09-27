@@ -18,9 +18,16 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '' });
+  // 완료 화면의 금액. 장바구니의 가격은 담을 때 본 값이라, 그 사이 가격이 바뀌었으면
+  // 서버가 DB에서 다시 계산한 합계와 다르다 — 입금할 금액은 서버 쪽이다.
+  const [placed, setPlaced] = useState<{ total: number; cartTotal: number } | null>(null);
+  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+  // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
+  // 키가 가므로, 첫 요청이 사실은 저장됐다면 서버는 새로 넣지 않고 그 주문으로
+  // 답한다. 새 키는 주문이 성공한 뒤에만 만든다.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const [mounted, setMounted] = useState(false);
 
@@ -77,6 +84,9 @@ export default function CheckoutPage() {
       address: form.address.trim(),
       note: form.note.trim() || null,
       items: toOrderItems(items),
+      idempotency_key: idempotencyKey,
+      // 허니팟 — 사람에게는 늘 빈 칸이다. 비었으면 키째 뺀다.
+      ...(form.website ? { website: form.website } : {}),
     };
 
     try {
@@ -111,7 +121,14 @@ export default function CheckoutPage() {
         return;
       }
 
+      const cartTotal = totalPrice();
+      const serverTotal = await res
+        .json()
+        .then((body: unknown) => (body as { total_price?: unknown })?.total_price)
+        .catch(() => undefined);
+      setPlaced({ total: typeof serverTotal === 'number' ? serverTotal : cartTotal, cartTotal });
       clearCart();
+      setIdempotencyKey(crypto.randomUUID());
       setDone(true);
     } catch {
       setOrderError('네트워크 오류로 주문을 보내지 못했습니다. 연결을 확인하고 다시 시도해주세요.');
@@ -136,9 +153,21 @@ export default function CheckoutPage() {
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
-        <p className="text-[15px] text-ink-body mb-10 break-keep">
+        <p className="text-[15px] text-ink-body mb-6 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
+        {placed && (
+          <div className="mb-10">
+            <p className="text-[15px] text-ink-body">
+              입금하실 금액 <span className="font-semibold text-ink tabular-nums">₩&nbsp;{placed.total.toLocaleString()}</span>
+            </p>
+            {placed.total !== placed.cartTotal && (
+              <p className="mt-2 text-xs text-brick break-keep">
+                장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
+              </p>
+            )}
+          </div>
+        )}
         <Link href="/shop" className="btn-primary">계속 둘러보기</Link>
       </main>
     );
@@ -250,6 +279,23 @@ export default function CheckoutPage() {
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                 placeholder="문 앞에 놓아주세요"
+              />
+            </div>
+
+            {/* 허니팟. 사람에게는 보이지도, 읽히지도, 탭으로 닿지도 않는다 —
+                폼을 통째로 채우는 봇만 여기에 값을 넣는다. `display:none`이
+                아닌 이유: 그건 봇도 건너뛴다. 서버는 채워진 주문을 성공처럼
+                답하고 버린다(`api/orders`). */}
+            <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+              <label htmlFor="website">웹사이트</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
               />
             </div>
 

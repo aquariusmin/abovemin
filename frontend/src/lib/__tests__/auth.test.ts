@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { signSession, verifySession, revoke, assertSameOrigin } from '@/lib/auth';
+import { signSession, verifySession, revoke, assertSameOrigin, passwordMatches } from '@/lib/auth';
 
 afterEach(() => vi.useRealTimers());
 
@@ -76,5 +76,42 @@ describe('공유 저장소가 없을 때', () => {
     expect(kvEnabled).toBe(false);
     expect(await exists('anything')).toBeNull();
     expect(await setWithTtl('a', 'b', 10)).toBe(false);
+  });
+});
+
+describe('passwordMatches', () => {
+  it('같은 값만 통과한다', () => {
+    expect(passwordMatches('correct horse', 'correct horse')).toBe(true);
+    expect(passwordMatches('correct hors', 'correct horse')).toBe(false);
+    expect(passwordMatches('correct horse!', 'correct horse')).toBe(false);
+    expect(passwordMatches('', 'correct horse')).toBe(false);
+  });
+
+  it('길이가 달라도 throw하지 않는다 — 해시로 길이를 맞춘다', () => {
+    expect(() => passwordMatches('a'.repeat(1000), 'b')).not.toThrow();
+  });
+
+  it('설정된 비밀번호가 없으면 아무것도 통과하지 않는다', () => {
+    expect(passwordMatches('', undefined)).toBe(false);
+    expect(passwordMatches('', '')).toBe(false);
+  });
+});
+
+describe('세션 시크릿이 없을 때', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('검증이 throw하지 않고 "로그인 안 됨"으로 답한다', async () => {
+    vi.stubEnv('ADMIN_SESSION_SECRET', '');
+    vi.stubEnv('ADMIN_PASSWORD', '');
+    vi.resetModules();
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fresh = await import('@/lib/auth');
+    const token = `${'a'.repeat(32)}:${Date.now()}:${Date.now() + 60_000}:${'0'.repeat(64)}`;
+    expect(fresh.verifySession(token)).toBe(false);
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('admin_session_secret_unavailable'));
+    spy.mockRestore();
   });
 });
