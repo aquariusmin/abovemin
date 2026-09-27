@@ -3,10 +3,12 @@ import { log } from './logger';
 /**
  * 선택적 공유 저장소. 설정돼 있으면 쓰고, 없으면 없는 대로 동작한다.
  *
- * 레이트 리미터와 세션 무효화는 in-memory라, 서버리스에서는 인스턴스마다
- * 따로 센다 — "15분에 5회" 제한이 실제로는 "인스턴스당 5회"이고, 로그아웃한
- * 세션이 다른 인스턴스에서는 여전히 살아 있다. 두 파일의 주석 모두 Upstash를
- * 권했지만 그대로였다.
+ * 세션 무효화는 in-memory라, 서버리스에서는 로그아웃한 세션이 다른
+ * 인스턴스에서 여전히 살아 있다. 이 모듈이 있으면 그걸 인스턴스 너머로 적는다.
+ *
+ * 레이트 리미터(`rateLimitShared`)도 여기를 먼저 보지만, 없으면 Supabase
+ * Postgres(`public.rate_limit_hit`)로 센다 — 프로덕션에는 Upstash가 없으므로
+ * 공유 레이트 리밋은 실제로 Postgres 경로다. `lib/rate-limit.ts` 참고.
  *
  * SDK를 넣지 않고 REST를 직접 부르는 이유: Upstash REST는 토큰 하나를 붙인
  * HTTPS 요청이고, 이 저장소는 레이트 리미터도 로거도 직접 쓴 곳이다.
@@ -16,8 +18,8 @@ import { log } from './logger';
  * Vercel Marketplace에서 Upstash Redis를 붙이면 아래 두 변수가 들어온다.
  *   UPSTASH_REDIS_REST_URL
  *   UPSTASH_REDIS_REST_TOKEN
- * 없으면 이 모듈의 모든 함수가 `null`을 돌려주고, 호출부는 기존의 in-memory
- * 경로를 그대로 탄다. 즉 **설정하지 않아도 아무것도 깨지지 않는다.**
+ * 없으면 이 모듈의 모든 함수가 `null`을 돌려주고, 호출부는 다음 경로(레이트
+ * 리밋은 Postgres, 세션 무효화는 in-memory)를 탄다. 즉 **설정하지 않아도 아무것도 깨지지 않는다.**
  */
 const URL_ = process.env.UPSTASH_REDIS_REST_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
