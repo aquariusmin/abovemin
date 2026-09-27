@@ -159,9 +159,9 @@ export default function CartPage() {
             </button>
           )}
 
-          <div className="w-full md:w-auto rounded-lg bg-stone p-6 md:min-w-[280px]">
+          <div className="w-full md:w-auto rounded-lg surface-cream p-6 md:min-w-[280px]">
             <div className="flex items-baseline justify-between mb-5">
-              <span className="eyebrow text-muted-foreground">Total</span>
+              <span className="eyebrow text-slate">Total</span>
               <span className="text-2xl font-semibold text-ink tabular-nums" aria-live="polite">
                 ₩&nbsp;{totalPrice().toLocaleString()}
               </span>
