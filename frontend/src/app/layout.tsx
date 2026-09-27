@@ -11,6 +11,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
+import MotionProvider from '@/components/motion/MotionProvider';
 import { SITE_URL } from '@/lib/site';
 import { hasPublishedNotes } from '@/lib/supabase';
 
@@ -130,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main-content" className="skip-link">본문 바로가기</a>
         <Nav />
         <div id="main-content" className="flex-grow pt-[72px] md:pt-[88px]">
-          {children}
+          <MotionProvider>{children}</MotionProvider>
         </div>
         <Footer hasNotes={hasNotes} />
         {/* 방문 통계와 실사용자 Core Web Vitals.
