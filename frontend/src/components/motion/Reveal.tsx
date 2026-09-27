@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useStartsBelowFold } from './useStartsBelowFold';
 
 // Shared editorial easing — slow settle, no bounce.
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -24,7 +25,18 @@ interface RevealProps {
 
 /**
  * Fades + rises its children into view the first time they scroll into the
- * viewport.
+ * viewport — but only if they started below the fold.
+ *
+ * The server HTML never hides anything: every `Reveal` is painted at full
+ * opacity from the first byte, so a page header above the fold is part of the
+ * first paint (and the LCP candidate) instead of waiting for hydration. Right
+ * after hydration, before the browser paints again, `useStartsBelowFold`
+ * measures the element; only one that sits below the viewport is dropped to
+ * opacity 0 — invisibly, since it is off screen — and fades in when it
+ * scrolls into view. The same principle as the grid tiles
+ * (`useBelowFoldReveal`), without the framer runtime. With no JS the effect
+ * never runs, so the content simply stays visible. Opacity and transform don't
+ * affect layout, so hiding causes no shift.
  *
  * Deliberately NOT framer-motion. This is a one-shot fade-and-rise with no
  * gestures, no layout animation, no variants and no exit — an
@@ -47,10 +59,13 @@ export default function Reveal({
   y = 20,
   amount = 0.2,
 }: RevealProps) {
-  const ref = useRef<HTMLElement>(null);
+  const { ref, deferred } = useStartsBelowFold<HTMLElement>();
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
+    // Started on screen (or not measured yet): it is already visible and
+    // never animates.
+    if (!deferred) return;
     const el = ref.current;
     if (!el) return;
     // No observer (a pre-2019 browser, or a jsdom-style environment): show the
@@ -73,15 +88,19 @@ export default function Reveal({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [amount]);
+  }, [deferred, amount, ref]);
 
-  const style: CSSProperties = {
-    opacity: shown ? 1 : 0,
-    transform: shown ? 'none' : `translateY(${y}px)`,
-    transition: `opacity ${DURATION}s ${EASE} ${delay}s, transform ${DURATION}s ${EASE} ${delay}s`,
-    willChange: shown ? undefined : 'opacity, transform',
-  };
-  const reveal = shown ? 'shown' : 'hidden';
+  const hidden = deferred && !shown;
+  // Visible: no inline opacity/transform at all, so the server HTML carries
+  // nothing that could hold the content back. The transition is attached only
+  // once it is actually animating in — dropping to hidden happens off screen
+  // and must be instant, not a 0.6s fade-out.
+  const style: CSSProperties | undefined = hidden
+    ? { opacity: 0, transform: `translateY(${y}px)`, willChange: 'opacity, transform' }
+    : shown
+      ? { transition: `opacity ${DURATION}s ${EASE} ${delay}s, transform ${DURATION}s ${EASE} ${delay}s` }
+      : undefined;
+  const reveal = hidden ? 'hidden' : 'shown';
 
   // Written out per tag rather than through `createElement(as, …)`: a ref
   // handed to a call whose callee is a variable can't be seen as a host
