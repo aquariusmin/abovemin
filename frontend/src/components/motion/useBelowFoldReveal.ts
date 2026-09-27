@@ -1,7 +1,7 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from 'react';
 import { useInView } from 'framer-motion';
+import { useStartsBelowFold } from './useStartsBelowFold';
 
 /**
  * 스크롤 등장 애니메이션을 **첫 화면 밖에서 시작한 타일에만** 건다.
@@ -23,18 +23,9 @@ import { useInView } from 'framer-motion';
  * - `hidden`: 아직 들어오지 않았다. `animate`를 숨김 상태로 둘 때 쓴다.
  */
 export function useBelowFoldReveal<T extends Element>(amount = 0.15) {
-  const ref = useRef<T>(null);
-  const [deferred, setDeferred] = useState(false);
+  // 재는 부분은 framer 없는 `Reveal`과 같은 훅을 쓴다.
+  const { ref, deferred } = useStartsBelowFold<T>();
   const inView = useInView(ref, { once: true, amount });
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // 레이아웃을 재서 그 결과로 다시 그리는 것은 layout effect의 본래 용도다
-    // — 다음 페인트 전에 끝나므로 숨는 순간이 화면에 찍히지 않는다.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (el.getBoundingClientRect().top > window.innerHeight) setDeferred(true);
-  }, []);
 
   return { ref, deferred, hidden: deferred && !inView };
 }
