@@ -12,10 +12,27 @@ import TimelineYearIndex from '@/components/archive/TimelineYearIndex';
 import { storedRatioStyle } from '@/components/photo-placeholder';
 import { buildFallback } from '@/lib/build-phase';
 
+const TITLE = 'Timeline';
+const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로 — 연도와 달로 나눠 봅니다.';
+
+// 공유 카드가 사이트 기본값을 달고 나가지 않게(`/archive`의 metadata 주석).
 export const metadata: Metadata = {
-  title: 'Timeline',
-  description: 'phorage 아카이브의 사진을 찍은 날짜순으로 — 연도와 달로 나눠 봅니다.',
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: '/archive/timeline' },
+  openGraph: {
+    title: `${TITLE} | phorage`,
+    description: DESCRIPTION,
+    url: '/archive/timeline',
+    siteName: 'phorage',
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${TITLE} | phorage`,
+    description: DESCRIPTION,
+  },
 };
 
 // `/archive`와 같다. `revalidateArchive()`가 사진이 바뀔 때 이 경로도 무효화한다.

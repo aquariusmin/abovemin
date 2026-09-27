@@ -8,10 +8,29 @@ import ArchiveGrid from '@/components/archive/ArchiveGrid';
 import { buildFallback } from '@/lib/build-phase';
 import PhotoFilter from '@/components/archive/PhotoFilter';
 
+const TITLE = 'Archive';
+const DESCRIPTION = "Yesterday's light, collected today. phorage의 사진 아카이브.";
+
+// `openGraph`·`twitter`는 루트 것을 통째로 갈아 끼운다(얕은 병합). 적지 않으면
+// 공유 카드가 사이트 기본 제목과 설명을 달고 나간다. 이미지는 적지 않는다 —
+// 루트의 `opengraph-image`가 그대로 나간다.
 export const metadata: Metadata = {
-  title: 'Archive',
-  description: "Yesterday's light, collected today. phorage의 사진 아카이브.",
-  alternates: { canonical: "/archive" },
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: '/archive' },
+  openGraph: {
+    title: `${TITLE} | phorage`,
+    description: DESCRIPTION,
+    url: '/archive',
+    siteName: 'phorage',
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${TITLE} | phorage`,
+    description: DESCRIPTION,
+  },
 };
 
 // 업로드/삭제 시 `revalidateArchive()`가 이 경로를 무효화한다. 300초는
