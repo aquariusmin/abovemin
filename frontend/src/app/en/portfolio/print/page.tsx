@@ -13,5 +13,12 @@ export default async function EnglishPortfolioPrintPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  return <PortfolioPrintContent locale="en" route={from === "submission" ? "submission" : "normal"} />;
+  // Curated ordering, as on /en/portfolio itself — see the Korean print page.
+  return (
+    <PortfolioPrintContent
+      locale="en"
+      mode="submission"
+      route={from === "submission" ? "submission" : "normal"}
+    />
+  );
 }

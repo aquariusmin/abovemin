@@ -16,7 +16,7 @@ const WHAT_I_DO = [
   { title: 'Portfolio', href: '/portfolio', action: '프로젝트 보기',
     desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.' },
   { title: 'Lab', href: '/lab', action: '대시보드 보기', italic: true,
-    desc: '페이퍼 트레이딩 검증 환경에서 전략과 운영 데이터를 관찰합니다.' },
+    desc: '모의 계좌와 소액 실계좌에서 돌아가는 전략과 운영 데이터를 관찰합니다.' },
 ];
 
 export default function About() {

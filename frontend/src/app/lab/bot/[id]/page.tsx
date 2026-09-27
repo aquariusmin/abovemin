@@ -16,18 +16,23 @@ export const revalidate = 60;
  * 조회 실패와 "그런 봇 없음"을 구분한다. 예전에는 존재하지 않는 id도 200을
  * 돌려주고 화면에만 "no bot with id …"를 그렸다 — 오타 난 URL이 정상 페이지로
  * 취급되는 soft-404다. 없으면 404를 준다.
+ *
+ * `readAt`은 `/lab`의 `getFleet`과 같은 이유로 함께 돌려준다.
  */
-async function getBot(id: string): Promise<FleetBot | null | "error"> {
+async function getBot(
+  id: string,
+): Promise<{ bot: FleetBot | null | "error"; readAt: number }> {
   const { data, error } = await supabase
     .from("quant_fleet")
     .select("*")
     .eq("id", id)
     .maybeSingle();
+  const readAt = Date.now();
   if (error) {
     log.warn("lab.bot_ssr", error);
-    return "error";
+    return { bot: "error", readAt };
   }
-  return (data as FleetBot | null) ?? null;
+  return { bot: (data as FleetBot | null) ?? null, readAt };
 }
 
 export default async function BotPage({
@@ -37,7 +42,7 @@ export default async function BotPage({
 }) {
   const { id } = await params;
   const botId = decodeURIComponent(id);
-  const result = await getBot(botId);
+  const { bot: result, readAt } = await getBot(botId);
 
   // 조회 자체가 실패한 경우에는 404를 주지 않는다 — 그건 "없다"가 아니라
   // "모른다"이고, 클라이언트가 다시 시도해 살아날 수 있다.
@@ -46,7 +51,11 @@ export default async function BotPage({
   return (
     <main className="lab-console min-h-screen bg-[var(--lab-plane)] px-4 py-10 sm:px-6 md:px-10 md:py-16">
       <div className="mx-auto max-w-[1500px]">
-        <BotDetail botId={botId} initialBot={result === "error" ? null : result} />
+        <BotDetail
+          botId={botId}
+          initialBot={result === "error" ? null : result}
+          renderedAt={readAt}
+        />
       </div>
     </main>
   );

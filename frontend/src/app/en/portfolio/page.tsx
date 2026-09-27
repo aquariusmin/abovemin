@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   },
 };
 
+// Same curated reading as `/portfolio` — three featured projects, the rest in
+// Explore — so the two halves of the hreflang pair show the same page.
 export default function EnglishPortfolioPage() {
-  return <PortfolioOverview locale="en" />;
+  return <PortfolioOverview locale="en" mode="submission" route="normal" />;
 }

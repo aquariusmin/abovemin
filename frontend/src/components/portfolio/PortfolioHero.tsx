@@ -21,7 +21,7 @@ export default function PortfolioHero({
   route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
-  const isKoreanSubmission = isKorean && mode === "submission";
+  const isSubmission = mode === "submission";
   const alternateLocale = isKorean ? "en" : "ko";
 
   return (
@@ -38,25 +38,31 @@ export default function PortfolioHero({
               through ~46px at 768px instead of jumping to 72. Every other page
               tops out at `md:text-6xl`; this was the one outlier. */}
           <h1 className="max-w-5xl break-keep font-serif text-[clamp(2.25rem,5vw+0.5rem,4.5rem)] font-medium leading-[1.05] tracking-tight text-ink">
-            {isKoreanSubmission
-              ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+            {isSubmission
+              ? isKorean
+                ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+                : "I test the assumptions behind data and turn it into metrics a decision can rest on."
               : isKorean
               ? "데이터를 보고, 시장 맥락을 붙여, 다음 판단까지 정리합니다."
               : "I connect data with business context, then turn it into a next step."}
           </h1>
           <p className="max-w-3xl break-keep text-base font-medium leading-relaxed text-accent md:text-xl">
-            {isKoreanSubmission
-              ? "국제통상·경영 배경 위에서 공공데이터, 고객 데이터, 대체 경제지표를 분석합니다. 좋은 숫자를 만드는 것보다 그 숫자가 어디까지 말할 수 있는지 확인하는 데 집중합니다."
+            {isSubmission
+              ? isKorean
+                ? "국제통상·경영 배경 위에서 공공데이터, 고객 데이터, 대체 경제지표를 분석합니다. 좋은 숫자를 만드는 것보다 그 숫자가 어디까지 말할 수 있는지 확인하는 데 집중합니다."
+                : "With a background in international trade and business, I analyse public data, customer data, and alternative economic indicators. I care less about producing a good number than about checking how far that number can speak."
               : isKorean
               ? "광운대학교 국제통상학부에서 국제통상을 전공하고 경영학을 복수전공하고 있습니다. 데이터 분석, 금융·시장 리서치, 서비스 기획이 만나는 일을 준비하고 있습니다."
               : "International Trade major and Business Administration double-major candidate, preparing for work across analytics, financial research, and service planning."}
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-slate md:text-base">
-            {isKoreanSubmission
-              ? "대표 프로젝트는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight 세 가지입니다. 북극항로처럼 AI 도움으로 낯선 도메인을 탐색한 작업은 Explore 영역에 낮은 비중으로 분리했습니다."
+            {isSubmission
+              ? isKorean
+                ? "대표 프로젝트는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight 세 가지입니다. 북극항로처럼 AI 도움으로 낯선 도메인을 탐색한 작업은 Explore 영역에 낮은 비중으로 분리했습니다."
+                : "The three featured projects are the Busan urban-rail dwell analysis, telecom churn XAI, and satellite night-light GDP analysis. Work that explored an unfamiliar domain with AI help, like the Arctic route study, is set apart in Explore with less weight."
               : isKorean
-              ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 모의투자 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
-              : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a paper-trading system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
+              ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 자동매매 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
+              : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a trading-automation system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-slate">
             <a className="link-underline transition-colors hover:text-accent" href="mailto:aquariusmin01@naver.com">
@@ -89,10 +95,12 @@ export default function PortfolioHero({
         </p>
         <ol className="space-y-3 text-sm text-slate">
           {(isKorean
-            ? isKoreanSubmission
+            ? isSubmission
               ? ["문제 정의", "데이터 가정 확인", "지표·모델 설계", "검증과 수정", "해석 범위"]
               : ["질문 정리", "데이터 확인", "분석·모델링", "해석 범위", "다음 판단"]
-            : ["Frame the question", "Check the data", "Analyze / model", "Set boundaries", "Recommend next steps"]
+            : isSubmission
+              ? ["Define the problem", "Check the data's assumptions", "Design the metric / model", "Validate and revise", "Scope the reading"]
+              : ["Frame the question", "Check the data", "Analyze / model", "Set boundaries", "Recommend next steps"]
           ).map((step, index) => (
             <li key={step} className="flex items-center gap-3">
               <span className="w-5 font-mono text-[10px] text-primary">{String(index + 1).padStart(2, "0")}</span>
