@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
 
@@ -77,6 +77,8 @@ export default function CheckoutPage() {
       address: form.address.trim(),
       note: form.note.trim() || null,
       items: toOrderItems(items),
+      // 허니팟 — 사람에게는 늘 빈 칸이다. 비었으면 키째 뺀다.
+      ...(form.website ? { website: form.website } : {}),
     };
 
     try {
@@ -250,6 +252,23 @@ export default function CheckoutPage() {
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                 placeholder="문 앞에 놓아주세요"
+              />
+            </div>
+
+            {/* 허니팟. 사람에게는 보이지도, 읽히지도, 탭으로 닿지도 않는다 —
+                폼을 통째로 채우는 봇만 여기에 값을 넣는다. `display:none`이
+                아닌 이유: 그건 봇도 건너뛴다. 서버는 채워진 주문을 성공처럼
+                답하고 버린다(`api/orders`). */}
+            <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+              <label htmlFor="website">웹사이트</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
               />
             </div>
 

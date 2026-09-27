@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OrderInput, type OrderInputValues } from '@/lib/orders-schema';
+import { OrderInput, isHoneypotFilled, type OrderInputValues } from '@/lib/orders-schema';
 
 /**
  * 이 파일이 지키는 것: 체크아웃 폼이 보내는 모든 필드가 서버까지 살아서 간다.
@@ -84,5 +84,28 @@ describe('OrderInput — 옵션', () => {
       items: [{ id: 3, option_id: 'a3-matte', option_label: 'A3', price: 1, quantity: 1 }],
     });
     expect(parsed.items[0]).toEqual({ id: 3, option_id: 'a3-matte', quantity: 1 });
+  });
+});
+
+describe('허니팟', () => {
+  const base: OrderInputValues = {
+    name: '홍길동',
+    email: 'hong@example.com',
+    address: '서울시 중구 세종대로 110',
+    items: [{ id: 3, quantity: 1 }],
+  };
+
+  it('스키마가 허니팟 값을 버리지 않고 서버까지 넘긴다', () => {
+    // strip되면 봇의 주문이 그대로 저장되고 메일이 나간다.
+    expect(OrderInput.parse({ ...base, website: 'http://spam.example' }).website).toBe('http://spam.example');
+    expect(OrderInput.parse(base).website).toBeUndefined();
+  });
+
+  it('비어 있을 때만 사람이다', () => {
+    expect(isHoneypotFilled(undefined)).toBe(false);
+    expect(isHoneypotFilled(null)).toBe(false);
+    expect(isHoneypotFilled('')).toBe(false);
+    expect(isHoneypotFilled(' ')).toBe(true);
+    expect(isHoneypotFilled('x')).toBe(true);
   });
 });

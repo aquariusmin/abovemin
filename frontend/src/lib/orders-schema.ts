@@ -33,7 +33,19 @@ export const OrderInput = z.object({
   address: z.string().min(1).max(500),
   note: z.string().max(1000).optional().nullable(),
   items: z.array(OrderItemInput).min(1).max(50),
+  /**
+   * 허니팟. 체크아웃 폼에는 화면·보조기기·탭 순서 어디에도 드러나지 않는
+   * 입력으로 있다 — 사람은 비워 두고, 폼을 통째로 채우는 봇은 채운다. 채워져
+   * 오면 API는 저장도 메일도 없이 성공한 척만 한다(`isHoneypotFilled`).
+   * 스키마가 이 키를 알아야 strip되지 않고 서버까지 온다.
+   */
+  website: z.string().max(200).optional().nullable(),
 });
+
+/** 허니팟에 뭔가 들어 있으면 봇이다 — 공백 한 칸이라도. 사람은 이 칸을 볼 수 없다. */
+export function isHoneypotFilled(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.length > 0;
+}
 
 /** 클라이언트가 조립해 보내는 본문의 타입. */
 export type OrderInputValues = z.input<typeof OrderInput>;
