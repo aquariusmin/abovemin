@@ -24,9 +24,9 @@ describe('imageLoader — Cloudinary', () => {
   });
 
   it('호출부가 적은 폭을 넘겨 요청하지 않는다', () => {
-    const src = cloudinary(real, { width: 2400, watermark: true });
+    const src = cloudinary(real, { width: 1500, watermark: true });
     for (const width of [1920, 2048, 3840]) {
-      expect(imageLoader({ src, width })).toContain(`c_limit,w_2400/`);
+      expect(imageLoader({ src, width })).toContain(`c_limit,w_1500/`);
     }
   });
 
