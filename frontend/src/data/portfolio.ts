@@ -41,6 +41,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Measured how many months a year Arctic shipping routes are actually open, using observed NSIDC sea-ice concentration grids from 1979 to 2025, and translated the result into distance saved on the Busan–Rotterdam leg.",
     question:
       "How much has sea-ice loss changed the operational window of Arctic routes, and what choice does that leave a Korean shipper?",
+    storyArc: [
+      "There is plenty of talk about shrinking ice, but it was hard to find anything that says in numbers how many months a ship can actually get through. So I fixed the target metric first: navigable months per year.",
+      "I laid a 50 km buffered corridor over each great-circle route onto the sea-ice grid and computed mean ice concentration and a 95th-percentile bottleneck value for every segment.",
+      "I did not report trends from OLS alone. Sea-ice data spikes in particular years, so I ran Theil-Sen robust regression alongside it and accepted a result only when both methods agreed in sign.",
+      "What remained was not a statement that the Arctic has warmed but two numbers: about 3.4 months a year open to ice-1A/PC7-class vessels, and still zero months on the Transpolar route over the Pole.",
+    ],
     evidence: [
       "NSIDC Sea Ice Index v4 monthly sea-ice concentration grids at 25 km, 1979–2025",
       "SHA-256 checksum data manifest with idempotent ingestion scripts",
@@ -109,6 +115,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Estimated dwell, a variable absent from the source data, using only Busan metro tap-in and tap-out records, and identified stations where arrivals are high but people do not stay.",
     question:
       "What does a ridership-based policy target list miss? Are alighting and dwelling the same thing?",
+    storyArc: [
+      "Policy picks target sites by boardings and alightings, but alighting means someone arrived, not that they stayed. The problem was that dwell is a variable no public statistic records.",
+      "Subtract cumulative boardings from cumulative alightings and you are left with the people who came in by rail and have not yet left. I converted the area under that curve into a mean dwell time with Little's Law.",
+      "The first version of the metric collapsed at residential stations: 86.7% of station-days were negative, and the mean dwell time came out at an impossible −1.23 hours. Before doubting the data, I re-examined the reference point I had chosen.",
+      "Shifting the curve to each day's minimum brought the values back into a normal range, and the correction also showed that the order of the daily trough and peak alone separates inflow stations from residential ones.",
+    ],
     evidence: [
       "40,544 rows of hourly boarding and alighting counts across 112 stations, January–June 2026",
       "System-wide daily boarding-alighting gap of at most 0.748%, confirming the data is gate-based",
@@ -178,6 +190,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Analyzed 7,043 telecom customer records and used explainable classification models to identify churn-risk segments and propose targeted retention actions.",
     question:
       "Which customers are most likely to leave, why are they at risk, and which retention response fits each segment?",
+    storyArc: [
+      "From the start, the focus was less on producing a churn-prediction score and more on finding risk signals that sales and marketing could read straight away.",
+      "I looked at churn rates and model output together, anchored on the traces customers actually leave behind: contract type, tenure, monthly charge, and payment method.",
+      "The strongest signal was month-to-month contracts, with short tenure and high monthly charges moving in the same direction.",
+      "The 5.0-percentage-point reduction, though, is a target set before any rollout. I kept it as a proposal still to be tested, not something to present as a result.",
+    ],
     evidence: [
       "7,043 customer records across profile, contract, tenure, billing, payment, service, and churn fields",
       "70/30 train-test split and seven classification models",
@@ -245,6 +263,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Matched night-time satellite brightness with World Bank indicators at the country-year level and tested how far night light holds up as a supporting indicator for GDP.",
     question:
       "When official statistics are scarce or late, how far can night-light intensity serve as a supporting indicator of economic activity?",
+    storyArc: [
+      "It started with a question: could traces of economic activity be seen even where official statistics are scarce, the way night-time satellite images of North Korea suggest?",
+      "I matched VIIRS night-light data with World Bank GDP, population, urbanisation, and electricity-access indicators at the country-year level for 2019–2023.",
+      "The simple regression's R-squared of 0.819 reproduced, but the urban-population and electricity-access moderators added little explanatory power. Brightness alone did not turn out to be enough to read an economy.",
+      "The conclusion is not a new forecasting model but the data-integrity checks and the limits of interpretation needed before night light can be used as a supporting economic indicator.",
+    ],
     evidence: [
       "VIIRS night-light data and World Bank GDP, population, urban-population, and electricity-access indicators",
       "Study period 2019–2023 · 164 countries · 820 country-year observations after merging",
@@ -314,6 +338,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Evaluated Korean Air through macroeconomic, industry, financial-ratio, and multiple valuation frameworks, focusing on model conflict under uncertain FCF assumptions.",
     question:
       "How should Korean Air be evaluated when post-pandemic recovery, large investment needs, leverage, and uncertain cash-flow assumptions cause valuation methods to diverge?",
+    storyArc: [
+      "Korean Air carries recovery expectations and heavy investment commitments at the same time, so I judged that any single method would give an easily shaken conclusion.",
+      "I reviewed 2020–2024 financial ratios first, then set DCF, APV, and peer multiples side by side with sensitivity analysis.",
+      "Absolute and relative valuation pointed in different directions, and the gap came down to the FCF and investment assumptions.",
+      "So instead of leading with a target price, I framed it as a case that shows where the calculation structure and its assumptions give way.",
+    ],
     evidence: [
       "2020-2024 profitability, efficiency, liquidity, leverage, and interest-coverage analysis",
       "Macroeconomic and airline-industry research",
@@ -381,6 +411,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Spent less time inventing strategies than on checking whether a strategy has an edge and on being able to start, stop, and record it safely. tqt handles validation and execution; Fleet is the operating dashboard.",
     question:
       "What does running trading rules as a service require beyond strategy code, and how do you confirm the rules actually have an edge?",
+    storyArc: [
+      "The starting point was simple. Before asking whether a strategy was right, I had to be able to switch it on and off safely and watch it.",
+      "In Fleet I tied the broker interface, bot state, settings, order history, and logs into one flow, controlled through FastAPI and a dashboard.",
+      "The next question was whether the strategy had any edge at all. In tqt I redesigned the backtest so that results are reported only from walk-forward out-of-sample runs, never in-sample.",
+      "That meant the first thing I wrote down was that even the best strategy trailed buy-and-hold on CAGR. Bots now run on small real-money accounts as well as paper ones, with each account labelled on /lab, but no return is claimed.",
+    ],
     evidence: [
       "Daily-bar backtest over eight domestically listed global ETFs and two government-bond ETFs, 2011–2026",
       "Cost assumptions using the account's real commission rate read from the API, 10 bp slippage, and next-open fills",
@@ -450,6 +486,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Compared regression, dimensionality-reduction, tree, support-vector, and neural-network approaches to understand when model complexity improves generalization.",
     question:
       "How do preprocessing, regularization, model complexity, and hyperparameters affect validation and test performance?",
+    storyArc: [
+      "Using a model that looks good and actually choosing a better model are different things, so I regrouped the assignments around comparison.",
+      "I checked what complexity buys by reading regression, PCA, SVM/SVR, and ANN/DNN each against their training, validation, and test performance.",
+      "In some assignments the simpler model was more stable, and a deeper network did not always deliver a meaningful improvement.",
+      "These are coursework results, so I present them not as operating performance but as the experience of setting model-selection criteria.",
+    ],
     evidence: [
       "Four applied assignments using financial and public datasets",
       "Training, validation, and test comparisons",
@@ -513,6 +555,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Developed a pre-launch photography-goods MVP covering brand concept, physical product production, customer journey, commerce workflows, and administration.",
     question:
       "How can a personal photography concept be translated into a testable product and service experience before public launch?",
+    storyArc: [
+      "I wanted to go beyond showing photographs and find out what experience people need when they meet the work as an actual product.",
+      "Within an MVP scope, I connected the brand concept, physical goods, product browsing, cart, ordering, and the admin flow.",
+      "This was not a screens-only project: looking at the physical products and the operating flow together is how I found what had to be checked before launch.",
+      "It is not yet a public market response. I describe it only as a limited test with acquaintances and what the MVP taught me.",
+    ],
     evidence: [
       "Physical photography goods produced",
       "Product discovery, cart, order, and administration workflows",
@@ -577,6 +625,12 @@ export const portfolioProjects: PortfolioProject[] = [
       "Helped design and analyze a 101-response survey testing whether blood type was statistically associated with four MBTI dimensions.",
     question:
       "Does a familiar social belief about blood type and personality remain supported when translated into hypotheses and tested with survey data?",
+    storyArc: [
+      "Rather than simply believing or dismissing a claim you hear all the time, I wanted to check it with a small survey study.",
+      "A 28-question survey collected 101 responses, and I examined the relationship between the four MBTI dimensions and blood type with cross-tabulations and chi-square tests.",
+      "Most dimensions showed no significant relationship, and I judged that one dimension's result alone could not support a large conclusion.",
+      "The sample is narrow and centred on people I know, so I kept the conclusion within what the data can say.",
+    ],
     evidence: [
       "28-question Google Forms survey",
       "101 responses",
