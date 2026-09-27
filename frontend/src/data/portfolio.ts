@@ -402,9 +402,9 @@ export const portfolioProjects: PortfolioProject[] = [
           "Replaced assumed fees with the account's actual rates from the API and applied slippage and next-open fills so cost assumptions match reality.",
       },
       {
-        title: "Validate out-of-sample, then on paper",
+        title: "Validate out-of-sample, on paper, then with real money",
         description:
-          "Reported performance only from a five-year train, two-year test walk-forward, then validated operations with paper trading that fills against the live order book.",
+          "Reported performance only from a five-year train, two-year test walk-forward, validated operations first with paper trading that fills against the live order book, then added small real-money accounts alongside the paper ones.",
       },
     ],
     insights: [
@@ -416,24 +416,24 @@ export const portfolioProjects: PortfolioProject[] = [
     decisionValue:
       "Instead of claiming returns, set out in numbers and operating controls the conditions under which a strategy may run and the signals that should switch it off.",
     limitations: [
-      "Both projects are at paper-trading validation with no real-money operating history.",
+      "Real-money operation runs on small accounts alongside paper and mock accounts; this portfolio does not treat those live results as evidence of performance.",
       "The backtest universe consists of currently listed instruments, so some survivorship bias remains.",
       "Most validated strategies lost money in 2022; this design does not defend a period where equities and long bonds fall together.",
       "Long-running uptime, order-failure handling, and restart scenarios remain separate operating concerns.",
     ],
     notClaimed: [
-      "Does not claim returns or win rate. There is no real-money track record.",
+      "Does not claim returns or win rate. Results from the small real-money accounts are not presented as a track record.",
       "Does not claim the strategy has an edge. The best variant still trailed buy-and-hold on CAGR.",
-      "Does not claim production operation. It remains at paper trading.",
+      "Does not claim a production service. It is a personal project running bots on small real-money accounts and on paper and mock accounts.",
     ],
     suggestedVisuals: [
       "In-sample versus out-of-sample walk-forward comparison",
       "CAGR and maximum drawdown trade-off by strategy",
       "System architecture from strategy to dashboard",
-      "Anonymised dashboard shown in paper-trading mode",
+      "Anonymised dashboard that labels real-money and paper accounts separately",
     ],
     caution:
-      "Paper-trading validation only. Backtest figures are simulations on historical data and claim no real-money operation, return, win rate, or capital growth.",
+      "Runs on paper and mock accounts and on small real-money accounts, labelled bot by bot on /lab. Backtest figures are simulations on historical data, not a live record, and claim no return, win rate, or capital growth.",
   },
   {
     slug: "financial-ai-model-study",

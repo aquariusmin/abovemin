@@ -55,8 +55,8 @@ export default function PortfolioHero({
             {isKoreanSubmission
               ? "대표 프로젝트는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight 세 가지입니다. 북극항로처럼 AI 도움으로 낯선 도메인을 탐색한 작업은 Explore 영역에 낮은 비중으로 분리했습니다."
               : isKorean
-              ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 모의투자 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
-              : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a paper-trading system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
+              ? "고객 이탈, 야간조도와 GDP, 대한항공 재무분석, 자동매매 시스템, 사진 굿즈 MVP, 설문 연구를 담았습니다. 성과처럼 읽힐 수 있는 숫자는 출처와 한계를 같이 적었습니다."
+              : "The projects cover churn analysis, night-light GDP research, Korean Air financial analysis, a trading-automation system, a photography-commerce MVP, and survey research. When a number could sound like an outcome, I show the caveat beside it."}
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-slate">
             <a className="link-underline transition-colors hover:text-accent" href="mailto:aquariusmin01@naver.com">
