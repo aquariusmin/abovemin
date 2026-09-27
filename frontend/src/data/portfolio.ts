@@ -242,48 +242,51 @@ export const portfolioProjects: PortfolioProject[] = [
     role: "Individual project",
     sourceUrl: "https://github.com/aquariusmin/Satellite-GDP-Insight",
     summary:
-      "Combined VIIRS night-light and World Bank indicators to examine whether satellite-observed brightness can complement conventional measures of national economic activity.",
+      "Matched night-time satellite brightness with World Bank indicators at the country-year level and tested how far night light holds up as a supporting indicator for GDP.",
     question:
-      "Can night-light intensity help explain GDP where official statistics are limited, and do urban population and electricity access change that relationship?",
+      "When official statistics are scarce or late, how far can night-light intensity serve as a supporting indicator of economic activity?",
     evidence: [
       "VIIRS night-light data and World Bank GDP, population, urban-population, and electricity-access indicators",
-      "Primary study period: 2019-2023",
-      "Distinct data stages: 973 raw rows, 820 merged observations, and 791 usable GDP observations",
+      "Study period 2019–2023 · 164 countries · 820 country-year observations after merging",
+      "Simple-regression R-squared = 0.819 on the 791 observations with usable GDP",
+      "Found that the brightness column in the repository's spreadsheet was misaligned, and recorded the SPSS analysis file and the reproduce.py baseline separately from it",
     ],
-    tools: ["Python", "SPSS", "Excel", "Regression", "Interaction effects"],
+    tools: ["Python", "SPSS", "Excel", "Regression", "Data QA"],
     process: [
+      {
+        title: "Frame the question",
+        description:
+          "Started from the need for an alternative signal where official GDP is late or limited, and took night-light intensity as the candidate indicator.",
+      },
       {
         title: "Integrate country-year data",
         description:
-          "Merged satellite brightness and economic indicators at the country-year level.",
+          "Matched VIIRS brightness and World Bank indicators by country name and year to build a 2019–2023 panel-shaped analysis table.",
       },
       {
-        title: "Prepare the variables",
+        title: "Test the relationship and its moderators",
         description:
-          "Applied log transformations to skewed variables and centered moderator variables.",
+          "Log-transformed skewed variables and added urban-population and electricity-access interaction terms to see whether the relationship changes with conditions.",
       },
       {
-        title: "Test the relationship",
+        title: "Fix data integrity",
         description:
-          "Estimated the baseline regression and added urban-population and electricity-access interaction terms.",
-      },
-      {
-        title: "Define responsible use",
-        description:
-          "Interpreted model fit alongside infrastructure effects, missing data, and non-economic sources of light.",
+          "Found that the brightness column in the xlsx that came with the report was misaligned, dropped the scatterplot claim, and kept only the values that the SPSS analysis file and reproduce.py reproduce.",
       },
     ],
     insights: [
-      "Night-light intensity explains 81.9% of GDP variation in the simple model (R-squared = 0.819, N = 791), reproducible via reproduce.py in the repository.",
-      "Urban population and electricity access produced statistically significant interaction effects in the report.",
-      "The result is explanatory and should not be described as prediction accuracy or causal proof.",
+      "In the simple regression, night-light intensity explains 81.9% of GDP variation (R-squared = 0.819, N = 791), reproducible via reproduce.py in the repository.",
+      "Adding the urban-population and electricity-access interaction terms raised explanatory power only slightly. What mattered was the baseline relationship and checking data quality, not a more complex model.",
+      "The misaligned brightness column in the accompanying xlsx could be read as a higher R-squared; the repository carries an explicit warning not to use that value.",
+      "The result is an explanatory relationship, not evidence of prediction accuracy, causation, or the ability to replace official GDP.",
     ],
     decisionValue:
-      "Night-light data can provide a complementary signal for early market screening, country-risk research, and economic monitoring where conventional reporting is limited.",
+      "Rather than replacing official statistics, night-light data can serve as a supporting signal for first-pass screening of countries and regions, or for monitoring change where statistics are missing.",
     limitations: [
-      "The final country count and the 973/820/791 dataset stages require a reproducible data dictionary.",
-      "An earlier-year Albania record and the final brightness definition require reconciliation.",
-      "Fixed-effects and out-of-sample analysis are needed before making predictive claims.",
+      "973, 820, and 791 belong to different data-processing stages, so they are never used interchangeably as one sample size.",
+      "The night-light–GDP relationship is an established research topic. The point of this project is not a new academic contribution but framing the question myself and verifying data integrity.",
+      "Because the brightness definition could differ between the report and the files, the scatterplot claim was dropped.",
+      "Claims about prediction or causation would need fixed effects and out-of-sample validation.",
     ],
     notClaimed: [
       "Does not claim predictive accuracy. R-squared is in-sample explanatory power.",
