@@ -2,7 +2,7 @@ import {
   getKoreanSubmissionPortfolioProjects,
   koreanPortfolioProjects,
 } from "@/data/portfolio.ko";
-import { portfolioProjects } from "@/data/portfolio";
+import { getEnglishSubmissionPortfolioProjects, portfolioProjects } from "@/data/portfolio";
 import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import { portfolioCardChips, type EvidenceLocale } from "@/data/portfolioEvidence";
 import {
@@ -11,6 +11,7 @@ import {
   type PortfolioRoute,
 } from "@/data/portfolioRouting";
 import PrintControls from "@/components/portfolio/PrintControls";
+import { SITE_URL } from "@/lib/site";
 
 export default function PortfolioPrintContent({
   locale,
@@ -24,13 +25,15 @@ export default function PortfolioPrintContent({
   route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
-  const isKoreanSubmission = isKorean && mode === "submission";
-  const projects = isKoreanSubmission
-    ? getKoreanSubmissionPortfolioProjects()
+  const isSubmission = mode === "submission";
+  const projects = isSubmission
+    ? isKorean
+      ? getKoreanSubmissionPortfolioProjects()
+      : getEnglishSubmissionPortfolioProjects()
     : isKorean
       ? koreanPortfolioProjects
       : portfolioProjects;
-  const portfolioUrl = `https://abovemin.com${getPortfolioBasePath(locale, route)}`;
+  const portfolioUrl = `${SITE_URL}${getPortfolioBasePath(locale, route)}`;
   const githubUrl = "https://github.com/aquariusmin";
 
   return (
@@ -52,24 +55,37 @@ export default function PortfolioPrintContent({
             </div>
           </div>
           <p className="mt-6 max-w-3xl break-keep text-lg font-semibold leading-relaxed text-accent">
-            {isKoreanSubmission
-              ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+            {isSubmission
+              ? isKorean
+                ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+                : "I test the assumptions behind data and turn it into metrics a decision can rest on."
               : isKorean
                 ? "데이터를 보고, 시장 맥락을 붙여, 다음 판단까지 정리합니다."
               : "International Trade major and Business Administration double-major candidate, preparing for work across analytics, financial research, and service planning."}
           </p>
           <p className="mt-3 max-w-3xl break-keep text-xs leading-relaxed text-slate">
-            {isKoreanSubmission
-              ? "대표 사례는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight입니다. 북극항로 등 탐색형 작업은 보조 자료로 낮춰 배치했습니다."
+            {isSubmission
+              ? isKorean
+                ? "대표 사례는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight입니다. 북극항로 등 탐색형 작업은 보조 자료로 낮춰 배치했습니다."
+                : "The featured cases are the Busan urban-rail dwell analysis, telecom churn XAI, and satellite night-light GDP analysis. Exploratory work such as the Arctic route study is placed lower as supporting material."
               : isKorean
                 ? "고객 분석, 대체 데이터 경제 연구, 기업가치평가, 핀테크 시스템, 서비스 MVP 기획을 다루며 수치의 출처와 해석 범위를 함께 기록했습니다."
               : "The work spans customer analytics, alternative-data economics, corporate valuation, fintech systems, and service MVP planning, with claim boundaries stated beside the numbers."}
           </p>
         </header>
 
+        {/* Titles AND bodies. This block printed the four words on their own —
+            시장 / 재무 / 분석 / 실행 in bordered boxes with nothing under them,
+            which reads as a table whose rows failed to render. The data file
+            says these are "shared by the web overview and the print/PDF
+            summary so the two never drift apart"; the print half had drifted,
+            and it is the half that gets handed to a recruiter. */}
         <section className="portfolio-print-section mt-7 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
           {portfolioCapabilities[locale].map((capability) => (
-            <p key={capability.title} className="bg-white p-3 text-[10px] font-semibold text-accent">{capability.title}</p>
+            <div key={capability.title} className="bg-white p-3">
+              <p className="text-[10px] font-semibold text-accent">{capability.title}</p>
+              <p className="mt-1.5 break-keep text-[9px] leading-relaxed text-slate">{capability.body}</p>
+            </div>
           ))}
         </section>
 
@@ -77,8 +93,10 @@ export default function PortfolioPrintContent({
           <div className="portfolio-print-section mb-5">
             <p className={`text-[9px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
             <h2 className="mt-2 font-serif text-2xl font-semibold">
-              {isKoreanSubmission
-                ? "대표 3개와 Explore 작업"
+              {isSubmission
+                ? isKorean
+                  ? "대표 3개와 Explore 작업"
+                  : "Three featured projects and Explore work"
                 : isKorean
                   ? "지금 보여줄 수 있는 일곱 가지 작업"
                   : "Seven projects I can discuss in detail"}

@@ -1,14 +1,16 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
+import { exists, kvEnabled, setWithTtl } from './kv';
+import { log } from './logger';
 
 // 관리자 세션 관리.
 //
 // 토큰 구조: `${nonce}:${issuedAt}:${expires}:${sig}`
 // - 로그아웃 시 해당 nonce를 revoke set에 추가해 재사용 차단
 //
-// ⚠️ in-memory 저장이라 서버리스 인스턴스 간 공유되지 않음.
-// 단일 admin 사용 + sameSite=strict 쿠키 전제라 실제 공격 벡터는 매우 좁음.
-// 강한 보장을 원하면 Supabase에 admin_sessions 테이블 추가 권장.
+// revoke set은 in-memory가 기본이라 서버리스 인스턴스 간 공유되지 않는다.
+// Upstash가 설정돼 있으면(`lib/kv`) 그쪽에도 같이 적어, 로그아웃이 인스턴스를
+// 넘어 효력을 갖는다. 설정이 없으면 예전과 똑같이 동작한다.
 
 const SECRET_RAW = process.env.ADMIN_SESSION_SECRET;
 const LEGACY_SECRET = process.env.ADMIN_PASSWORD;
@@ -50,7 +52,17 @@ export function verifySession(token: string | undefined | null): boolean {
   if (Date.now() > expires) return false;
   if (revokedNonces.has(nonce)) return false;
 
-  const expected = createHmac('sha256', getSecret())
+  // 시크릿이 없으면 `getSecret`이 throw한다. 그대로 두면 관리 API 전부와
+  // `/api/admin/auth`의 GET이 500이 된다 — 설정 누락을 "로그인 안 됨"으로 읽고,
+  // 원인은 로그에 남긴다. 서명할 수 없는 서버가 서명을 믿을 수는 없다.
+  let secret: string;
+  try {
+    secret = getSecret();
+  } catch (error) {
+    log.error('admin_session_secret_unavailable', error instanceof Error ? error.message : error);
+    return false;
+  }
+  const expected = createHmac('sha256', secret)
     .update(`${nonce}:${issuedAtStr}:${expiresStr}`)
     .digest('hex');
   const a = Buffer.from(sig, 'hex');
@@ -59,14 +71,49 @@ export function verifySession(token: string | undefined | null): boolean {
   return timingSafeEqual(a, b);
 }
 
+/**
+ * 관리자 비밀번호 비교. 두 값을 SHA-256으로 같은 길이(32바이트)로 만든 뒤
+ * 비교한다 — 원문을 바로 `timingSafeEqual`에 넣으려면 길이가 같아야 해서, 예전
+ * 코드는 길이가 다르면 먼저 돌아갔고 그 응답 시간 차이로 비밀번호 길이가
+ * 드러났다.
+ */
+export function passwordMatches(input: string, expected: string | undefined): boolean {
+  if (!expected) return false;
+  const a = createHash('sha256').update(input).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
 export function revoke(token: string): void {
   const parts = token.split(':');
-  if (parts.length === 4) revokedNonces.add(parts[0]);
+  if (parts.length !== 4) return;
+  const [nonce, , expiresStr] = parts;
+  revokedNonces.add(nonce);
+
+  // 공유 저장소에도 남긴다. 토큰이 어차피 만료되는 시점까지만 보관하면
+  // 되므로 TTL을 남은 수명으로 잡는다 — 지워진 세션 목록이 무한히 자라지
+  // 않는다. 실패해도 기다리지 않는다: 로그아웃은 로컬에서 이미 끝났고,
+  // 이건 그것을 넓히는 시도일 뿐이다.
+  const remainingSec = Math.ceil((Number(expiresStr) - Date.now()) / 1000);
+  if (kvEnabled && Number.isFinite(remainingSec) && remainingSec > 0) {
+    void setWithTtl(`revoked:${nonce}`, '1', remainingSec);
+  }
 }
 
 export async function isAdminRequest(): Promise<boolean> {
   const jar = await cookies();
-  return verifySession(jar.get(SESSION_COOKIE)?.value);
+  const token = jar.get(SESSION_COOKIE)?.value;
+
+  // 서명·만료·로컬 revoke를 먼저 본다. 대부분의 요청이 여기서 끝나므로
+  // 네트워크를 타지 않는다.
+  if (!verifySession(token)) return false;
+  if (!kvEnabled) return true;
+
+  // 다른 인스턴스에서 로그아웃된 세션인지 확인한다. 저장소가 대답하지
+  // 못하면(`null`) 통과시킨다 — 저장소 장애로 관리자가 잠기는 것이
+  // 이 위협 모델에서 더 나쁜 결과다.
+  const nonce = token!.split(':')[0];
+  return (await exists(`revoked:${nonce}`)) !== true;
 }
 
 // CSRF: 상태 변경 요청은 동일 origin에서 왔는지 확인.

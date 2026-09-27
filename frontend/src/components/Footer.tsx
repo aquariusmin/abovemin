@@ -2,64 +2,85 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { isPortfolioFocusedPath } from '@/data/portfolioRouting';
+import { hidesSiteChrome } from '@/lib/chrome';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 // About and Portfolio are deliberately absent here, as they are in `Nav`.
-// Neither page is gone: both stay live, indexed and in the sitemap, and the
-// home page's closing band still links to both by name ("스튜디오 소개 보기" /
-// "포트폴리오 보기"). What changes is that they are no longer in the chrome
-// that follows a visitor around — you arrive at them from the front door or
-// from a URL someone handed you, not from every page on the site.
-const NAV = [
-  { href: '/archive', label: 'Archive' },
-  { href: '/shop', label: 'Shop' },
-  { href: '/lab', label: 'The Lab', italic: true },
-];
+// Neither page is gone: both stay live, indexed and in the sitemap. What
+// changes is that they are no longer in the chrome that follows a visitor
+// around — you arrive at them from a URL someone handed you.
+//
+// The home page's closing band does NOT link to them (it used to, by name,
+// and this comment outlived that). Between here and `Nav`, URL-only is the
+// whole truth.
+// Notes는 공개된 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
+// `notFound()`를 부르므로, 조건 없이 링크하면 푸터에서 404로 가는 길이 생긴다.
+// 글은 DB에 있고 이 컴포넌트는 클라이언트라 직접 읽지 못한다 — 루트 레이아웃이
+// 서버에서 `hasPublishedNotes()`를 읽어 `hasNotes`로 넘긴다.
+function navItems(hasNotes: boolean) {
+  return [
+    { href: '/archive', label: 'Archive' },
+    { href: '/shop', label: 'Shop' },
+    ...(hasNotes ? [{ href: '/notes', label: 'Notes' }] : []),
+    { href: '/lab', label: 'The Lab', italic: true },
+  ];
+}
 
 const CONNECT = [
-  { href: 'mailto:aquariusmin01@naver.com', label: 'aquariusmin01@naver.com', external: false },
+  { href: `mailto:${CONTACT_EMAIL}`, label: CONTACT_EMAIL, external: false },
   { href: 'https://github.com/aquariusmin', label: 'GitHub / aquariusmin', external: true },
   { href: 'https://instagram.com/sangmin__02', label: 'Instagram / @sangmin__02', external: true },
 ];
 
-export default function Footer() {
+export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
   const pathname = usePathname();
-  const isPortfolioFocused = isPortfolioFocusedPath(pathname);
-  if (isPortfolioFocused) return null;
+  if (hidesSiteChrome(pathname)) return null;
 
   return (
     // The page's deepest surface. Ending on forest-black lets the warm canvas
     // above read as daylight and gives the wordmark one full-bleed moment.
+    //
+    // Sized as a footer, not as a final section. It used to run ~500px tall on
+    // desktop — a 6xl wordmark, 24 units of padding at each end, and 20 more
+    // before the meta rule — so every page ended by scrolling through a screen
+    // of chrome. The whole block is scaled down here, and the contrast moves
+    // the other way at the same time: the dimmed text (links at 70%, labels and
+    // meta at 40%) is lifted, because "smaller" only reads as tidy if the type
+    // that remains is easier to read, not fainter.
     <footer className="band-navy texture-grain">
       {/* Canopy gradient hairline capping the band */}
-      <div aria-hidden className="h-[3px] bg-gradient-to-r from-forest via-fern to-moss" />
+      <div aria-hidden className="h-[2px] bg-gradient-to-r from-forest via-fern to-moss" />
 
-      <div className="max-w-[1400px] mx-auto px-5 sm:px-6 md:px-10 py-16 md:py-24">
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-y-12 gap-x-8">
+      <div className="max-w-[1400px] mx-auto px-5 sm:px-6 md:px-10 py-10 md:py-12">
+        {/* Five tracks on mobile rather than two. Index needs almost no width
+            ("Archive", "Shop"), while Connect carries a 23-character email that
+            an even split forced to break mid-word — "…naver.co / m". A 2/3
+            split gives the long column the room and leaves the short one what
+            it needs. Desktop keeps its own 12-track grid. */}
+        <div className="grid grid-cols-5 md:grid-cols-12 gap-y-8 gap-x-5 sm:gap-x-8 items-start">
 
           {/* Brand — signature wordmark + studio line */}
-          <div className="col-span-2 md:col-span-6 space-y-5">
+          <div className="col-span-5 md:col-span-4 space-y-2.5">
             <p className="eyebrow text-moss">Collecting the greenery</p>
-            <h2 className="font-serif text-[2.75rem] md:text-6xl font-medium tracking-tight leading-none text-cream">
+            <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-none text-cream">
               phorage
             </h2>
-            <p className="text-sm leading-relaxed text-cream/60 max-w-sm break-keep">
-              빛을 수집하고 세상을 분석합니다. 서울에서 사진 아카이브와 소품샵,
-              그리고 데이터 분석 작업을 함께 운영합니다.
+            <p className="text-[13px] leading-relaxed text-cream/65 max-w-xs break-keep">
+              작은 관심을 기록하고 만들어갑니다.
             </p>
           </div>
 
           <div className="hidden md:block md:col-span-1" />
 
           {/* Index */}
-          <nav className="md:col-span-2 space-y-4" aria-label="Footer">
-            <h3 className="eyebrow text-cream/40">Index</h3>
-            <ul className="space-y-3 text-sm">
-              {NAV.map(item => (
+          <nav className="col-span-2 md:col-span-3 space-y-3" aria-label="Footer">
+            <h3 className="eyebrow text-cream/50">Index</h3>
+            <ul className="space-y-2 text-[13px]">
+              {navItems(hasNotes).map(item => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`text-cream/70 hover:text-moss transition-colors ${item.italic ? 'italic' : ''}`}
+                    className={`text-cream/80 hover:text-moss transition-colors ${item.italic ? 'italic' : ''}`}
                   >
                     {item.label}
                   </Link>
@@ -69,15 +90,15 @@ export default function Footer() {
           </nav>
 
           {/* Connect */}
-          <div className="md:col-span-3 space-y-4">
-            <h3 className="eyebrow text-cream/40">Connect</h3>
-            <ul className="space-y-3 text-sm">
+          <div className="col-span-3 md:col-span-4 space-y-3">
+            <h3 className="eyebrow text-cream/50">Connect</h3>
+            <ul className="space-y-2 text-[13px]">
               {CONNECT.map(item => (
                 <li key={item.href}>
                   <a
                     href={item.href}
                     {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className="link-underline text-cream/70 hover:text-moss"
+                    className="link-underline text-cream/80 hover:text-moss"
                   >
                     {item.label}
                   </a>
@@ -88,8 +109,10 @@ export default function Footer() {
         </div>
 
         {/* Meta row — thin rule, mono microcopy */}
-        <div className="mt-16 md:mt-20 pt-6 border-t border-cream/15 flex flex-col sm:flex-row justify-between gap-3 eyebrow text-cream/40">
-          <span>&copy; 2026 phorage studio</span>
+        <div className="mt-9 md:mt-10 pt-5 border-t border-cream/15 flex flex-col sm:flex-row justify-between gap-2 eyebrow text-cream/50">
+          {/* Rendered at request/build time rather than typed in, so the
+              footer does not quietly go stale on 1 January. */}
+          <span>&copy; {new Date().getFullYear()} phorage studio</span>
           <span>Digital studio · Seoul</span>
         </div>
       </div>

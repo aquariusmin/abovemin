@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://abovemin.com/sitemap.xml
+Sitemap: https://www.abovemin.com/sitemap.xml

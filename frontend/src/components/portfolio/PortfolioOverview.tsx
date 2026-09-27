@@ -10,7 +10,11 @@ import {
   getKoreanSubmissionFeaturedProjects,
   koreanPortfolioProjects,
 } from "@/data/portfolio.ko";
-import { portfolioProjects } from "@/data/portfolio";
+import {
+  getEnglishSubmissionArchiveProjects,
+  getEnglishSubmissionFeaturedProjects,
+  portfolioProjects,
+} from "@/data/portfolio";
 import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import {
   getPortfolioBasePath,
@@ -31,10 +35,18 @@ export default function PortfolioOverview({
   route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
-  const isKoreanSubmission = isKorean && mode === "submission";
+  const isSubmission = mode === "submission";
   const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
-  const featuredProjects = isKoreanSubmission ? getKoreanSubmissionFeaturedProjects() : projects;
-  const archiveProjects = isKoreanSubmission ? getKoreanSubmissionArchiveProjects() : [];
+  const featuredProjects = !isSubmission
+    ? projects
+    : isKorean
+      ? getKoreanSubmissionFeaturedProjects()
+      : getEnglishSubmissionFeaturedProjects();
+  const archiveProjects = !isSubmission
+    ? []
+    : isKorean
+      ? getKoreanSubmissionArchiveProjects()
+      : getEnglishSubmissionArchiveProjects();
   const basePath = getPortfolioBasePath(locale, route);
 
   return (
@@ -92,16 +104,20 @@ export default function PortfolioOverview({
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                {isKoreanSubmission
-                  ? "대표 프로젝트 3개를 먼저 보여줍니다."
+                {isSubmission
+                  ? isKorean
+                    ? "대표 프로젝트 3개를 먼저 보여줍니다."
+                    : "Three featured projects come first."
                   : isKorean
                     ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다."
                     : "Seven projects I can walk through in detail."}
               </h2>
             </div>
             <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
-              {isKoreanSubmission
-                ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
+              {isSubmission
+                ? isKorean
+                  ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
+                  : "This first screen leads with analysis I can defend myself. Each case shows the question, how the data was checked, and how far the conclusion reaches."
                 : isKorean
                   ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
                 : "Each project explains why I started it, what I checked, and where the conclusion should stop."}
@@ -126,19 +142,27 @@ export default function PortfolioOverview({
           <section className="space-y-8" aria-labelledby="submission-archive">
             <Reveal className="grid gap-5 border-t border-hairline pt-10 md:grid-cols-12 md:items-end" y={16}>
               <div className="space-y-3 md:col-span-7">
-                <p className="label-ko text-slate">Explore / Archive</p>
+                <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>Explore / Archive</p>
                 <h2 id="submission-archive" className="break-keep font-serif text-2xl font-medium tracking-tight text-ink md:text-3xl">
-                  낯선 도메인과 보조 프로젝트는 낮은 비중으로 둡니다.
+                  {isKorean
+                    ? "낯선 도메인과 보조 프로젝트는 낮은 비중으로 둡니다."
+                    : "Unfamiliar domains and side projects carry less weight."}
                 </h2>
               </div>
               <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
-                북극항로는 AI 도움을 받아 확장한 탐색형 작업이라 대표 프로젝트에서 제외했습니다. 그래도 재현성, 한계 명시, 시스템 구현 습관을 확인할 수 있는 보조 자료로 남겨둡니다.
+                {isKorean
+                  ? "북극항로는 AI 도움을 받아 확장한 탐색형 작업이라 대표 프로젝트에서 제외했습니다. 그래도 재현성, 한계 명시, 시스템 구현 습관을 확인할 수 있는 보조 자료로 남겨둡니다."
+                  : "The Arctic route study was extended with AI help as exploratory work, so it is left out of the featured set. It stays here as supporting material that still shows habits of reproducibility, stated limits, and building systems."}
               </p>
             </Reveal>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {archiveProjects.map((project, i) => (
                 <Reveal key={project.slug} delay={i * 0.04} y={16} className="h-full">
-                  <KoreanProjectCard project={project} basePath={basePath} />
+                  {isKorean ? (
+                    <KoreanProjectCard project={project} basePath={basePath} />
+                  ) : (
+                    <ProjectCard project={project} basePath={basePath} />
+                  )}
                 </Reveal>
               ))}
             </div>

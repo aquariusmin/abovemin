@@ -1,0 +1,339 @@
+"use client";
+
+import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import PhotoGrid from '@/components/PhotoGrid';
+import { cleanCaptionField } from '@/lib/caption';
+import { CAMERA_PARAM, cameraOptions, matchesCamera } from '@/lib/camera';
+import type { MapPlace } from '@/lib/places';
+
+/**
+ * 지도는 "지도로 보기"를 누를 때만 불러온다. d3-geo + 세계 윤곽(55 KB)이
+ * 아카이브 첫 화면 번들에 실리지 않고, 지도를 안 여는 방문자는 받지 않는다.
+ * `ssr: false`: 지도는 컨테이너 폭을 재서 그리므로 서버에서 그릴 것이 없다.
+ */
+const PlaceMap = dynamic(() => import('./PlaceMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full rounded-lg border border-border bg-surface aspect-[16/10] sm:aspect-[16/9] lg:aspect-[2/1] max-h-[560px] animate-pulse" />
+  ),
+});
+
+/**
+ * 아카이브 전체를 연도·장소·카메라로 좁혀 본다.
+ *
+ * 290장이 다섯 앨범에 흩어져 있는데 앨범 단위 순회만 가능했다. 두 값 모두
+ * 이미 모든 사진에 붙어 있으므로, 새로 입력할 것 없이 질문만 바꾸면 된다 —
+ * "2019년", "Seoul".
+ *
+ * 검색창을 두지 않은 이유: 제목이 파일명에서 자동 생성된 것이 많아 검색어로
+ * 쓸 만한 문자열이 아니다. 연도와 장소는 사람이 확인하고 넣은 값이라 목록으로
+ * 제시하는 편이 정직하고, 무엇이 있는지도 같이 알려 준다.
+ */
+type Photo = {
+  id: number;
+  src: string;
+  title: string;
+  location: string;
+  year: number;
+  album_slug: string;
+  album_title: string;
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
+};
+
+const ALL = '__all__';
+
+/**
+ * 한 번에 그리는 최대 장수.
+ *
+ * 상한이 없을 때 이 섹션은 사진 290장을 한 화면에 올렸고, `/archive`가
+ * 0.9 MB에서 **4.5 MB**로, HTML만 40 KB에서 1.3 MB로 커졌다(측정). CSS
+ * columns 안에서는 `loading="lazy"`도 별 도움이 안 된다 — 브라우저가 뷰포트
+ * 근처로 판단하는 이미지가 너무 많아 90장이 즉시 내려왔다. 폰트에서 아낀
+ * 것을 이 한 섹션이 되돌려 놓는 셈이다.
+ */
+const PAGE = 48;
+
+/**
+ * 조건을 고르기 전에 보여 줄 최근 사진 장수.
+ *
+ * 예전에는 이 자리가 점선 상자 하나였다("연도나 장소를 고르면…"). 섹션의
+ * 절반이 안내문뿐이라 기능이 있다는 것조차 잘 보이지 않았다. 최근 올라온
+ * 사진을 한 화면 분량만 보여 주면, 아래 그리드가 무엇을 거르는지 먼저
+ * 보이고 위의 칩이 그것을 좁히는 도구로 읽힌다. 전체 290장이 아니라 12장인
+ * 이유는 PAGE 주석의 무게 문제와 같다.
+ */
+const PREVIEW = 12;
+
+export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[]; mapPlaces?: MapPlace[] }) {
+  const [year, setYear] = useState<string>(ALL);
+  const [place, setPlace] = useState<string>(ALL);
+  const [limit, setLimit] = useState(PAGE);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [camera, setCameraState] = useState<string>(ALL);
+
+  // 카메라 선택지. 사진 페이지의 "카메라" 줄이 같은 값(`lib/camera`)으로 링크한다.
+  const cameras = useMemo(() => cameraOptions(photos), [photos]);
+
+  // `?camera=`는 사진 페이지에서 들어오는 길이다. `PhotoGrid`의 `?p=`와 같은 이유로
+  // `useSearchParams`가 아니라 히스토리 API로 읽는다 — 그 훅은 Suspense 경계를
+  // 요구하고, 그러면 `/archive`가 정적 프리렌더를 잃는다. 필터 결과는 어차피
+  // 클라이언트에서 그리므로 첫 진입에 한 번 읽으면 된다.
+  //
+  // 선택지에 없는 값(옛 링크, 그 카메라 사진을 모두 숨긴 뒤)은 조용히 무시한다 —
+  // "조건에 맞는 사진이 없습니다"보다 최근 사진이 낫다.
+  // 서버 HTML에는 조건 없는 화면이 들어 있고(주소창은 서버가 모른다), 하이드레이션
+  // 뒤에 주소창이라는 바깥 상태를 한 번 읽어 맞춘다 — `PhotoGrid`의 `read()`와 같은 모양.
+  useEffect(() => {
+    const read = () => {
+      const wanted = new URLSearchParams(window.location.search).get(CAMERA_PARAM);
+      if (wanted && cameras.some(option => option.value === wanted)) setCameraState(wanted);
+    };
+    read();
+  }, [cameras]);
+
+  // 카메라만 주소에 남긴다. 들어온 링크가 `?camera=`였는데 다른 카메라를 고른 뒤
+  // 새로고침하면 옛 조건으로 돌아가는 것은 이상하다. 연도·장소까지 주소에
+  // 싣는 것은 이 변경의 범위 밖이라 그대로 둔다. `?p=` 같은 다른 값은 지킨다.
+  function setCamera(next: string) {
+    setCameraState(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === ALL) params.delete(CAMERA_PARAM);
+    else params.set(CAMERA_PARAM, next);
+    const query = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }
+
+  // 목록은 데이터에서 만든다. 비어 있는 값은 선택지로 두지 않는다.
+  const years = useMemo(
+    () => [...new Set(photos.map(p => p.year).filter(Boolean))].sort((a, b) => b - a),
+    [photos],
+  );
+  const places = useMemo(
+    // "-"도 빈 값이다 — 선택지에 "-"가 뜨면 고를 수 있는 장소처럼 보인다.
+    () =>
+      [...new Set(photos.map(p => cleanCaptionField(p.location)).filter((v): v is string => v !== null))]
+        .sort((a, b) => a.localeCompare(b)),
+    [photos],
+  );
+
+  const filtered = useMemo(
+    () =>
+      photos.filter(
+        p =>
+          (year === ALL || String(p.year) === year) &&
+          (place === ALL || p.location?.trim() === place) &&
+          (camera === ALL || matchesCamera(p, camera)),
+      ),
+    [photos, year, place, camera],
+  );
+
+  const active = year !== ALL || place !== ALL || camera !== ALL;
+  const shown = filtered.slice(0, limit);
+
+  // "최근"은 id 순서다 — 홈의 최근 아카이브 띠와 같은 기준.
+  const recent = useMemo(
+    () => photos.toSorted((a, b) => b.id - a.id).slice(0, PREVIEW),
+    [photos],
+  );
+
+  // 조건을 바꾸면 처음부터 다시 센다.
+  function narrow(next: () => void) {
+    next();
+    setLimit(PAGE);
+  }
+
+  function reset() {
+    narrow(() => {
+      setYear(ALL);
+      setPlace(ALL);
+      setCamera(ALL);
+    });
+  }
+
+  return (
+    <div className="max-w-[1400px] mx-auto">
+      {/* 필터 패널. 연도는 열 개 남짓이라 전부 칩으로 펼친다 — 무엇이 있는지가
+          곧 정보다. 장소는 36곳이라 칩으로 펼치면 패널이 사진보다 길어지므로,
+          같은 pill 모양의 select로 접는다. 카메라도 같은 모양이다 — 여덟 대뿐이지만
+          모델명이 길어("iPhone 15 Pro Max · 100") 칩으로 펼치면 폰에서 네 줄이 된다. */}
+      <div className="mb-8 md:mb-10 space-y-5 border-y border-hairline py-6">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
+          <span className="label-ko text-muted-foreground sm:w-12 sm:pt-2.5 shrink-0" id="filter-year-label">연도</span>
+          <div role="group" aria-labelledby="filter-year-label" className="flex flex-wrap gap-2">
+            {[ALL, ...years.map(String)].map(y => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => narrow(() => setYear(y))}
+                data-active={year === y}
+                aria-pressed={year === y}
+                className="btn-outline tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {y === ALL ? '전체' : y}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+          <label htmlFor="filter-place" className="label-ko text-muted-foreground sm:w-12 shrink-0">장소</label>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <PillSelect
+              id="filter-place"
+              value={place}
+              onChange={value => narrow(() => setPlace(value))}
+              options={[{ value: ALL, label: '전체 장소' }, ...places.map(p => ({ value: p, label: p }))]}
+            />
+
+            {/* 좌표가 하나도 없으면(마이그레이션 전이거나 아직 채우지 않았으면)
+                토글 자체가 없다 — 빈 세계 지도를 여는 버튼은 고장처럼 보인다. */}
+            {mapPlaces.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMapOpen(open => !open)}
+                aria-expanded={mapOpen}
+                aria-controls="archive-map-panel"
+                className="btn-outline gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.4">
+                  <path d="M1.5 3.5 5.5 2l5 1.5 4-1.5v10.5l-4 1.5-5-1.5-4 1.5z M5.5 2v10.5 M10.5 3.5V14" strokeLinejoin="round" />
+                </svg>
+                {mapOpen ? '지도 닫기' : '지도로 보기'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {mapOpen && mapPlaces.length > 0 && (
+          <div id="archive-map-panel">
+            {/* 점을 누르면 위의 장소 선택과 **같은** 상태를 바꾼다. 같은 점을 다시
+                누르면 풀린다. 연도·카메라 조건은 그대로 둔다. */}
+            <PlaceMap
+              places={mapPlaces}
+              selected={place === ALL ? null : place}
+              onSelect={name => narrow(() => setPlace(current => (current === name ? ALL : name)))}
+            />
+          </div>
+        )}
+
+        {/* 카메라가 기록된 사진이 없으면(촬영 정보 채우기 전) 줄 자체가 없다. */}
+        {cameras.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+            <label htmlFor="filter-camera" className="label-ko text-muted-foreground sm:w-12 shrink-0">카메라</label>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <PillSelect
+                id="filter-camera"
+                value={camera}
+                onChange={value => narrow(() => setCamera(value))}
+                options={[
+                  { value: ALL, label: '전체 카메라' },
+                  // 장수는 전체 기준이다. 연도·장소에 따라 바뀌는 숫자는 선택지가
+                  // 움직이는 것처럼 보이고, "0장"인 선택지를 따로 다뤄야 한다.
+                  ...cameras.map(option => ({ value: option.value, label: `${option.label} (${option.count})` })),
+                ]}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 결과 수는 본문 글씨로. 한국어에 모노 대문자 자간을 걸면 글자가
+            흩어져 숫자가 읽히지 않았다. */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <p className="text-sm text-slate" aria-live="polite">
+            {active
+              ? <>전체 {photos.length}장 중 <span className="font-medium text-ink tabular-nums">{filtered.length}장</span></>
+              : <>최근 올라온 {recent.length}장을 보여 드립니다. 연도·장소·카메라를 고르면 전체 {photos.length}장에서 찾습니다.</>}
+          </p>
+          {active && (
+            <button
+              type="button"
+              onClick={reset}
+              className="btn-ghost focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              조건 초기화
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!active ? (
+        // 조건을 고르기 전: 최근 사진 한 화면 분량. 컬렉션 전체는 바로 위
+        // 그리드가 이미 더 나은 방식으로 보여 주고 있다.
+        <PhotoGrid key="recent" photos={recent} />
+      ) : filtered.length > 0 ? (
+        <>
+          {/* 조건이 바뀌면 그리드를 새로 만든다. 재사용하면 사진이 자리만
+              바뀌면서 스크롤 리빌 애니메이션이 어긋난다. */}
+          <PhotoGrid key={`${year}-${place}-${camera}`} photos={shown} />
+          {filtered.length > shown.length && (
+            <div className="mt-10 text-center">
+              <button
+                type="button"
+                onClick={() => setLimit(n => n + PAGE)}
+                className="btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                더 보기 ({filtered.length - shown.length}장 남음)
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="py-16 text-center space-y-4">
+          <p className="text-base text-slate">조건에 맞는 사진이 없습니다.</p>
+          <button type="button" onClick={reset} className="btn-outline">
+            조건 초기화
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 필터용 pill select. 장소와 카메라가 같은 모양을 쓴다 — `.btn-outline`에
+ * 펼침 표시를 얹고, 고른 상태(`data-active`)면 forest로 뒤집힌다.
+ */
+function PillSelect({
+  id,
+  value,
+  onChange,
+  options,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  const active = value !== ALL;
+  return (
+    <span className="relative inline-flex items-center">
+      <select
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        data-active={active}
+        className="btn-outline appearance-none cursor-pointer pr-10 max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <svg
+        aria-hidden
+        viewBox="0 0 12 12"
+        className={`pointer-events-none absolute right-4 h-3 w-3 ${active ? 'text-primary-foreground' : 'text-muted-foreground'}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}

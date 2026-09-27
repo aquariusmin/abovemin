@@ -1,6 +1,10 @@
+import { incrementWithTtl, kvEnabled } from './kv';
+
 // 최소 in-memory 레이트 리미터. 슬라이딩 윈도우 카운터.
-// 서버리스에서 인스턴스별로 독립 카운팅됨 — 완전한 분산 제한이 필요하면
-// Upstash Redis(Vercel Marketplace) 기반으로 교체 권장.
+//
+// 인스턴스별로 독립 카운팅된다. 인스턴스를 넘는 제한이 필요한 곳은
+// `rateLimitShared()`를 쓴다 — Upstash가 설정돼 있으면 그걸로 세고, 아니면
+// 이 함수로 되돌아온다.
 
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
@@ -33,6 +37,36 @@ export function rateLimit(
   existing.count += 1;
   const ok = existing.count <= opts.limit;
   return { ok, remaining: Math.max(0, opts.limit - existing.count), resetAt: existing.resetAt };
+}
+
+/**
+ * 공유 저장소가 있으면 그걸로 세고, 없으면 위의 in-memory로 되돌아간다.
+ *
+ * 서버리스에서 in-memory 카운터는 인스턴스마다 따로 돌아서, "15분에 5회"가
+ * 실제로는 "인스턴스당 5회"다. 로그인 시도 제한에서는 그 차이가 의미가 있다.
+ *
+ * 저장소가 응답하지 않으면 조용히 로컬 카운터로 내려간다 — 레이트 리미터가
+ * 죽었다고 로그인 자체가 막혀서는 안 되고, 공유되지 않는 제한이 없는 제한보다
+ * 낫기 때문이다.
+ */
+export async function rateLimitShared(
+  key: string,
+  opts: { limit: number; windowMs: number },
+): Promise<RateLimitResult> {
+  if (!kvEnabled) return rateLimit(key, opts);
+
+  const windowSec = Math.ceil(opts.windowMs / 1000);
+  // 창을 시간으로 잘라 키에 넣는다. 이러면 만료를 따로 관리할 필요가 없고,
+  // 같은 창 안의 요청이 같은 카운터를 본다.
+  const bucket = Math.floor(Date.now() / opts.windowMs);
+  const count = await incrementWithTtl(`rl:${key}:${bucket}`, windowSec);
+
+  if (count === null) return rateLimit(key, opts);
+  return {
+    ok: count <= opts.limit,
+    remaining: Math.max(0, opts.limit - count),
+    resetAt: (bucket + 1) * opts.windowMs,
+  };
 }
 
 export function clientIp(request: Request): string {

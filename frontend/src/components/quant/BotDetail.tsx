@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquityChart } from "@/components/quant/EquityChart";
 import { HoldingsTable } from "@/components/quant/HoldingsTable";
-import { Bar, Frame, Metric, Pill, Section } from "@/components/quant/Panel";
+import { Bar, FeedStale, Frame, Metric, Pill, RelativeTime, Section } from "@/components/quant/Panel";
 import {
   fmtAmount, fmtPct, fmtRelative, lastCycle, parseBotName,
   parseEquityCurve, staleness, type FleetBot,
@@ -13,10 +13,26 @@ import {
 
 const REFRESH_MS = 60_000;
 
-export function BotDetail({ botId }: { botId: string }) {
-  const [bot, setBot] = useState<FleetBot | null>(null);
+export function BotDetail({
+  botId,
+  /** Server-rendered first paint. See `getBot` in this route's page. */
+  initialBot = null,
+  /** When the server read `initialBot` (epoch ms) — see `FleetDashboard`. */
+  renderedAt,
+}: {
+  botId: string;
+  initialBot?: FleetBot | null;
+  renderedAt: number;
+}) {
+  const [bot, setBot] = useState<FleetBot | null>(initialBot);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // Seeded rows are already "loaded": showing the spinner over numbers the
+  // server just delivered would be a step backwards.
+  const [loaded, setLoaded] = useState(initialBot !== null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  // Staleness is judged against the server's render time until the first
+  // poll, so the state pill hydrates as rendered. See `FleetDashboard`.
+  const [now, setNow] = useState(renderedAt);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,10 +46,14 @@ export function BotDetail({ botId }: { botId: string }) {
         if (cancelled) return;
         setBot(data?.[0] ?? null);
         setError(null);
+        setLastFetched(new Date());
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) {
+          setLoaded(true);
+          setNow(Date.now());
+        }
       }
     };
     load();
@@ -67,7 +87,9 @@ export function BotDetail({ botId }: { botId: string }) {
       </Frame>
     );
   }
-  if (error) {
+  // A failed poll over a bot already on screen keeps it and says so; only a
+  // page that never got the bot at all is a full-screen error.
+  if (error && !bot) {
     return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
   if (!bot) {
@@ -85,7 +107,7 @@ export function BotDetail({ botId }: { botId: string }) {
   const positive = (bot.pnl_pct ?? 0) >= 0;
   const day = bot.day_pnl_pct;
   const seen = lastCycle(points, bot.updated_at);
-  const age = staleness(seen);
+  const age = staleness(seen, now);
   const positionValue =
     bot.cash !== null && bot.cash !== undefined
       ? Math.max(0, bot.equity - bot.cash)
@@ -95,6 +117,9 @@ export function BotDetail({ botId }: { botId: string }) {
     <div className="space-y-3">
       <BackLink />
       <Frame>
+        {error ? (
+          <FeedStale error={error} since={lastFetched ? fmtRelative(lastFetched.toISOString()) : null} />
+        ) : null}
         {/* Identity first: the venue tag and halt state decide how to read
             every number below, and mock equity looks identical to real money
             otherwise. */}
@@ -171,8 +196,11 @@ export function BotDetail({ botId }: { botId: string }) {
               <KV k="market" v={`${bot.market} · ${bot.currency ?? "USD"}`} />
               <KV k="total fills" v={bot.fills_count !== null ? String(bot.fills_count) : "—"} />
               <KV k="last action" v={bot.last_fill ?? "—"} />
-              <KV k="last cycle" v={fmtRelative(new Date(seen).toISOString())} />
-              <KV k="row synced" v={fmtRelative(bot.updated_at)} />
+              {/* Server-rendered, so these have to survive hydration — see
+                  `RelativeTime`. This page had the same latent mismatch as the
+                  fleet table. */}
+              <KV k="last cycle" v={<RelativeTime>{fmtRelative(new Date(seen).toISOString())}</RelativeTime>} />
+              <KV k="row synced" v={<RelativeTime>{fmtRelative(bot.updated_at)}</RelativeTime>} />
             </div>
           </div>
         </Section>
@@ -190,7 +218,7 @@ function BackLink() {
   );
 }
 
-function KV({ k, v }: { k: string; v: string }) {
+function KV({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 px-4 py-2">
       <span className="lab-label shrink-0">{k}</span>

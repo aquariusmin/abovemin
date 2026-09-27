@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+import { formatPrice } from '@/lib/price';
+import { MAX_LINE_QUANTITY } from '@/lib/cart-lines';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -25,13 +27,15 @@ export default function CartPage() {
   if (items.length === 0) return (
     <main className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8 py-24">
       <p className="eyebrow text-muted-foreground mb-4">Cart</p>
-      <p className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</p>
+      {/* 빈 장바구니에도 제목은 있어야 한다. 담긴 게 있을 때의 "Ready to
+          collect?"와 같은 자리다 (axe: page-has-heading-one). */}
+      <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</h1>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Link href="/shop" className="btn-primary">소품 보러 가기</Link>
-        <Link href="/archive" className="link-underline text-ink text-sm">Browse the archive</Link>
+        <Link href="/archive" className="link-underline text-ink text-sm">아카이브 둘러보기</Link>
       </div>
     </main>
   );
@@ -54,9 +58,11 @@ export default function CartPage() {
         {/* Line items */}
         <div className="mb-12">
           <AnimatePresence initial={false}>
+            {/* 줄의 열쇠는 상품 id가 아니라 `key`(상품 + 옵션)다. 같은 포스터의
+                A3와 A2가 한 줄로 합쳐지면 안 된다(`lib/cart-lines.ts`). */}
             {items.map(item => (
               <motion.div
-                key={item.id}
+                key={item.key}
                 layout={!reduce}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -64,12 +70,23 @@ export default function CartPage() {
                 transition={{ duration: 0.4, ease: EASE }}
                 className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6 border-b border-hairline py-5 overflow-hidden"
               >
-                {/* Image */}
+                {/* Image — 높이만 맞추고 폭은 사진 비율대로. 정사각에 채워
+                    자르지 않는다(DESIGN.md § Image Treatment). 칸은 가장 넓은
+                    가로 사진까지 받도록 폭만 예약한다. */}
                 <Link
                   href={`/shop/${item.id}`}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-md bg-stone border border-border-light overflow-hidden shrink-0 relative transition-colors hover:border-accent"
+                  className="flex w-24 md:w-28 shrink-0 justify-center"
                 >
-                  <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="96px" />
+                  {item.image_url && (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      width={0}
+                      height={0}
+                      sizes="112px"
+                      className="h-20 md:h-24 w-auto max-w-full rounded-md border border-border-light bg-stone transition-colors hover:border-accent"
+                    />
+                  )}
                 </Link>
 
                 {/* Name + unit price */}
@@ -77,13 +94,16 @@ export default function CartPage() {
                   <Link href={`/shop/${item.id}`} className="text-[15px] font-medium text-ink-body leading-snug hover:text-accent transition-colors">
                     {item.name}
                   </Link>
-                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">₩&nbsp;{item.price.toLocaleString()}</p>
+                  {item.option_label && (
+                    <p className="mt-0.5 text-[13px] text-slate">{item.option_label}</p>
+                  )}
+                  <p className="mt-1 text-sm font-semibold text-accent tabular-nums">{formatPrice(item.price)}</p>
                 </div>
 
                 {/* Quantity */}
                 <div className="flex items-center gap-2 order-3 sm:order-none">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.key, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     aria-label="수량 줄이기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent disabled:opacity-40 disabled:hover:border-hairline disabled:hover:text-slate disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -92,7 +112,8 @@ export default function CartPage() {
                   </button>
                   <span className="text-sm font-semibold w-6 text-center tabular-nums">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.key, item.quantity + 1)}
+                    disabled={item.quantity >= MAX_LINE_QUANTITY}
                     aria-label="수량 늘리기"
                     className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
@@ -106,10 +127,10 @@ export default function CartPage() {
                     ₩&nbsp;{(item.price * item.quantity).toLocaleString()}
                   </p>
                   <button
-                    onClick={() => removeItem(item.id)}
-                    className="eyebrow text-muted-foreground hover:text-brick transition-colors"
+                    onClick={() => removeItem(item.key)}
+                    className="label-ko text-muted-foreground hover:text-brick transition-colors"
                   >
-                    Remove
+                    삭제
                   </button>
                 </div>
               </motion.div>
@@ -122,19 +143,19 @@ export default function CartPage() {
           {confirmingClear ? (
             <span className="flex items-center gap-3 text-sm text-slate">
               모두 비울까요?
-              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="eyebrow text-brick hover:opacity-70 transition-opacity">
-                Yes, clear
+              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="label-ko text-brick hover:opacity-70 transition-opacity">
+                비우기
               </button>
-              <button onClick={() => setConfirmingClear(false)} className="eyebrow text-muted-foreground hover:text-ink transition-colors">
-                Cancel
+              <button onClick={() => setConfirmingClear(false)} className="label-ko text-muted-foreground hover:text-ink transition-colors">
+                취소
               </button>
             </span>
           ) : (
             <button
               onClick={() => setConfirmingClear(true)}
-              className="eyebrow text-muted-foreground hover:text-slate transition-colors"
+              className="label-ko text-muted-foreground hover:text-slate transition-colors"
             >
-              Clear All
+              모두 비우기
             </button>
           )}
 
@@ -146,7 +167,7 @@ export default function CartPage() {
               </span>
             </div>
             <Link href="/cart/checkout" className="btn-primary w-full">
-              Checkout
+              주문하기
             </Link>
           </div>
         </div>

@@ -21,7 +21,7 @@ export function HoldingsTable({
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
   return (
-    <div className="overflow-x-auto">
+    <div className="lab-scroll overflow-x-auto">
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr className="glass-inset border-b border-[var(--lab-border)]">

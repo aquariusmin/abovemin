@@ -1,7 +1,8 @@
 import type { PortfolioProject } from "@/data/portfolio";
 import type { PortfolioLocale } from "@/data/portfolioRouting";
+import { SITE_URL } from "@/lib/site";
 
-const SITE = "https://abovemin.com";
+const SITE = SITE_URL;
 const EMAIL = "aquariusmin01@naver.com";
 const GITHUB = "https://github.com/aquariusmin";
 
@@ -64,8 +65,13 @@ export default function PortfolioJsonLd({
   return (
     <script
       type="application/ld+json"
-      // Server-rendered from data this repo owns — no user input reaches it.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      // Server-rendered from data this repo owns, so nothing hostile reaches
+      // it today. The `<` escape is here anyway, for the same reason
+      // `shop/[id]` has it: a `</script>` inside any of these strings would
+      // close the block early and turn the rest into markup, and "the data is
+      // ours" is a property of today's `portfolio.ts`, not of the component.
+      // One escape costs nothing and stops that from being a future problem.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
     />
   );
 }

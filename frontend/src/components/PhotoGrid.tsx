@@ -1,24 +1,109 @@
 "use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import FadeImage from './FadeImage';
+import { placeholderStyle } from './photo-placeholder';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Lightbox from './Lightbox';
 import { cloudinary } from '@/lib/cloudinary';
+import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+/**
+ * 첫 화면에 걸리는 앞쪽 타일 수. 이 타일들은 등장 애니메이션 없이 서버 HTML
+ * 그대로 보인다 — `initial`의 opacity 0은 하이드레이션 뒤에야 풀려서, 첫 화면의
+ * 사진(LCP)이 JS를 기다리게 된다. 열 기반 masonry라 한 줄이 어느 타일인지는
+ * 뷰포트마다 다르다. 폰(1열)에서는 앞의 두세 장이, 데스크톱에서는 첫 열의
+ * 위쪽이 여기에 든다.
+ */
+const ABOVE_FOLD = 3;
 
 interface Photo {
   id: number;
   src: string;
   title: string;
   location: string;
-  year: string;
+  year: number;
+  /** 앨범을 가로지르는 목록에서만 온다. 라이트박스의 공유 링크가 쓴다. */
+  album_slug?: string;
+  /** 촬영 정보 채우기 이후에만 있다. 여기서는 비율로만 쓴다. */
+  width?: number | null;
+  height?: number | null;
+  taken_at?: string | null;
+  camera?: string | null;
+  focal_length?: string | null;
+  aperture?: string | null;
+  shutter?: string | null;
+  iso?: number | null;
 }
 
 export default function PhotoGrid({ photos }: { photos: Photo[] }) {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const reduce = useReducedMotion();
+
+  // 열린 사진이 URL에 있다.
+  //
+  // 45장짜리 앨범에서 한 장을 누군가에게 보여 주려면 "japan 앨범 열고 열두
+  // 번째"라고 말하는 수밖에 없었다. `?p=<id>`면 주소 하나로 끝나고, 뒤로
+  // 가기가 라이트박스를 닫는 동작이 된다 — 폰에서 사람들이 실제로 하는 동작.
+  //
+  // 인덱스가 아니라 **사진 id**를 쓴다. 인덱스는 앨범에 사진이 추가되거나
+  // 순서가 바뀌면 다른 사진을 가리키게 되어, 공유한 링크가 조용히 틀려진다.
+  //
+  // `useSearchParams`가 아니라 히스토리 API를 직접 쓰는 이유: 그 훅은 Suspense
+  // 경계를 요구하고, 그러면 이 앨범 페이지가 정적 프리렌더를 잃는다. 사진
+  // 목록은 이 사이트의 본문이라 HTML에 들어 있어야 한다. 라이트박스는 어차피
+  // 클라이언트 전용 장치이므로, 쿼리 문자열도 클라이언트에서만 다룬다.
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const lightboxIndex = useMemo(() => {
+    if (openId === null) return null;
+    const at = photos.findIndex(photo => String(photo.id) === openId);
+    return at === -1 ? null : at;
+  }, [openId, photos]);
+
+  // 주소창을 상태의 원천으로 삼는다: 첫 진입에서 한 번 읽고, 그 뒤로는
+  // 뒤로/앞으로 가기를 따라간다.
+  useEffect(() => {
+    const read = () => setOpenId(new URLSearchParams(window.location.search).get('p'));
+    read();
+    window.addEventListener('popstate', read);
+    return () => window.removeEventListener('popstate', read);
+  }, []);
+
+  // 공유받은 링크로 바로 들어왔다면, 닫았을 때 그 사진이 화면에 있도록
+  // 뒤의 그리드를 미리 그 자리로 옮겨 둔다.
+  useEffect(() => {
+    if (openId === null) return;
+    document.getElementById(`photo-${openId}`)?.scrollIntoView({ block: 'center' });
+    // 열리는 순간 한 번이면 된다. 넘길 때마다 스크롤하면 닫았을 때 처음 보던
+    // 자리를 잃는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId === null]);
+
+  const setQuery = useCallback((id: string | null, mode: 'push' | 'replace') => {
+    const params = new URLSearchParams(window.location.search);
+    if (id === null) params.delete('p');
+    else params.set('p', id);
+    const query = params.toString();
+    const url = `${window.location.pathname}${query ? `?${query}` : ''}`;
+    // 여는 것만 히스토리에 쌓는다. 스무 장을 넘긴 뒤 뒤로 가기를 스무 번
+    // 눌러야 앨범으로 돌아가는 것은 함정이다.
+    if (mode === 'push') window.history.pushState(null, '', url);
+    else window.history.replaceState(null, '', url);
+    setOpenId(id);
+  }, []);
+
+  const open = useCallback((index: number) => setQuery(String(photos[index].id), 'push'), [photos, setQuery]);
+  const close = useCallback(() => setQuery(null, 'replace'), [setQuery]);
+  const step = useCallback(
+    (delta: number) => {
+      if (lightboxIndex === null) return;
+      const next = (lightboxIndex + delta + photos.length) % photos.length;
+      setQuery(String(photos[next].id), 'replace');
+    },
+    [lightboxIndex, photos, setQuery],
+  );
 
   if (photos.length === 0) {
     return (
@@ -34,40 +119,72 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
   return (
     <>
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
-        {photos.map((photo, i) => (
+        {photos.map((photo, i) => {
+          // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
+          const caption = photoCaption(photo);
+          const label = photoLabel(photo);
+          const aboveFold = i < ABOVE_FOLD;
+          return (
           <motion.button
             key={photo.id}
             type="button"
+            id={`photo-${photo.id}`}
             className="break-inside-avoid group block w-full text-left cursor-pointer"
-            onClick={() => setLightboxIndex(i)}
-            aria-label={`${photo.title} 크게 보기`}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+            onClick={() => open(i)}
+            aria-label={`${label} 크게 보기`}
+            initial={aboveFold ? false : reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
             whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: EASE }}
           >
-            <div className="relative overflow-hidden rounded-md bg-stone">
-              <Image
+            {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`). 프레임 크기는
+                아래 이미지가 정하므로, 사진이 오면 판을 정확히 덮는다. */}
+            <div className="relative overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
+              {/* Next 16 deprecates `priority` in favour of `preload`, but a
+                  preload link is the wrong migration for a masonry grid: the
+                  column count changes with the viewport, so which tile is the
+                  LCP element is not knowable from the markup — the docs name
+                  this case explicitly and point at these two props instead.
+                  Same treatment the Lightbox already uses. */}
+              <FadeImage
                 src={cloudinary(photo.src, { watermark: true, width: 800 })}
-                alt={photo.title}
+                alt={label}
                 width={0}
                 height={0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-auto block duration-700 group-hover:scale-105"
+                // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
+                // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
+                // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
+                //
+                // 비율만 쓴다. 폭은 `w-full`이 정하고, 원본 픽셀 크기(1500px 안팎으로
+                // 줄어 있다)는 프레임 크기에 관여하지 않는다. `auto`를 앞에 두는 이유:
+                // 이미지가 도착하면 **실제** 비율이 이긴다 — 저장된 값이 회전 전
+                // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
+                style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
                 draggable={false}
-                priority={i === 0}
+                fadeIn={!aboveFold}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
               />
             </div>
-            <div className="mt-3">
-              <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
-                {photo.title}
-              </p>
-              <p className="eyebrow text-muted-foreground mt-1">
-                {photo.location}&nbsp;&middot; {photo.year}
-              </p>
-            </div>
+            {(caption.title || caption.meta.length > 0) && (
+              <div className="mt-3">
+                {caption.title && (
+                  <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
+                    {caption.title}
+                  </p>
+                )}
+                {caption.meta.length > 0 && (
+                  <p className={`eyebrow text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
+                    {joinCaption(caption.meta)}
+                  </p>
+                )}
+              </div>
+            )}
           </motion.button>
-        ))}
+          );
+        })}
       </div>
 
       <AnimatePresence>
@@ -76,9 +193,9 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
             key="lightbox"
             photos={photos}
             currentIndex={lightboxIndex}
-            onClose={() => setLightboxIndex(null)}
-            onPrev={() => setLightboxIndex((lightboxIndex - 1 + photos.length) % photos.length)}
-            onNext={() => setLightboxIndex((lightboxIndex + 1) % photos.length)}
+            onClose={close}
+            onPrev={() => step(-1)}
+            onNext={() => step(1)}
           />
         )}
       </AnimatePresence>

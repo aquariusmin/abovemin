@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: 'Lab — Quant Fleet Console',
   description:
     '자동매매 플릿의 운영 상태 콘솔. 계좌별로 실자금/모의를 구분해 표시하며, 투자 권유나 성과 보장이 아닙니다.',
+  // metadataBase만으로는 canonical이 나오지 않는다. sitemap에 올라가 있는
+  // 라우트인데 이것만 빠져 있었다.
+  alternates: { canonical: '/lab' },
   other: { 'color-scheme': 'light' },
 };
 

@@ -4,6 +4,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 // Content Security Policy.
 // - Supabase, Cloudinary, Unsplash를 이미지/API 소스로 허용
+//   (api.cloudinary.com은 /admin에서 브라우저가 사진을 직접 업로드하는 엔드포인트)
 // - Next.js가 필요로 하는 unsafe-inline/eval은 개발에서만, 프로덕션에서도 style unsafe-inline은
 //   Tailwind JIT/styled-jsx 때문에 현실적으로 필요
 const csp = [
@@ -16,7 +17,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.supabase.co",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://query1.finance.yahoo.com https://query2.finance.yahoo.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com",
   "upgrade-insecure-requests",
 ].join('; ');
 
@@ -31,7 +32,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ['yahoo-finance2'],
+  // `opengraph-image`가 `readFile(process.cwd() + 'assets/…')`로 서체를 읽는다.
+  // 파일 트레이서는 그런 런타임 경로를 따라가지 못하므로 명시해 준다 — 없으면
+  // 로컬에서는 되고 배포에서만 카드가 폰트 없이(또는 500으로) 나온다.
+  outputFileTracingIncludes: {
+    '/opengraph-image': ['./assets/**'],
+    '/portfolio/opengraph-image': ['./assets/**'],
+  },
   experimental: {
     // framer-motion re-exports its whole surface from one entry point, so a
     // component that imports `{ motion }` drags the gesture, layout-animation
@@ -47,6 +54,16 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
+      {
+        // `public/`는 파일명에 해시가 붙지 않아 기본 캐시가 사실상 없다.
+        // 국기 웹폰트는 내용이 고정된 벤더 파일이므로 1년 immutable로 못박는다.
+        // 교체할 일이 생기면 덮어쓰지 말고 **파일명을 바꿔야** 한다
+        // (public/fonts/README.md 참고).
+        source: '/fonts/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
     ];
   },
   async redirects() {
@@ -60,8 +77,14 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Next 16 ignores any `quality` not listed here and silently falls back to
-    // 75. The hero asks for 90, so both values have to be declared.
+    // 원격 이미지는 이미 Cloudinary/Unsplash가 줄이고 포맷을 고른 것이라
+    // `/_next/image`로 한 번 더 통과시키지 않는다. 로더가 각 CDN에 폭과 품질을
+    // 직접 넘긴다(src/lib/image-loader.ts).
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    // Next 16 warns about any `quality` not listed here. The custom loader passes
+    // the prop straight to the CDN (hero: q_90), but the list stays so the
+    // warning stays meaningful if someone adds a new value.
     qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),

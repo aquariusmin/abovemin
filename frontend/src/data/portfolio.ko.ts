@@ -1,4 +1,9 @@
 import type { PortfolioProject } from "@/data/portfolio";
+import {
+  archivePortfolioSlugs,
+  curatePortfolioProjects,
+  featuredPortfolioSlugs,
+} from "@/data/portfolioCuration";
 
 export const koreanPortfolioProjects: PortfolioProject[] = [
   {
@@ -378,6 +383,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
     period: "2025년~현재",
     role: "개인 프로젝트 · tqt(토스 Open API) · Quant Trading Fleet",
     sourceUrl: "https://github.com/aquariusmin/toss-api-quant-trading",
+    liveUrl: "/lab",
     summary:
       "전략을 새로 만드는 일보다, 그 전략에 우위가 있는지 검증하고 안전하게 켜고 끄고 기록하는 데 시간을 더 썼습니다. tqt가 검증과 실행을, Fleet이 운영 대시보드를 맡습니다.",
     question:
@@ -386,7 +392,7 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "처음 문제의식은 단순했습니다. 전략이 맞는지 보기 전에, 그 전략을 안전하게 켜고 끄고 지켜볼 수 있어야 했습니다.",
       "Fleet에서 브로커 인터페이스, 봇 상태, 설정값, 주문 이력, 로그를 한 흐름으로 묶고 FastAPI와 대시보드로 제어했습니다.",
       "다음 질문은 ‘그래서 이 전략에 우위가 있는가’였습니다. tqt에서는 인샘플 성과 대신 walk-forward 아웃오브샘플로만 결과를 보고하도록 백테스트를 다시 설계했습니다.",
-      "그 결과 가장 좋은 전략도 매수보유보다 CAGR이 낮다는 사실을 먼저 적게 됐습니다. 두 프로젝트 모두 페이퍼 트레이딩 단계이며 수익률을 주장하지 않습니다.",
+      "그 결과 가장 좋은 전략도 매수보유보다 CAGR이 낮다는 사실을 먼저 적게 됐습니다. 지금은 모의 계좌와 함께 소액 실계좌에서도 봇이 돌아가고 /lab에 계좌 구분이 표시되지만, 수익률은 주장하지 않습니다.",
     ],
     evidence: [
       "국내상장 글로벌 ETF 8종과 국고채 2종, 2011~2026년 일봉 백테스트",
@@ -412,9 +418,9 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
           "추정 수수료 대신 계좌의 실제 요율을 API에서 읽어오고, 슬리피지와 익일 시가 체결을 반영해 비용 가정을 실제에 맞췄습니다.",
       },
       {
-        title: "아웃오브샘플 검증과 페이퍼 트레이딩",
+        title: "아웃오브샘플 검증, 페이퍼 트레이딩, 소액 실계좌",
         description:
-          "5년 학습 · 2년 검증 walk-forward로만 성과를 보고하고, 실제 호가창에 체결시키는 페이퍼 트레이딩으로 운영을 검증했습니다.",
+          "5년 학습 · 2년 검증 walk-forward로만 성과를 보고하고, 실제 호가창에 체결시키는 페이퍼 트레이딩으로 운영을 먼저 검증한 뒤 소액 실계좌 운용을 더했습니다.",
       },
     ],
     insights: [
@@ -426,24 +432,24 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
     decisionValue:
       "수익률을 주장하는 대신, 어떤 조건에서 전략을 켤 수 있고 무엇을 보면 꺼야 하는지를 숫자와 운영 장치로 정리했습니다.",
     limitations: [
-      "두 프로젝트 모두 페이퍼 트레이딩 검증 단계이며 실자금 운용 이력이 없습니다.",
+      "실자금 운용은 모의 계좌와 병행하는 소액 계좌 단계이며, 이 포트폴리오는 그 실거래 결과를 성과 근거로 쓰지 않습니다.",
       "백테스트 유니버스가 현재 상장된 종목으로 구성돼 생존 편향이 일부 남아 있습니다.",
       "2022년에는 검증한 전략 대부분이 손실이었습니다. 주식과 장기채가 함께 빠지는 구간은 이 설계로 방어되지 않습니다.",
       "장시간 가동, 주문 실패 처리, 재시작 시나리오는 별도 운영 기준으로 관리해야 합니다.",
     ],
     notClaimed: [
-      "수익률과 승률을 주장하지 않습니다. 실자금 운용 이력이 없습니다.",
+      "수익률과 승률을 주장하지 않습니다. 소액 실계좌의 결과도 성과 기록으로 제시하지 않습니다.",
       "전략에 우위가 있다고 말하지 않습니다. 가장 좋은 전략도 매수보유보다 CAGR이 낮았습니다.",
-      "실서비스 운영이라고 말하지 않습니다. 페이퍼 트레이딩 단계입니다.",
+      "실서비스라고 말하지 않습니다. 소액 실계좌와 모의 계좌에서 봇을 돌리는 개인 프로젝트입니다.",
     ],
     suggestedVisuals: [
       "walk-forward 인샘플 대 아웃오브샘플 비교",
       "전략별 CAGR과 최대낙폭 교환관계",
       "전략부터 대시보드까지의 시스템 구조",
-      "모의투자로 표시한 익명화 대시보드",
+      "실계좌와 모의 계좌를 구분해 표시한 익명화 대시보드",
     ],
     caution:
-      "페이퍼 트레이딩 검증 단계입니다. 백테스트 수치는 과거 데이터 기반 시뮬레이션이며, 실거래 운영·수익률·승률·자본 증가를 주장하지 않습니다.",
+      "모의 계좌와 소액 실계좌를 함께 운용하며, 계좌 구분은 /lab에 봇마다 표시됩니다. 백테스트 수치는 과거 데이터 기반 시뮬레이션이지 실거래 기록이 아니며, 수익률·승률·자본 증가를 주장하지 않습니다.",
   },
   {
     slug: "financial-ai-model-study",
@@ -661,38 +667,14 @@ export function getKoreanPortfolioProject(slug: string) {
   return koreanPortfolioProjects.find((project) => project.slug === slug);
 }
 
-export const koreanSubmissionFeaturedSlugs = [
-  "busan-station-dwell",
-  "telecom-churn",
-  "satellite-gdp",
-] as const;
-
-export const koreanSubmissionArchiveSlugs = [
-  "arctic-route",
-  "quant-trading-fleet",
-  "korean-air",
-  "financial-ai-model-study",
-  "phorage",
-  "blood-type-survey",
-] as const;
-
-function getSubmissionProjectsBySlugs(slugs: readonly string[], prefix = "") {
-  return slugs.flatMap((slug, index) => {
-    const project = getKoreanPortfolioProject(slug);
-    if (!project) return [];
-    return [{
-      ...project,
-      number: `${prefix}${String(index + 1).padStart(2, "0")}`,
-    }];
-  });
-}
-
+// The curated ordering is shared with the English pages — see
+// `portfolioCuration.ts`.
 export function getKoreanSubmissionFeaturedProjects() {
-  return getSubmissionProjectsBySlugs(koreanSubmissionFeaturedSlugs);
+  return curatePortfolioProjects(koreanPortfolioProjects, featuredPortfolioSlugs);
 }
 
 export function getKoreanSubmissionArchiveProjects() {
-  return getSubmissionProjectsBySlugs(koreanSubmissionArchiveSlugs, "A");
+  return curatePortfolioProjects(koreanPortfolioProjects, archivePortfolioSlugs, "A");
 }
 
 export function getKoreanSubmissionPortfolioProjects() {

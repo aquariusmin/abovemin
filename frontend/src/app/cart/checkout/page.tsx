@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
+import type { OrderInputValues } from '@/lib/orders-schema';
+import { toOrderItems } from '@/lib/cart-lines';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -15,9 +18,16 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '' });
+  // 완료 화면의 금액. 장바구니의 가격은 담을 때 본 값이라, 그 사이 가격이 바뀌었으면
+  // 서버가 DB에서 다시 계산한 합계와 다르다 — 입금할 금액은 서버 쪽이다.
+  const [placed, setPlaced] = useState<{ total: number; cartTotal: number } | null>(null);
+  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+  // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
+  // 키가 가므로, 첫 요청이 사실은 저장됐다면 서버는 새로 넣지 않고 그 주문으로
+  // 답한다. 새 키는 주문이 성공한 뒤에만 만든다.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const [mounted, setMounted] = useState(false);
 
@@ -54,29 +64,71 @@ export default function CheckoutPage() {
     }
     setSubmitting(true);
 
+    // Typed against the schema the server parses with, on purpose.
+    //
+    // This is the compile-time half of the fix for the dropped postal code: an
+    // object literal annotated with `OrderInputValues` cannot carry a key the
+    // schema does not declare, so adding a field to this form without adding
+    // it to `orders-schema` fails the build instead of being silently stripped
+    // at runtime. `total_price` is gone for the same reason — the server has
+    // always recomputed it from the products table, and sending it suggested
+    // otherwise.
+    //
+    // 항목도 같은 이유로 id·옵션 id·수량만 싣는다(`toOrderItems`). 장바구니 줄의
+    // 가격은 화면 표시용이고, 서버는 옵션 가격까지 DB에서 다시 읽는다.
+    const payload: OrderInputValues = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      zipcode: form.zipcode.trim() || null,
+      address: form.address.trim(),
+      note: form.note.trim() || null,
+      items: toOrderItems(items),
+      idempotency_key: idempotencyKey,
+      // 허니팟 — 사람에게는 늘 빈 칸이다. 비었으면 키째 뺀다.
+      ...(form.website ? { website: form.website } : {}),
+    };
+
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim() || null,
-          zipcode: form.zipcode.trim() || null,
-          address: form.address.trim(),
-          note: form.note.trim() || null,
-          items,
-          total_price: totalPrice(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        setOrderError('주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        // The server distinguishes its failures — a sold-out item, an item that
+        // no longer exists, too many attempts — and a blanket "try again later"
+        // hides all of them. Worse, it invites a retry loop for the one case
+        // that retrying can never fix: a product that went out of stock while
+        // it sat in this cart. Show what the server said, and fall back to the
+        // generic line only when it said nothing useful.
+        const detail = await res
+          .json()
+          .then((body: unknown) =>
+            typeof (body as { error?: unknown })?.error === 'string'
+              ? (body as { error: string }).error
+              : null,
+          )
+          .catch(() => null);
+        setOrderError(
+          detail ??
+            (res.status === 429
+              ? '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.'
+              : '주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+        );
         setSubmitting(false);
         return;
       }
 
+      const cartTotal = totalPrice();
+      const serverTotal = await res
+        .json()
+        .then((body: unknown) => (body as { total_price?: unknown })?.total_price)
+        .catch(() => undefined);
+      setPlaced({ total: typeof serverTotal === 'number' ? serverTotal : cartTotal, cartTotal });
       clearCart();
+      setIdempotencyKey(crypto.randomUUID());
       setDone(true);
     } catch {
       setOrderError('네트워크 오류로 주문을 보내지 못했습니다. 연결을 확인하고 다시 시도해주세요.');
@@ -101,10 +153,22 @@ export default function CheckoutPage() {
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
-        <p className="text-[15px] text-ink-body mb-10 break-keep">
+        <p className="text-[15px] text-ink-body mb-6 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
-        <Link href="/shop" className="btn-primary">Continue Shopping</Link>
+        {placed && (
+          <div className="mb-10">
+            <p className="text-[15px] text-ink-body">
+              입금하실 금액 <span className="font-semibold text-ink tabular-nums">₩&nbsp;{placed.total.toLocaleString()}</span>
+            </p>
+            {placed.total !== placed.cartTotal && (
+              <p className="mt-2 text-xs text-brick break-keep">
+                장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
+              </p>
+            )}
+          </div>
+        )}
+        <Link href="/shop" className="btn-primary">계속 둘러보기</Link>
       </main>
     );
   }
@@ -123,9 +187,7 @@ export default function CheckoutPage() {
       >
 
         <header className="mb-10 border-b border-hairline pb-6">
-          <Link href="/cart" className="link-underline text-sm text-slate">
-            ← Back to Cart
-          </Link>
+          <BackLink href="/cart">장바구니로</BackLink>
           <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
           <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해주세요.</h1>
         </header>
@@ -220,6 +282,23 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {/* 허니팟. 사람에게는 보이지도, 읽히지도, 탭으로 닿지도 않는다 —
+                폼을 통째로 채우는 봇만 여기에 값을 넣는다. `display:none`이
+                아닌 이유: 그건 봇도 건너뛴다. 서버는 채워진 주문을 성공처럼
+                답하고 버린다(`api/orders`). */}
+            <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+              <label htmlFor="website">웹사이트</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
+              />
+            </div>
+
             {orderError && (
               <p
                 role="alert"
@@ -234,7 +313,7 @@ export default function CheckoutPage() {
               disabled={submitting}
               className="btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Processing…' : 'Place Order'}
+              {submitting ? '주문 중…' : '주문하기'}
             </button>
           </form>
 
@@ -244,14 +323,26 @@ export default function CheckoutPage() {
               <p className="eyebrow text-muted-foreground">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex justify-between items-center gap-3">
+                  <div key={item.key} className="flex justify-between items-center gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="relative w-11 h-11 shrink-0 rounded-md overflow-hidden bg-canvas border border-border-light">
-                        <Image src={item.image_url} alt="" fill className="object-cover" sizes="44px" />
+                      {/* 높이만 맞추고 폭은 사진 비율대로 — 자르지 않는다. */}
+                      <span className="flex w-14 shrink-0 justify-center">
+                        {item.image_url && (
+                          <Image
+                            src={item.image_url}
+                            alt=""
+                            width={0}
+                            height={0}
+                            sizes="56px"
+                            className="h-11 w-auto max-w-full rounded-md bg-canvas border border-border-light"
+                          />
+                        )}
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink-body leading-snug truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">× {item.quantity}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.option_label && <>{item.option_label}&nbsp;· </>}× {item.quantity}
+                        </p>
                       </div>
                     </div>
                     <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</p>

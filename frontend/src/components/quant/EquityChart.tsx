@@ -6,7 +6,9 @@ import {
   Tooltip, XAxis, YAxis,
 } from "recharts";
 
-import { fmtAmount, type EquityPoint } from "@/lib/quant";
+import {
+  dayTicks, fmtAmount, fmtDateKst, fmtDateTimeKst, fmtDayKst, type EquityPoint,
+} from "@/lib/quant";
 import { LAB_AXIS, LAB_GRID, LAB_INK, LAB_STATUS, LAB_TOOLTIP } from "@/components/quant/theme";
 
 /**
@@ -54,12 +56,16 @@ export function EquityChart({
   // rather than a series colour. The signed figure beside the chart is the
   // label that keeps this from being colour-alone.
   const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
-  const fmtDate = (ts: number) => new Date(ts).toISOString().slice(5, 10);
+  // 축과 툴팁 모두 KST. 플릿 차트와 같은 규칙이고, 이유는 `lib/quant`의 KST
+  // 주석에 있다 — 여기 계좌는 전부 한국 시장이다.
+  const ticks = dayTicks(points.map((p) => p.ts));
 
   return (
     <div className="space-y-1">
       <div className="h-52 w-full">
-        <ResponsiveContainer>
+        {/* 높이는 위의 `h-52`(208px)와 같아야 한다 — 기본값 -1로 첫 측정이
+            들어가면 recharts가 콘솔에 경고를 찍는다. */}
+        <ResponsiveContainer initialDimension={{ width: 640, height: 208 }}>
           <AreaChart data={points} margin={{ top: 6, right: 12, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="labEqFill" x1="0" y1="0" x2="0" y2="1">
@@ -68,14 +74,13 @@ export function EquityChart({
               </linearGradient>
             </defs>
             <CartesianGrid stroke={LAB_GRID} vertical={false} />
-            <XAxis dataKey="ts" tickFormatter={fmtDate} {...LAB_AXIS} minTickGap={40} />
+            <XAxis dataKey="ts" ticks={ticks} tickFormatter={fmtDateKst} {...LAB_AXIS} minTickGap={32} />
             <YAxis {...LAB_AXIS} width={64} domain={["auto", "auto"]}
                    tickFormatter={(v: number) => fmtAmount(v, currency, 0)} />
             <Tooltip
               contentStyle={LAB_TOOLTIP}
               cursor={{ stroke: LAB_INK.muted, strokeWidth: 1 }}
-              labelFormatter={(l) =>
-                new Date(Number(l)).toISOString().replace("T", " ").slice(0, 16) + "Z"}
+              labelFormatter={(l) => `${fmtDateTimeKst(Number(l))} KST`}
               formatter={(v) => [fmtAmount(Number(v), currency, 2), "equity"]}
             />
             <Area type="monotone" dataKey="equity" stroke={stroke} strokeWidth={2}
@@ -86,7 +91,7 @@ export function EquityChart({
 
       <div className="lab-label px-1 pt-1">drawdown from peak</div>
       <div className="h-20 w-full">
-        <ResponsiveContainer>
+        <ResponsiveContainer initialDimension={{ width: 640, height: 80 }}>
           <AreaChart data={dd} margin={{ top: 2, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke={LAB_GRID} vertical={false} />
             <XAxis dataKey="ts" hide />
@@ -96,7 +101,7 @@ export function EquityChart({
             <Tooltip
               contentStyle={LAB_TOOLTIP}
               cursor={{ stroke: LAB_INK.muted, strokeWidth: 1 }}
-              labelFormatter={(l) => new Date(Number(l)).toISOString().slice(0, 10)}
+              labelFormatter={(l) => `${fmtDayKst(Number(l))} KST`}
               formatter={(v) => [`${Number(v).toFixed(2)}%`, "drawdown"]}
             />
             <Area type="monotone" dataKey="dd" stroke={LAB_STATUS.critical} strokeWidth={1.5}

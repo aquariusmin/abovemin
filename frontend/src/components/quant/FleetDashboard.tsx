@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EquitySparkline } from "@/components/quant/EquitySparkline";
 import { FleetEquityChart } from "@/components/quant/FleetEquityChart";
-import { Bar, Frame, Metric, Pill, Section, cx } from "@/components/quant/Panel";
+import { Bar, FeedStale, Frame, Metric, Pill, RelativeTime, Section, cx } from "@/components/quant/Panel";
 import { LAB_SERIES } from "@/components/quant/theme";
 import {
   books, buildSeriesColors, fmtAmount, fmtPct, fmtRelative, lastCycle,
@@ -20,12 +20,30 @@ type SortKey = "equity" | "pnl_pct" | "day_pnl_pct" | "updated_at" | "bot_name";
 // not cycled recently enough to have a baseline.
 const NUMERIC_SORT = new Set<SortKey>(["equity", "pnl_pct", "day_pnl_pct"]);
 
-export function FleetDashboard() {
-  const [bots, setBots] = useState<FleetBot[] | null>(null);
+export function FleetDashboard({
+  /** Server-rendered first paint. See `getFleet` in `app/lab/page.tsx`. */
+  initialBots = null,
+  /** When the server read `initialBots` (epoch ms). Staleness is judged
+   *  against this until the first client fetch, so the server HTML and the
+   *  hydrating render pick the same state pill. */
+  renderedAt,
+}: {
+  initialBots?: FleetBot[] | null;
+  renderedAt: number;
+}) {
+  // Seeded from the server so the console has numbers in the HTML itself; the
+  // effect below still refreshes on mount, so what you read is never older
+  // than the page's own ISR window.
+  const [bots, setBots] = useState<FleetBot[] | null>(initialBots);
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("equity");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  // The clock staleness is judged by. Not `Date.now()` in render: an ISR page
+  // can be served minutes or days after it was rendered, and a bot crossing
+  // the 30h line in between would hydrate with a different pill — words and
+  // colour — than the HTML it is meant to adopt. It advances on every poll.
+  const [now, setNow] = useState(renderedAt);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +60,8 @@ export function FleetDashboard() {
         setLastFetched(new Date());
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setNow(Date.now());
       }
     };
     load();
@@ -103,10 +123,10 @@ export function FleetDashboard() {
       // Counted on the BOT's last cycle, not the sync stamp — a dead bot behind
       // a live sync container is precisely what this console exists to catch.
       stale: bots.filter(
-        (b) => staleness(lastCycle(parseEquityCurve(b.equity_curve), b.updated_at)) !== "live",
+        (b) => staleness(lastCycle(parseEquityCurve(b.equity_curve), b.updated_at), now) !== "live",
       ).length,
     };
-  }, [bots]);
+  }, [bots, now]);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
@@ -116,7 +136,9 @@ export function FleetDashboard() {
     }
   };
 
-  if (error) {
+  // Only a feed that never delivered anything is a full-screen error. Once
+  // there are numbers on screen, a failed poll keeps them and says so.
+  if (error && !bots) {
     return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
   if (!bots) {
@@ -131,6 +153,10 @@ export function FleetDashboard() {
 
   return (
     <Frame>
+      {error ? (
+        <FeedStale error={error} since={lastFetched ? fmtRelative(lastFetched.toISOString()) : null} />
+      ) : null}
+
       {/* Anything needing a human is stated in words before any number. A
           halted bot is invisible otherwise: it keeps running, keeps syncing,
           and just quietly stops trading. */}
@@ -161,7 +187,7 @@ export function FleetDashboard() {
         </Section>
       ) : null}
 
-      <Section className="grid grid-cols-2 lg:grid-cols-4">
+      <Section className="lab-stats grid grid-cols-2 lg:grid-cols-4">
         {/* One cell per book. There is deliberately no single fleet figure:
             KRW and USD are not addable, and mock equity is not addable to real
             money — a paper profit must never flatter a real loss. */}
@@ -206,7 +232,7 @@ export function FleetDashboard() {
           title="fleet"
           right={<span className="lab-label">{sorted.length} row{sorted.length === 1 ? "" : "s"}</span>}
         />
-        <div className="overflow-x-auto">
+        <div className="lab-scroll overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="glass-inset border-b border-[var(--lab-border)]">
@@ -229,7 +255,7 @@ export function FleetDashboard() {
                 const points = parseEquityCurve(b.equity_curve);
                 const positive = (b.pnl_pct ?? 0) >= 0;
                 const day = b.day_pnl_pct;
-                const age = staleness(lastCycle(points, b.updated_at));
+                const age = staleness(lastCycle(points, b.updated_at), now);
                 return (
                   <tr key={b.id} className="row-hover border-b border-[var(--lab-border)] transition-colors last:border-0">
                     <td className="relative py-2 pl-4 pr-3">
@@ -297,7 +323,9 @@ export function FleetDashboard() {
                       <EquitySparkline points={points} positive={positive} />
                     </td>
                     <Td right mono muted>
-                      {fmtRelative(new Date(lastCycle(points, b.updated_at)).toISOString())}
+                      <RelativeTime>
+                        {fmtRelative(new Date(lastCycle(points, b.updated_at)).toISOString())}
+                      </RelativeTime>
                     </Td>
                   </tr>
                 );
