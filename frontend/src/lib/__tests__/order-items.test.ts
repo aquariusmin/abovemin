@@ -100,6 +100,41 @@ describe('resolveOrderItems()', () => {
     ).toBe(false);
   });
 
+  it('합친 수량이 딱 99면 받고, 합계는 합친 줄로 낸다', () => {
+    const result = resolveOrderItems(
+      [
+        { id: 4, quantity: 50 },
+        { id: 4, quantity: 49 },
+      ],
+      [postcard],
+    );
+    expect(result).toMatchObject({ ok: true, total: 99 * 2000 });
+    expect(result.ok && result.items).toHaveLength(1);
+  });
+
+  it('옵션 없음은 키가 없든 null이든 같은 줄이다 — 표기를 바꿔 상한을 넘을 수 없다', () => {
+    const split = resolveOrderItems(
+      [
+        { id: 4, quantity: 50 },
+        { id: 4, option_id: null, quantity: 50 },
+      ],
+      [postcard],
+    );
+    expect(split.ok).toBe(false);
+  });
+
+  it('줄이 여럿이어도 상한은 줄마다 따로다', () => {
+    // 다른 옵션은 다른 물건 — 합쳐서 99를 넘는 것은 괜찮다.
+    const result = resolveOrderItems(
+      [
+        { id: 3, option_id: 'a3', quantity: 99 },
+        { id: 3, option_id: 'a2', quantity: 99 },
+      ],
+      [poster],
+    );
+    expect(result.ok).toBe(true);
+  });
+
   it('마이그레이션 전의 행(status·options 없음)은 예전 규칙으로 판다', () => {
     const legacy = { id: 4, name: '엽서', price: 2000, in_stock: true };
     expect(resolveOrderItems([{ id: 4, quantity: 1 }], [legacy])).toMatchObject({ ok: true, total: 2000 });
