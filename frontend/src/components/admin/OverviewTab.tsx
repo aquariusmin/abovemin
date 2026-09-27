@@ -8,6 +8,7 @@ import { ARCHIVE_EXTRAS_MIGRATION, MAX_BULK, UPLOAD_PRIVACY_MIGRATION } from '@/
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, type Message } from './AdminUi';
 import { BTN_SM, CHIP_KO, EYEBROW_CLASS, ORDER_STATUS_CHIP, ORDER_STATUS_LABEL, PANEL_CLASS } from './adminStyles';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 개요. 세 가지를 한 화면에: 지금 규모(숫자), 최근에 무엇이 들어왔나, 그리고
@@ -126,6 +127,9 @@ export default function OverviewTab({ active }: { active: boolean }) {
       cancelled = true;
     };
   }, [active, reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(error !== null && !data, () => setReloadKey(k => k + 1));
 
   if (!data) {
     return error ? <p role="alert" className="py-8 text-center text-sm text-brick">{error}</p> : <LoadingLine />;

@@ -129,8 +129,16 @@ function ConfirmDialog({ options, onSettle }: { options: ConfirmOptions; onSettl
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog || dialog.open) return;
+    // 대화상자를 연 버튼. 열린 `<dialog>`를 그냥 언마운트하면 브라우저가 포커스를
+    // 돌려주지 못해 <body>로 떨어진다 — 키보드 사용자는 페이지 맨 위에서 다시
+    // 찾아와야 한다. 닫을 때 직접 돌려준다(열었던 버튼이 사라졌으면 그대로 둔다).
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
     cancelRef.current?.focus();
+    return () => {
+      if (dialog.open) dialog.close();
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
   }, []);
 
   return (

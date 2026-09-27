@@ -15,6 +15,8 @@ import { dropOnto, moveById, rangeBetween } from '@/lib/admin/reorder';
 import { MAX_BULK } from '@/lib/admin/limits';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import type { AlbumOption } from './ArchiveTab';
+import { useUnsavedGuard } from './UnsavedGuard';
+import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
@@ -184,10 +186,18 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
   }, [albumSlug]);
 
   useEffect(() => { void load(); }, [load, refreshToken]);
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError, () => void load());
 
   const byId = useMemo(() => new Map(photos.map(photo => [photo.id, photo])), [photos]);
   const serverOrder = useMemo(() => photos.map(photo => photo.id), [photos]);
   const orderDirty = order.length === serverOrder.length && order.some((id, i) => id !== serverOrder[i]);
+  // 적다 만 캡션이나 저장 안 한 순서가 있으면 페이지를 떠나기 전에 묻는다.
+  const captionsDirty = photos.some(photo => {
+    const draft = drafts[photo.id];
+    return draft !== undefined && isDirty(photo, draft);
+  });
+  useUnsavedGuard('photo-manager', orderDirty || captionsDirty);
   const visible = order.filter(id => {
     const photo = byId.get(id);
     return photo ? matches(photo, filter) : false;

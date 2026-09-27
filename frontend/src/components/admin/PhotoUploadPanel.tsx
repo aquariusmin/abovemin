@@ -5,6 +5,7 @@ import { adminFetch, errorMessage, uploadToCloudinary, type SignResponse } from 
 import { CONVERTED_NOTICE, prepareUpload, type PrivacyStatus } from '@/lib/admin/upload-privacy';
 import type { RoundedCoord } from '@/lib/exif-strip';
 import { StatusLine, type Message } from './AdminUi';
+import { useUnsavedGuard } from './UnsavedGuard';
 import { BTN_SM, CHIP_KO, INPUT_COMPACT, LABEL_CLASS, INPUT_CLASS } from './adminStyles';
 
 /**
@@ -252,6 +253,9 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
   }
 
   const uploading = rows.some(row => row.status === 'uploading');
+  // 올리는 중이거나, 올렸지만 아직 앨범에 저장하지 않은 사진. 이대로 떠나면 파일은
+  // Cloudinary에만 남고 아무도 가리키지 않는다. 실패한 행은 잃을 것이 없다.
+  useUnsavedGuard('photo-upload', saving || rows.some(row => row.status !== 'error'));
   const readyCount = rows.filter(row => row.status === 'ready').length;
 
   return (

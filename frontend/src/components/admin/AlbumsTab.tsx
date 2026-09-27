@@ -7,6 +7,7 @@ import { dropOnto, moveById } from '@/lib/admin/reorder';
 import { isValidSlug, suggestSlug } from '@/lib/admin/slug';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
+import { useRetryAfterRelogin } from './SessionRetry';
 import PhotoPicker from './PhotoPicker';
 import {
   BTN_SM,
@@ -72,6 +73,9 @@ export default function AlbumsTab({ active }: { active: boolean }) {
       cancelled = true;
     };
   }, [active, reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError !== null && !albums, () => setReloadKey(k => k + 1));
 
   // 개요의 "고치기"로 들어오면 그 앨범의 편집을 연다. 목록이 도착한 뒤에야
   // id를 알 수 있으므로 렌더 중에 한 번 맞춘다.
