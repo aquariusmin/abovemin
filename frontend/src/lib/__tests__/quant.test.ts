@@ -123,7 +123,7 @@ describe('lastCycle()', () => {
 describe('books()', () => {
   const bot = (over: Partial<FleetBot>): FleetBot => ({
     id: 'x', bot_name: 'T / s', strategy: 's', market: 'stock', equity: 100,
-    pnl_pct: 0, position_pct: null, holdings_count: null, holdings: null,
+    pnl_pct: 0, day_pnl_pct: null, position_pct: null, holdings_count: null, holdings: null,
     fills_count: null, last_fill: null, cash: null, currency: 'USD', mark: null,
     equity_curve: null, updated_at: '2026-09-12T00:00:00Z', ...over,
   });

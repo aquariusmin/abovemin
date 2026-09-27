@@ -21,6 +21,15 @@ export interface FleetBot {
   market: Market;
   equity: number;
   pnl_pct: number;
+  /**
+   * Return since the bot's previous daily cycle (~the prior close).
+   *
+   * Null is a real, frequent answer, not just a pre-migration gap: the sync
+   * writes it only while the baseline it comes from is at most a day old, so a
+   * bot that stopped cycling reports nothing rather than a multi-day return
+   * labelled as today's. Render "—", never 0.
+   */
+  day_pnl_pct: number | null;
   position_pct: number | null;
   holdings_count: number | null;
   holdings: Record<string, Holding> | null;
