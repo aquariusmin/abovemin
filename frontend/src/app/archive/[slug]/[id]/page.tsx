@@ -110,6 +110,9 @@ async function frameRatio(photo: Photo): Promise<number> {
 /** 프레임 높이의 상한(뷰포트 비율). 사진이 먼저 보이고, 캡션은 스크롤 한 번 아래. */
 const FRAME_VH = 74;
 
+/** `sizes`를 계산할 때 가정하는 가장 높은 뷰포트(CSS px). 아래 `maxWidth`의 주석. */
+const SIZES_VIEWPORT_H = 1150;
+
 /**
  * 주소의 앨범에는 없지만 다른 공개 앨범에 있는 사진이면 그 주소.
  *
@@ -167,7 +170,13 @@ export default async function PhotoPage({ params }: { params: Params }) {
 
   // 가장 넓게 그려질 때의 CSS 폭. `sizes`가 이보다 크면 세로 사진이 좁은 기둥에
   // 가로 사진만큼의 픽셀을 받아 온다(홈 히어로의 `heroWidth`와 같은 이유).
-  const maxWidth = Math.min(1400, Math.round(ratio * 900 * (FRAME_VH / 100)));
+  //
+  // 프레임 폭은 `비율 × 74svh`라 화면이 높을수록 넓어진다. 높이 기준을 900으로
+  // 잡으면 그보다 높은 화면(큰 모니터, 세로로 세운 태블릿)에서 프레임이 `sizes`
+  // 보다 넓게 그려져, 브라우저가 작은 후보를 골라 늘려 그린다. 기준을 높게
+  // 잡으면 낮은 화면이 조금 더 받는 대신 높은 화면이 흐려지지 않는다.
+  // 1400 상한은 그대로다.
+  const maxWidth = Math.min(1400, Math.round(ratio * SIZES_VIEWPORT_H * (FRAME_VH / 100)));
   const prevHref = prev ? photoPagePath(prev) : null;
   const nextHref = next ? photoPagePath(next) : null;
 
