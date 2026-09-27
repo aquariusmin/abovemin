@@ -147,9 +147,10 @@ export async function POST(request: Request) {
   };
   // `idempotency_key`는 `20260927000000_orders_idempotency` 이후 컬럼이다. 없으면
   // 키 없이 넣는다 — 중복 방지만 꺼질 뿐 주문은 받는다.
+  const keyedRow: typeof row & { idempotency_key?: string } = idempotencyKey ? { ...row, idempotency_key: idempotencyKey } : row;
   const { data: order, error: dbError } = await withColumnFallback(
     'orders.insert',
-    () => supabase.from('orders').insert(idempotencyKey ? { ...row, idempotency_key: idempotencyKey } : row).select('id').single(),
+    () => supabase.from('orders').insert(keyedRow).select('id').single(),
     () => supabase.from('orders').insert(row).select('id').single(),
   );
 
