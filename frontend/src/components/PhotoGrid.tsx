@@ -10,6 +10,15 @@ import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * 첫 화면에 걸리는 앞쪽 타일 수. 이 타일들은 등장 애니메이션 없이 서버 HTML
+ * 그대로 보인다 — `initial`의 opacity 0은 하이드레이션 뒤에야 풀려서, 첫 화면의
+ * 사진(LCP)이 JS를 기다리게 된다. 열 기반 masonry라 한 줄이 어느 타일인지는
+ * 뷰포트마다 다르다. 폰(1열)에서는 앞의 두세 장이, 데스크톱에서는 첫 열의
+ * 위쪽이 여기에 든다.
+ */
+const ABOVE_FOLD = 3;
+
 interface Photo {
   id: number;
   src: string;
@@ -114,6 +123,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
           // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
           const caption = photoCaption(photo);
           const label = photoLabel(photo);
+          const aboveFold = i < ABOVE_FOLD;
           return (
           <motion.button
             key={photo.id}
@@ -122,7 +132,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
             className="break-inside-avoid group block w-full text-left cursor-pointer"
             onClick={() => open(i)}
             aria-label={`${label} 크게 보기`}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+            initial={aboveFold ? false : reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
             whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: EASE }}
@@ -153,6 +163,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
                 // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
                 style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
                 draggable={false}
+                fadeIn={!aboveFold}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'auto'}
               />

@@ -129,7 +129,9 @@ export const getAlbumsWithCounts = cache(async (): Promise<Array<Album & { photo
     ),
   ]);
   if (aErr) { log.error('getAlbumsWithCounts.albums', aErr); throw aErr; }
-  if (pErr) log.warn('getAlbumsWithCounts.photos', pErr);
+  // 사진 조회가 실패하면 모든 앨범이 "0 pieces"가 되고, 공개 목록은 사진 없는
+  // 앨범을 빼므로 `/archive`가 통째로 비어 캐시에 앉는다. 던진다.
+  if (pErr) { log.error('getAlbumsWithCounts.photos', pErr); throw pErr; }
   const counts: Record<string, number> = {};
   for (const p of photos ?? []) counts[p.album_slug] = (counts[p.album_slug] ?? 0) + 1;
   return (albums ?? []).map(a => ({ ...a, photo_count: counts[a.slug] ?? 0 }));
@@ -200,7 +202,13 @@ export async function getPhotoInAlbum(
 export const getSiteSettings = unstable_cache(
   async (): Promise<Record<string, string>> => {
     const { data, error } = await supabase.from('site_settings').select('key, value');
-    if (error) log.warn('getSiteSettings', error);
+    // 테이블이 없으면(마이그레이션 전) 설정 없음 — 기본값으로 그린다. 다른 오류는
+    // 던진다: 빈 설정을 돌려주면 이 캐시와 홈의 ISR 캐시에 "기본 히어로"가 앉는다.
+    // `unstable_cache`는 던진 결과를 캐시하지 않는다.
+    if (error) {
+      if (!isMissingSchemaError(error)) { log.error('getSiteSettings', error); throw error; }
+      log.warn('getSiteSettings.migration_pending', error);
+    }
     const settings: Record<string, string> = {};
     for (const row of data ?? []) settings[row.key] = row.value;
     return settings;
@@ -232,7 +240,12 @@ export const getAllPhotos = cache(
       supabase.from('albums').select('*'),
     ]);
     if (pErr) { log.error('getAllPhotos.photos', pErr); throw pErr; }
-    if (aErr) log.warn('getAllPhotos.albums', aErr);
+    // 앨범 조회 실패도 던진다. 예전에는 거르지 않은 목록을 돌려줬는데, 그러면
+    // 비공개 앨범의 사진이 공개 페이지(`/archive`, 홈, 타임라인)에 실려 ISR
+    // 캐시에 앉고, 사진 페이지의 "옮겨진 사진" 리다이렉트가 비공개 앨범을
+    // 가리켰다. 빈 목록도 답이 아니다 — "앨범이 없다"가 아니라 "모른다"이므로.
+    // 던지면 Next가 마지막으로 성공한 페이지를 계속 내보낸다.
+    if (aErr) { log.error('getAllPhotos.albums', aErr); throw aErr; }
 
     // 비공개 앨범의 사진은 앨범을 가로지르는 검색에서도 빠져야 한다.
     //
@@ -242,13 +255,10 @@ export const getAllPhotos = cache(
     // 집합이 되어 아무것도 거르지 못한다. 앨범을 `select('*')`로 읽는 이유는
     // `published`를 이름으로 고르면 마이그레이션 전 DB에서 이 조회가 실패하기
     // 때문이고, 그때는 모든 앨범이 보이므로 결과가 같다.
-    //
-    // 앨범 조회가 실패했으면 거르지 않는다. 빈 목록으로 거르면 사진이 전부
-    // 사라지는데, 그건 "앨범이 없다"가 아니라 "모른다"이기 때문이다.
     const titles = new Map((albums ?? []).map(a => [a.slug as string, a.title as string]));
-    const visible = aErr ? null : new Set((albums ?? []).map(a => a.slug as string));
+    const visible = new Set((albums ?? []).map(a => a.slug as string));
     return (photos ?? [])
-      .filter(photo => !visible || visible.has(photo.album_slug))
+      .filter(photo => visible.has(photo.album_slug))
       .map(photo => ({
         ...publicPhoto(photo),
         album_title: titles.get(photo.album_slug) ?? photo.album_slug,
@@ -412,9 +422,15 @@ export async function getProducts(): Promise<Product[]> {
 //
 // 초안이면 `null` — 페이지는 404가 된다. 주소를 안다고 초안이 열리면 초안이
 // 아니다. `.maybeSingle()`: 없는 id는 오류가 아니라 "없음"이다.
+//
+// 조회 실패는 던진다. `null`로 바꾸면 상세 페이지가 `notFound()`를 부르고, 그
+// 404가 ISR 캐시에 앉아 revalidate 주기 동안 멀쩡한 상품이 사라진다
+// (`getAlbumWithPhotos`와 같은 이유). 숫자가 아닌 id는 조회 전에 "없음"이다 —
+// 보내면 DB가 형식 오류를 돌려주고, 그건 장애가 아니다.
 export const getProductById = cache(async (id: number): Promise<Product | null> => {
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
   const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
-  if (error) { log.warn('getProductById', error); return null; }
+  if (error) { log.error('getProductById', error); throw error; }
   if (!data) return null;
   const product = publicProduct(data);
   return isListed(product) ? product : null;

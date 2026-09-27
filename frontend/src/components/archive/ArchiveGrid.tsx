@@ -10,6 +10,9 @@ const MotionLink = motion.create(Link);
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** 등장 애니메이션 없이 서버 HTML 그대로 보이는 앞쪽 카드 수 — `PhotoGrid`의 같은 상수 주석. */
+const ABOVE_FOLD = 3;
+
 interface AlbumCard {
   slug: string;
   cover: string;
@@ -35,7 +38,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
           key={album.slug}
           href={`/archive/${album.slug}`}
           className="break-inside-avoid group block relative overflow-hidden rounded-lg bg-stone"
-          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
+          initial={i < ABOVE_FOLD ? false : reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
           whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: EASE }}

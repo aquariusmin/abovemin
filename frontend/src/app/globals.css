@@ -852,6 +852,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 홈 히어로 문구의 등장. framer-motion 대신 CSS인 이유는 HomeContent의 주석:
+   서버 HTML이 그대로 보여야 한다(LCP). 그래서 불투명도는 움직이지 않고 위치만
+   옮긴다 — 첫 페인트부터 글자가 읽힌다. 움직임 줄이기에서는 아래 규칙이
+   시간을 0으로 만든다. */
+@keyframes hero-rise {
+  from {
+    transform: translateY(16px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Honour users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   html {

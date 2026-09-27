@@ -12,6 +12,7 @@ import BackLink from '@/components/BackLink';
 import CopyLinkButton from '@/components/archive/CopyLinkButton';
 import PhotoKeyNav from '@/components/archive/PhotoKeyNav';
 import { placeholderStyle } from '@/components/photo-placeholder';
+import { buildFallback } from '@/lib/build-phase';
 
 /**
  * 사진 한 장의 페이지.
@@ -109,20 +110,35 @@ async function frameRatio(photo: Photo): Promise<number> {
 /** 프레임 높이의 상한(뷰포트 비율). 사진이 먼저 보이고, 캡션은 스크롤 한 번 아래. */
 const FRAME_VH = 74;
 
+/** `sizes`를 계산할 때 가정하는 가장 높은 뷰포트(CSS px). 아래 `maxWidth`의 주석. */
+const SIZES_VIEWPORT_H = 1150;
+
 /**
  * 주소의 앨범에는 없지만 다른 공개 앨범에 있는 사진이면 그 주소.
  *
  * 관리 화면에서 사진을 다른 앨범으로 옮길 수 있다. 옮기기 전에 건넨 링크가
  * 404가 되면 공유한 사람이 잘못한 것처럼 보이므로, id가 같은 사진의 새 주소로
- * 보낸다. 숨긴 사진·비공개 앨범은 `getAllPhotos`에 없으니 여기서도 404로 남는다.
+ * 보낸다.
+ *
+ * `getAllPhotos`만 믿지 않는다. 그 함수는 예전에 앨범 조회가 실패하면 앨범으로
+ * 거르지 않은 목록을 돌려줬고, 그때 비공개 앨범의 사진이 섞여 왔다. 그대로
+ * 보내면 (1) 비공개 앨범 주소를 알려 주고, (2) 지금 주소가 바로 그 비공개
+ * 앨범이면 자기 자신으로 영구 리다이렉트해 무한 루프가 된다. 지금은 그 경우
+ * 던지지만, 영구 리다이렉트는 브라우저에 남으므로 여기서도 막는다: 새 주소가
+ * 지금 주소와 다를 때만, 그리고 그 주소가 실제로 열리는지(`getPhotoInAlbum` —
+ * 공개 규칙이 모인 곳) 확인한 뒤에만 보낸다.
  */
 async function movedPhotoPath(params: Params): Promise<string | null> {
-  const { id } = await params;
+  const { slug, id } = await params;
   const photoId = parsePhotoId(id);
   if (photoId === null) return null;
-  const photos = await getAllPhotos().catch(() => []);
+  const photos = await getAllPhotos().catch(buildFallback([]));
   const moved = photos.find(photo => photo.id === photoId);
-  return moved ? photoPagePath(moved) : null;
+  // `id`는 `parsePhotoId`가 정규형만 받으므로, 앨범이 같으면 주소도 같다.
+  if (!moved || moved.album_slug === slug) return null;
+  // 조회 실패는 던진다 — 404가 ISR 캐시에 앉지 않게(`getPhotoInAlbum`의 주석).
+  const target = await getPhotoInAlbum(moved.album_slug, photoId);
+  return target ? photoPagePath(moved) : null;
 }
 
 export default async function PhotoPage({ params }: { params: Params }) {
@@ -154,7 +170,13 @@ export default async function PhotoPage({ params }: { params: Params }) {
 
   // 가장 넓게 그려질 때의 CSS 폭. `sizes`가 이보다 크면 세로 사진이 좁은 기둥에
   // 가로 사진만큼의 픽셀을 받아 온다(홈 히어로의 `heroWidth`와 같은 이유).
-  const maxWidth = Math.min(1400, Math.round(ratio * 900 * (FRAME_VH / 100)));
+  //
+  // 프레임 폭은 `비율 × 74svh`라 화면이 높을수록 넓어진다. 높이 기준을 900으로
+  // 잡으면 그보다 높은 화면(큰 모니터, 세로로 세운 태블릿)에서 프레임이 `sizes`
+  // 보다 넓게 그려져, 브라우저가 작은 후보를 골라 늘려 그린다. 기준을 높게
+  // 잡으면 낮은 화면이 조금 더 받는 대신 높은 화면이 흐려지지 않는다.
+  // 1400 상한은 그대로다.
+  const maxWidth = Math.min(1400, Math.round(ratio * SIZES_VIEWPORT_H * (FRAME_VH / 100)));
   const prevHref = prev ? photoPagePath(prev) : null;
   const nextHref = next ? photoPagePath(next) : null;
 

@@ -15,9 +15,19 @@ import Image, { type ImageProps } from 'next/image';
  *
  * 움직임 줄이기: 전역 규칙(globals.css)이 전환 시간을 0으로 만들고,
  * `motion-reduce:transition-none`이 한 번 더 막는다 — 사진은 도착하는 순간 보인다.
+ *
+ * `fadeIn={false}`: 첫 화면에 걸리는 타일용. 불투명도 0은 하이드레이션 뒤
+ * `onLoad`가 불려야 풀리므로, 서버 HTML의 사진이 JS를 기다리게 되고 LCP가
+ * 그만큼 밀린다. 끄면 처음부터 보이고, 흐린 미리보기 위로 그냥 그려진다.
  */
-export default function FadeImage({ alt, className = '', onLoad, ...props }: ImageProps) {
-  const [loaded, setLoaded] = useState(false);
+export default function FadeImage({
+  alt,
+  className = '',
+  onLoad,
+  fadeIn = true,
+  ...props
+}: ImageProps & { fadeIn?: boolean }) {
+  const [loaded, setLoaded] = useState(!fadeIn);
   return (
     <Image
       {...props}

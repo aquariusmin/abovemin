@@ -3,6 +3,7 @@ import { isAvailable } from '@/lib/product';
 import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
 import { onThisDay, seoulToday } from '@/lib/on-this-day';
+import { buildFallback } from '@/lib/build-phase';
 import type { Metadata } from 'next';
 
 // Title and description come from the root layout; only the canonical is
@@ -36,11 +37,13 @@ const DEFAULT_HERO_IMAGE =
   'https://res.cloudinary.com/dmljaqqzc/image/upload/v1776151998/C92CC8C0-9B98-4F63-9331-674818552AD9_4_5005_c_rxmdjn.jpg';
 
 export default async function Home() {
+  // 조회 실패는 빌드 중에만 빈 값으로 그린다(`buildFallback`). 실행 중에
+  // 삼키면 소품·사진 섹션이 빠지거나 기본 히어로로 돌아간 홈이 60초 동안
+  // 캐시에서 나간다 — 던지면 마지막으로 성공한 홈이 계속 나간다.
   const [products, settings, photos] = await Promise.all([
-    getProducts().catch(() => []),
-    getSiteSettings().catch((): Record<string, string> => ({})),
-    // 사진 조회가 실패해도 홈은 뜬다 — 섹션 하나가 빠질 뿐이다.
-    getAllPhotos().catch(() => []),
+    getProducts().catch(buildFallback([])),
+    getSiteSettings().catch(buildFallback<Record<string, string>>({})),
+    getAllPhotos().catch(buildFallback([])),
   ]);
 
   // "최근"은 id가 큰 순서다. 촬영 연도로 고르면 옛 사진을 새로 올렸을 때

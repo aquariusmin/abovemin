@@ -1,9 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAlbumsWithCounts, getAlbumWithPhotos } from '@/lib/supabase';
 import PhotoGrid from '@/components/PhotoGrid';
 import Reveal from '@/components/motion/Reveal';
 import BackLink from '@/components/BackLink';
+import { cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 
 /**
  * 공개할 앨범 = 사진이 한 장이라도 있는 앨범.
@@ -23,21 +25,47 @@ async function publicAlbums() {
 // 그 신호를 놓쳤을 때를 위한 안전망이다.
 export const revalidate = 300;
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getAlbumWithPhotos(slug);
   if (!result || result.photos.length === 0) return { title: 'Collection Not Found' };
+  const { album } = result;
   // 관리 화면에서 쓴 소개가 있으면 그것이 검색 결과의 한 줄이 된다.
   const description =
-    result.album.description?.trim() || `${result.album.title} — ${result.photos.length} pieces in this collection.`;
+    album.description?.trim() || `${album.title} — ${result.photos.length} pieces in this collection.`;
+  const path = `/archive/${slug}`;
+  // 사진 페이지와 같은 카드: 자르지 않은 1200×630(`cloudinaryOgImage`의 주석).
+  // 커버를 그대로 실으면 4000px 원본이 가거나, 저장된 `f_auto`가 크롤러가 못
+  // 읽는 포맷을 준다. Cloudinary가 아니면 크기를 모르므로 원본을 싣는다.
+  // 커버가 없으면 이미지를 적지 않는다 — 루트의 `opengraph-image`가 나간다.
+  const og = album.cover ? cloudinaryOgImage(album.cover) : null;
+  const images = og
+    ? [{ url: og, width: OG_WIDTH, height: OG_HEIGHT, alt: album.title }]
+    : album.cover
+      ? [{ url: album.cover, alt: album.title }]
+      : undefined;
+
   return {
-    title: result.album.title,
+    title: album.title,
     description,
-    alternates: { canonical: `/archive/${slug}` },
+    alternates: { canonical: path },
+    // `openGraph`·`twitter`는 부모 것을 통째로 갈아 끼우므로(얕은 병합) 사이트
+    // 이름·언어·종류를 다시 적는다. `twitter`를 적지 않으면 제목과 설명이
+    // 사이트 기본값으로 남는다.
     openGraph: {
-      title: result.album.title,
+      title: album.title,
       description,
-      ...(result.album.cover ? { images: [{ url: result.album.cover }] } : {}),
+      url: path,
+      siteName: 'phorage',
+      locale: 'ko_KR',
+      type: 'website',
+      ...(images ? { images } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: album.title,
+      description,
+      ...(images ? { images } : {}),
     },
   };
 }
