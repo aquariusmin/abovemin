@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
@@ -180,16 +180,22 @@ export async function POST(request: Request) {
     total_price,
   };
 
-  const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
-  if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
-  const messages = buyerQuota.ok ? [buildBuyerEmail(emailOrder), buildOwnerEmail(emailOrder)] : [buildOwnerEmail(emailOrder)];
-
-  try {
-    await sendEmails(messages);
-  } catch (emailErr) {
-    log.error('orders.email_send', emailErr);
-    // 이메일 실패는 주문 성공에 영향 안 줌
-  }
+  // 메일은 응답을 보낸 뒤에 보낸다(`after`). Resend가 느리거나 멈춰도 손님은
+  // "주문 완료"를 바로 본다 — 예전에는 메일 두 통이 끝날 때까지 버튼이 돌았고,
+  // 그 사이 다시 누르면 주문이 두 번 들어갔다. 실패는 여기서도 삼킨다: 주문은
+  // 이미 저장됐고, 입금 안내는 관리 화면에서 다시 보낼 수 있다.
+  after(async () => {
+    const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
+    if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
+    const messages = buyerQuota.ok
+      ? [buildBuyerEmail(emailOrder), buildOwnerEmail(emailOrder)]
+      : [buildOwnerEmail(emailOrder)];
+    try {
+      await sendEmails(messages);
+    } catch (emailErr) {
+      log.error('orders.email_send', emailErr);
+    }
+  });
 
   return NextResponse.json({ success: true, orderId, total_price });
 }
