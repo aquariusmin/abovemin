@@ -159,6 +159,14 @@ export default function HomeContent({
                    for. (The masonry grids get `loading`/`fetchPriority`
                    instead; see the note in `ArchiveGrid`.) */
                 preload
+                /* `preload` 혼자서는 우선순위를 올리지 않는다 — next/image는
+                   <link rel=preload>와 <img> 어느 쪽에도 fetchpriority를 붙이지
+                   않고, 브라우저는 레이아웃 전까지 이미지를 Low로 받는다.
+                   Lighthouse(lcp-discovery)가 짚은 것이 이것이고, 그동안 High로
+                   preload되던 woff2 다섯 개가 이 사진과 대역폭을 다퉜다(폰트
+                   쪽은 layout.tsx의 mono 주석). fetchPriority는 두 태그 모두에
+                   그대로 실린다. */
+                fetchPriority="high"
               />
               {/* Only needed where the copy actually sits on the picture. */}
               {overlaid && (
