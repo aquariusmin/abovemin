@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { getAllPhotos, getPhotoInAlbum, type Photo } from '@/lib/supabase';
-import { cloudinary, cloudinaryAspect, cloudinaryOgImage, DEFAULT_ASPECT, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
+import { ARCHIVE_MAX_WIDTH, cloudinary, cloudinaryAspect, cloudinaryOgImage, DEFAULT_ASPECT, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { displayCamera, exifParts, joinCaption, photoCaption, photoLabel, takenDate } from '@/lib/caption';
 import { photoPageDescription, photoPagePath, photoPageTitle, printInquiryMailto } from '@/lib/photo-share';
 import { cameraArchiveHref } from '@/lib/camera';
@@ -177,7 +177,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
         <figure className="@container mx-auto" style={{ width: `min(100%, calc(${ratio} * ${FRAME_VH}svh))` }}>
           <div className="overflow-hidden rounded-lg bg-stone" style={placeholderStyle(photo.src)}>
             <Image
-              src={cloudinary(photo.src, { watermark: true, width: 2000 })}
+              src={cloudinary(photo.src, { watermark: true, width: ARCHIVE_MAX_WIDTH })}
               alt={label}
               width={0}
               height={0}

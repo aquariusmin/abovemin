@@ -78,8 +78,14 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Next 16 ignores any `quality` not listed here and silently falls back to
-    // 75. The hero asks for 90, so both values have to be declared.
+    // 원격 이미지는 이미 Cloudinary/Unsplash가 줄이고 포맷을 고른 것이라
+    // `/_next/image`로 한 번 더 통과시키지 않는다. 로더가 각 CDN에 폭과 품질을
+    // 직접 넘긴다(src/lib/image-loader.ts).
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    // Next 16 warns about any `quality` not listed here. The custom loader passes
+    // the prop straight to the CDN (hero: q_90), but the list stays so the
+    // warning stays meaningful if someone adds a new value.
     qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),

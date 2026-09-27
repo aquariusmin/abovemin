@@ -112,6 +112,70 @@ function withTransform(url: string, transform: string): string {
   return parsed.toString();
 }
 
+/**
+ * 아카이브 원본의 가로 상한. 업로드된 사진이 긴 변 ~1500px에서 멈춰 있어서
+ * (`fl_getinfo`로 확인), 그보다 큰 폭을 요청해도 `c_limit`이 확대하지 않으므로
+ * 같은 사진이 URL만 다른 파생 이미지로 여러 벌 생긴다 — 변환 크레딧과 CDN
+ * 캐시만 쓴다. 원본을 더 큰 해상도로 다시 올리면 이 값만 올리면 된다.
+ */
+export const ARCHIVE_MAX_WIDTH = 1500;
+
+/** `next/image` 로더가 갈아 끼우는 "전달 최적화" 키. 이것만으로 된 세그먼트는 걷어 낸다. */
+const DELIVERY_KEYS = new Set(['f', 'q', 'w', 'dpr']);
+
+/** 이 세그먼트가 전달 최적화(`f_auto,q_auto,c_limit,w_N,dpr_auto`)뿐인가. */
+function isDeliverySegment(segment: string): boolean {
+  return segment.split(',').every(part => {
+    const [key] = part.split('_');
+    return DELIVERY_KEYS.has(key) || part === 'c_limit';
+  });
+}
+
+/**
+ * `next/image`가 srcset 후보마다 요청하는 폭(`width`)으로 주소를 다시 쓴다.
+ * 로더 파일(`image-loader.ts`)이 부른다.
+ *
+ * 호출부는 `cloudinary(url, { width, watermark })`로 만든 주소를 넘긴다. 그
+ * 앞머리의 전달 최적화 세그먼트(와 저장된 `f_auto,q_auto`)는 걷어 내고
+ * `f_auto,q_…,c_limit,w_<width>`로 **맨 앞에** 새로 붙인다. 워터마크처럼
+ * 전달 최적화가 아닌 세그먼트는 순서 그대로 남는다 — 줄인 **뒤에** 오버레이가
+ * 얹혀야 25MP 한도에 걸리지 않는다(`cloudinary()`의 주석).
+ *
+ * - 폭은 호출부가 적은 `w_N`을 넘지 않는다. srcset은 3840w까지 후보를 만들지만
+ *   호출부가 정한 상한이 그 사진에 필요한 최대치다.
+ * - `dpr_auto`는 버린다. srcset의 `w` 서술자가 이미 기기 픽셀 기준이라, 둘을
+ *   같이 쓰면 레티나에서 두 번 곱해진다.
+ * - `quality`를 안 주면 `q_auto`, 주면 `q_<quality>`.
+ */
+export function cloudinaryResize(url: string, width: number, quality?: number): string {
+  if (!isCloudinaryUrl(url)) return url;
+
+  const parsed = new URL(url);
+  const marker = '/upload/';
+  const at = parsed.pathname.indexOf(marker);
+  const head = parsed.pathname.slice(0, at + marker.length);
+  let segments = parsed.pathname.slice(at + marker.length).split('/');
+
+  let cap = Infinity;
+  const kept: string[] = [];
+  while (segments.length > 1 && isTransformSegment(segments[0])) {
+    const segment = segments[0];
+    segments = segments.slice(1);
+    if (!isDeliverySegment(segment)) {
+      kept.push(segment);
+      continue;
+    }
+    const w = segment.split(',').find(part => /^w_\d+$/.test(part));
+    if (w) cap = Math.min(cap, Number(w.slice(2)));
+  }
+
+  const w = Math.max(1, Math.round(Math.min(width, cap)));
+  const q = quality ? `q_${quality}` : 'q_auto';
+  const resize = ['f_auto', q, 'c_limit', `w_${w}`].join(',');
+  parsed.pathname = `${head}${[resize, ...kept, ...segments].join('/')}`;
+  return parsed.toString();
+}
+
 /** Open Graph 카드 크기. 페이스북·카카오톡·슬랙이 모두 1.91:1로 자른다. */
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;

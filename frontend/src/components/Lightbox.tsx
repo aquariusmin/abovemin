@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
-import { cloudinary } from '@/lib/cloudinary';
+import { ARCHIVE_MAX_WIDTH, cloudinary } from '@/lib/cloudinary';
 import { exifParts, joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 import { photoShareUrl, printInquiryMailto } from '@/lib/photo-share';
 import { copyToClipboard } from '@/lib/clipboard';
@@ -333,7 +333,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         transition={{ duration: 0.28, ease: EASE }}
       >
         <Image
-          src={cloudinary(photo.src, { watermark: true, width: 2400 })}
+          src={cloudinary(photo.src, { watermark: true, width: ARCHIVE_MAX_WIDTH })}
           alt={label}
           width={0}
           height={0}
