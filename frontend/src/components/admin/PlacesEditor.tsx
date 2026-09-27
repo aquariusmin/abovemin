@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, errorMessage } from '@/lib/admin/client';
 import { ARCHIVE_EXTRAS_MIGRATION } from '@/lib/admin/limits';
-import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, type Message } from './AdminUi';
+import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHIP_KO, FILTER_CHIP_CLASS, INPUT_COMPACT, PANEL_CLASS } from './adminStyles';
 
 /**
@@ -132,6 +132,7 @@ function PlaceEditRow({
   const [lat, setLat] = useState(row.lat === null ? '' : String(row.lat));
   const [lng, setLng] = useState(row.lng === null ? '' : String(row.lng));
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog } = useConfirm();
   const chip = SOURCE_CHIP[row.source ?? 'none'];
   const dirty = lat !== (row.lat === null ? '' : String(row.lat)) || lng !== (row.lng === null ? '' : String(row.lng));
   const id = `place-${encodeURIComponent(row.name)}`;
@@ -157,6 +158,21 @@ function PlaceEditRow({
   }
 
   async function clear() {
+    // 되돌리기가 없다. GPS로 채운 좌표면 다시 채울 수 있지만, 직접 적은 좌표는
+    // 어디에도 남지 않는다.
+    const ok = await confirm({
+      title: `“${row.name}” 좌표를 지울까요?`,
+      body: (
+        <>
+          <p>
+            지금 좌표({row.lat}, {row.lng})가 사라지고, 이 장소{row.count > 0 ? `의 사진 ${row.count}장` : ''}은 지도에서 빠집니다.
+          </p>
+          {row.source === 'manual' && <p className="text-slate">직접 입력한 좌표라 다시 채우려면 손으로 적어야 합니다.</p>}
+        </>
+      ),
+      confirmLabel: '좌표 지우기',
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await adminFetch('/api/admin/places', 'DELETE', { name: row.name });
@@ -178,6 +194,7 @@ function PlaceEditRow({
 
   return (
     <li className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:gap-4">
+      {dialog}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-medium text-ink">{row.name}</span>
         <span className="text-[12px] tabular-nums text-muted-foreground">
