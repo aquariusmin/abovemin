@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, MotionConfig, type Variants } from 'framer-motion';
+import { motion, MotionConfig, useReducedMotion } from 'framer-motion';
+import type { ReactNode } from 'react';
 import { cloudinary } from '@/lib/cloudinary';
 import { formatPrice } from '@/lib/price';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
@@ -10,6 +11,7 @@ import { photoPagePath } from '@/lib/photo-share';
 import { monthDayLabel } from '@/lib/timeline';
 import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
+import { revealTarget, useBelowFoldReveal } from '@/components/motion/useBelowFoldReveal';
 
 const MotionLink = motion.create(Link);
 
@@ -45,23 +47,64 @@ interface MemoryPhoto extends RecentPhoto {
 // Shared editorial easing — slow settle, no bounce.
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const rise: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
-};
+const RISE = { duration: 0.7, ease: EASE };
 
-// Scroll-in container: children rise in sequence the first time the block
-// enters the viewport.
-const scrollStagger: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
+/**
+ * 스크롤 등장의 목표 상태. 예전에는 섹션 머리말과 사진 목록이
+ * `initial="hidden"` + `whileInView`였다 — 서버 HTML이 opacity 0으로 나가서,
+ * 첫 화면에 걸친 "최근 올라온 사진" 머리말과 첫 줄 사진이 하이드레이션이
+ * 끝날 때까지 비어 있었다. 이제 서버 HTML에서는 모두 보이고, 마운트 때 뷰포트
+ * 아래에 있던 것만 숨었다가 들어올 때 올라온다(`useBelowFoldReveal`, 그리드
+ * 타일과 같은 원칙). 숨김은 즉시, 등장만 `RISE`로 — 전환을 목표 안에 실어서
+ * 컴포넌트의 `transition`은 hover 같은 다른 움직임에 남겨 둔다.
+ */
+function useRise<T extends Element>(amount?: number) {
+  const reduce = useReducedMotion();
+  const { ref, hidden } = useBelowFoldReveal<T>(amount);
+  const target = revealTarget(hidden, reduce);
+  return { ref, animate: hidden ? target : { ...target, transition: RISE } };
+}
 
-const inViewProps = {
-  initial: 'hidden',
-  whileInView: 'visible',
-  viewport: { once: true, amount: 0.25 },
-} as const;
+/** 섹션 머리말·닫는 띠처럼 한 덩어리로 올라오는 블록. */
+function RiseBlock({ className, children }: { className: string; children: ReactNode }) {
+  const { ref, animate } = useRise<HTMLDivElement>(0.25);
+  return (
+    <motion.div ref={ref} className={className} initial={false} animate={animate}>
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * 사진 목록의 한 칸. 예전의 목록 단위 stagger 대신 칸마다 자기 자리를 잰다 —
+ * CSS columns라 몇 번째 칸이 첫 화면인지 인덱스로 알 수 없다.
+ */
+function RiseItem({ className, children }: { className: string; children: ReactNode }) {
+  const { ref, animate } = useRise<HTMLLIElement>();
+  return (
+    <motion.li ref={ref} className={className} initial={false} animate={animate}>
+      {children}
+    </motion.li>
+  );
+}
+
+/** 소품 카드. hover로 뜨는 움직임은 컴포넌트 `transition`(0.3s)을 따른다. */
+function RiseProductLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  const { ref, animate } = useRise<HTMLAnchorElement>();
+  return (
+    <MotionLink
+      ref={ref}
+      href={href}
+      className={className}
+      initial={false}
+      animate={animate}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: EASE }}
+    >
+      {children}
+    </MotionLink>
+  );
+}
 
 interface HomeContentProps {
   heroImage: string;
@@ -243,11 +286,7 @@ export default function HomeContent({
         {recent.length > 0 && (
           <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
             <div className="max-w-[1400px] mx-auto">
-              <motion.div
-                {...inViewProps}
-                variants={rise}
-                className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14"
-              >
+              <RiseBlock className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
                 <div className="space-y-3">
                   <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
                   <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
@@ -255,23 +294,18 @@ export default function HomeContent({
                   </h2>
                 </div>
                 <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
-              </motion.div>
+              </RiseBlock>
 
               {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
                   사진에 맞춘다"는 원칙이 홈에서 깨진다. */}
-              <motion.ul
-                {...inViewProps}
-                viewport={{ once: true, amount: 0.1 }}
-                variants={scrollStagger}
-                className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5"
-              >
+              <ul className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5">
                 {recent.map(photo => {
                   // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
                   // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
                   // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
                   const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
                   return (
-                    <motion.li key={photo.id} variants={rise} className="break-inside-avoid">
+                    <RiseItem key={photo.id} className="break-inside-avoid">
                       <Link
                         href={photoPagePath(photo)}
                         className="group block"
@@ -295,10 +329,10 @@ export default function HomeContent({
                           </p>
                         )}
                       </Link>
-                    </motion.li>
+                    </RiseItem>
                   );
                 })}
-              </motion.ul>
+              </ul>
             </div>
           </section>
         )}
@@ -318,7 +352,7 @@ export default function HomeContent({
             aria-labelledby="on-this-day-title"
           >
             <div className="max-w-[1400px] mx-auto">
-              <motion.div {...inViewProps} variants={rise} className="mb-8 md:mb-10 space-y-3">
+              <RiseBlock className="mb-8 md:mb-10 space-y-3">
                 <p className="eyebrow eyebrow-marked text-primary">On this day</p>
                 <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
                   몇 년 전 오늘
@@ -326,12 +360,9 @@ export default function HomeContent({
                 {!onThisDay.some(photo => photo.exact) && (
                   <p className="text-[15px] text-slate">이 즈음 찍은 사진은 이렇습니다.</p>
                 )}
-              </motion.div>
+              </RiseBlock>
 
-              <motion.ul
-                {...inViewProps}
-                viewport={{ once: true, amount: 0.1 }}
-                variants={scrollStagger}
+              <ul
                 className={`columns-2 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5 ${
                   onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : onThisDay.length >= 3 ? 'md:columns-3 lg:columns-4' : 'md:columns-3'
                 }`}
@@ -342,7 +373,7 @@ export default function HomeContent({
                     : joinCaption([`${photo.yearsAgo}년 전`, monthDayLabel(photo.taken_at)].filter((v): v is string => Boolean(v)));
                   const place = photoCaption({ location: photo.location }).location;
                   return (
-                    <motion.li key={photo.id} variants={rise} className="break-inside-avoid">
+                    <RiseItem key={photo.id} className="break-inside-avoid">
                       <Link href={photoPagePath(photo)} className="group block">
                         <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
                           <FadeImage
@@ -362,10 +393,10 @@ export default function HomeContent({
                         </p>
                         {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
                       </Link>
-                    </motion.li>
+                    </RiseItem>
                   );
                 })}
-              </motion.ul>
+              </ul>
             </div>
           </section>
         )}
@@ -378,11 +409,7 @@ export default function HomeContent({
         {featured.length > 0 && (
         <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
           <div className="max-w-[1400px] mx-auto">
-            <motion.div
-              {...inViewProps}
-              variants={rise}
-              className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14"
-            >
+            <RiseBlock className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
               <div className="space-y-3">
                 <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
                 <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
@@ -390,20 +417,13 @@ export default function HomeContent({
                 </h2>
               </div>
               <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
-            </motion.div>
+            </RiseBlock>
 
-            <motion.div
-                {...inViewProps}
-                variants={scrollStagger}
-                className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
-              >
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {featured.map(item => (
-                  <MotionLink
+                  <RiseProductLink
                     key={item.id}
                     href={`/shop/${item.id}`}
-                    variants={rise}
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.3, ease: EASE }}
                     className="group flex flex-col gap-3"
                   >
                     <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
@@ -423,9 +443,9 @@ export default function HomeContent({
                     </div>
                     <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
                     <p className="text-sm font-mono text-primary">{formatPrice(item.price)}</p>
-                  </MotionLink>
+                  </RiseProductLink>
                 ))}
-              </motion.div>
+              </div>
           </div>
         </section>
         )}
@@ -434,11 +454,7 @@ export default function HomeContent({
              페이지마다 forest 띠는 하나. 가장 앞에 내세울 행동은 아카이브이고,
              소품은 살 수 있는 것이 있을 때만 두 번째로 붙는다. */}
         <section className="band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
-          <motion.div
-            {...inViewProps}
-            variants={rise}
-            className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12"
-          >
+          <RiseBlock className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
             <div className="space-y-4 max-w-2xl">
               <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
               <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
@@ -463,7 +479,7 @@ export default function HomeContent({
                 </Link>
               )}
             </div>
-          </motion.div>
+          </RiseBlock>
         </section>
       </main>
     </MotionConfig>
