@@ -143,6 +143,19 @@ function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOp
   // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
   const caption = photoCaption(photo);
   const label = photoLabel(photo);
+  const hasCaption = Boolean(caption.title || caption.meta.length > 0);
+  // 접근 가능한 이름은 **보이는 캡션 그대로** + "크게 보기".
+  //
+  // `aria-label="${label} 크게 보기"`는 보이는 글자와 어긋났다. 제목이 없으면
+  // 화면에는 "Somewhere · 2019"가 찍히는데 이름은 "Somewhere 크게 보기"였고,
+  // 음성 제어로 "Somewhere · 2019 누르기"라고 말하는 사람은 이 버튼을 부를 수
+  // 없었다(Lighthouse label-content-name-mismatch, WCAG 2.5.3). 그렇다고
+  // 이름을 내용에서 계산하게 두면 사진의 `alt`(= 제목)가 한 번 더 읽힌다.
+  // 그래서 캡션 블록과 숨긴 동작 문구를 `aria-labelledby`로 잇는다 — `alt`는
+  // 이미지 자체의 설명으로 그대로 남는다. 캡션이 하나도 없는 사진은 보이는
+  // 글자가 없으니 어긋날 것도 없어, 예전처럼 `aria-label`을 쓴다.
+  const captionId = `photo-${photo.id}-caption`;
+  const actionId = `photo-${photo.id}-action`;
   return (
     <motion.button
       ref={ref}
@@ -150,7 +163,8 @@ function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOp
       id={`photo-${photo.id}`}
       className="break-inside-avoid group block w-full text-left cursor-pointer"
       onClick={() => onOpen(index)}
-      aria-label={`${label} 크게 보기`}
+      aria-labelledby={hasCaption ? `${captionId} ${actionId}` : undefined}
+      aria-label={hasCaption ? undefined : `${label} 크게 보기`}
       initial={false}
       animate={revealTarget(hidden, reduce)}
       transition={{ duration: 0.6, ease: EASE }}
@@ -186,8 +200,8 @@ function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOp
           fetchPriority={index === 0 ? 'high' : 'auto'}
         />
       </div>
-      {(caption.title || caption.meta.length > 0) && (
-        <div className="mt-3">
+      {hasCaption && (
+        <div id={captionId} className="mt-3">
           {caption.title && (
             <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
               {caption.title}
@@ -200,6 +214,7 @@ function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOp
           )}
         </div>
       )}
+      {hasCaption && <span id={actionId} className="sr-only">크게 보기</span>}
     </motion.button>
   );
 }
