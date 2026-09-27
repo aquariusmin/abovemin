@@ -18,6 +18,9 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  // 완료 화면의 금액. 장바구니의 가격은 담을 때 본 값이라, 그 사이 가격이 바뀌었으면
+  // 서버가 DB에서 다시 계산한 합계와 다르다 — 입금할 금액은 서버 쪽이다.
+  const [placed, setPlaced] = useState<{ total: number; cartTotal: number } | null>(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -118,6 +121,12 @@ export default function CheckoutPage() {
         return;
       }
 
+      const cartTotal = totalPrice();
+      const serverTotal = await res
+        .json()
+        .then((body: unknown) => (body as { total_price?: unknown })?.total_price)
+        .catch(() => undefined);
+      setPlaced({ total: typeof serverTotal === 'number' ? serverTotal : cartTotal, cartTotal });
       clearCart();
       setIdempotencyKey(crypto.randomUUID());
       setDone(true);
@@ -144,9 +153,21 @@ export default function CheckoutPage() {
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
-        <p className="text-[15px] text-ink-body mb-10 break-keep">
+        <p className="text-[15px] text-ink-body mb-6 break-keep">
           확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
         </p>
+        {placed && (
+          <div className="mb-10">
+            <p className="text-[15px] text-ink-body">
+              입금하실 금액 <span className="font-semibold text-ink tabular-nums">₩&nbsp;{placed.total.toLocaleString()}</span>
+            </p>
+            {placed.total !== placed.cartTotal && (
+              <p className="mt-2 text-xs text-brick break-keep">
+                장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
+              </p>
+            )}
+          </div>
+        )}
         <Link href="/shop" className="btn-primary">계속 둘러보기</Link>
       </main>
     );
