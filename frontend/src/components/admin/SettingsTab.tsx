@@ -9,6 +9,7 @@ import OrphanScan from './OrphanScan';
 import MetadataFill from './MetadataFill';
 import PlacesEditor from './PlacesEditor';
 import { BTN_SM, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 설정 — 홈 히어로, 사진 데이터(촬영 정보·장소 좌표), 그리고 Cloudinary 정리.
@@ -36,6 +37,7 @@ function HeroSettings() {
   const [message, setMessage] = useState<Message | null>(null);
   const [picking, setPicking] = useState(false);
   const [albums, setAlbums] = useState<Array<{ slug: string; title: string }>>([]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +49,7 @@ function HeroSettings() {
         setHeroTitle(data.hero_title || '');
         setHeroSubtitle(data.hero_subtitle || '');
         setLoaded(true);
+        setMessage(null);
       } catch (e) {
         if (!cancelled) setMessage({ tone: 'error', text: errorMessage(e, '설정을 불러오지 못했습니다.') });
       }
@@ -54,7 +57,10 @@ function HeroSettings() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(!loaded && message?.tone === 'error', () => setReloadKey(k => k + 1));
 
   async function openPicker() {
     setPicking(v => !v);

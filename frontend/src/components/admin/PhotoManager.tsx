@@ -16,6 +16,7 @@ import { MAX_BULK } from '@/lib/admin/limits';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import type { AlbumOption } from './ArchiveTab';
 import { useUnsavedGuard } from './UnsavedGuard';
+import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
@@ -185,6 +186,8 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
   }, [albumSlug]);
 
   useEffect(() => { void load(); }, [load, refreshToken]);
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError, () => void load());
 
   const byId = useMemo(() => new Map(photos.map(photo => [photo.id, photo])), [photos]);
   const serverOrder = useMemo(() => photos.map(photo => photo.id), [photos]);

@@ -6,6 +6,7 @@ import { ordersToCsv } from '@/lib/admin/orders-csv';
 import type { OrderItemRecord } from '@/lib/order-items';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
+import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
@@ -99,6 +100,9 @@ export default function OrdersTab() {
       cancelled = true;
     };
   }, [reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError !== null && !orders, () => setReloadKey(k => k + 1));
 
   if (loadError && !orders) {
     return (

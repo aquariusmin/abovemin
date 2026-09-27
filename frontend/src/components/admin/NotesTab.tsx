@@ -8,6 +8,7 @@ import { NOTE_SLUG_RE, parseTags, splitParagraphs, suggestNoteSlug, type NoteRow
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, FILTER_CHIP_CLASS, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 노트 — 짧은 글을 쓰고, 고치고, 공개한다.
@@ -121,6 +122,9 @@ export default function NotesTab({ active }: { active: boolean }) {
       cancelled = true;
     };
   }, [active, reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError !== null && !notes, () => setReloadKey(k => k + 1));
 
   if (loadError && !notes) return <p role="alert" className="py-8 text-center text-sm text-brick">{loadError}</p>;
   if (!notes) return <LoadingLine />;

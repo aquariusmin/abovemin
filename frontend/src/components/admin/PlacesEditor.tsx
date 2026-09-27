@@ -5,6 +5,7 @@ import { adminFetch, errorMessage } from '@/lib/admin/client';
 import { ARCHIVE_EXTRAS_MIGRATION } from '@/lib/admin/limits';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHIP_KO, FILTER_CHIP_CLASS, INPUT_COMPACT, PANEL_CLASS } from './adminStyles';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 장소 좌표 — `/archive`의 "지도로 보기"가 점을 찍는 자리.
@@ -55,6 +56,9 @@ export default function PlacesEditor({ reloadKey }: { reloadKey: number }) {
       cancelled = true;
     };
   }, [reloadKey, localReload]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(rows === null && message?.tone === 'error', () => setLocalReload(k => k + 1));
 
   const missing = rows?.filter(row => row.lat === null && row.count > 0).length ?? 0;
   const shown = (rows ?? []).filter(row => view === 'all' || row.lat === null);

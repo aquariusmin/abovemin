@@ -38,6 +38,7 @@ import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, ICON_BTN_CLASS, INPUT_CLASS, INPUT_COMPACT, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
+import { useRetryAfterRelogin } from './SessionRetry';
 
 /**
  * 샵 상품 관리. 저장하면 홈·샵 목록·상품 상세·sitemap이 다시 구워진다
@@ -110,6 +111,9 @@ export default function ShopTab() {
       cancelled = true;
     };
   }, [reloadKey]);
+
+  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
+  useRetryAfterRelogin(loadError !== null && !products, () => setReloadKey(k => k + 1));
 
   // 개요의 "고치기"(`?product=`)로 들어오면 그 상품의 편집을 연다. 다른 상품을
   // 고치던 중이면 바꾸지 않고 알린다 — 렌더 중에는 물어볼 수 없고, 말없이 바꾸면
