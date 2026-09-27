@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cloudinary } from '@/lib/cloudinary';
 import { formatPrice, formatPriceRange } from '@/lib/price';
 import { adminFetch, errorMessage, uploadToCloudinary, type SignResponse } from '@/lib/admin/client';
+import { isDraftDirty } from '@/lib/admin/dirty';
 import { moveItem } from '@/lib/admin/reorder';
 import {
   changedFields,
@@ -36,6 +37,7 @@ import {
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, ICON_BTN_CLASS, INPUT_CLASS, INPUT_COMPACT, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
+import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
 
 /**
  * 샵 상품 관리. 저장하면 홈·샵 목록·상품 상세·sitemap이 다시 구워진다
@@ -75,6 +77,18 @@ export default function ShopTab() {
   /** 편집 중인 상품. `'new'`는 새 상품. */
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
+  /** 열린 편집기에 저장하지 않은 변경(또는 올리는 중인 이미지)이 있는가. */
+  const [editorDirty, setEditorDirty] = useState(false);
+  const { confirm, dialog } = useConfirm();
+  useUnsavedGuard('product-editor', editorDirty);
+
+  /** 편집기를 닫거나 다른 상품으로 바꾼다. 쓰던 내용이 있으면 먼저 묻는다. */
+  async function openEditor(next: number | 'new' | null) {
+    if (next === editing) return;
+    if (editorDirty && !(await confirm(DISCARD_CONFIRM))) return;
+    setEditing(next);
+    setMessage(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -97,12 +111,20 @@ export default function ShopTab() {
     };
   }, [reloadKey]);
 
-  // 개요의 "고치기"(`?product=`)로 들어오면 그 상품의 편집을 연다.
+  // 개요의 "고치기"(`?product=`)로 들어오면 그 상품의 편집을 연다. 다른 상품을
+  // 고치던 중이면 바꾸지 않고 알린다 — 렌더 중에는 물어볼 수 없고, 말없이 바꾸면
+  // 쓰던 내용이 사라진다.
   const [seenProduct, setSeenProduct] = useState<string | null>(null);
   if (productParam && seenProduct !== productParam) {
     setSeenProduct(productParam);
     const id = Number(productParam);
-    if (Number.isInteger(id) && id > 0) setEditing(id);
+    if (Number.isInteger(id) && id > 0 && id !== editing) {
+      if (editorDirty) {
+        setMessage({ tone: 'error', text: '편집 중인 상품에 저장하지 않은 변경이 있어 요청한 상품을 열지 않았습니다. 저장하거나 닫은 뒤 목록에서 골라 주세요.' });
+      } else {
+        setEditing(id);
+      }
+    }
   }
 
   if (loadError && !products) return <p role="alert" className="py-8 text-center text-sm text-brick">{loadError}</p>;
@@ -118,7 +140,7 @@ export default function ShopTab() {
         description="초안은 공개 화면에 보이지 않습니다. 판매 중으로 바꾸려면 가격(옵션이 있으면 재고 있는 옵션의 가격)이 있어야 합니다."
         actions={
           editing === null && (
-            <button type="button" onClick={() => { setEditing('new'); setMessage(null); }} className={`btn-primary ${BTN_SM}`}>
+            <button type="button" onClick={() => void openEditor('new')} className={`btn-primary ${BTN_SM}`}>
               + 새 상품
             </button>
           )
@@ -128,6 +150,7 @@ export default function ShopTab() {
       {shopMigrationPending && (
         <MigrationNotice feature="상품 상태(초안·품절)·여러 장 이미지·옵션·에디션" file={SHOP_READY_MIGRATION} />
       )}
+      {dialog}
       <StatusLine message={message} />
 
       {editing !== null && (editing === 'new' || current) && (
@@ -136,7 +159,8 @@ export default function ShopTab() {
           product={current}
           migrationPending={migrationPending}
           shopMigrationPending={shopMigrationPending}
-          onClose={() => setEditing(null)}
+          onDirtyChange={setEditorDirty}
+          onClose={() => void openEditor(null)}
           onSaved={text => {
             setMessage({ tone: 'ok', text });
             setEditing(null);
@@ -158,7 +182,7 @@ export default function ShopTab() {
               <li key={product.id}>
                 <button
                   type="button"
-                  onClick={() => { setEditing(product.id); setMessage(null); }}
+                  onClick={() => void openEditor(product.id)}
                   aria-pressed={editing === product.id}
                   className={`card-hair flex w-full gap-3 p-3 text-left ${editing === product.id ? 'border-forest/50' : ''}`}
                 >
@@ -204,16 +228,20 @@ function ProductEditor({
   product,
   migrationPending,
   shopMigrationPending,
+  onDirtyChange,
   onClose,
   onSaved,
 }: {
   product?: AdminProductRow;
   migrationPending: boolean;
   shopMigrationPending: boolean;
+  onDirtyChange: (dirty: boolean) => void;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
-  const [draft, setDraft] = useState<ProductDraft>(product ? draftFromProduct(product) : EMPTY_PRODUCT_DRAFT);
+  // 연 시점의 값. 저장하면 편집기가 닫히므로 기준이 바뀔 일은 없다.
+  const [initial] = useState<ProductDraft>(() => (product ? draftFromProduct(product) : EMPTY_PRODUCT_DRAFT));
+  const [draft, setDraft] = useState<ProductDraft>(initial);
   const [uploading, setUploading] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -310,6 +338,11 @@ function ProductEditor({
 
   const id = product ? `product-${product.id}` : 'product-new';
   const busy = saving || uploading > 0;
+  // 올리는 중인 이미지도 "저장하지 않은 것"이다 — 닫으면 Cloudinary에만 남는다.
+  const dirty = uploading > 0 || isDraftDirty(draft, initial);
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
   return (
     <form onSubmit={save} className={`${PANEL_CLASS} space-y-6 p-5 md:p-6`}>

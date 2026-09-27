@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, errorMessage } from '@/lib/admin/client';
 import { ARCHIVE_EXTRAS_MIGRATION } from '@/lib/admin/limits';
+import { isDraftDirty } from '@/lib/admin/dirty';
 import { NOTE_SLUG_RE, parseTags, splitParagraphs, suggestNoteSlug, type NoteRow } from '@/lib/notes';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, FILTER_CHIP_CLASS, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
+import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
 
 /**
  * 노트 — 짧은 글을 쓰고, 고치고, 공개한다.
@@ -86,6 +88,20 @@ export default function NotesTab({ active }: { active: boolean }) {
   const [view, setView] = useState<View>('all');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
+  /** 열린 편집기에 저장하지 않은 변경이 있는가(편집기가 알려 준다). */
+  const [editorDirty, setEditorDirty] = useState(false);
+  const { confirm, dialog } = useConfirm();
+  useUnsavedGuard('note-editor', editorDirty);
+
+  /**
+   * 편집기를 닫거나 다른 글로 바꾼다. 쓰던 내용이 있으면 먼저 묻는다 — 편집기는
+   * 글마다 새로 만들어지므로(`key`), 바꾸는 순간 입력이 사라진다.
+   */
+  async function openDraft(next: Draft | null) {
+    if (editorDirty && !(await confirm(DISCARD_CONFIRM))) return;
+    setDraft(next);
+    setMessage(null);
+  }
 
   useEffect(() => {
     if (!active) return;
@@ -124,13 +140,14 @@ export default function NotesTab({ active }: { active: boolean }) {
         }
         actions={
           !migrationPending && !draft && (
-            <button type="button" onClick={() => { setDraft(emptyDraft()); setMessage(null); }} className={`btn-primary ${BTN_SM}`}>
+            <button type="button" onClick={() => void openDraft(emptyDraft())} className={`btn-primary ${BTN_SM}`}>
               새 글
             </button>
           )
         }
       />
 
+      {dialog}
       {migrationPending && <MigrationNotice feature="노트 쓰기 기능" file={ARCHIVE_EXTRAS_MIGRATION} />}
       <StatusLine message={message} />
 
@@ -139,7 +156,8 @@ export default function NotesTab({ active }: { active: boolean }) {
           // 다른 글을 열면 입력 상태를 새로 만든다.
           key={draft.id ?? 'new'}
           initial={draft}
-          onClose={() => setDraft(null)}
+          onDirtyChange={setEditorDirty}
+          onClose={() => void openDraft(null)}
           onSaved={(text, note) => {
             setMessage({ tone: 'ok', text });
             setDraft(note ? draftFrom(note) : null);
@@ -188,7 +206,7 @@ export default function NotesTab({ active }: { active: boolean }) {
                       <button
                         type="button"
                         aria-expanded={open}
-                        onClick={() => { setDraft(open ? null : draftFrom(note)); setMessage(null); }}
+                        onClick={() => void openDraft(open ? null : draftFrom(note))}
                         className={`btn-outline ${BTN_SM} w-fit shrink-0`}
                       >
                         {open ? '닫기' : '편집'}
@@ -209,18 +227,28 @@ export default function NotesTab({ active }: { active: boolean }) {
 
 function NoteEditor({
   initial,
+  onDirtyChange,
   onClose,
   onSaved,
 }: {
   initial: Draft;
+  onDirtyChange: (dirty: boolean) => void;
   onClose: () => void;
   onSaved: (text: string, note: NoteRow | null) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(initial);
+  // "변경 없음"의 기준. 연 시점의 값이고, 저장에 성공하면 저장한 값이 된다 —
+  // 저장한 뒤에도 편집기는 열려 있다.
+  const [baseline, setBaseline] = useState<Draft>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Message | null>(null);
   const { confirm, dialog } = useConfirm();
   const isNew = draft.id === null;
+  const dirty = isDraftDirty(draft, baseline, ['slugTouched']);
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
+  // 닫히면(다른 글을 열거나 지우면) 더 이상 지킬 것이 없다.
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft(prev => ({ ...prev, [key]: value }));
 
@@ -256,6 +284,7 @@ function NoteEditor({
         ? await adminFetch<{ note: NoteRow }>('/api/admin/notes', 'POST', body)
         : await adminFetch<{ note: NoteRow }>('/api/admin/notes', 'PATCH', { id: draft.id, ...body });
       const state = result.note.published ? '공개했습니다' : '초안으로 저장했습니다';
+      setBaseline(draft);
       onSaved(`“${result.note.title}”을(를) ${state}.`, result.note);
     } catch (e) {
       setError({ tone: 'error', text: errorMessage(e, '저장하지 못했습니다.') });
