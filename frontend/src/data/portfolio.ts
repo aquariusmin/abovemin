@@ -1,3 +1,9 @@
+import {
+  archivePortfolioSlugs,
+  curatePortfolioProjects,
+  featuredPortfolioSlugs,
+} from "@/data/portfolioCuration";
+
 export type PortfolioProject = {
   slug: string;
   number: string;
@@ -688,4 +694,23 @@ export const portfolioProjects: PortfolioProject[] = [
 
 export function getPortfolioProject(slug: string) {
   return portfolioProjects.find((project) => project.slug === slug);
+}
+
+export function getEnglishSubmissionFeaturedProjects() {
+  return curatePortfolioProjects(portfolioProjects, featuredPortfolioSlugs);
+}
+
+export function getEnglishSubmissionArchiveProjects() {
+  return curatePortfolioProjects(portfolioProjects, archivePortfolioSlugs, "A");
+}
+
+export function getEnglishSubmissionPortfolioProjects() {
+  return [
+    ...getEnglishSubmissionFeaturedProjects(),
+    ...getEnglishSubmissionArchiveProjects(),
+  ];
+}
+
+export function getEnglishSubmissionPortfolioProject(slug: string) {
+  return getEnglishSubmissionPortfolioProjects().find((project) => project.slug === slug);
 }

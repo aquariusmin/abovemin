@@ -1,4 +1,9 @@
 import type { PortfolioProject } from "@/data/portfolio";
+import {
+  archivePortfolioSlugs,
+  curatePortfolioProjects,
+  featuredPortfolioSlugs,
+} from "@/data/portfolioCuration";
 
 export const koreanPortfolioProjects: PortfolioProject[] = [
   {
@@ -662,38 +667,14 @@ export function getKoreanPortfolioProject(slug: string) {
   return koreanPortfolioProjects.find((project) => project.slug === slug);
 }
 
-export const koreanSubmissionFeaturedSlugs = [
-  "busan-station-dwell",
-  "telecom-churn",
-  "satellite-gdp",
-] as const;
-
-export const koreanSubmissionArchiveSlugs = [
-  "arctic-route",
-  "quant-trading-fleet",
-  "korean-air",
-  "financial-ai-model-study",
-  "phorage",
-  "blood-type-survey",
-] as const;
-
-function getSubmissionProjectsBySlugs(slugs: readonly string[], prefix = "") {
-  return slugs.flatMap((slug, index) => {
-    const project = getKoreanPortfolioProject(slug);
-    if (!project) return [];
-    return [{
-      ...project,
-      number: `${prefix}${String(index + 1).padStart(2, "0")}`,
-    }];
-  });
-}
-
+// The curated ordering is shared with the English pages — see
+// `portfolioCuration.ts`.
 export function getKoreanSubmissionFeaturedProjects() {
-  return getSubmissionProjectsBySlugs(koreanSubmissionFeaturedSlugs);
+  return curatePortfolioProjects(koreanPortfolioProjects, featuredPortfolioSlugs);
 }
 
 export function getKoreanSubmissionArchiveProjects() {
-  return getSubmissionProjectsBySlugs(koreanSubmissionArchiveSlugs, "A");
+  return curatePortfolioProjects(koreanPortfolioProjects, archivePortfolioSlugs, "A");
 }
 
 export function getKoreanSubmissionPortfolioProjects() {

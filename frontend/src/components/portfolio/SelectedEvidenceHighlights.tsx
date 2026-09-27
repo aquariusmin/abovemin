@@ -1,11 +1,6 @@
+import { featuredPortfolioSlugs } from "@/data/portfolioCuration";
 import { portfolioEvidenceHighlights, type EvidenceLocale } from "@/data/portfolioEvidence";
 import type { PortfolioMode } from "@/data/portfolioRouting";
-
-const submissionHighlightSlugs = [
-  "busan-station-dwell",
-  "telecom-churn",
-  "satellite-gdp",
-] as const;
 
 export default function SelectedEvidenceHighlights({
   locale,
@@ -14,9 +9,9 @@ export default function SelectedEvidenceHighlights({
   locale: EvidenceLocale;
   mode?: PortfolioMode;
 }) {
-  const isKoreanSubmission = locale === "ko" && mode === "submission";
-  const highlights = isKoreanSubmission
-    ? submissionHighlightSlugs.flatMap((slug) => portfolioEvidenceHighlights.find((item) => item.slug === slug) ?? [])
+  const isSubmission = mode === "submission";
+  const highlights = isSubmission
+    ? featuredPortfolioSlugs.flatMap((slug) => portfolioEvidenceHighlights.find((item) => item.slug === slug) ?? [])
     : portfolioEvidenceHighlights;
 
   return (
@@ -27,16 +22,20 @@ export default function SelectedEvidenceHighlights({
             {locale === "ko" ? "대표 근거" : "Selected evidence highlights"}
           </p>
           <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-semibold tracking-tight md:text-4xl">
-            {isKoreanSubmission
-              ? "대표 프로젝트의 숫자만 먼저 보여줍니다."
+            {isSubmission
+              ? locale === "ko"
+                ? "대표 프로젝트의 숫자만 먼저 보여줍니다."
+                : "The featured projects' numbers come first."
               : locale === "ko"
                 ? "숫자는 보여주고, 해석 범위는 같이 둡니다."
                 : "Key numbers, with the caveats kept close."}
           </h2>
         </div>
         <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
-          {isKoreanSubmission
-            ? "채용 담당자가 먼저 볼 세 가지 사례만 남겼습니다. 북극항로처럼 면접에서 깊게 방어하기 어려운 작업은 아래 Explore 영역으로 낮춰 배치했습니다."
+          {isSubmission
+            ? locale === "ko"
+              ? "채용 담당자가 먼저 볼 세 가지 사례만 남겼습니다. 북극항로처럼 면접에서 깊게 방어하기 어려운 작업은 아래 Explore 영역으로 낮춰 배치했습니다."
+              : "Only the three cases a recruiter should see first are kept here. Work that is harder to defend in depth in an interview, like the Arctic route study, sits lower in the Explore section below."
             : locale === "ko"
               ? "눈에 띄는 수치일수록 어디서 나온 값인지, 아직 말할 수 없는 부분은 무엇인지 같이 붙였습니다. 자세한 과정은 아래 프로젝트별 사례에 나눠 적었습니다."
               : "When a number could sound like an outcome claim, I spell out where it came from and what it does not prove. The full cases below carry the detail."}
