@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
+import { buildFallback } from '@/lib/build-phase';
 
 export const metadata: Metadata = {
   title: 'Notes',
@@ -15,9 +16,10 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function NotesPage() {
-  // 조회 실패는 "글 없음"으로 읽는다(아카이브·sitemap과 같은 선택). 빌드 중에
-  // DB가 흔들려 배포 전체가 죽는 것보다, 한 시간 동안 잠들어 있는 편이 낫다.
-  const notes = await getPublishedNotes().catch(() => []);
+  // 조회 실패는 빌드 중에만 "글 없음"으로 읽는다 — DB가 흔들려 배포 전체가
+  // 죽는 것보다 낫다. 실행 중에는 던진다: 여기서 삼키면 아래의 404가 한 시간
+  // 동안 캐시에 앉는다(`buildFallback`).
+  const notes = await getPublishedNotes().catch(buildFallback([]));
   // 글이 없으면 이 경로는 존재하지 않는다. 빈 목록 페이지를 색인시키고
   // 푸터에서 링크하는 것보다, 첫 글이 올라올 때까지 없는 편이 낫다.
   if (notes.length === 0) notFound();

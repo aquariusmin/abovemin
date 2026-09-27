@@ -12,6 +12,7 @@ import BackLink from '@/components/BackLink';
 import CopyLinkButton from '@/components/archive/CopyLinkButton';
 import PhotoKeyNav from '@/components/archive/PhotoKeyNav';
 import { placeholderStyle } from '@/components/photo-placeholder';
+import { buildFallback } from '@/lib/build-phase';
 
 /**
  * 사진 한 장의 페이지.
@@ -116,18 +117,19 @@ const FRAME_VH = 74;
  * 404가 되면 공유한 사람이 잘못한 것처럼 보이므로, id가 같은 사진의 새 주소로
  * 보낸다.
  *
- * `getAllPhotos`만 믿지 않는다. 앨범 조회가 실패하면 그 함수는 앨범으로 거르지
- * 않은 목록을 돌려주므로(그쪽 주석), 비공개 앨범의 사진이 섞여 온다. 그대로
+ * `getAllPhotos`만 믿지 않는다. 그 함수는 예전에 앨범 조회가 실패하면 앨범으로
+ * 거르지 않은 목록을 돌려줬고, 그때 비공개 앨범의 사진이 섞여 왔다. 그대로
  * 보내면 (1) 비공개 앨범 주소를 알려 주고, (2) 지금 주소가 바로 그 비공개
- * 앨범이면 자기 자신으로 영구 리다이렉트해 무한 루프가 된다. 그래서
- * 새 주소가 지금 주소와 다를 때만, 그리고 그 주소가 실제로 열리는지
- * (`getPhotoInAlbum` — 공개 규칙이 모인 곳) 확인한 뒤에만 보낸다.
+ * 앨범이면 자기 자신으로 영구 리다이렉트해 무한 루프가 된다. 지금은 그 경우
+ * 던지지만, 영구 리다이렉트는 브라우저에 남으므로 여기서도 막는다: 새 주소가
+ * 지금 주소와 다를 때만, 그리고 그 주소가 실제로 열리는지(`getPhotoInAlbum` —
+ * 공개 규칙이 모인 곳) 확인한 뒤에만 보낸다.
  */
 async function movedPhotoPath(params: Params): Promise<string | null> {
   const { slug, id } = await params;
   const photoId = parsePhotoId(id);
   if (photoId === null) return null;
-  const photos = await getAllPhotos().catch(() => []);
+  const photos = await getAllPhotos().catch(buildFallback([]));
   const moved = photos.find(photo => photo.id === photoId);
   // `id`는 `parsePhotoId`가 정규형만 받으므로, 앨범이 같으면 주소도 같다.
   if (!moved || moved.album_slug === slug) return null;

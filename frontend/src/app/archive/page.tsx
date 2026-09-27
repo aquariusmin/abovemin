@@ -5,6 +5,7 @@ import { buildMapPlaces } from '@/lib/places';
 import { publicIdFromUrl } from '@/lib/cloudinary';
 import Reveal from '@/components/motion/Reveal';
 import ArchiveGrid from '@/components/archive/ArchiveGrid';
+import { buildFallback } from '@/lib/build-phase';
 import PhotoFilter from '@/components/archive/PhotoFilter';
 
 export const metadata: Metadata = {
@@ -18,12 +19,12 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function Archive() {
-  // 조회 실패도 "앨범 0개"로 다룬다. 아래에 이미 그 상태의 화면이 있는데,
-  // 예외가 거기까지 가지 못하게 막고 있었다 — 프리렌더 단계에서 터지면
-  // 배포 전체가 죽는다.
+  // 조회 실패는 빌드 중에만 "앨범 0개"로 다룬다 — 프리렌더 단계에서 터지면
+  // 배포 전체가 죽는다. 실행 중에는 던진다: 빈 아카이브가 ISR 캐시에 앉는
+  // 대신 마지막으로 성공한 페이지가 계속 나간다(`buildFallback`).
   const [albumsWithCount, allPhotos, places] = await Promise.all([
-    getAlbumsWithCounts().catch(() => []),
-    getAllPhotos().catch(() => []),
+    getAlbumsWithCounts().catch(buildFallback([])),
+    getAllPhotos().catch(buildFallback([])),
     // 좌표가 없으면(테이블이 없어도) 빈 목록 — 지도 토글이 나타나지 않는다.
     getPlaces().catch(() => []),
   ]);

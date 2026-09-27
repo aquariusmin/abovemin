@@ -10,6 +10,7 @@ import BackLink from '@/components/BackLink';
 import Reveal from '@/components/motion/Reveal';
 import TimelineYearIndex from '@/components/archive/TimelineYearIndex';
 import { storedRatioStyle } from '@/components/photo-placeholder';
+import { buildFallback } from '@/lib/build-phase';
 
 export const metadata: Metadata = {
   title: 'Timeline',
@@ -32,8 +33,8 @@ export const revalidate = 300;
  * 보는 것 말고 할 일이 없어 JS가 필요 없다. 클라이언트 코드는 연도 색인 하나다.
  */
 export default async function TimelinePage() {
-  // 조회 실패도 빈 목록 — `/archive`와 같이, 프리렌더에서 터져 배포가 죽지 않게.
-  const photos = await getAllPhotos().catch(() => []);
+  // 조회 실패는 빌드 중에만 빈 목록 — `/archive`와 같다(`buildFallback`).
+  const photos = await getAllPhotos().catch(buildFallback([]));
   const years = groupTimeline(photos);
   const dated = photos.filter(photo => photo.taken_at).length;
 
