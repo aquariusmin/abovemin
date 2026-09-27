@@ -45,19 +45,9 @@ interface MemoryPhoto extends RecentPhoto {
 // Shared editorial easing — slow settle, no bounce.
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const heroStagger: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
-};
-
 const rise: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
-};
-
-const mediaReveal: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 1.03 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.9, ease: EASE } },
 };
 
 // Scroll-in container: children rise in sequence the first time the block
@@ -141,15 +131,17 @@ export default function HomeContent({
             면의 전환이 구분을 맡는다 — 예전에는 빈 canvas가 데스크톱에서
             ~180px 이어졌다. */}
         <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
-          <motion.div
+          {/* 히어로는 framer-motion의 `initial="hidden"`을 쓰지 않는다. 그러면
+              서버 HTML이 사진과 <h1>을 opacity 0으로 내보내고, JS가 받아져
+              하이드레이션이 끝날 때까지 첫 화면이 비어 있다 — 이 사진이 사이트
+              정문의 LCP다. 사진은 처음부터 보이고, 문구만 CSS 애니메이션
+              (`.hero-rise`)으로 살짝 올라온다. 불투명도는 건드리지 않으므로
+              JS와 상관없이 첫 페인트에 다 보인다. */}
+          <div
             className="@container relative mx-auto w-full"
             style={{ maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }}
-            variants={heroStagger}
-            initial="hidden"
-            animate="visible"
           >
-            <motion.div
-              variants={mediaReveal}
+            <div
               className="relative w-full overflow-hidden rounded-xl bg-stone"
               style={{ aspectRatio: String(heroAspect) }}
             >
@@ -172,11 +164,10 @@ export default function HomeContent({
               {overlaid && (
                 <div aria-hidden className="scrim-hero absolute inset-0 hidden md:block" />
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              variants={rise}
-              className={`mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
+            <div
+              className={`hero-rise mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
             >
               {/* 문구 블록이 자기 scrim을 들고 다닌다.
 
@@ -232,8 +223,8 @@ export default function HomeContent({
                   </Link>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </section>
 
         {/* ── 최근 아카이브 ─────────────────────────────────────────────────────
