@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { BTN_SM, INPUT_CLASS } from './adminStyles';
 
@@ -12,6 +13,12 @@ export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
         {/* 이 화면의 유일한 최상위 제목 (axe: page-has-heading-one). */}
         <h1 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-ink">Admin</h1>
         <LoginForm onSuccess={onSuccess} />
+        {/* /admin에는 사이트 내비게이션이 없다(`lib/chrome.ts`). */}
+        <p className="mt-8 text-center">
+          <Link href="/" className="text-sm text-slate underline-offset-4 hover:underline">
+            ← 사이트로 돌아가기
+          </Link>
+        </p>
       </div>
     </main>
   );
