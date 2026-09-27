@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UNAUTHORIZED_EVENT } from '@/lib/admin/client';
+import { tabKeyTarget } from '@/lib/admin/tab-keys';
 import { BTN_SM } from './adminStyles';
 import AdminLogin from './AdminLogin';
 import OverviewTab from './OverviewTab';
@@ -164,6 +165,17 @@ export default function AdminApp() {
             role="tablist"
             aria-label="관리 메뉴"
             className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-4 md:px-8"
+            onKeyDown={event => {
+              // 탭 사이는 화살표로 옮기고, 옮기면 곧바로 연다(자동 활성화 —
+              // 숨긴 탭은 언마운트하지 않으니 여는 비용이 없다).
+              const index = ADMIN_TABS.findIndex(item => item.id === tab);
+              const next = tabKeyTarget(event.key, index, ADMIN_TABS.length);
+              if (next === null) return;
+              event.preventDefault();
+              const target = ADMIN_TABS[next].id;
+              go(target);
+              document.getElementById(`admin-tab-${target}`)?.focus();
+            }}
           >
             {ADMIN_TABS.map(item => {
               const active = item.id === tab;
@@ -174,7 +186,11 @@ export default function AdminApp() {
                   role="tab"
                   id={`admin-tab-${item.id}`}
                   aria-selected={active}
-                  aria-controls={`admin-panel-${item.id}`}
+                  // 한 번도 연 적 없는 탭의 패널은 아직 문서에 없다 — 없는 id를
+                  // 가리키지 않는다.
+                  aria-controls={visited.has(item.id) ? `admin-panel-${item.id}` : undefined}
+                  // Tab 키는 선택된 탭에만 멈춘다. 나머지는 화살표로.
+                  tabIndex={active ? 0 : -1}
                   onClick={() => go(item.id)}
                   className={`relative shrink-0 px-3 py-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm md:px-4 ${
                     active ? 'text-forest' : 'text-slate hover:text-ink'
