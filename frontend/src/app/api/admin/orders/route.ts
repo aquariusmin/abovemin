@@ -54,25 +54,30 @@ export async function PATCH(request: Request) {
 
   const { id, notify, ...fields } = body.value;
 
-  const { data: before, error: beforeError } = await db.value
-    .from('orders')
-    .select('status')
-    .eq('id', id)
-    .maybeSingle();
-  if (beforeError) return dbErrorResponse('admin_orders_lookup', beforeError);
-  if (!before) return jsonError('주문을 찾을 수 없습니다.', 404);
+  // `shipped`로 바꾸는 요청은 "아직 shipped가 아닌 행만" 고치는 조건부 update로
+  // 먼저 보낸다. 행이 돌아오면 이 요청이 상태를 **바꾼** 것이고, 메일은 그때만
+  // 나간다. 예전에는 상태를 먼저 읽고 따로 update했는데, 버튼을 두 번 누르거나
+  // 탭 두 개에서 동시에 저장하면 둘 다 "아직 shipped 아님"을 읽어 배송 안내가
+  // 두 통 나갔다. 조건을 update의 WHERE에 두면 Postgres가 행 잠금 뒤 조건을
+  // 다시 보므로, 동시에 와도 한쪽만 행을 받는다.
+  //
+  // `status is null`도 넣는 이유: `neq`는 null을 걸러낸다(null <> 'shipped'는
+  // null). 상태가 비어 있는 옛 행도 "아직 안 보냄"이다.
+  const update = () => db.value.from('orders').update(fields).eq('id', id);
 
-  const { data: order, error } = await db.value
-    .from('orders')
-    .update(fields)
-    .eq('id', id)
-    .select('*')
-    .maybeSingle();
+  const transition =
+    fields.status === 'shipped'
+      ? await update().or('status.is.null,status.neq.shipped').select('*').maybeSingle()
+      : null;
+  if (transition?.error) return dbErrorResponse('admin_orders_update', transition.error);
+  const becameShipped = Boolean(transition?.data);
+
+  // 상태를 바꾸지 않는 요청, 또는 이미 shipped였던 주문(메모·송장만 고침).
+  const { data: order, error } = becameShipped ? transition! : await update().select('*').maybeSingle();
   if (error) return dbErrorResponse('admin_orders_update', error);
   if (!order) return jsonError('주문을 찾을 수 없습니다.', 404);
 
   let email: 'sent' | 'failed' | 'skipped' = 'skipped';
-  const becameShipped = fields.status === 'shipped' && before.status !== 'shipped';
   if (becameShipped && notify !== false && order.tracking_number) {
     try {
       await sendEmails([
