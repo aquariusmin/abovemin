@@ -192,9 +192,19 @@ export default function AdminApp() {
                   <p className="eyebrow eyebrow-marked text-muted-foreground">phorage studio</p>
                   <h1 className="font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">관리</h1>
                 </div>
-                <button type="button" onClick={logout} className={`btn-ghost ${BTN_SM} text-slate`}>
-                  로그아웃
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* /admin에는 사이트 내비게이션이 없어서(`lib/chrome.ts`) 여기가
+                      홈으로 가는 유일한 길이다. next/link가 아니라 <a>인 이유:
+                      전체 이동이어야 저장 안 한 초안이 있을 때 beforeunload
+                      경고(UnsavedGuard)가 뜬다 — 클라이언트 이동은 그걸 건너뛴다. */}
+                  {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                  <a href="/" className={`btn-ghost ${BTN_SM} text-slate`}>
+                    사이트로
+                  </a>
+                  <button type="button" onClick={logout} className={`btn-ghost ${BTN_SM} text-slate`}>
+                    로그아웃
+                  </button>
+                </div>
               </div>
               <hr className="rule-accent mt-6" />
             </header>
