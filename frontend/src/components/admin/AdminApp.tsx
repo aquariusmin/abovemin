@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { UNAUTHORIZED_EVENT } from '@/lib/admin/client';
 import { tabKeyTarget } from '@/lib/admin/tab-keys';
 import { BTN_SM } from './adminStyles';
-import AdminLogin from './AdminLogin';
+import AdminLogin, { SessionExpiredDialog } from './AdminLogin';
 import OverviewTab from './OverviewTab';
 import ArchiveTab from './ArchiveTab';
 import AlbumsTab from './AlbumsTab';
@@ -77,6 +77,8 @@ export default function AdminApp() {
   // 쿠키 세션이 살아 있는지 아직 모르는 동안. 로그인 폼을 먼저 그렸다가 곧바로
   // 대시보드로 바꾸면, 이미 로그인한 사람에게 비밀번호 칸이 한 번 번쩍인다.
   const [sessionChecked, setSessionChecked] = useState(false);
+  // 대시보드를 쓰던 중에 세션이 끝났다. 대시보드는 그대로 두고 위에 로그인을 띄운다.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // 한 번이라도 연 탭. 숨겨 두되 상태(업로드 대기, 입력 중인 값)는 유지한다.
   const [visited, setVisited] = useState<ReadonlySet<AdminTab>>(() => new Set([tab]));
@@ -118,9 +120,12 @@ export default function AdminApp() {
     return () => observer.disconnect();
   }, [authed]);
 
-  // 어느 탭에서든 401을 받으면 로그인으로 돌아간다(`adminFetch`가 이벤트를 낸다).
+  // 어느 탭에서든 401을 받으면(`adminFetch`가 이벤트를 낸다) 다시 로그인을 받는다.
+  // `authed`를 내리면 대시보드가 언마운트되어 쓰던 초안이 사라진다 — 그래서
+  // 대시보드 위에 로그인 대화상자를 띄운다(`SessionExpiredDialog`). 아직 로그인
+  // 전이면 이 값은 쓰이지 않고 평범한 로그인 화면이 그대로 보인다.
   useEffect(() => {
-    const onUnauthorized = () => setAuthed(false);
+    const onUnauthorized = () => setSessionExpired(true);
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
@@ -128,6 +133,7 @@ export default function AdminApp() {
   async function logout() {
     await fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => undefined);
     setAuthed(false);
+    setSessionExpired(false);
     setVisited(new Set([tab]));
   }
 
@@ -136,7 +142,14 @@ export default function AdminApp() {
   }
 
   if (!authed) {
-    return <AdminLogin onSuccess={() => setAuthed(true)} />;
+    return (
+      <AdminLogin
+        onSuccess={() => {
+          setAuthed(true);
+          setSessionExpired(false);
+        }}
+      />
+    );
   }
 
   const nav: AdminNav = { tab, params: new URLSearchParams(searchParams.toString()), go };
@@ -144,6 +157,9 @@ export default function AdminApp() {
   return (
     <AdminNavContext.Provider value={nav}>
       <main className="min-h-screen bg-canvas pb-24">
+        {sessionExpired && (
+          <SessionExpiredDialog onSuccess={() => setSessionExpired(false)} onDismiss={() => setSessionExpired(false)} />
+        )}
         <header className="mx-auto max-w-6xl px-4 pt-8 sm:px-6 md:px-10 md:pt-12">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-2">
