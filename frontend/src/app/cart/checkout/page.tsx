@@ -21,6 +21,10 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+  // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
+  // 키가 가므로, 첫 요청이 사실은 저장됐다면 서버는 새로 넣지 않고 그 주문으로
+  // 답한다. 새 키는 주문이 성공한 뒤에만 만든다.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const [mounted, setMounted] = useState(false);
 
@@ -77,6 +81,7 @@ export default function CheckoutPage() {
       address: form.address.trim(),
       note: form.note.trim() || null,
       items: toOrderItems(items),
+      idempotency_key: idempotencyKey,
       // 허니팟 — 사람에게는 늘 빈 칸이다. 비었으면 키째 뺀다.
       ...(form.website ? { website: form.website } : {}),
     };
@@ -114,6 +119,7 @@ export default function CheckoutPage() {
       }
 
       clearCart();
+      setIdempotencyKey(crypto.randomUUID());
       setDone(true);
     } catch {
       setOrderError('네트워크 오류로 주문을 보내지 못했습니다. 연결을 확인하고 다시 시도해주세요.');

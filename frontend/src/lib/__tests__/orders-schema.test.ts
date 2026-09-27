@@ -109,3 +109,25 @@ describe('허니팟', () => {
     expect(isHoneypotFilled('x')).toBe(true);
   });
 });
+
+describe('멱등 키', () => {
+  const base: OrderInputValues = {
+    name: '홍길동',
+    email: 'hong@example.com',
+    address: '서울시 중구 세종대로 110',
+    items: [{ id: 3, quantity: 1 }],
+  };
+
+  it('UUID를 서버까지 넘기고, 없어도 통과한다(구버전 탭)', () => {
+    const key = '3f1c2b8e-7d4a-4f5e-9a1b-2c3d4e5f6a7b';
+    expect(OrderInput.parse({ ...base, idempotency_key: key }).idempotency_key).toBe(key);
+    expect(OrderInput.safeParse(base).success).toBe(true);
+    expect(OrderInput.safeParse({ ...base, idempotency_key: null }).success).toBe(true);
+  });
+
+  it('UUID가 아닌 값은 막는다', () => {
+    for (const idempotency_key of ['', 'abc', 'x'.repeat(500)]) {
+      expect(OrderInput.safeParse({ ...base, idempotency_key }).success).toBe(false);
+    }
+  });
+});

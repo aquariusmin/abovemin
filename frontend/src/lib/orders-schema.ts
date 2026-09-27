@@ -40,6 +40,12 @@ export const OrderInput = z.object({
    * 스키마가 이 키를 알아야 strip되지 않고 서버까지 온다.
    */
   website: z.string().max(200).optional().nullable(),
+  /**
+   * 주문 시도 하나에 하나. 체크아웃이 만들고, 같은 제출을 다시 보낼 때도 같은
+   * 값을 보낸다 — 서버는 이 키로 이미 들어온 주문이 있으면 새로 넣지 않고 그
+   * 주문으로 답한다(`api/orders`). 구버전 탭은 키 없이 오므로 optional.
+   */
+  idempotency_key: z.string().uuid().optional().nullable(),
 });
 
 /** 허니팟에 뭔가 들어 있으면 봇이다 — 공백 한 칸이라도. 사람은 이 칸을 볼 수 없다. */
