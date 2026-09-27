@@ -114,15 +114,26 @@ const FRAME_VH = 74;
  *
  * 관리 화면에서 사진을 다른 앨범으로 옮길 수 있다. 옮기기 전에 건넨 링크가
  * 404가 되면 공유한 사람이 잘못한 것처럼 보이므로, id가 같은 사진의 새 주소로
- * 보낸다. 숨긴 사진·비공개 앨범은 `getAllPhotos`에 없으니 여기서도 404로 남는다.
+ * 보낸다.
+ *
+ * `getAllPhotos`만 믿지 않는다. 앨범 조회가 실패하면 그 함수는 앨범으로 거르지
+ * 않은 목록을 돌려주므로(그쪽 주석), 비공개 앨범의 사진이 섞여 온다. 그대로
+ * 보내면 (1) 비공개 앨범 주소를 알려 주고, (2) 지금 주소가 바로 그 비공개
+ * 앨범이면 자기 자신으로 영구 리다이렉트해 무한 루프가 된다. 그래서
+ * 새 주소가 지금 주소와 다를 때만, 그리고 그 주소가 실제로 열리는지
+ * (`getPhotoInAlbum` — 공개 규칙이 모인 곳) 확인한 뒤에만 보낸다.
  */
 async function movedPhotoPath(params: Params): Promise<string | null> {
-  const { id } = await params;
+  const { slug, id } = await params;
   const photoId = parsePhotoId(id);
   if (photoId === null) return null;
   const photos = await getAllPhotos().catch(() => []);
   const moved = photos.find(photo => photo.id === photoId);
-  return moved ? photoPagePath(moved) : null;
+  // `id`는 `parsePhotoId`가 정규형만 받으므로, 앨범이 같으면 주소도 같다.
+  if (!moved || moved.album_slug === slug) return null;
+  // 조회 실패는 던진다 — 404가 ISR 캐시에 앉지 않게(`getPhotoInAlbum`의 주석).
+  const target = await getPhotoInAlbum(moved.album_slug, photoId);
+  return target ? photoPagePath(moved) : null;
 }
 
 export default async function PhotoPage({ params }: { params: Params }) {
