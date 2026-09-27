@@ -112,14 +112,6 @@ function withTransform(url: string, transform: string): string {
   return parsed.toString();
 }
 
-/**
- * 아카이브 원본의 가로 상한. 업로드된 사진이 긴 변 ~1500px에서 멈춰 있어서
- * (`fl_getinfo`로 확인), 그보다 큰 폭을 요청해도 `c_limit`이 확대하지 않으므로
- * 같은 사진이 URL만 다른 파생 이미지로 여러 벌 생긴다 — 변환 크레딧과 CDN
- * 캐시만 쓴다. 원본을 더 큰 해상도로 다시 올리면 이 값만 올리면 된다.
- */
-export const ARCHIVE_MAX_WIDTH = 1500;
-
 /** `next/image` 로더가 갈아 끼우는 "전달 최적화" 키. 이것만으로 된 세그먼트는 걷어 낸다. */
 const DELIVERY_KEYS = new Set(['f', 'q', 'w', 'dpr']);
 

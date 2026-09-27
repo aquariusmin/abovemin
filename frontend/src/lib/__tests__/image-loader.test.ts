@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import imageLoader from '@/lib/image-loader';
-import { ARCHIVE_MAX_WIDTH, cloudinary } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary';
 
 const BASE = 'https://res.cloudinary.com/dmljaqqzc/image/upload';
 const real = `${BASE}/v1/phorage/photo.jpg`;
@@ -24,9 +24,9 @@ describe('imageLoader — Cloudinary', () => {
   });
 
   it('호출부가 적은 폭을 넘겨 요청하지 않는다', () => {
-    const src = cloudinary(real, { width: ARCHIVE_MAX_WIDTH, watermark: true });
+    const src = cloudinary(real, { width: 2400, watermark: true });
     for (const width of [1920, 2048, 3840]) {
-      expect(imageLoader({ src, width })).toContain(`c_limit,w_${ARCHIVE_MAX_WIDTH}/`);
+      expect(imageLoader({ src, width })).toContain(`c_limit,w_2400/`);
     }
   });
 
