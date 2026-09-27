@@ -101,6 +101,15 @@ describe('staleness()', () => {
     expect(staleness(now - 200 * 3600_000)).toBe('stale');
     expect(staleness('garbage')).toBe('stale');
   });
+
+  it('넘겨받은 기준 시각으로 판단한다 — 서버와 하이드레이션이 같은 답을 내도록', () => {
+    const renderedAt = Date.parse('2026-09-12T00:00:00Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(renderedAt + 100 * 3600_000);
+    const seen = renderedAt - 1 * 3600_000;
+    expect(staleness(seen, renderedAt)).toBe('live');
+    expect(staleness(seen)).toBe('stale');
+  });
 });
 
 describe('lastCycle()', () => {

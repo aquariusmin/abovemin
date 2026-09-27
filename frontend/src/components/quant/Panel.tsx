@@ -128,6 +128,36 @@ export function RelativeTime({ children }: { children: React.ReactNode }) {
   return <span suppressHydrationWarning>{children}</span>;
 }
 
+/**
+ * A failed poll over data that is already on screen.
+ *
+ * One dropped request used to replace the whole console with "FEED ERROR",
+ * throwing away numbers that were correct a minute ago. The last good data
+ * stays up; this strip says in words that it is no longer refreshing, and the
+ * next successful poll removes it.
+ */
+export function FeedStale({
+  error,
+  since,
+}: {
+  error: string;
+  /** Pre-formatted relative time of the last good fetch, if there was one. */
+  since?: string | null;
+}) {
+  return (
+    <Section
+      role="status"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 border-l-[var(--lab-warning)] bg-[color-mix(in_srgb,var(--lab-warning)_6%,transparent)] px-4 py-2.5"
+    >
+      <Pill tone="warning" dot>feed stale</Pill>
+      <span className="lab-prose text-[var(--lab-ink-2)]">
+        Last refresh failed ({error}). Showing the last good data
+        {since ? <>, fetched <RelativeTime>{since}</RelativeTime></> : null}; retrying.
+      </span>
+    </Section>
+  );
+}
+
 /** Status is never colour alone — each pill carries its own text, so the state
  *  survives colour-blindness, greyscale and a screenshot. */
 export function Pill({
