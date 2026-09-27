@@ -17,7 +17,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.supabase.co",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com",
   "upgrade-insecure-requests",
 ].join('; ');
 
@@ -39,7 +39,6 @@ const nextConfig: NextConfig = {
     '/opengraph-image': ['./assets/**'],
     '/portfolio/opengraph-image': ['./assets/**'],
   },
-  serverExternalPackages: ['yahoo-finance2'],
   experimental: {
     // framer-motion re-exports its whole surface from one entry point, so a
     // component that imports `{ motion }` drags the gesture, layout-animation
