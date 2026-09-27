@@ -319,8 +319,8 @@ export default function CheckoutPage() {
 
           {/* Order summary */}
           <div className="md:col-span-5">
-            <div className="rounded-lg bg-stone p-6 space-y-6">
-              <p className="eyebrow text-muted-foreground">Order Summary</p>
+            <div className="rounded-lg surface-cream p-6 space-y-6">
+              <p className="eyebrow text-slate">Order Summary</p>
               <div className="space-y-4">
                 {items.map(item => (
                   <div key={item.key} className="flex justify-between items-center gap-3">
@@ -340,7 +340,7 @@ export default function CheckoutPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink-body leading-snug truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-slate mt-0.5">
                           {item.option_label && <>{item.option_label}&nbsp;· </>}× {item.quantity}
                         </p>
                       </div>
@@ -350,7 +350,7 @@ export default function CheckoutPage() {
                 ))}
               </div>
               <div className="border-t border-hairline pt-4 flex justify-between items-baseline">
-                <span className="eyebrow text-muted-foreground">Total</span>
+                <span className="eyebrow text-slate">Total</span>
                 <span className="text-xl font-semibold text-ink tabular-nums">₩&nbsp;{totalPrice().toLocaleString()}</span>
               </div>
               <p className="text-xs text-slate leading-relaxed">

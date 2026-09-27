@@ -19,6 +19,10 @@ import Image, { type ImageProps } from 'next/image';
  * `fadeIn={false}`: 첫 화면에 걸리는 타일용. 불투명도 0은 하이드레이션 뒤
  * `onLoad`가 불려야 풀리므로, 서버 HTML의 사진이 JS를 기다리게 되고 LCP가
  * 그만큼 밀린다. 끄면 처음부터 보이고, 흐린 미리보기 위로 그냥 그려진다.
+ *
+ * 마운트 뒤에 `false → true`로 바뀌어도 된다(`useBelowFoldReveal`의
+ * `deferred`). 서버 HTML에서는 보이고, 뷰포트 아래로 판정된 뒤에야 도착을
+ * 기다린다 — 이미 도착했다면 `onLoad`가 먼저 불려 있어 그대로 보인다.
  */
 export default function FadeImage({
   alt,
@@ -27,12 +31,13 @@ export default function FadeImage({
   fadeIn = true,
   ...props
 }: ImageProps & { fadeIn?: boolean }) {
-  const [loaded, setLoaded] = useState(!fadeIn);
+  const [loaded, setLoaded] = useState(false);
+  const shown = loaded || !fadeIn;
   return (
     <Image
       {...props}
       alt={alt}
-      className={`${className} transition-[opacity,transform] ease-out motion-reduce:transition-none ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      className={`${className} transition-[opacity,transform] ease-out motion-reduce:transition-none ${shown ? 'opacity-100' : 'opacity-0'}`}
       onLoad={event => {
         setLoaded(true);
         onLoad?.(event);

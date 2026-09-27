@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { revealTarget, useBelowFoldReveal } from '@/components/motion/useBelowFoldReveal';
 import { useCartStore } from '@/store/cartStore';
 import { formatPriceRange } from '@/lib/price';
 import { SOLD_OUT_LABEL } from '@/lib/product';
@@ -45,15 +46,31 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 const categoryLabel = (cat: string) => CATEGORY_LABELS[cat] ?? cat;
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
-const itemVariants = {
-  hidden: { y: 16, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
-};
+/**
+ * 카드 한 장의 스크롤 등장. 예전에는 그리드 전체가 `initial="hidden"`(opacity 0)
+ * 컨테이너였고 카드는 그 stagger를 따랐다 — 서버 HTML의 첫 줄 카드와 첫 사진
+ * (이 페이지의 LCP)이 하이드레이션이 끝날 때까지 보이지 않았다. 이제 서버
+ * HTML에서는 모두 보이고, 마운트 때 뷰포트 아래에 있던 카드만 들어올 때
+ * 올라온다(`useBelowFoldReveal`). CSS columns라 "첫 화면"을 인덱스로 셀 수
+ * 없는 것은 아카이브 그리드와 같다.
+ */
+function RevealCard({ className, children }: { className: string; children: ReactNode }) {
+  const reduce = useReducedMotion();
+  const { ref, hidden } = useBelowFoldReveal<HTMLDivElement>();
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={false}
+      animate={revealTarget(hidden, reduce, 16)}
+      transition={{ duration: 0.5, ease: EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function ShopCatalog({ products, loadError }: { products: Product[]; loadError: boolean }) {
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL);
@@ -168,12 +185,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
           <p className="text-lg text-ink-body">이 카테고리에는 아직 상품이 없어요.</p>
         </div>
       ) : (
-        <motion.div
-          className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-        >
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto">
           {filtered.map((item, i) => {
             const available = item.state === 'available';
             return (
@@ -181,10 +193,9 @@ export default function ShopCatalog({ products, loadError }: { products: Product
             // stretches over the whole card via `.card-link`, and the add-to-cart
             // button sits above that overlay — so the two controls are siblings
             // rather than a <button> nested inside an <a>.
-            <motion.div
+            <RevealCard
               key={item.id}
               className="break-inside-avoid card-surface group has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring rounded-md"
-              variants={itemVariants}
             >
               {/* Media */}
               <div className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary">
@@ -259,10 +270,10 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 </button>
                 )}
               </div>
-            </motion.div>
+            </RevealCard>
             );
           })}
-        </motion.div>
+        </div>
       )}
     </>
   );

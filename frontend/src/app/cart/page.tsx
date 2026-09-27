@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -14,11 +14,37 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 // with no effect/setState, so the persisted cart never flashes the empty state.
 const noopSubscribe = () => () => {};
 
+/** 줄을 지운 뒤 포커스를 보낼 곳. 다음 줄이 없으면 페이지 제목. */
+const HEADING = Symbol('heading');
+
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCartStore();
   const reduce = useReducedMotion();
   const [confirmingClear, setConfirmingClear] = useState(false);
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
+
+  // 포커스가 누른 버튼과 함께 사라지지 않게 한다.
+  //
+  // 줄을 지우면 그 줄의 "삭제" 버튼이 DOM에서 빠지고, 포커스는 <body>로
+  // 떨어진다 — 키보드·스크린 리더 사용자는 페이지 맨 위에서 다시 찾아 내려와야
+  // 했다. 지우기 전에 갈 곳(다음 줄, 없으면 이전 줄의 "삭제", 줄이 하나도 남지
+  // 않으면 제목)을 정해 두고, 목록이 다시 그려진 뒤 옮긴다.
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const pendingFocus = useRef<string | typeof HEADING | null>(null);
+
+  useEffect(() => {
+    const target = pendingFocus.current;
+    if (target === null) return;
+    pendingFocus.current = null;
+    (target === HEADING ? headingRef.current : removeButtons.current.get(target))?.focus();
+  }, [items]);
+
+  const removeAt = (index: number) => {
+    const next = items[index + 1] ?? items[index - 1];
+    pendingFocus.current = next ? next.key : HEADING;
+    removeItem(items[index].key);
+  };
 
   if (!mounted) {
     return <main className="min-h-screen bg-canvas" aria-hidden />;
@@ -29,7 +55,7 @@ export default function CartPage() {
       <p className="eyebrow text-muted-foreground mb-4">Cart</p>
       {/* 빈 장바구니에도 제목은 있어야 한다. 담긴 게 있을 때의 "Ready to
           collect?"와 같은 자리다 (axe: page-has-heading-one). */}
-      <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</h1>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>
@@ -52,7 +78,7 @@ export default function CartPage() {
           transition={{ duration: 0.6, ease: EASE }}
         >
           <p className="eyebrow text-muted-foreground mb-3">Your Cart · {items.length} {items.length === 1 ? 'item' : 'items'}</p>
-          <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">Ready to collect?</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">Ready to collect?</h1>
         </motion.header>
 
         {/* Line items */}
@@ -60,7 +86,10 @@ export default function CartPage() {
           <AnimatePresence initial={false}>
             {/* 줄의 열쇠는 상품 id가 아니라 `key`(상품 + 옵션)다. 같은 포스터의
                 A3와 A2가 한 줄로 합쳐지면 안 된다(`lib/cart-lines.ts`). */}
-            {items.map(item => (
+            {items.map((item, index) => {
+              const atMin = item.quantity <= 1;
+              const atMax = item.quantity >= MAX_LINE_QUANTITY;
+              return (
               <motion.div
                 key={item.key}
                 layout={!reduce}
@@ -100,22 +129,32 @@ export default function CartPage() {
                   <p className="mt-1 text-sm font-semibold text-accent tabular-nums">{formatPrice(item.price)}</p>
                 </div>
 
-                {/* Quantity */}
+                {/* Quantity
+                    `disabled`가 아니라 `aria-disabled` + 이른 return. 1까지
+                    줄이는 순간 누르고 있던 버튼이 disabled가 되면 포커스가
+                    <body>로 떨어져, 키보드로는 옆의 "+"조차 다시 찾아가야 했다.
+                    aria-disabled는 포커스를 남긴 채 "사용할 수 없음"만 알린다. */}
                 <div className="flex items-center gap-2 order-3 sm:order-none">
                   <button
-                    onClick={() => updateQuantity(item.key, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
-                    aria-label="수량 줄이기"
-                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent disabled:opacity-40 disabled:hover:border-hairline disabled:hover:text-slate disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    type="button"
+                    onClick={() => { if (!atMin) updateQuantity(item.key, item.quantity - 1); }}
+                    aria-disabled={atMin}
+                    aria-label={`${item.name} 수량 줄이기`}
+                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent aria-disabled:opacity-40 aria-disabled:hover:border-hairline aria-disabled:hover:text-slate aria-disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     −
                   </button>
-                  <span className="text-sm font-semibold w-6 text-center tabular-nums">{item.quantity}</span>
+                  {/* 바뀐 수량을 읽어 준다. 숫자만 들리지 않도록 상품명을 숨겨 붙인다. */}
+                  <span role="status" className="text-sm font-semibold w-6 text-center tabular-nums">
+                    <span className="sr-only">{item.name} 수량 </span>
+                    {item.quantity}
+                  </span>
                   <button
-                    onClick={() => updateQuantity(item.key, item.quantity + 1)}
-                    disabled={item.quantity >= MAX_LINE_QUANTITY}
-                    aria-label="수량 늘리기"
-                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    type="button"
+                    onClick={() => { if (!atMax) updateQuantity(item.key, item.quantity + 1); }}
+                    aria-disabled={atMax}
+                    aria-label={`${item.name} 수량 늘리기`}
+                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent aria-disabled:opacity-40 aria-disabled:hover:border-hairline aria-disabled:hover:text-slate aria-disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     +
                   </button>
@@ -127,14 +166,21 @@ export default function CartPage() {
                     ₩&nbsp;{(item.price * item.quantity).toLocaleString()}
                   </p>
                   <button
-                    onClick={() => removeItem(item.key)}
+                    type="button"
+                    ref={el => {
+                      if (el) removeButtons.current.set(item.key, el);
+                      else removeButtons.current.delete(item.key);
+                    }}
+                    onClick={() => removeAt(index)}
+                    aria-label={`${item.name} 삭제`}
                     className="label-ko text-muted-foreground hover:text-brick transition-colors"
                   >
                     삭제
                   </button>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </AnimatePresence>
         </div>
 
@@ -143,7 +189,7 @@ export default function CartPage() {
           {confirmingClear ? (
             <span className="flex items-center gap-3 text-sm text-slate">
               모두 비울까요?
-              <button onClick={() => { clearCart(); setConfirmingClear(false); }} className="label-ko text-brick hover:opacity-70 transition-opacity">
+              <button onClick={() => { pendingFocus.current = HEADING; clearCart(); setConfirmingClear(false); }} className="label-ko text-brick hover:opacity-70 transition-opacity">
                 비우기
               </button>
               <button onClick={() => setConfirmingClear(false)} className="label-ko text-muted-foreground hover:text-ink transition-colors">
@@ -159,9 +205,9 @@ export default function CartPage() {
             </button>
           )}
 
-          <div className="w-full md:w-auto rounded-lg bg-stone p-6 md:min-w-[280px]">
+          <div className="w-full md:w-auto rounded-lg surface-cream p-6 md:min-w-[280px]">
             <div className="flex items-baseline justify-between mb-5">
-              <span className="eyebrow text-muted-foreground">Total</span>
+              <span className="eyebrow text-slate">Total</span>
               <span className="text-2xl font-semibold text-ink tabular-nums" aria-live="polite">
                 ₩&nbsp;{totalPrice().toLocaleString()}
               </span>

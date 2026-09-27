@@ -653,6 +653,19 @@ body {
 
 /* ── Surfaces ──────────────────────────────────────────────────────────── */
 
+/* Cream panel that carries controls (cart / checkout summary).
+   The default ring is fern, and fern on cream is 2.74:1 — under the 3:1 a focus
+   indicator needs (WCAG 1.4.11). Forest on cream clears it comfortably, so the
+   panel re-points `--ring` for everything inside it; the global
+   `:focus-visible` rule reads the variable, so no control needs its own class.
+   Small secondary text on this surface takes `text-slate`, not
+   `text-muted-foreground`: muted is tuned for the canvas and drops to 4.20:1
+   on cream. */
+.surface-cream {
+  background: var(--stone);
+  --ring: var(--forest);
+}
+
 /* shadcn card — bordered, near-flat, lifts on hover */
 .card-hair {
   border: 1px solid var(--border);

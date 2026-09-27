@@ -72,7 +72,8 @@ Directional colour in editorial contexts uses `trend.up` = moss and `trend.down`
 ### Contrast Notes
 
 - Moss (`#a7c957`) never carries text on a light surface — it is a highlight, an underlay, or dark-surface text only.
-- `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 11px eyebrows stay legible.
+- `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 11px eyebrows stay legible. On cream (`--stone`) it drops to 4.20:1 — small text on a cream panel uses `text-slate` (5.27:1) instead.
+- The fern focus ring is 2.74:1 on cream. A cream panel that holds controls uses `.surface-cream`, which re-points `--ring` to forest inside it.
 - Forest and brick both clear 5:1 on canvas and are safe for body-size links.
 
 ## Typography
