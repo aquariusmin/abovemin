@@ -1,5 +1,6 @@
 import { SITE_URL } from '@/lib/site';
 import { getPublishedNotes } from '@/lib/supabase';
+import { buildFallback } from '@/lib/build-phase';
 
 const BASE = SITE_URL;
 
@@ -27,7 +28,10 @@ export const dynamic = 'force-static';
 export const revalidate = 3600;
 
 export async function GET() {
-  const notes = await getPublishedNotes().catch(() => []);
+  // 조회 실패를 빈 피드로 바꾸면 그 빈 피드가 한 시간 동안 캐시에 앉고, 구독
+  // 리더는 글이 모두 사라진 것으로 읽는다. 실행 중에는 던져서 마지막으로 성공한
+  // 피드가 계속 나가게 하고, 빌드 중에만 비워 둔다 — `notes/page.tsx`와 같은 규칙.
+  const notes = await getPublishedNotes().catch(buildFallback([]));
   const updated = notes[0]?.date;
 
   const items = notes
