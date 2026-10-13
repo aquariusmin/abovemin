@@ -1,9 +1,4 @@
 import type { PortfolioProject } from "@/data/portfolio";
-import {
-  archivePortfolioSlugs,
-  curatePortfolioProjects,
-  featuredPortfolioSlugs,
-} from "@/data/portfolioCuration";
 
 export const koreanPortfolioProjects: PortfolioProject[] = [
   {
@@ -662,28 +657,3 @@ export const koreanPortfolioProjects: PortfolioProject[] = [
       "한 차원의 유의한 결과만으로 혈액형과 성격 사이의 광범위한 과학적 관계를 입증할 수 없습니다.",
   },
 ];
-
-export function getKoreanPortfolioProject(slug: string) {
-  return koreanPortfolioProjects.find((project) => project.slug === slug);
-}
-
-// The curated ordering is shared with the English pages — see
-// `portfolioCuration.ts`.
-export function getKoreanSubmissionFeaturedProjects() {
-  return curatePortfolioProjects(koreanPortfolioProjects, featuredPortfolioSlugs);
-}
-
-export function getKoreanSubmissionArchiveProjects() {
-  return curatePortfolioProjects(koreanPortfolioProjects, archivePortfolioSlugs, "A");
-}
-
-export function getKoreanSubmissionPortfolioProjects() {
-  return [
-    ...getKoreanSubmissionFeaturedProjects(),
-    ...getKoreanSubmissionArchiveProjects(),
-  ];
-}
-
-export function getKoreanSubmissionPortfolioProject(slug: string) {
-  return getKoreanSubmissionPortfolioProjects().find((project) => project.slug === slug);
-}

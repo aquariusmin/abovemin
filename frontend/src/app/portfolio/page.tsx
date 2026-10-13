@@ -24,11 +24,10 @@ export const metadata: Metadata = {
   }),
 };
 
-// The curated `submission` reading is now the public one: three defensible
-// projects first, the rest demoted to Explore. Only the PRESENTATION is
-// borrowed — `route="normal"` keeps every link on `/portfolio/...`, so the
-// indexed URL family is the one carrying the good version and the noindex
-// `/portfolio/submission` pages stay valid for links already handed out.
+// Same page as `/portfolio/submission`: three defensible projects first, the
+// rest demoted to Explore. `route="normal"` keeps every link on
+// `/portfolio/...`, the indexed URL family; the noindex `/portfolio/submission`
+// pages stay valid for links already handed out.
 export default function PortfolioPage() {
-  return <PortfolioOverview locale="ko" mode="submission" route="normal" />;
+  return <PortfolioOverview locale="ko" route="normal" />;
 }
