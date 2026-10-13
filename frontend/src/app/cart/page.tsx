@@ -14,6 +14,23 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 // with no effect/setState, so the persisted cart never flashes the empty state.
 const noopSubscribe = () => () => {};
 
+// 터치 영역은 40px, 보이는 모양은 그대로.
+//
+// 수량 버튼: 버튼 자체가 40px이고 테두리 있는 36px 면은 안쪽 <span>이 그린다.
+// 바깥 2px은 음수 마진으로 되돌려, 줄 안에서 차지하는 자리는 예전과 같다.
+// 포커스 링도 보이는 면에 둔다(전역 `:focus-visible`과 같은 2px `--ring`).
+const QTY_BUTTON =
+  'group -m-0.5 flex h-10 w-10 items-center justify-center aria-disabled:cursor-not-allowed focus-visible:outline-none!';
+const QTY_BUTTON_FACE =
+  'flex h-9 w-9 items-center justify-center rounded-md border border-hairline text-lg leading-none text-slate transition-colors group-hover:border-accent group-hover:text-accent group-aria-disabled:opacity-40 group-aria-disabled:group-hover:border-hairline group-aria-disabled:group-hover:text-slate group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-ring';
+// 글자 버튼(삭제·비우기·취소): 글줄은 18px이라 위아래 11px씩 키우고 같은 만큼
+// 음수 마진으로 되돌린다. 좁은 것은 쓰는 자리에서 옆으로도 같은 식으로 넓힌다.
+// 포커스 링은 넓어진 버튼이 아니라 글자를 감싼 <span>에 그린다 — 전역
+// `:focus-visible`은 레이어 밖이라 `!`로만 끌 수 있다.
+const TEXT_BUTTON = 'group label-ko inline-flex min-h-10 items-center -my-[11px] focus-visible:outline-none!';
+const TEXT_BUTTON_FACE =
+  'group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-ring';
+
 /** 줄을 지운 뒤 포커스를 보낼 곳. 다음 줄이 없으면 페이지 제목. */
 const HEADING = Symbol('heading');
 
@@ -140,9 +157,9 @@ export default function CartPage() {
                     onClick={() => { if (!atMin) updateQuantity(item.key, item.quantity - 1); }}
                     aria-disabled={atMin}
                     aria-label={`${item.name} 수량 줄이기`}
-                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent aria-disabled:opacity-40 aria-disabled:hover:border-hairline aria-disabled:hover:text-slate aria-disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className={QTY_BUTTON}
                   >
-                    −
+                    <span aria-hidden className={QTY_BUTTON_FACE}>−</span>
                   </button>
                   {/* 바뀐 수량을 읽어 준다. 숫자만 들리지 않도록 상품명을 숨겨 붙인다. */}
                   <span role="status" className="text-sm font-semibold w-6 text-center tabular-nums">
@@ -154,9 +171,9 @@ export default function CartPage() {
                     onClick={() => { if (!atMax) updateQuantity(item.key, item.quantity + 1); }}
                     aria-disabled={atMax}
                     aria-label={`${item.name} 수량 늘리기`}
-                    className="w-9 h-9 rounded-md border border-hairline text-slate hover:border-accent hover:text-accent aria-disabled:opacity-40 aria-disabled:hover:border-hairline aria-disabled:hover:text-slate aria-disabled:cursor-not-allowed transition-colors text-lg leading-none flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className={QTY_BUTTON}
                   >
-                    +
+                    <span aria-hidden className={QTY_BUTTON_FACE}>+</span>
                   </button>
                 </div>
 
@@ -173,9 +190,9 @@ export default function CartPage() {
                     }}
                     onClick={() => removeAt(index)}
                     aria-label={`${item.name} 삭제`}
-                    className="label-ko text-muted-foreground hover:text-brick transition-colors"
+                    className={`${TEXT_BUTTON} -ml-5 pl-5 text-muted-foreground hover:text-brick transition-colors`}
                   >
-                    삭제
+                    <span className={TEXT_BUTTON_FACE}>삭제</span>
                   </button>
                 </div>
               </motion.div>
@@ -189,19 +206,19 @@ export default function CartPage() {
           {confirmingClear ? (
             <span className="flex items-center gap-3 text-sm text-slate">
               모두 비울까요?
-              <button onClick={() => { pendingFocus.current = HEADING; clearCart(); setConfirmingClear(false); }} className="label-ko text-brick hover:opacity-70 transition-opacity">
-                비우기
+              <button onClick={() => { pendingFocus.current = HEADING; clearCart(); setConfirmingClear(false); }} className={`${TEXT_BUTTON} -ml-2 pl-2 text-brick hover:opacity-70 transition-opacity`}>
+                <span className={TEXT_BUTTON_FACE}>비우기</span>
               </button>
-              <button onClick={() => setConfirmingClear(false)} className="label-ko text-muted-foreground hover:text-ink transition-colors">
-                취소
+              <button onClick={() => setConfirmingClear(false)} className={`${TEXT_BUTTON} -mx-2.5 px-2.5 text-muted-foreground hover:text-ink transition-colors`}>
+                <span className={TEXT_BUTTON_FACE}>취소</span>
               </button>
             </span>
           ) : (
             <button
               onClick={() => setConfirmingClear(true)}
-              className="label-ko text-muted-foreground hover:text-slate transition-colors"
+              className={`${TEXT_BUTTON} text-muted-foreground hover:text-slate transition-colors`}
             >
-              모두 비우기
+              <span className={TEXT_BUTTON_FACE}>모두 비우기</span>
             </button>
           )}
 
