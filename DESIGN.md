@@ -257,7 +257,7 @@ An inline-SVG world map, not a tile map: `moss-wash` land with a `forest/25` hai
 
 One photograph per URL — the address the lightbox's "링크 복사" and print inquiry now hand out (old `?p=` album deep links still open the lightbox). The frame follows the Image Treatment rule: its width is `min(100%, ratio × 74svh)`, so a landscape fills the 1400px container and a portrait becomes a centred column; the caption shares that width (`@container` on the `<figure>`). Below the photo: album name as `.eyebrow-marked`, the caption as a display `h1` (falls back to the place, then "무제"), `.btn-outline` "링크 복사" beside the page's single `.btn-primary` print inquiry, a `.rule-accent`, then a `<dl>` of Korean `label-ko` terms — 촬영일, 장소, 카메라 (a `.link-leaf` to `/archive?camera=…`), 설정 in mono, 컬렉션. Previous/next are `.card-hair` cards with a fixed-height thumbnail whose width comes from the ratio; ←/→ do the same.
 
-The share card is **padded, not cropped**: Cloudinary `c_limit` to 1200×630, watermark, then `c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg`. The fill is the paper canvas, so a portrait reads as a print laid on the site's page rather than a band cut from the middle.
+The share card is **padded, not cropped**: Cloudinary `c_limit` to 1200×630, the signature watermark (an image overlay sized to 12% of the fitted photo's width, bottom-right — `WATERMARK` in `lib/cloudinary.ts`), then `c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg`. The fill is the paper canvas, so a portrait reads as a print laid on the site's page rather than a band cut from the middle.
 
 ### Image placeholder
 

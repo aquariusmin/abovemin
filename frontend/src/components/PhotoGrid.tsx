@@ -199,7 +199,14 @@ function PhotoTile({
           alt={label}
           width={0}
           height={0}
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          // 칸의 실제 폭. 컨테이너는 1400px에서 멈추고(뷰포트 1480px = 1400 +
+          // 좌우 여백 80), 여백은 20/24/40px, 열 사이는 16px → md부터 24px다.
+          //   1480px~      (1400 − 2×24) ÷ 3 = 450.7px
+          //   1024~1479px  (100vw − 80 − 48) ÷ 3 = 33.3vw − 42.7px  → 31vw 이하
+          //   640~1023px   (100vw − 48 − 16) ÷ 2, md부터 (100vw − 80 − 24) ÷ 2 → 46vw 이하
+          //   ~639px       100vw − 40px
+          // 예전의 `33vw`는 상한이 없어 1920px 화면에서 451px 칸에 634px라고 말했다.
+          sizes="(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)"
           className="w-full h-auto block duration-700 group-hover:scale-105"
           // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
           // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다

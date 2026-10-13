@@ -263,7 +263,7 @@ export default function HomeContent({
                           alt={photoLabel(photo)}
                           width={0}
                           height={0}
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          sizes="(min-width: 1480px) 335px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 47vw"
                           className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
                           style={storedRatioStyle(photo)}
                           draggable={false}
@@ -328,7 +328,13 @@ export default function HomeContent({
                           alt={photoLabel(photo)}
                           width={0}
                           height={0}
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 17vw"
+                          sizes={
+                            onThisDay.length >= 5
+                              ? '(min-width: 1480px) 217px, (min-width: 1024px) 15vw, (min-width: 768px) 30vw, 47vw'
+                              : onThisDay.length >= 3
+                                ? '(min-width: 1480px) 335px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 47vw'
+                                : '(min-width: 1480px) 454px, (min-width: 768px) 31vw, 47vw'
+                          }
                           className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
                           style={storedRatioStyle(photo)}
                           draggable={false}
@@ -384,7 +390,7 @@ export default function HomeContent({
                         width={600}
                         height={600}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                        sizes="(max-width: 1024px) 50vw, 25vw"
+                        sizes="(min-width: 1480px) 332px, (min-width: 1024px) 23vw, (min-width: 768px) 45vw, 47vw"
                       />
                     ) : (
                       <div className="w-full h-full bg-accent/5" />

@@ -63,7 +63,12 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
             alt={album.title}
             width={0}
             height={0}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            // 칸의 실제 폭(`PhotoGrid`와 같은 계산, 열 사이만 20px → md부터 24px).
+            //   1480px~      (1400 − 2×24) ÷ 3 = 450.7px
+            //   1024~1479px  (100vw − 80 − 48) ÷ 3 → 31vw 이하
+            //   640~1023px   (100vw − 48 − 20) ÷ 2, md부터 (100vw − 80 − 24) ÷ 2 → 46vw 이하
+            //   ~639px       100vw − 40px
+            sizes="(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)"
             className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
             // 비율만 쓴다. `auto`가 앞에 있어 표지가 오면 실제 비율이 이긴다.
             style={album.width && album.height ? { aspectRatio: `auto ${album.width} / ${album.height}` } : undefined}

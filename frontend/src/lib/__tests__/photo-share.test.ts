@@ -135,7 +135,8 @@ describe('photoJsonLd', () => {
       creator: { '@type': 'Organization', name: 'phorage', url: origin },
       contentLocation: { '@type': 'Place', name: '여수' },
     });
-    expect(image.contentUrl).toContain('l_text');
+    // 워터마크(사인 오버레이)가 실린 주소여야 한다 — 페이지가 그리는 것과 같은 것.
+    expect(image.contentUrl).toContain('l_phorage:brand:signature');
   });
 
   it('촬영일·장소가 없으면 그 칸이 없다. 좌표와 크기는 어느 경우에도 없다', () => {
