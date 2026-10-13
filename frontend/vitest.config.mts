@@ -14,6 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // 서버 전용 모듈(`lib/auth`, `lib/order-email` 등)을 테스트가 직접 부른다.
+      'server-only': fileURLToPath(new URL('./src/lib/__tests__/server-only.stub.ts', import.meta.url)),
     },
   },
   test: {

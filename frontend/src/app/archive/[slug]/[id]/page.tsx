@@ -212,6 +212,8 @@ export default async function PhotoPage({ params }: { params: Params }) {
               // 이 페이지의 LCP. 히어로와 같이 `preload`가 맞는 자리다 — 한 장이고,
               // 모든 폭에서 첫 화면에 있다.
               preload
+              // `preload`만으로는 우선순위가 오르지 않는다(홈 히어로의 주석).
+              fetchPriority="high"
               draggable={false}
             />
           </div>

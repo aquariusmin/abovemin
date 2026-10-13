@@ -1,3 +1,4 @@
+import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { exists, kvEnabled, setWithTtl } from './kv';

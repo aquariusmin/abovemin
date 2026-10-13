@@ -9,6 +9,8 @@ import {
   type EmailOrder,
 } from '@/lib/order-email';
 
+const OWNER = 'owner@example.com';
+
 const order: EmailOrder = {
   id: 12,
   name: '<img src=x onerror=alert(1)>',
@@ -36,7 +38,7 @@ describe('order-email', () => {
   it('고객 입력은 어느 메일에서도 태그로 살아나지 않는다', () => {
     for (const message of [
       buildBuyerEmail(order),
-      buildOwnerEmail(order),
+      buildOwnerEmail(order, OWNER),
       buildShippingEmail(order, { carrier: '<b>CJ</b>', trackingNumber: '<script>' }),
     ]) {
       expect(message.html).not.toContain('<img src=x');
@@ -51,7 +53,7 @@ describe('order-email', () => {
       to: 'buyer@example.com',
       subject: '[phorage] 배송 시작 안내 — #12',
     });
-    expect(buildOwnerEmail(order).subject).toContain('#12');
+    expect(buildOwnerEmail(order, OWNER).subject).toContain('#12');
   });
 
   it('옵션을 고른 줄은 옵션 이름을 같이 적고(이스케이프), 옛 주문은 이름만', () => {
@@ -62,7 +64,7 @@ describe('order-email', () => {
         { id: 1, name: '엽서', price: 2000, quantity: 2 },
       ],
     };
-    for (const message of [buildBuyerEmail(withOption), buildOwnerEmail(withOption)]) {
+    for (const message of [buildBuyerEmail(withOption), buildOwnerEmail(withOption, OWNER)]) {
       expect(message.html).toContain('숲 포스터 · A3 &lt;매트지&gt;');
       expect(message.html).not.toContain('<매트지>');
       expect(message.html).toContain('엽서');
@@ -71,7 +73,7 @@ describe('order-email', () => {
 
   it('금액과 우편번호가 본문에 들어간다', () => {
     expect(buildBuyerEmail(order).html).toContain('₩ 60,000');
-    expect(buildOwnerEmail(order).html).toContain('[04524]');
+    expect(buildOwnerEmail(order, OWNER).html).toContain('[04524]');
     expect(buildShippingEmail(order, { carrier: 'CJ대한통운', trackingNumber: '5555' }).html).toContain(
       'CJ대한통운 · 5555',
     );
@@ -80,14 +82,14 @@ describe('order-email', () => {
 
 describe('메일 제목', () => {
   it('제목은 평문이다 — 이름을 HTML 이스케이프하지 않는다', () => {
-    const subject = buildOwnerEmail({ ...order, name: 'Kim & Lee <studio>' }).subject;
+    const subject = buildOwnerEmail({ ...order, name: 'Kim & Lee <studio>' }, OWNER).subject;
     expect(subject).toContain('Kim & Lee <studio>');
     expect(subject).not.toContain('&amp;');
     expect(subject).not.toContain('&lt;');
   });
 
   it('줄바꿈·제어 문자를 지워 헤더가 끊기지 않는다', () => {
-    const subject = buildOwnerEmail({ ...order, name: '홍길동\r\nBcc: victim@example.com\u0000\u2028' }).subject;
+    const subject = buildOwnerEmail({ ...order, name: '홍길동\r\nBcc: victim@example.com\u0000\u2028' }, OWNER).subject;
     expect(subject).not.toMatch(/[\r\n\u0000\u2028]/);
     expect(subject).toContain('홍길동 Bcc: victim@example.com');
   });
