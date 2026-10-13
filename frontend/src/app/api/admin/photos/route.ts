@@ -1,9 +1,11 @@
 import { NextResponse, after } from 'next/server';
-import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
+import { isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { revalidateArchive } from '@/lib/cache-tags';
 import { PHOTO_COLUMN_LEVEL, photoColumnSets, selectWithColumnSets } from '@/lib/admin/photo-columns';
 import {
+  CLOUDINARY_UPLOAD_NOT_CONFIGURED,
+  adminCloudinary,
   adminDb,
   dbErrorResponse,
   guardMutation,
@@ -87,13 +89,9 @@ export async function POST(request: Request) {
   if (!body.ok) return body.response;
   const albumSlug = body.value.album_slug;
 
-  let cloudName: string;
-  try {
-    cloudName = getCloudinaryConfig().cloudName;
-  } catch (error) {
-    log.error('admin_photos_cloudinary', error);
-    return jsonError('Cloudinary upload is not configured', 503);
-  }
+  const cloudinary = adminCloudinary('admin_photos', CLOUDINARY_UPLOAD_NOT_CONFIGURED);
+  if (!cloudinary.ok) return cloudinary.response;
+  const { cloudName } = cloudinary.value;
 
   // 사진은 하나씩 본다 — 몇 번째가 틀렸는지 화면에 알려야 하고, `src` 확인에는
   // 위에서 읽은 클라우드 이름이 든다(`photoCreateItem`). 좌표는 브라우저가 이미
@@ -172,7 +170,7 @@ export async function POST(request: Request) {
   if (insertedIds.length > 0) {
     after(async () => {
       try {
-        const outcome = await fillPhotoMetadata(supabase, getCloudinaryConfig(), {
+        const outcome = await fillPhotoMetadata(supabase, cloudinary.value, {
           ids: insertedIds,
           limit: insertedIds.length,
           deadline: Date.now() + 15_000,

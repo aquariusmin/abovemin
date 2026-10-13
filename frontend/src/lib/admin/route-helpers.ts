@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { z } from 'zod';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { getCloudinaryConfig, type CloudinaryConfig } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { isMissingSchemaError } from '@/lib/db-compat';
 import { firstIssue } from './schemas';
@@ -46,6 +47,26 @@ export function adminDb(label: string): Guarded<SupabaseClient> {
   } catch (error) {
     log.error(`${label}_config`, error);
     return { ok: false, response: jsonError('Admin database is not configured', 503) };
+  }
+}
+
+export const CLOUDINARY_NOT_CONFIGURED = 'Cloudinary is not configured';
+/** 업로드 서명과 업로드 결과 저장이 쓰는 문구. 화면에 그대로 보이므로 나눠 둔 채로 둔다. */
+export const CLOUDINARY_UPLOAD_NOT_CONFIGURED = 'Cloudinary upload is not configured';
+
+/**
+ * Cloudinary 설정(`CLOUDINARY_*`). 환경 변수가 빠졌으면 503 — `adminDb`와 같은
+ * 모양이다. 로그 이름은 `${label}_cloudinary`.
+ */
+export function adminCloudinary(
+  label: string,
+  message: string = CLOUDINARY_NOT_CONFIGURED,
+): Guarded<CloudinaryConfig> {
+  try {
+    return { ok: true, value: getCloudinaryConfig() };
+  } catch (error) {
+    log.error(`${label}_cloudinary`, error);
+    return { ok: false, response: jsonError(message, 503) };
   }
 }
 

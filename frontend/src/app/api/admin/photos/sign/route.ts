@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getCloudinaryConfig, signUploadParams, uploadFolder } from '@/lib/cloudinary-upload';
-import { log } from '@/lib/logger';
+import { signUploadParams, uploadFolder } from '@/lib/cloudinary-upload';
 import { PhotoSign } from '@/lib/admin/schemas';
-import { adminDb, guardMutation, jsonError, parseBody } from '@/lib/admin/route-helpers';
+import {
+  CLOUDINARY_UPLOAD_NOT_CONFIGURED,
+  adminCloudinary,
+  adminDb,
+  guardMutation,
+  jsonError,
+  parseBody,
+} from '@/lib/admin/route-helpers';
 
 /**
  * 브라우저가 Cloudinary에 직접 업로드하기 위한 서명을 발급한다.
@@ -27,13 +33,9 @@ export async function POST(request: Request) {
     .single();
   if (albumError || !album) return jsonError('Album not found', 404);
 
-  let config;
-  try {
-    config = getCloudinaryConfig();
-  } catch (error) {
-    log.error('admin_photos_sign_cloudinary', error);
-    return jsonError('Cloudinary upload is not configured', 503);
-  }
+  const cloudinary = adminCloudinary('admin_photos_sign', CLOUDINARY_UPLOAD_NOT_CONFIGURED);
+  if (!cloudinary.ok) return cloudinary.response;
+  const config = cloudinary.value;
 
   // `image_metadata`를 켜야 응답에 EXIF가 실린다. 촬영 연도를 자동으로 채우는
   // 근거가 이것뿐이라 서명 대상 파라미터에 포함한다.
