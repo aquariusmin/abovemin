@@ -10,8 +10,10 @@ import {
   changedFields,
   draftFromProduct,
   EMPTY_PRODUCT_DRAFT,
+  newAddonId,
   newOptionId,
   payloadFromDraft,
+  relatedCandidates,
   type AdminProductRow,
   type DraftImage,
   type DraftOption,
@@ -19,16 +21,21 @@ import {
 } from '@/lib/admin/product-draft';
 import {
   IMAGE_LABELS,
+  MAX_ADDONS,
   MAX_IMAGE_LABEL,
   MAX_IMAGES,
   MAX_OPTION_LABEL,
   MAX_OPTIONS,
+  MAX_RELATED,
+  PRODUCT_ADDONS_MIGRATION,
   PRODUCT_STATUS_LABEL,
   PRODUCT_STATUSES,
   SHOP_READY_MIGRATION,
   optionsMinPrice,
+  parseAddons,
   parseImages,
   parseOptions,
+  parseRelatedIds,
   priceRange,
   productStatus,
   publicState,
@@ -73,6 +80,7 @@ export default function ShopTab() {
   const [products, setProducts] = useState<AdminProductRow[] | null>(null);
   const [migrationPending, setMigrationPending] = useState(false);
   const [shopMigrationPending, setShopMigrationPending] = useState(false);
+  const [addonsMigrationPending, setAddonsMigrationPending] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   /** 편집 중인 상품. `'new'`는 새 상품. */
@@ -95,13 +103,17 @@ export default function ShopTab() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await adminFetch<{ products: AdminProductRow[]; migrationPending: boolean; shopMigrationPending?: boolean }>(
-          '/api/admin/products',
-        );
+        const data = await adminFetch<{
+          products: AdminProductRow[];
+          migrationPending: boolean;
+          shopMigrationPending?: boolean;
+          addonsMigrationPending?: boolean;
+        }>('/api/admin/products');
         if (cancelled) return;
         setProducts(data.products);
         setMigrationPending(data.migrationPending);
         setShopMigrationPending(Boolean(data.shopMigrationPending));
+        setAddonsMigrationPending(Boolean(data.addonsMigrationPending));
         setLoadError(null);
       } catch (e) {
         if (!cancelled) setLoadError(errorMessage(e, '상품을 불러오지 못했습니다.'));
@@ -154,6 +166,7 @@ export default function ShopTab() {
       {shopMigrationPending && (
         <MigrationNotice feature="상품 상태(초안·품절)·여러 장 이미지·옵션·에디션" file={SHOP_READY_MIGRATION} />
       )}
+      {addonsMigrationPending && <MigrationNotice feature="추가 상품·함께 구매" file={PRODUCT_ADDONS_MIGRATION} />}
       {dialog}
       <StatusLine message={message} />
 
@@ -161,8 +174,10 @@ export default function ShopTab() {
         <ProductEditor
           key={String(editing)}
           product={current}
+          products={products}
           migrationPending={migrationPending}
           shopMigrationPending={shopMigrationPending}
+          addonsMigrationPending={addonsMigrationPending}
           onDirtyChange={setEditorDirty}
           onClose={() => void openEditor(null)}
           onSaved={text => {
@@ -182,6 +197,8 @@ export default function ShopTab() {
             const shown = publicState(product);
             const imageCount = parseImages(product.images, product.image_url).length;
             const optionCount = parseOptions(product.options).length;
+            const addonCount = parseAddons(product.addons).length;
+            const relatedCount = parseRelatedIds(product.related_ids, product.id).length;
             return (
               <li key={product.id}>
                 <button
@@ -213,6 +230,8 @@ export default function ShopTab() {
                       )}
                       {imageCount > 1 && <span className={`chip ${CHIP_KO}`}>사진 {imageCount}</span>}
                       {optionCount > 0 && <span className={`chip ${CHIP_KO}`}>옵션 {optionCount}</span>}
+                      {addonCount > 0 && <span className={`chip ${CHIP_KO}`}>추가 상품 {addonCount}</span>}
+                      {relatedCount > 0 && <span className={`chip ${CHIP_KO}`}>함께 구매 {relatedCount}</span>}
                       {product.category && <span className="chip">{product.category}</span>}
                     </span>
                   </span>
@@ -230,15 +249,21 @@ export default function ShopTab() {
 
 function ProductEditor({
   product,
+  products,
   migrationPending,
   shopMigrationPending,
+  addonsMigrationPending,
   onDirtyChange,
   onClose,
   onSaved,
 }: {
   product?: AdminProductRow;
+  /** 전체 상품 — 함께 구매에서 고를 대상. */
+  products: AdminProductRow[];
   migrationPending: boolean;
   shopMigrationPending: boolean;
+  /** `addons`·`related_ids` 컬럼이 아직 없다 — 두 칸을 잠근다. */
+  addonsMigrationPending: boolean;
   onDirtyChange: (dirty: boolean) => void;
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -255,6 +280,8 @@ function ProductEditor({
   const set = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) => setDraft(prev => ({ ...prev, [key]: value }));
   const setImages = (update: (images: DraftImage[]) => DraftImage[]) => setDraft(prev => ({ ...prev, images: update(prev.images) }));
   const setOptions = (update: (options: DraftOption[]) => DraftOption[]) => setDraft(prev => ({ ...prev, options: update(prev.options) }));
+  const setAddons = (update: (addons: DraftOption[]) => DraftOption[]) => setDraft(prev => ({ ...prev, addons: update(prev.addons) }));
+  const setRelated = (update: (ids: number[]) => number[]) => setDraft(prev => ({ ...prev, related_ids: update(prev.related_ids) }));
 
   const hasOptions = draft.options.length > 0;
   const priceValid = /^\d+$/.test(draft.price.trim());
@@ -290,14 +317,14 @@ function ProductEditor({
   async function save(event: React.FormEvent) {
     event.preventDefault();
     const includeSortOrder = !migrationPending;
-    const result = payloadFromDraft(draft, { includeSortOrder });
+    const result = payloadFromDraft(draft, { includeSortOrder, selfId: product?.id });
     if (!result.ok) return setError(result.error);
 
     let body: Record<string, unknown> = { ...result.body };
     if (product) {
       // 바뀐 필드만 보낸다. 기준은 지금 행을 같은 함수로 본문으로 만든 것 —
       // 입력칸 문자열과 DB 숫자를 직접 비교하면 "35000" ≠ 35000으로 헛돈다.
-      const before = payloadFromDraft(draftFromProduct(product), { includeSortOrder });
+      const before = payloadFromDraft(draftFromProduct(product), { includeSortOrder, selfId: product.id });
       if (before.ok) {
         body = changedFields(before.body, result.body);
         if (Object.keys(body).length === 0) return setError('바뀐 내용이 없습니다.');
@@ -570,61 +597,42 @@ function ProductEditor({
           </button>
         </div>
 
-        {draft.options.length > 0 && (
-          <ol className="space-y-2">
-            {draft.options.map((option, index) => {
-              const name = option.label.trim() || `${index + 1}번째 옵션`;
-              const optionPriceValid = /^\d+$/.test(option.price.trim());
-              const update = (patch: Partial<DraftOption>) =>
-                setOptions(list => list.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-              return (
-                <li key={option.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-2 sm:flex-nowrap">
-                  <div className="flex shrink-0 flex-col items-center gap-1">
-                    <button type="button" onClick={() => setOptions(list => moveItem(list, index, index - 1))} disabled={index === 0} aria-label={`${name} 위로`} className={ICON_BTN_CLASS}>↑</button>
-                    <button type="button" onClick={() => setOptions(list => moveItem(list, index, index + 1))} disabled={index === draft.options.length - 1} aria-label={`${name} 아래로`} className={ICON_BTN_CLASS}>↓</button>
-                  </div>
-                  <div className="min-w-[10rem] flex-1">
-                    <label htmlFor={`${id}-opt-${option.id}-label`} className="sr-only">{index + 1}번째 옵션 이름</label>
-                    <input
-                      id={`${id}-opt-${option.id}-label`}
-                      className={INPUT_COMPACT}
-                      value={option.label}
-                      maxLength={MAX_OPTION_LABEL}
-                      placeholder="A3 · 매트지"
-                      onChange={e => update({ label: e.target.value })}
-                    />
-                    <p className="mt-1 font-mono text-[11px] text-muted-foreground">id {option.id}</p>
-                  </div>
-                  <div className="w-32 shrink-0">
-                    <label htmlFor={`${id}-opt-${option.id}-price`} className="sr-only">{name} 가격(원)</label>
-                    <input
-                      id={`${id}-opt-${option.id}-price`}
-                      inputMode="numeric"
-                      className={`${INPUT_COMPACT} tabular-nums`}
-                      value={option.price}
-                      aria-invalid={!optionPriceValid}
-                      onChange={e => update({ price: e.target.value.replace(/[,\s₩]/g, '') })}
-                    />
-                    <p className="mt-1 text-[11px] text-muted-foreground">{optionPriceValid ? formatPrice(Number(option.price)) : '숫자만'}</p>
-                  </div>
-                  <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-[13px] text-ink-body">
-                    <input type="checkbox" className={CHECKBOX_CLASS} checked={option.in_stock} onChange={e => update({ in_stock: e.target.checked })} />
-                    <span className="sr-only">{name} </span>재고 있음
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setOptions(list => list.filter((_, i) => i !== index))}
-                    aria-label={`${name} 빼기`}
-                    className={`btn-ghost ${BTN_SM} shrink-0 text-brick`}
-                  >
-                    빼기
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        <ChoiceRows idPrefix={`${id}-opt`} noun="옵션" placeholder="A3 · 매트지" items={draft.options} onChange={setOptions} />
       </fieldset>
+
+      {/* ── 추가 상품 ── */}
+      <fieldset className="space-y-3 border-t border-border pt-5" disabled={addonsMigrationPending}>
+        <legend className="label-ko float-left w-full text-ink">
+          추가 상품 <span className="tabular-nums text-muted-foreground">{draft.addons.length}/{MAX_ADDONS}</span>
+        </legend>
+        <div className="clear-both flex flex-wrap items-end justify-between gap-2">
+          <p className="max-w-xl text-[12px] text-muted-foreground">
+            {addonsMigrationPending
+              ? '마이그레이션 적용 필요 — 적용한 뒤에 추가 상품을 적을 수 있습니다.'
+              : '이 상품과 함께만 살 수 있는 것(달력의 거치대 등)을 적습니다. 따로 팔지 않고, 손님이 수량을 골라 이 상품과 같이 담습니다. 옵션과는 무관합니다.'}
+          </p>
+          <button
+            type="button"
+            disabled={draft.addons.length >= MAX_ADDONS}
+            onClick={() =>
+              setAddons(list => [...list, { id: newAddonId(list.map(addon => addon.id)), label: '', price: '0', in_stock: true }])
+            }
+            className={`btn-outline ${BTN_SM}`}
+          >
+            + 추가 상품
+          </button>
+        </div>
+        <ChoiceRows idPrefix={`${id}-add`} noun="추가 상품" placeholder="거치대" items={draft.addons} onChange={setAddons} />
+      </fieldset>
+
+      {/* ── 함께 구매 ── */}
+      <RelatedPicker
+        products={products}
+        selfId={product?.id}
+        selected={draft.related_ids}
+        locked={addonsMigrationPending}
+        onChange={setRelated}
+      />
 
       {error && <p role="alert" className="text-[13px] text-brick">{error}</p>}
 
@@ -641,5 +649,198 @@ function ProductEditor({
         </button>
       </div>
     </form>
+  );
+}
+
+// ── 옵션 · 추가 상품의 줄 ─────────────────────────────────────────────────────
+
+/**
+ * 이름·가격·재고를 가진 줄의 목록. 옵션과 추가 상품이 같은 모양이라 같이 쓴다 —
+ * `noun`이 버튼 이름과 읽어 주는 문장에 들어간다.
+ */
+function ChoiceRows({
+  idPrefix,
+  noun,
+  placeholder,
+  items,
+  onChange,
+}: {
+  idPrefix: string;
+  noun: string;
+  placeholder: string;
+  items: DraftOption[];
+  onChange: (update: (items: DraftOption[]) => DraftOption[]) => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ol className="space-y-2">
+      {items.map((item, index) => {
+        const name = item.label.trim() || `${index + 1}번째 ${noun}`;
+        const priceValid = /^\d+$/.test(item.price.trim());
+        const update = (patch: Partial<DraftOption>) =>
+          onChange(list => list.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
+        return (
+          <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-2 sm:flex-nowrap">
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <button type="button" onClick={() => onChange(list => moveItem(list, index, index - 1))} disabled={index === 0} aria-label={`${name} 위로`} className={ICON_BTN_CLASS}>↑</button>
+              <button type="button" onClick={() => onChange(list => moveItem(list, index, index + 1))} disabled={index === items.length - 1} aria-label={`${name} 아래로`} className={ICON_BTN_CLASS}>↓</button>
+            </div>
+            <div className="min-w-[10rem] flex-1">
+              <label htmlFor={`${idPrefix}-${item.id}-label`} className="sr-only">{index + 1}번째 {noun} 이름</label>
+              <input
+                id={`${idPrefix}-${item.id}-label`}
+                className={INPUT_COMPACT}
+                value={item.label}
+                maxLength={MAX_OPTION_LABEL}
+                placeholder={placeholder}
+                onChange={e => update({ label: e.target.value })}
+              />
+              <p className="mt-1 font-mono text-[11px] text-muted-foreground">id {item.id}</p>
+            </div>
+            <div className="w-32 shrink-0">
+              <label htmlFor={`${idPrefix}-${item.id}-price`} className="sr-only">{name} 가격(원)</label>
+              <input
+                id={`${idPrefix}-${item.id}-price`}
+                inputMode="numeric"
+                className={`${INPUT_COMPACT} tabular-nums`}
+                value={item.price}
+                aria-invalid={!priceValid}
+                onChange={e => update({ price: e.target.value.replace(/[,\s₩]/g, '') })}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">{priceValid ? formatPrice(Number(item.price)) : '숫자만'}</p>
+            </div>
+            <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-[13px] text-ink-body">
+              <input type="checkbox" className={CHECKBOX_CLASS} checked={item.in_stock} onChange={e => update({ in_stock: e.target.checked })} />
+              <span className="sr-only">{name} </span>재고 있음
+            </label>
+            <button
+              type="button"
+              onClick={() => onChange(list => list.filter((_, i) => i !== index))}
+              aria-label={`${name} 빼기`}
+              className={`btn-ghost ${BTN_SM} shrink-0 text-brick`}
+            >
+              빼기
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+// ── 함께 구매 ────────────────────────────────────────────────────────────────
+
+/**
+ * 이 상품 페이지에 같이 보여 줄 다른 상품을 고른다. 위 목록이 고른 것(순서가
+ * 화면 순서), 아래가 고를 수 있는 나머지다.
+ *
+ * 초안도 고를 수 있다 — 공개 화면에는 판매를 시작한 뒤에 나타난다. 고른 뒤
+ * 지워진 상품은 "지워진 상품"으로 남아 뺄 수 있다(공개 화면은 없는 id를 무시한다).
+ */
+function RelatedPicker({
+  products,
+  selfId,
+  selected,
+  locked,
+  onChange,
+}: {
+  products: AdminProductRow[];
+  selfId?: number;
+  selected: number[];
+  locked: boolean;
+  onChange: (update: (ids: number[]) => number[]) => void;
+}) {
+  const byId = new Map(products.map(product => [product.id, product]));
+  const candidates = relatedCandidates(products, selected, selfId);
+  const full = selected.length >= MAX_RELATED;
+
+  return (
+    <fieldset className="space-y-3 border-t border-border pt-5" disabled={locked}>
+      <legend className="label-ko float-left w-full text-ink">
+        함께 구매 <span className="tabular-nums text-muted-foreground">{selected.length}/{MAX_RELATED}</span>
+      </legend>
+      <p className="clear-both max-w-xl text-[12px] text-muted-foreground">
+        {locked
+          ? '마이그레이션 적용 필요 — 적용한 뒤에 함께 구매를 고를 수 있습니다.'
+          : '이 상품 페이지 아래에 같이 보여 줄 다른 상품입니다. 위에서부터 순서대로 나오고, 초안은 판매를 시작한 뒤에 보입니다.'}
+      </p>
+
+      {selected.length > 0 && (
+        <ol className="space-y-2">
+          {selected.map((relatedId, index) => {
+            const related = byId.get(relatedId);
+            const name = related?.name ?? `지워진 상품 #${relatedId}`;
+            const status = related ? productStatus(related) : null;
+            return (
+              <li key={relatedId} className="flex items-center gap-3 rounded-md border border-border p-2">
+                <div className="flex shrink-0 flex-col items-center gap-1">
+                  <button type="button" onClick={() => onChange(list => moveItem(list, index, index - 1))} disabled={index === 0} aria-label={`${name} 위로`} className={ICON_BTN_CLASS}>↑</button>
+                  <button type="button" onClick={() => onChange(list => moveItem(list, index, index + 1))} disabled={index === selected.length - 1} aria-label={`${name} 아래로`} className={ICON_BTN_CLASS}>↓</button>
+                </div>
+                <ProductThumb url={related?.image_url} />
+                <span className="min-w-0 flex-1 space-y-1">
+                  <span className={`block truncate text-sm font-medium ${related ? 'text-ink' : 'text-muted-foreground'}`}>{name}</span>
+                  {status ? (
+                    <span className={`chip ${CHIP_KO} ${STATUS_CHIP[status]}`}>{PRODUCT_STATUS_LABEL[status]}</span>
+                  ) : (
+                    <span className="block text-[12px] text-muted-foreground">공개 화면에는 나오지 않습니다.</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onChange(list => list.filter(entry => entry !== relatedId))}
+                  aria-label={`${name} 빼기`}
+                  className={`btn-ghost ${BTN_SM} shrink-0 text-brick`}
+                >
+                  빼기
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {candidates.length === 0 ? (
+        selected.length === 0 && <p className="text-[13px] text-muted-foreground">고를 수 있는 다른 상품이 없습니다.</p>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-[12px] text-muted-foreground">
+            {full ? `${MAX_RELATED}개까지 고를 수 있습니다. 더 넣으려면 위에서 하나를 빼 주세요.` : '눌러서 추가'}
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {candidates.map(candidate => {
+              const status = productStatus(candidate);
+              return (
+                <li key={candidate.id} className="max-w-full">
+                  <button
+                    type="button"
+                    disabled={full}
+                    onClick={() => onChange(list => (list.includes(candidate.id) ? list : [...list, candidate.id]))}
+                    aria-label={`${candidate.name} 함께 구매에 추가`}
+                    className="flex min-h-11 max-w-full items-center gap-2 rounded-md border border-border bg-card p-1.5 pr-3 text-left transition-colors hover:border-forest/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <ProductThumb url={candidate.image_url} small />
+                    <span className="min-w-0 truncate text-[13px] font-medium text-ink-body">{candidate.name}</span>
+                    <span className={`chip ${CHIP_KO} shrink-0 ${STATUS_CHIP[status]}`}>{PRODUCT_STATUS_LABEL[status]}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+/** 자르지 않는다 — 칸 안에서 사진 비율대로. 주소는 `cloudinary()`로만 만든다. */
+function ProductThumb({ url, small = false }: { url?: string | null; small?: boolean }) {
+  return (
+    <span className={`flex shrink-0 items-center justify-center ${small ? 'h-8 w-8' : 'h-12 w-12'}`}>
+      {url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cloudinary(url, { width: small ? 80 : 120 })} alt="" loading="lazy" className="max-h-full max-w-full rounded-sm" />
+      )}
+    </span>
   );
 }

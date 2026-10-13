@@ -250,3 +250,58 @@ describe('ProductCreate / ProductUpdate — 상태·이미지·옵션', () => {
     expect(ProductUpdate.parse({ id: 1, edition: '  ' })).toEqual({ id: 1, edition: null });
   });
 });
+
+describe('ProductCreate / ProductUpdate — 추가 상품·함께 구매', () => {
+  const IMG = 'https://res.cloudinary.com/dmljaqqzc/image/upload/v1/phorage/shop/';
+  const addon = (patch: Record<string, unknown> = {}) => ({ id: 'add-stand', label: '거치대', price: 3000, in_stock: true, ...patch });
+  const message = (result: { success: boolean; error?: { issues: Array<{ message: string }> } }) =>
+    result.success ? null : result.error?.issues[0]?.message;
+
+  it('둘 다 받고, 없어도 된다', () => {
+    const body = { name: '2027 Calendar', image_url: `${IMG}cal.jpg`, addons: [addon({ label: ' 거치대 ' })], related_ids: [4, 2] };
+    const parsed = ProductCreate.parse(body);
+    expect(parsed.addons).toEqual([addon()]);
+    expect(parsed.related_ids).toEqual([4, 2]);
+    expect(ProductCreate.safeParse({ name: '2027 Calendar', image_url: `${IMG}cal.jpg` }).success).toBe(true);
+    expect(ProductUpdate.safeParse({ id: 1, addons: [], related_ids: [] }).success).toBe(true);
+  });
+
+  it('추가 상품: id 형식·중복, 이름, 가격, 모르는 키, 10개까지', () => {
+    const update = (addons: unknown[]) => ProductUpdate.safeParse({ id: 1, addons });
+    expect(update([addon()]).success).toBe(true);
+    expect(update([addon({ price: 0 })]).success).toBe(true);
+    expect(message(update([addon({ id: 'Stand' })]))).toContain('추가 상품 id');
+    expect(update([addon({ id: 'a+b' })]).success).toBe(false);
+    expect(message(update([addon({ label: ' ' })]))).toBe('추가 상품 이름이 비어 있습니다.');
+    expect(update([addon({ label: 'ㄱ'.repeat(41) })]).success).toBe(false);
+    expect(update([addon({ price: -1 })]).success).toBe(false);
+    expect(update([addon({ price: 1.5 })]).success).toBe(false);
+    expect(update([addon({ in_stock: 'yes' })]).success).toBe(false);
+    expect(update([addon({ image_url: 'x' })]).success).toBe(false);
+    expect(message(update([addon(), addon({ label: '다시' })]))).toBe('추가 상품 id가 겹칩니다.');
+    const many = (n: number) => Array.from({ length: n }, (_, i) => addon({ id: `add-${i}` }));
+    expect(update(many(10)).success).toBe(true);
+    expect(message(update(many(11)))).toBe('추가 상품은 10개까지 둘 수 있습니다.');
+  });
+
+  it('옵션의 오류 문구는 그대로 "옵션"이라고 말한다', () => {
+    expect(message(ProductUpdate.safeParse({ id: 1, options: [addon({ id: 'A3' })] }))).toContain('옵션 id');
+    expect(message(ProductUpdate.safeParse({ id: 1, options: [addon({ label: '' })] }))).toBe('옵션 이름이 비어 있습니다.');
+  });
+
+  it('함께 구매: 양의 정수 id, 6개까지, 중복 없이', () => {
+    const update = (related_ids: unknown) => ProductUpdate.safeParse({ id: 1, related_ids });
+    expect(update([2, 3, 4, 5, 6, 7]).success).toBe(true);
+    expect(message(update([2, 3, 4, 5, 6, 7, 8]))).toBe('함께 구매는 6개까지 고를 수 있습니다.');
+    expect(message(update([2, 3, 2]))).toContain('두 번');
+    expect(update(['2']).success).toBe(false);
+    expect(update([0]).success).toBe(false);
+    expect(update([1.5]).success).toBe(false);
+    expect(update('2,3').success).toBe(false);
+  });
+
+  it('자기 자신을 함께 구매로 고를 수 없다', () => {
+    expect(message(ProductUpdate.safeParse({ id: 7, related_ids: [3, 7] }))).toBe('함께 구매에 이 상품 자신을 넣을 수 없습니다.');
+    expect(ProductUpdate.safeParse({ id: 7, related_ids: [3, 8] }).success).toBe(true);
+  });
+});

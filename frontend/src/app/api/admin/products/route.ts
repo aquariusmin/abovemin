@@ -5,6 +5,7 @@ import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload
 import { isMissingColumnError, withColumnFallback } from '@/lib/db-compat';
 import { Id, ProductCreate, ProductUpdate } from '@/lib/admin/schemas';
 import { revalidateShop } from '@/lib/admin/revalidate';
+import { writeWithFallback, type BlockedBy } from '@/lib/admin/product-columns';
 import {
   adminDb,
   dbErrorResponse,
@@ -18,6 +19,7 @@ import {
   availabilityProblem,
   parseImages,
   parseOptions,
+  PRODUCT_ADDONS_MIGRATION,
   productStatus,
   SHOP_READY_MIGRATION,
   syncedColumns,
@@ -68,28 +70,12 @@ function checkImages(urls: Array<string | undefined>): Response | null {
 }
 
 /**
- * `status`·`images`·`options`·`edition`은 20260917020000_shop_ready 이후 컬럼이다.
- * 적용 전이면 이 키들을 빼고 한 번 더 저장한다 — 상태는 `in_stock`에, 커버는
- * `image_url`에 이미 담겨 있으므로 이름·가격·판매 여부 수정은 계속 된다.
- *
- * 단, 빼면 **내용이 사라지는** 저장(옵션, 두 장 이상의 이미지, 에디션)은
- * 조용히 반쯤 저장하지 않고 409로 알린다. 관리자는 "저장했습니다"를 보고
- * 옵션이 들어갔다고 믿는다.
+ * 새 컬럼이 아직 없을 때의 저장 규칙(벗겨서 다시 쓰기, 내용이 사라지면 409)은
+ * `lib/admin/product-columns.ts`에 있다. 여기서는 그 결과를 응답으로 바꾼다.
  */
-const SHOP_READY_COLUMNS = ['status', 'images', 'options', 'edition'] as const;
-
-function withoutShopReadyColumns(row: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(row).filter(([key]) => !(SHOP_READY_COLUMNS as readonly string[]).includes(key)));
-}
-
-function losesDataWithoutMigration(row: Record<string, unknown>): boolean {
-  const images = Array.isArray(row.images) ? row.images.length : 0;
-  const options = Array.isArray(row.options) ? row.options.length : 0;
-  return images > 1 || options > 0 || Boolean(row.edition);
-}
-
-function shopMigrationResponse(): Response {
-  return jsonError(migrationNotice(SHOP_READY_MIGRATION), 409, { migration: true });
+function migrationBlockedResponse(blocked: BlockedBy): Response {
+  const file = blocked === 'addons' ? PRODUCT_ADDONS_MIGRATION : SHOP_READY_MIGRATION;
+  return jsonError(migrationNotice(file), 409, { migration: true });
 }
 
 /**
@@ -122,22 +108,26 @@ export async function GET() {
   if (!db.ok) return db.response;
 
   // 목록은 `*`라 적용 전후 모두 읽힌다. 새 컬럼이 있는지는 행을 보고 알 수
-  // 없으므로(상품이 0개일 수도 있다) 한 컬럼만 따로 찔러 본다.
-  const [list, probe] = await Promise.all([
+  // 없으므로(상품이 0개일 수도 있다) 한 컬럼만 따로 찔러 본다. 마이그레이션
+  // 파일마다 하나씩 — `addons`와 `related_ids`는 한 파일이 같이 더한다.
+  const [list, probe, addonsProbe] = await Promise.all([
     withColumnFallback(
       'admin_products.list',
       () => db.value.from('products').select('*').order('sort_order').order('id'),
       () => db.value.from('products').select('*').order('id'),
     ),
     db.value.from('products').select('status').limit(1),
+    db.value.from('products').select('addons').limit(1),
   ]);
   if (list.error) return dbErrorResponse('admin_products_fetch', list.error);
   if (probe.error && !isMissingColumnError(probe.error)) log.warn('admin_products_probe', probe.error);
+  if (addonsProbe.error && !isMissingColumnError(addonsProbe.error)) log.warn('admin_products_addons_probe', addonsProbe.error);
 
   return NextResponse.json({
     products: list.data ?? [],
     migrationPending: list.migrationPending,
     shopMigrationPending: Boolean(probe.error && isMissingColumnError(probe.error)),
+    addonsMigrationPending: Boolean(addonsProbe.error && isMissingColumnError(addonsProbe.error)),
   });
 }
 
@@ -174,27 +164,28 @@ export async function POST(request: Request) {
     images,
     options,
     edition: input.edition ?? null,
+    // 비어 있으면 키째 뺀다(DB 기본값이 `[]`다) — 추가 상품이 없는 상품의 등록이
+    // 그 마이그레이션 전에도 첫 시도에 들어가게.
+    ...(input.addons?.length ? { addons: input.addons } : {}),
+    ...(input.related_ids?.length ? { related_ids: input.related_ids } : {}),
     ...(sort_order === undefined ? {} : { sort_order }),
   };
 
   const insert = (values: Record<string, unknown>) => db.value.from('products').insert(values).select('*').single();
 
-  // 컬럼이 없다는 오류면 한 겹씩 벗겨 다시 넣는다: 먼저 shop_ready 컬럼, 그래도
-  // 없으면 `sort_order`(admin_studio). 순서 하나 때문에 등록 자체가 막히면 안 된다.
-  let result = await insert(row);
-  let migrationPending = false;
-  if (result.error && isMissingColumnError(result.error)) {
-    if (losesDataWithoutMigration(row)) return shopMigrationResponse();
-    migrationPending = true;
-    const legacy = withoutShopReadyColumns(row);
-    result = await insert(legacy);
-    if (result.error && sort_order !== undefined && isMissingColumnError(result.error)) {
-      const { sort_order: _dropped, ...oldest } = legacy;
-      void _dropped;
-      result = await insert(oldest);
-    }
+  // 컬럼이 없다는 오류면 한 겹씩 벗겨 다시 넣는다: 추가 상품 컬럼, shop_ready
+  // 컬럼(`writeWithFallback`), 그래도 없으면 `sort_order`(admin_studio). 순서
+  // 하나 때문에 등록 자체가 막히면 안 된다.
+  const attempt = await writeWithFallback(row, insert);
+  if (attempt.blocked) return migrationBlockedResponse(attempt.blocked);
+  let { result } = attempt;
+  const { migrationPending } = attempt;
+  if (result.error && sort_order !== undefined && isMissingColumnError(result.error)) {
+    const { sort_order: _dropped, ...oldest } = attempt.written;
+    void _dropped;
+    result = await insert(oldest);
   }
-  if (result.error) return dbErrorResponse('admin_products_insert', result.error, SHOP_READY_MIGRATION);
+  if (result.error || !result.data) return dbErrorResponse('admin_products_insert', result.error, SHOP_READY_MIGRATION);
 
   log.info('admin_products_created', { id: result.data.id });
   revalidateShop();
@@ -236,13 +227,8 @@ export async function PATCH(request: Request) {
   const update = (values: Record<string, unknown>) =>
     db.value.from('products').update(values).eq('id', id).select('*').maybeSingle();
 
-  let result = await update(row);
-  let migrationPending = false;
-  if (result.error && isMissingColumnError(result.error)) {
-    if (losesDataWithoutMigration(row)) return shopMigrationResponse();
-    migrationPending = true;
-    result = await update(withoutShopReadyColumns(row));
-  }
+  const { result, migrationPending, blocked } = await writeWithFallback(row, update);
+  if (blocked) return migrationBlockedResponse(blocked);
   if (result.error) return dbErrorResponse('admin_products_update', result.error, SHOP_READY_MIGRATION);
   if (!result.data) return jsonError('상품을 찾을 수 없습니다.', 404);
 

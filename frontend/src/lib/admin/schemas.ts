@@ -2,10 +2,12 @@ import { z } from 'zod';
 import { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR } from './limits';
 import { NOTE_SLUG_RE } from '@/lib/notes';
 import {
+  MAX_ADDONS,
   MAX_IMAGE_LABEL,
   MAX_IMAGES,
   MAX_OPTION_LABEL,
   MAX_OPTIONS,
+  MAX_RELATED,
   OPTION_ID_RE,
   PRODUCT_STATUSES,
 } from '@/lib/product';
@@ -259,12 +261,22 @@ export const ProductImageInput = z.strictObject({
  * (`OPTION_ID_RE`). 가격 0은 저장할 수 있다 — "가격 미정" 옵션은 담기지 않을
  * 뿐이다(`isOptionAvailable`).
  */
-export const ProductOptionInput = z.strictObject({
-  id: z.string().regex(OPTION_ID_RE, '옵션 id는 영문 소문자·숫자·하이픈 1~32자여야 합니다.'),
-  label: z.string().trim().min(1, '옵션 이름이 비어 있습니다.').max(MAX_OPTION_LABEL, '옵션 이름이 너무 깁니다.'),
-  price: Price,
-  in_stock: z.boolean({ error: '옵션 재고 여부가 올바르지 않습니다.' }),
-});
+function pricedChoiceInput(noun: string) {
+  return z.strictObject({
+    id: z.string().regex(OPTION_ID_RE, `${noun} id는 영문 소문자·숫자·하이픈 1~32자여야 합니다.`),
+    label: z.string().trim().min(1, `${noun} 이름이 비어 있습니다.`).max(MAX_OPTION_LABEL, `${noun} 이름이 너무 깁니다.`),
+    price: Price,
+    in_stock: z.boolean({ error: `${noun} 재고 여부가 올바르지 않습니다.` }),
+  });
+}
+
+export const ProductOptionInput = pricedChoiceInput('옵션');
+
+/**
+ * 추가 상품 하나. 모양과 id 형식이 옵션과 같아서 같은 스키마를 이름만 바꿔 쓴다 —
+ * 오류 문구가 "옵션"이라고 말하면 관리자는 엉뚱한 칸을 고친다.
+ */
+export const ProductAddonInput = pricedChoiceInput('추가 상품');
 
 const ProductFields = {
   name: z.string().trim().min(1, '상품명이 비어 있습니다.').max(120, '상품명이 너무 깁니다.'),
@@ -284,6 +296,19 @@ const ProductFields = {
     .array(ProductOptionInput)
     .max(MAX_OPTIONS, `옵션은 ${MAX_OPTIONS}개까지 둘 수 있습니다.`)
     .refine(options => new Set(options.map(option => option.id)).size === options.length, '옵션 id가 겹칩니다.'),
+  addons: z
+    .array(ProductAddonInput)
+    .max(MAX_ADDONS, `추가 상품은 ${MAX_ADDONS}개까지 둘 수 있습니다.`)
+    .refine(addons => new Set(addons.map(addon => addon.id)).size === addons.length, '추가 상품 id가 겹칩니다.'),
+  /**
+   * 함께 구매로 이어 둘 다른 상품의 id. 순서가 화면 순서다. 그 id의 상품이
+   * 실제로 있는지는 보지 않는다 — 나중에 지워질 수도 있어서, 읽는 쪽이 없는
+   * id를 무시한다(`relatedProducts`). 자기 자신은 `ProductUpdate`가 막는다.
+   */
+  related_ids: z
+    .array(Id)
+    .max(MAX_RELATED, `함께 구매는 ${MAX_RELATED}개까지 고를 수 있습니다.`)
+    .refine(ids => new Set(ids).size === ids.length, '함께 구매에 같은 상품이 두 번 들어 있습니다.'),
 };
 
 /**
@@ -304,6 +329,8 @@ export const ProductCreate = z
     edition: ProductFields.edition.optional(),
     images: ProductFields.images.optional(),
     options: ProductFields.options.optional(),
+    addons: ProductFields.addons.optional(),
+    related_ids: ProductFields.related_ids.optional(),
   })
   .refine(body => Boolean(body.image_url) || (body.images?.length ?? 0) > 0, '상품 이미지를 한 장 이상 올려 주세요.');
 export type ProductCreateInput = z.output<typeof ProductCreate>;
@@ -322,8 +349,11 @@ export const ProductUpdate = z
     edition: ProductFields.edition.optional(),
     images: ProductFields.images.min(1, '상품 이미지를 한 장 이상 남겨 주세요.').optional(),
     options: ProductFields.options.optional(),
+    addons: ProductFields.addons.optional(),
+    related_ids: ProductFields.related_ids.optional(),
   })
-  .refine(body => Object.keys(body).length > 1, '변경할 내용이 없습니다.');
+  .refine(body => Object.keys(body).length > 1, '변경할 내용이 없습니다.')
+  .refine(body => !body.related_ids?.includes(body.id), '함께 구매에 이 상품 자신을 넣을 수 없습니다.');
 export type ProductUpdateInput = z.output<typeof ProductUpdate>;
 
 // ── 주문 ──────────────────────────────────────────────────────────────────────
