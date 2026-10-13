@@ -6,6 +6,7 @@ import AddToCartButton from '@/components/AddToCartButton';
 import { formatPrice, formatPriceRange } from '@/lib/price';
 import { MAX_LINE_QUANTITY } from '@/lib/cart-lines';
 import { isAddonAvailable, isOptionAvailable, SOLD_OUT_LABEL, type ProductAddon, type ProductOption } from '@/lib/product';
+import AddAddonsOnly from './AddAddonsOnly';
 import QuantityStepper from './QuantityStepper';
 
 interface Props {
@@ -40,6 +41,9 @@ interface Props {
  * 한 번에 담는다. 추가 상품은 옵션이 아니라 상품에 붙는다 — 옵션을 바꿔도 고른
  * 수량은 그대로다. 품절인 추가 상품은 보이되 고를 수 없다. 상품 자체가 품절이면
  * 살 수 있는 것이 없으므로 구역을 그리지 않는다.
+ *
+ * 이 상품이 이미 장바구니에 있으면 고른 추가 상품**만** 담는 길이 하나 더 생긴다
+ * (`AddAddonsOnly`). 장바구니에 없을 때는 아무것도 달라지지 않는다.
  */
 export default function ProductPurchase({ product, options, addons, priceMin, priceMax, soldOut }: Props) {
   const hasOptions = options.length > 0;
@@ -202,6 +206,17 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         extras={extras}
         onAdded={() => setAddonQuantity({})}
       />
+
+      {/* 이 상품이 이미 장바구니에 있고 추가 상품을 골랐을 때만 나타난다. 주 버튼
+          아래라 나타나도 주 버튼은 움직이지 않는다. 옵션을 고르지 않았어도 된다. */}
+      {showAddons && (
+        <AddAddonsOnly
+          productId={product.id}
+          productName={product.name}
+          extras={extras}
+          onAdded={() => setAddonQuantity({})}
+        />
+      )}
 
       {/* 담을 수 없는 상품에서 "장바구니 보기"는 갈 이유가 없는 길이다. */}
       <div className="flex items-center gap-5 pt-1">
