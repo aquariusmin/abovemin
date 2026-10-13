@@ -6,6 +6,7 @@ import {
   cartCount,
   cartLineKey,
   cartTotal,
+  hasParentLine,
   MAX_LINE_QUANTITY,
   migrateCartLines,
   placeAddonsUnderParents,
@@ -168,6 +169,38 @@ describe('추가 상품 줄', () => {
     expect(addLines([], [{ line: stand, quantity: 3 }])).toEqual([]);
     // 다른 상품의 줄은 부모가 아니다.
     expect(addLines(addLine([], poster(null)), [{ line: stand }]).map(line => line.key)).toEqual(['3']);
+  });
+
+  it('hasParentLine: 어느 옵션의 줄이든 부모이고, 추가 상품 줄과 다른 상품은 아니다', () => {
+    expect(hasParentLine([], 9)).toBe(false);
+    const withAddon = addLines([], [{ line: calendar }, { line: stand }]);
+    expect(hasParentLine(withAddon, 9)).toBe(true);
+    expect(hasParentLine(withAddon, 3)).toBe(false);
+    expect(hasParentLine(addLine([], poster(A3)), 3)).toBe(true);
+    // 추가 상품 줄만으로는 부모가 아니다(저장소가 손상된 경우를 가정한 모양).
+    expect(hasParentLine([{ id: 9, addon_id: 'stand' }], 9)).toBe(false);
+  });
+
+  it('부모가 이미 담겨 있으면 추가 상품만 따로 담을 수 있다 — 부모 수량은 그대로', () => {
+    let lines = addLine(addLine([], poster(A3)), calendar);
+    lines = addLines(lines, [{ line: stand, quantity: 2 }, { line: envelope }]);
+    expect(lines.map(line => [line.key, line.quantity])).toEqual([
+      ['3:a3', 1],
+      ['9', 1],
+      ['9+stand', 2],
+      ['9+env', 1],
+    ]);
+    // 옵션 상품: 어느 옵션이 담겨 있든 추가 상품은 옵션 없이 들어간다.
+    expect(addLines(addLine([], poster(A2)), [{ line: posterStand }]).map(line => line.key)).toEqual(['3:a2', '3+stand']);
+  });
+
+  it('늦은 클릭: 부모가 그사이 사라졌으면 추가 상품만 담기는 아무것도 담지 않는다', () => {
+    // 상품 페이지가 "부모가 있다"고 믿고 추가 상품만 보냈지만 장바구니에는 부모가 없다.
+    const others = addLine([], poster(A3));
+    const after = addLines(others, [{ line: stand, quantity: 2 }, { line: envelope }]);
+    expect(after).toEqual(others);
+    expect(after.some(line => line.addon_id)).toBe(false);
+    expect(addLines([], [{ line: stand }])).toEqual([]);
   });
 
   it('부모 줄 바로 아래에 놓인다 — 부모 줄의 순서는 그대로', () => {

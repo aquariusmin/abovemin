@@ -52,6 +52,15 @@ export function isAddonLine(line: { addon_id?: string | null }): boolean {
 }
 
 /**
+ * 이 상품의 줄(부모)이 장바구니에 하나라도 있는가 — 어느 옵션이든. 있으면 상품
+ * 페이지가 "추가 상품만 담기"를 내놓을 수 있다: 추가 상품 줄이 기댈 부모가 이미
+ * 있고, 주문 API의 "같은 주문에 부모 줄" 규칙도 그 줄로 채워진다.
+ */
+export function hasParentLine(lines: ReadonlyArray<{ id: number; addon_id?: string | null }>, productId: number): boolean {
+  return lines.some(line => line.id === productId && !isAddonLine(line));
+}
+
+/**
  * 추가 상품 줄을 부모 줄 아래로 모으고, 부모가 없는 추가 상품 줄은 버린다.
  *
  * 부모 줄의 순서는 건드리지 않는다 — 추가 상품이 없는 장바구니는 들어온 그대로
