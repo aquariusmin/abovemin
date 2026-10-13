@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
-import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getCloudinaryConfig, signUploadParams, uploadFolder } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
+import { PhotoSign } from '@/lib/admin/schemas';
+import { adminDb, guardMutation, jsonError, parseBody } from '@/lib/admin/route-helpers';
 
 /**
  * 브라우저가 Cloudinary에 직접 업로드하기 위한 서명을 발급한다.
@@ -11,43 +11,28 @@ import { log } from '@/lib/logger';
  * 아니라 파라미터에만 걸리기 때문이다. 자세한 배경은 `lib/cloudinary-upload.ts`.
  */
 export async function POST(request: Request) {
-  if (!assertSameOrigin(request)) {
-    return NextResponse.json({ error: 'Bad origin' }, { status: 403 });
-  }
-  if (!(await isAdminRequest())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const body = await request.json().catch(() => ({}));
-  const albumSlug = (body as { album_slug?: unknown }).album_slug;
-  if (typeof albumSlug !== 'string' || !/^[a-z0-9-]{1,64}$/.test(albumSlug)) {
-    return NextResponse.json({ error: 'Invalid album_slug' }, { status: 400 });
-  }
-
-  let supabase: ReturnType<typeof getSupabaseAdmin>;
-  try {
-    supabase = getSupabaseAdmin();
-  } catch (error) {
-    log.error('admin_photos_sign_config', error);
-    return NextResponse.json({ error: 'Admin database is not configured' }, { status: 503 });
-  }
+  const denied = await guardMutation(request);
+  if (denied) return denied;
+  const body = await parseBody(request, PhotoSign);
+  if (!body.ok) return body.response;
+  const albumSlug = body.value.album_slug;
+  const db = adminDb('admin_photos_sign');
+  if (!db.ok) return db.response;
 
   // 존재하지 않는 앨범으로 폴더가 생기지 않도록 먼저 확인한다.
-  const { data: album, error: albumError } = await supabase
+  const { data: album, error: albumError } = await db.value
     .from('albums')
     .select('slug')
     .eq('slug', albumSlug)
     .single();
-  if (albumError || !album) {
-    return NextResponse.json({ error: 'Album not found' }, { status: 404 });
-  }
+  if (albumError || !album) return jsonError('Album not found', 404);
 
   let config;
   try {
     config = getCloudinaryConfig();
   } catch (error) {
     log.error('admin_photos_sign_cloudinary', error);
-    return NextResponse.json({ error: 'Cloudinary upload is not configured' }, { status: 503 });
+    return jsonError('Cloudinary upload is not configured', 503);
   }
 
   // `image_metadata`를 켜야 응답에 EXIF가 실린다. 촬영 연도를 자동으로 채우는
