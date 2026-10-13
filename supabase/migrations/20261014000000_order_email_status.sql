@@ -1,0 +1,36 @@
+-- 적용 순서는 상관없다 — 코드가 먼저 나가도 주문은 받고 메일도 나간다.
+--
+-- `api/orders`는 메일을 보낸 뒤 아래 두 컬럼에 시각을 적는다. 컬럼이 없으면
+-- (`42703`/`PGRST204`) 경고만 남기고 적지 않는다(`lib/order-email-status.ts`의
+-- `recordEmailSent`, `lib/db-compat.ts`의 `withColumnFallback`). 이 파일을
+-- 적용해야 "메일이 안 나간 주문"이 관리 화면에 표시된다. 적용 방법:
+--   - Supabase 대시보드 → SQL Editor에 이 파일을 붙여넣고 실행
+--   - supabase db push  (CLI를 연결해 둔 경우)
+--   - psql "$DATABASE_URL" -f 이파일
+--
+-- ── 1. orders.buyer_email_sent_at / owner_email_sent_at ──────────────────────
+-- 주문 메일 두 통(손님의 입금 안내, 운영자 알림)은 응답을 보낸 뒤에 나가고,
+-- 실패해도 주문은 남는다. 그런데 실패가 로그에만 남아서, Resend가 멈추거나
+-- 키가 만료되면 손님은 계좌를 못 받고 운영자는 주문이 온 줄도 모른 채였다.
+-- "관리 화면에서 다시 보내면 된다"는 실패를 아는 사람이 있을 때만 통한다.
+--
+--  - buyer_email_sent_at: 입금 안내 메일이 마지막으로 나간 시각. 주문 접수
+--    때, 그리고 관리 화면에서 주문 확인 메일을 다시 보냈을 때 적는다.
+--  - owner_email_sent_at: 운영자 알림이 나간 시각. 주문 접수 때만 적는다.
+--
+-- nullable, 기본값 없음, **backfill 없음.** 이 파일 이전의 주문은 null이고,
+-- 그 null은 "안 나갔다"가 아니라 **"모른다"**다 — 그때는 기록하지 않았다.
+-- 그래서 관리 화면은 null만 보고 표시하지 않는다: 기록이 시작된 뒤(두 컬럼을
+-- 통틀어 가장 이른 시각 이후)에 들어온 주문만 "메일 미발송"으로 본다
+-- (`lib/order-email-status.ts`의 `isBuyerEmailMissing`).
+--
+-- 기록이 시작된 뒤의 null은 셋 중 하나다: 발송 실패, 구매자 메일 전체 한도에
+-- 걸려 건너뜀(`api/orders`의 `BUYER_EMAIL_GLOBAL`), 또는 OWNER_EMAIL 미설정
+-- (운영자 쪽).
+alter table public.orders add column if not exists buyer_email_sent_at timestamptz;
+alter table public.orders add column if not exists owner_email_sent_at timestamptz;
+
+-- ── 2. RLS ───────────────────────────────────────────────────────────────────
+-- 바꾸지 않는다. orders에는 anon/authenticated 정책이 하나도 없고
+-- (`20260927000000_orders_idempotency.sql`), 이 컬럼들도 서버 라우트가 service
+-- role로만 읽고 쓴다.
