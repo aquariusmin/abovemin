@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { log } from '@/lib/logger';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { withColumnFallback } from '@/lib/db-compat';
 import { AlbumCreate, AlbumUpdate, Id } from '@/lib/admin/schemas';
 import {

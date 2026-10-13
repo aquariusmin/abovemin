@@ -14,7 +14,7 @@ paths:
 - 본문은 `parseBody`와 `lib/admin/schemas.ts`의 zod 스키마로 검증한다. 새 입력은 스키마부터 더한다.
 - DB는 `adminDb()`(service-role)로 접근한다. `getSupabaseAdmin`과 service-role 키는 서버 전용이다 — 클라이언트 컴포넌트가 import하는 모듈에 끌려 들어가지 않게 한다.
 - DB 오류는 `dbErrorResponse`로 돌려준다. 마이그레이션이 아직 없는 경우는 `migrationNotice`로 알리고, 반쯤 저장하지 않는다(409).
-- 변경 뒤에는 공개 페이지 캐시를 맞춘다: `revalidateArchive`·`revalidateNotes`(`lib/cache-tags.ts`), `revalidateShop`(`lib/admin/revalidate.ts`).
+- 변경 뒤에는 공개 페이지 캐시를 맞춘다: `revalidateArchive`·`revalidatePlaces`·`revalidateNotes`·`revalidateShop`·`revalidateSettings`(`lib/admin/revalidate.ts`). 라우트에서 `revalidatePath`/`revalidateTag`를 직접 부르지 않는다. 태그 이름은 `lib/cache-tags.ts`.
 - 관리자가 넣는 이미지 주소는 저장 시점에 `isRenderableImageUrl`로 확인한다. 호스트는 부분 문자열이 아니라 `URL.hostname`으로 본다(SSRF — `lib/cloudinary.ts` 주석).
 - **사진별 위도·경도를 공개 테이블에 저장하지 않는다.** `photos`는 anon 키로 읽힌다. 좌표는 `places`에 소수점 한 자리로만 남긴다.
 - 업로드는 EXIF의 GPS를 지운 뒤 올린다(`lib/exif-strip.ts`, `lib/admin/upload-privacy.ts`).

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
 import { log } from '@/lib/logger';
 import { isMissingSchemaError } from '@/lib/db-compat';
 import { placeFromRow, placeName } from '@/lib/places';
+import { revalidatePlaces } from '@/lib/admin/revalidate';
 import { PlaceDelete, PlaceUpsert } from '@/lib/admin/schemas';
 import {
   ARCHIVE_EXTRAS_MIGRATION,
@@ -29,11 +29,6 @@ interface AdminPlaceRow {
   lat: number | null;
   lng: number | null;
   source: 'gps' | 'manual' | null;
-}
-
-function revalidateMap(): void {
-  // 지도는 /archive에만 있다. 앨범 상세와 홈은 좌표를 쓰지 않는다.
-  revalidatePath('/archive');
 }
 
 export async function GET() {
@@ -88,7 +83,7 @@ export async function PUT(request: Request) {
   if (error) return dbErrorResponse('admin_places_upsert', error, ARCHIVE_EXTRAS_MIGRATION);
 
   log.info('admin_places_saved', { name, lat, lng });
-  revalidateMap();
+  revalidatePlaces();
   return NextResponse.json({ ok: true, place: data ? placeFromRow(data) : { name, lat, lng } });
 }
 
@@ -104,6 +99,6 @@ export async function DELETE(request: Request) {
   const { data, error } = await db.value.from('places').delete().eq('name', body.value.name).select('name');
   if (error) return dbErrorResponse('admin_places_delete', error, ARCHIVE_EXTRAS_MIGRATION);
 
-  if ((data?.length ?? 0) > 0) revalidateMap();
+  if ((data?.length ?? 0) > 0) revalidatePlaces();
   return NextResponse.json({ ok: true, deleted: data?.length ?? 0 });
 }

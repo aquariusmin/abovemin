@@ -1,98 +1,46 @@
 import { NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
-import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
-import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { log } from '@/lib/logger';
-import { SETTINGS_CACHE_TAG } from '@/lib/cache-tags';
-import { isRenderableImageUrl } from '@/lib/cloudinary';
-
-const ALLOWED_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'] as const;
-type AllowedKey = typeof ALLOWED_KEYS[number];
+import { revalidateSettings } from '@/lib/admin/revalidate';
+import { SettingsUpdate } from '@/lib/admin/schemas';
+import { adminDb, dbErrorResponse, guardMutation, guardRead, parseBody } from '@/lib/admin/route-helpers';
 
 export async function GET() {
-  if (!(await isAdminRequest())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const denied = await guardRead();
+  if (denied) return denied;
+  const db = adminDb('admin_settings');
+  if (!db.ok) return db.response;
 
-  let supabase: ReturnType<typeof getSupabaseAdmin>;
-  try {
-    supabase = getSupabaseAdmin();
-  } catch (error) {
-    log.error('admin_settings_config', error);
-    return NextResponse.json(
-      { error: 'Admin database is not configured' },
-      { status: 503 },
-    );
-  }
-
-  const { data, error } = await supabase
+  const { data, error } = await db.value
     .from('site_settings')
     .select('key, value');
-
-  if (error) {
-    log.error('admin_settings_fetch', error);
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
-  }
+  if (error) return dbErrorResponse('admin_settings_fetch', error);
 
   const settings: Record<string, string> = {};
   for (const row of data ?? []) settings[row.key] = row.value;
   return NextResponse.json(settings);
 }
 
+/**
+ * 아는 키(`hero_image`·`hero_title`·`hero_subtitle`)만 저장한다. 무엇을 고르고
+ * 무엇을 거절하는지는 `SettingsUpdate`(`lib/admin/schemas.ts`)에 있다 — 히어로
+ * 이미지의 호스트 확인도 거기서 한다.
+ */
 export async function PATCH(request: Request) {
-  if (!assertSameOrigin(request)) {
-    return NextResponse.json({ error: 'Bad origin' }, { status: 403 });
-  }
-  if (!(await isAdminRequest())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const denied = await guardMutation(request);
+  if (denied) return denied;
+  const body = await parseBody(request, SettingsUpdate);
+  if (!body.ok) return body.response;
+  const db = adminDb('admin_settings');
+  if (!db.ok) return db.response;
 
-  const body = await request.json().catch(() => ({}));
-  if (typeof body !== 'object' || body === null) {
-    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-  }
-
-  const updates = Object.entries(body as Record<string, unknown>)
-    .filter(([k, v]) => (ALLOWED_KEYS as readonly string[]).includes(k) && typeof v === 'string')
-    .map(([k, v]) => [k as AllowedKey, v as string] as const);
-
-  if (updates.length === 0) {
-    return NextResponse.json({ error: 'No valid keys' }, { status: 400 });
-  }
-
-  // `hero_image`는 홈에서 `next/image`로 렌더된다. 허용되지 않은 호스트가 들어
-  // 가면 렌더 도중 throw가 나고 홈 전체가 error 바운더리로 떨어지므로, 저장을
-  // 막는 쪽이 맞다 — 잘못된 값이 이미 들어간 뒤에는 관리 화면에서 되돌리기
-  // 전까지 홈이 계속 깨져 있다.
-  const heroImage = updates.find(([key]) => key === 'hero_image')?.[1];
-  if (heroImage !== undefined && heroImage !== '' && !isRenderableImageUrl(heroImage)) {
-    return NextResponse.json(
-      { error: '히어로 이미지는 res.cloudinary.com 또는 images.unsplash.com의 https 주소여야 합니다.' },
-      { status: 400 },
-    );
-  }
-
-  let supabase: ReturnType<typeof getSupabaseAdmin>;
-  try {
-    supabase = getSupabaseAdmin();
-  } catch (error) {
-    log.error('admin_settings_config', error);
-    return NextResponse.json(
-      { error: 'Admin database is not configured' },
-      { status: 503 },
-    );
-  }
   const now = new Date().toISOString();
-  for (const [key, value] of updates) {
-    const { error } = await supabase
+  for (const [key, value] of body.value) {
+    const { error } = await db.value
       .from('site_settings')
       .upsert({ key, value, updated_at: now }, { onConflict: 'key' });
-    if (error) {
-      log.error('admin_settings_upsert', { key, error });
-      return NextResponse.json({ error: 'DB error' }, { status: 500 });
-    }
+    // 키는 스키마가 고른 셋 중 하나라 로그 이름에 붙여도 된다.
+    if (error) return dbErrorResponse(`admin_settings_upsert.${key}`, error);
   }
 
-  revalidateTag(SETTINGS_CACHE_TAG, { expire: 0 });
+  revalidateSettings();
   return NextResponse.json({ ok: true });
 }

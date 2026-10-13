@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { IdOrder } from '@/lib/admin/schemas';
 import { renumberChanges, sameIdSet } from '@/lib/admin/reorder';
 import {

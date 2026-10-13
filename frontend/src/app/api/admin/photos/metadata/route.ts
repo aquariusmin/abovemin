@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getCloudinaryConfig } from '@/lib/cloudinary-upload';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { log } from '@/lib/logger';
 import { fillPhotoMetadata, metadataProgress } from '@/lib/admin/metadata-fill';
 import { MetadataRecheck, firstIssue } from '@/lib/admin/schemas';
 import {
   ARCHIVE_EXTRAS_MIGRATION,
+  adminCloudinary,
   adminDb,
   guardMutation,
   guardRead,
@@ -75,15 +75,10 @@ export async function POST(request: Request) {
   const db = adminDb('admin_photo_metadata');
   if (!db.ok) return db.response;
 
-  let config: ReturnType<typeof getCloudinaryConfig>;
-  try {
-    config = getCloudinaryConfig();
-  } catch (error) {
-    log.error('admin_photo_metadata_cloudinary', error);
-    return jsonError('Cloudinary is not configured', 503);
-  }
+  const cloudinary = adminCloudinary('admin_photo_metadata');
+  if (!cloudinary.ok) return cloudinary.response;
 
-  const outcome = await fillPhotoMetadata(db.value, config, {
+  const outcome = await fillPhotoMetadata(db.value, cloudinary.value, {
     deadline: Date.now() + DEADLINE_MS,
     ...(recheckIds ? { ids: recheckIds, limit: recheckIds.length, recheck: true } : {}),
   });

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { log } from '@/lib/logger';
-import { revalidateNotes } from '@/lib/cache-tags';
+import { revalidateNotes } from '@/lib/admin/revalidate';
 import { isMissingSchemaError } from '@/lib/db-compat';
 import { NoteCreate, NoteDelete, NoteUpdate } from '@/lib/admin/schemas';
 import {
