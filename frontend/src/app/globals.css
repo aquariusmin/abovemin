@@ -631,10 +631,16 @@ body {
   border: 1px solid var(--input);
   background: var(--card);
   padding: 0.75rem 1rem;
-  font-size: 0.9375rem;
+  /* 16px on phones: iOS Safari zooms the page on focus for any field under
+     16px, and the checkout form is nothing but fields. 15px returns at `md`,
+     where there is no focus zoom to avoid. */
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-body);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+@media (min-width: 48rem) {
+  .field-input { font-size: 0.9375rem; }
 }
 .field-input::placeholder { color: var(--muted-foreground); }
 .field-input:hover { border-color: color-mix(in srgb, var(--forest) 30%, var(--input)); }
@@ -880,6 +886,29 @@ html {
 
 .hero-rise {
   animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 홈 소품 카드가 hover에서 4px 뜬다. framer-motion의 `whileHover={{ y: -4 }}`를
+   그대로 옮긴 것이다 — 홈이 서버 컴포넌트가 되면서 이 움직임 하나 때문에
+   애니메이션 런타임을 실을 이유가 없어졌다.
+
+   뜰 때 0.3초, 내려앉을 때 0.7초. 비대칭은 실수가 아니라 framer에서 잰 값이다:
+   뜨는 쪽은 컴포넌트의 `transition`(0.3s)을 따랐고, hover가 끝나면 `animate`
+   목표에 실려 있던 등장 전환(0.7s)으로 돌아갔다. 그래서 기본 상태에 0.7초를
+   두고 `:hover`에서만 0.3초로 줄인다.
+
+   framer는 터치 포인터에서 hover를 걸지 않았으므로 `(hover: hover)` 안에
+   둔다(탭한 뒤 떠 있는 카드가 남지 않는다). 움직임 줄이기에서는 아래
+   `[data-reveal]` 규칙이 transform을 없애므로 뜨지 않는다. */
+.lift-card {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .lift-card:hover {
+    transform: translateY(-4px);
+    transition-duration: 0.3s;
+  }
 }
 
 /* Honour users who prefer reduced motion */

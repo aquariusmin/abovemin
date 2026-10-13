@@ -9,6 +9,14 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import type { OrderInputValues } from '@/lib/orders-schema';
 import { toOrderItems } from '@/lib/cart-lines';
+import {
+  clearPlacedOrder,
+  placedOrderFromResponse,
+  readPlacedOrder,
+  writePlacedOrder,
+  type PlacedOrder,
+} from '@/lib/order-placed';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -17,10 +25,13 @@ export default function CheckoutPage() {
   const reduce = useReducedMotion();
   const { items, totalPrice, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  // 완료 화면의 금액. 장바구니의 가격은 담을 때 본 값이라, 그 사이 가격이 바뀌었으면
-  // 서버가 DB에서 다시 계산한 합계와 다르다 — 입금할 금액은 서버 쪽이다.
-  const [placed, setPlaced] = useState<{ total: number; cartTotal: number } | null>(null);
+  // 완료 화면에 띄울 요약 — 있으면 완료 화면이다. 금액은 서버가 DB에서 다시
+  // 계산한 합계다: 장바구니의 가격은 담을 때 본 값이라, 그 사이 가격이 바뀌었으면
+  // 둘이 다르고 입금할 금액은 서버 쪽이다. `sessionStorage`에도 같이 적어 두어
+  // 새로고침해도 이 화면이 남는다(`lib/order-placed.ts`).
+  const [placed, setPlaced] = useState<PlacedOrder | null>(null);
+  // 방금 낸 주문에서만 안다(장바구니 합계는 저장하지 않는다). 새로고침 뒤에는 꺼진다.
+  const [priceChanged, setPriceChanged] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -32,16 +43,21 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // 장바구니가 비어 있는데 방금 낸 주문의 요약이 남아 있다: 완료 화면에서
+    // 새로고침한 것이다. 장바구니에 무언가 담겨 있으면 새 주문을 하러 온 것이니
+    // 지난 요약은 치운다.
+    if (useCartStore.getState().items.length === 0) setPlaced(readPlacedOrder());
+    else clearPlacedOrder();
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (mounted && items.length === 0 && !done) {
+    if (mounted && items.length === 0 && !placed) {
       router.replace('/cart');
     }
-  }, [mounted, items.length, done, router]);
+  }, [mounted, items.length, placed, router]);
 
-  if (!mounted || (items.length === 0 && !done)) return null;
+  if (!mounted || (items.length === 0 && !placed)) return null;
 
   function validate() {
     const e: Partial<typeof form> = {};
@@ -122,14 +138,16 @@ export default function CheckoutPage() {
       }
 
       const cartTotal = totalPrice();
-      const serverTotal = await res
-        .json()
-        .then((body: unknown) => (body as { total_price?: unknown })?.total_price)
-        .catch(() => undefined);
-      setPlaced({ total: typeof serverTotal === 'number' ? serverTotal : cartTotal, cartTotal });
+      const body: unknown = await res.json().catch(() => null);
+      const order = placedOrderFromResponse(body, { email: payload.email, cartTotal });
+      writePlacedOrder(order);
+      setPriceChanged(order.total !== cartTotal);
+      setPlaced(order);
       clearCart();
       setIdempotencyKey(crypto.randomUUID());
-      setDone(true);
+      // 제출 버튼은 폼의 맨 아래다. 그 스크롤 위치에 완료 화면이 그대로 뜨면
+      // 주문번호와 금액이 화면 위로 밀려나 있다.
+      window.scrollTo(0, 0);
     } catch {
       setOrderError('네트워크 오류로 주문을 보내지 못했습니다. 연결을 확인하고 다시 시도해주세요.');
     } finally {
@@ -137,10 +155,10 @@ export default function CheckoutPage() {
     }
   }
 
-  if (done) {
+  if (placed) {
     return (
       <main
-        className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8"
+        className="min-h-screen bg-canvas flex flex-col items-center justify-center text-center px-8 py-24"
         aria-live="polite"
       >
         <motion.div
@@ -153,22 +171,43 @@ export default function CheckoutPage() {
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
-        <p className="text-[15px] text-ink-body mb-6 break-keep">
-          확인 이메일을 <span className="text-accent font-medium">{form.email}</span>으로 보내드릴게요.
+        <p className="text-[15px] text-ink-body mb-8 break-keep">
+          확인 이메일을 <span className="text-accent font-medium">{placed.email}</span>으로 보내드릴게요.
         </p>
-        {placed && (
-          <div className="mb-10">
-            <p className="text-[15px] text-ink-body">
-              입금하실 금액 <span className="font-semibold text-ink tabular-nums">₩&nbsp;{placed.total.toLocaleString()}</span>
-            </p>
-            {placed.total !== placed.cartTotal && (
-              <p className="mt-2 text-xs text-brick break-keep">
-                장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
-              </p>
+
+        {/* 메일이 오지 않아도 이 화면만으로 입금할 수 있어야 한다: 번호, 금액, 계좌. */}
+        <dl className="w-full max-w-sm rounded-lg surface-cream p-6 space-y-4 text-left">
+          {placed.orderId !== null && (
+            <div className="flex items-baseline justify-between gap-4">
+              <dt className="label-ko text-slate">주문번호</dt>
+              <dd className="text-sm font-semibold text-ink tabular-nums">#{placed.orderId}</dd>
+            </div>
+          )}
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="label-ko text-slate">입금하실 금액</dt>
+            <dd className="text-xl font-semibold text-ink tabular-nums">₩&nbsp;{placed.total.toLocaleString()}</dd>
+          </div>
+          <div className="border-t border-hairline pt-4">
+            <dt className="label-ko text-slate">입금 계좌</dt>
+            {placed.bankInfo ? (
+              <dd className="mt-1 text-[15px] font-semibold text-ink">{placed.bankInfo}</dd>
+            ) : (
+              <dd className="mt-1 text-sm text-ink-body">확인 이메일에 적어 보내드립니다.</dd>
             )}
           </div>
+        </dl>
+        {priceChanged && (
+          <p className="mt-3 max-w-md text-xs text-brick">
+            장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
+          </p>
         )}
-        <Link href="/shop" className="btn-primary">계속 둘러보기</Link>
+        <p className="mt-6 mb-10 max-w-sm text-[13px] text-slate leading-relaxed">
+          메일이 오지 않거나 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="link-leaf">{CONTACT_EMAIL}</a>으로 알려주세요.
+        </p>
+        {/* 이 화면을 스스로 떠날 때 요약을 지운다. 지우지 않으면 빈 장바구니로
+            체크아웃 주소에 다시 올 때마다 지난 주문이 뜬다. */}
+        <Link href="/shop" className="btn-primary" onClick={() => clearPlacedOrder()}>계속 둘러보기</Link>
       </main>
     );
   }
@@ -205,6 +244,7 @@ export default function CheckoutPage() {
                 onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(er => ({ ...er, name: undefined })); }}
                 placeholder="홍길동"
                 autoComplete="name"
+                aria-required="true"
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? 'name-error' : undefined}
               />
@@ -221,6 +261,7 @@ export default function CheckoutPage() {
                 onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: undefined })); }}
                 placeholder="hello@phorage.com"
                 autoComplete="email"
+                aria-required="true"
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? 'email-error' : undefined}
               />
@@ -264,6 +305,7 @@ export default function CheckoutPage() {
                 onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setErrors(er => ({ ...er, address: undefined })); }}
                 placeholder="서울시 마포구 ..."
                 autoComplete="street-address"
+                aria-required="true"
                 aria-invalid={!!errors.address}
                 aria-describedby={errors.address ? 'address-error' : undefined}
               />
@@ -308,13 +350,20 @@ export default function CheckoutPage() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? '주문 중…' : '주문하기'}
-            </button>
+            {/* 결제 방법은 옆(모바일에서는 아래)의 요약에 적혀 있다. 폰에서는 그게
+                버튼을 누른 뒤에야 보이는 자리라, 버튼 바로 위에 한 줄로 먼저 알린다. */}
+            <div className="space-y-3">
+              <p className="text-xs text-slate leading-relaxed md:hidden">
+                결제는 계좌이체입니다. 주문 후 입금 계좌를 안내드립니다.
+              </p>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? '주문 중…' : '주문하기'}
+              </button>
+            </div>
           </form>
 
           {/* Order summary */}

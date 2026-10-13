@@ -11,6 +11,7 @@ import Reveal from '@/components/motion/Reveal';
 import TimelineYearIndex from '@/components/archive/TimelineYearIndex';
 import { storedRatioStyle } from '@/components/photo-placeholder';
 import { buildFallback } from '@/lib/build-phase';
+import { sectionTitle, shareCard } from '@/lib/share-card';
 
 const TITLE = 'Timeline';
 const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로 — 연도와 달로 나눠 봅니다.';
@@ -20,19 +21,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/archive/timeline' },
-  openGraph: {
-    title: `${TITLE} | phorage`,
-    description: DESCRIPTION,
-    url: '/archive/timeline',
-    siteName: 'phorage',
-    locale: 'ko_KR',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: `${TITLE} | phorage`,
-    description: DESCRIPTION,
-  },
+  ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/archive/timeline' }),
 };
 
 // `/archive`와 같다. `revalidateArchive()`가 사진이 바뀔 때 이 경로도 무효화한다.

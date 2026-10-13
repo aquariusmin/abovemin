@@ -423,28 +423,39 @@ reading — three defensible projects first, the rest demoted to an Explore
 archive, copy written for someone screening a candidate — is now what the
 public route shows.
 
-Two axes in `src/data/portfolioRouting.ts` keep that from collapsing into a
-redirect:
+One axis in `src/data/portfolioRouting.ts` keeps that from collapsing into a
+redirect: **`PortfolioRoute`**, *which URL family a page's links stay in* —
+`normal` (`/portfolio/...`, indexed) or `submission`
+(`/portfolio/submission/...`, `noindex`, nav suppressed, kept valid for links
+already handed out). The page components (`PortfolioOverview`,
+`PortfolioCaseStudy`, `PortfolioPrintContent`) take `route` as a required prop,
+so every route file states its own family.
 
-- **`PortfolioMode`** is the *presentation*: `submission` (curated) or `normal`
-  (the flat list of every project in data order).
-- **`PortfolioRoute`** is *which URL family the links belong to*.
+There is no presentation axis. A `PortfolioMode` (`submission` / `normal`) used
+to pick between the curated reading and an older flat list of every project in
+data order; once every route passed `submission`, the flat list, its copy and
+the prop were deleted. Do not bring a second presentation back as a prop — a
+different reading is a different page.
 
-They used to be one value, and that coupling is what made the two paths two
-different pages. `/portfolio` passes `mode="submission" route="normal"`, so the
-indexed URLs carry the good version while `/portfolio/submission` stays valid —
-`noindex`, nav suppressed — for links already handed out. Every component
-downstream defaults `route` to `mode`, so a call site that never cared keeps its
-old behaviour.
+What `route` changes, and nothing else:
 
-The one intentional difference between the two: the closing CTA's "소개 더 보기"
-link appears on `/portfolio` and not on `/portfolio/submission`. It is keyed to
-`route`, not `mode` — a submission handout has no site to wander into, and a
-site page should link onward.
+- every internal link — cards, back, prev/next, the language switch, and the
+  print link (which carries `?from=submission` so the sheet can link back);
+- the closing CTA's "소개 더 보기" link, which appears on `/portfolio` and not
+  on `/portfolio/submission` — a submission handout has no site to wander
+  into, and a site page should link onward;
+- `ProfilePage` + `Person` JSON-LD (`PortfolioJsonLd.tsx`), emitted only for
+  `route === "normal"` so the noindex family never describes the same person
+  at a second URL.
 
-`/portfolio` also emits `ProfilePage` + `Person` JSON-LD
-(`PortfolioJsonLd.tsx`), gated on `route === "normal"` so the noindex family
-never describes the same person at a second URL.
+Korean and English are the same components. `getPortfolio(locale)`
+(`src/data/portfolioAccess.ts`) is the only place that picks between the two
+data files; it returns the curated `featured` / `archive` / `projects` lists and
+a `getProject(slug)` lookup, renumbered identically for both languages, plus
+`slugs` in data-file order for `generateStaticParams`.
+`ProjectCard` takes `locale` and keeps two typographic treatments on purpose:
+English uses `.eyebrow` and `.chip`, Korean spells the same labels out in sans
+with tighter tracking, because mono uppercase tracking scatters Hangul.
 
 ## Known Gaps
 

@@ -4,13 +4,19 @@ import ShopCatalog, { type CatalogItem } from '@/components/shop/ShopCatalog';
 import { priceRange, publicState } from '@/lib/product';
 import { cloudinaryAspect } from '@/lib/cloudinary';
 import { buildFallback } from '@/lib/build-phase';
+import { sectionTitle, shareCard } from '@/lib/share-card';
 
 export const revalidate = 60;
 
+const TITLE = 'Shop';
+const DESCRIPTION = 'Tangible light for your space. phorage가 엄선한 소품 컬렉션.';
+
 export const metadata: Metadata = {
-  title: 'Shop',
-  description: 'Tangible light for your space. phorage가 엄선한 소품 컬렉션.',
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: '/shop' },
+  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
+  ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/shop' }),
 };
 
 export default async function Shop() {

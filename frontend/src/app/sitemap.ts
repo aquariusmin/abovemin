@@ -1,6 +1,6 @@
 import { SITE_URL } from '@/lib/site';
 import { getAlbumsWithCounts, getAllPhotos, getProducts } from '@/lib/supabase';
-import { photoPagePath } from '@/lib/photo-share';
+import { photoImageUrl, photoPagePath } from '@/lib/photo-share';
 import { isAvailable } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getPublishedNotes } from '@/lib/supabase';
@@ -61,10 +61,14 @@ export default async function sitemap() {
   // `lastModified`는 적지 않는다. 공개 조회는 행의 수정 시각을 싣지 않고
   // (`publicPhoto`), 만들 때마다 바뀌는 `now`를 300개에 붙이면 검색엔진은 그
   // 신호를 믿지 않게 된다 — 틀린 날짜보다 없는 날짜가 낫다.
+  //
+  // `images`는 그 페이지가 실제로 그리는 주소 그대로다(`photoImageUrl`) — 페이지가
+  // 200이면 그 이미지도 200이고, 워터마크 없는 원본 주소를 따로 신고하지 않는다.
   const photoPages = photos.map(photo => ({
     url: `${BASE}${photoPagePath(photo)}`,
     changeFrequency: 'yearly' as const,
     priority: 0.5,
+    images: [photoImageUrl(photo.src)],
   }));
 
   // 상품 상세는 **초안이 아닌 것**만 올린다 — 초안은 404다(`getProducts`가

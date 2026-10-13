@@ -4,11 +4,17 @@ import { notFound } from 'next/navigation';
 import { getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import { buildFallback } from '@/lib/build-phase';
+import { sectionTitle, shareCard } from '@/lib/share-card';
+
+const TITLE = 'Notes';
+const DESCRIPTION = '공개 데이터를 짧게 들여다보고, 말할 수 있는 범위를 함께 적습니다.';
 
 export const metadata: Metadata = {
-  title: 'Notes',
-  description: '공개 데이터를 짧게 들여다보고, 말할 수 있는 범위를 함께 적습니다.',
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: '/notes', types: { 'application/rss+xml': '/notes/rss.xml' } },
+  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
+  ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/notes' }),
 };
 
 // 관리 화면에서 글을 저장하면 `revalidateNotes()`가 이 경로를 무효화한다.

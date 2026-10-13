@@ -1,19 +1,13 @@
 import Link from "next/link";
 import type { EvidenceLocale } from "@/data/portfolioEvidence";
-import {
-  getPortfolioPrintPath,
-  type PortfolioMode,
-  type PortfolioRoute,
-} from "@/data/portfolioRouting";
+import { getPortfolioPrintPath, type PortfolioRoute } from "@/data/portfolioRouting";
 
 export default function PortfolioClosingCta({
   locale,
-  mode = "normal",
-  route = mode,
+  route,
 }: {
   locale: EvidenceLocale;
-  mode?: PortfolioMode;
-  route?: PortfolioRoute;
+  route: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
 

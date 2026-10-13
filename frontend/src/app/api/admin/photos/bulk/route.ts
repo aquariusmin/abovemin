@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { log } from '@/lib/logger';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { publicIdFromUrl } from '@/lib/cloudinary';
 import { PhotoBulk, type PhotoBulkInput } from '@/lib/admin/schemas';
 import {

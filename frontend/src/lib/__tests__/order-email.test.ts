@@ -3,6 +3,7 @@ import {
   buildBuyerEmail,
   buildOwnerEmail,
   buildShippingEmail,
+  configuredBankInfo,
   escapeHtml,
   subjectText,
   type EmailOrder,
@@ -23,6 +24,13 @@ const order: EmailOrder = {
 };
 
 describe('order-email', () => {
+  it('configuredBankInfo — 설정되지 않았으면 자리표시 문구가 아니라 null', () => {
+    expect(configuredBankInfo('은행 000-00 (예금주)')).toBe('은행 000-00 (예금주)');
+    expect(configuredBankInfo('  은행 000-00  ')).toBe('은행 000-00');
+    expect(configuredBankInfo('')).toBeNull();
+    expect(configuredBankInfo('   ')).toBeNull();
+  });
+
   it('escapeHtml', () => {
     expect(escapeHtml('<a href="x">&</a>')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
   });

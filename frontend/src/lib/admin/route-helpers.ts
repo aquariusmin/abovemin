@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { z } from 'zod';
 import { isAdminRequest, assertSameOrigin } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { getCloudinaryConfig, type CloudinaryConfig } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { isMissingSchemaError } from '@/lib/db-compat';
 import { firstIssue } from './schemas';
@@ -12,11 +13,12 @@ import { ADMIN_STUDIO_MIGRATION, ARCHIVE_EXTRAS_MIGRATION } from './limits';
 /**
  * 관리 API 라우트의 공통 관문. **서버 전용.**
  *
- * 기존 라우트(`api/admin/photos` 등)는 같은 여섯 줄 — origin 확인, 세션 확인,
+ * 처음 라우트들(`api/admin/photos` 등)은 같은 여섯 줄 — origin 확인, 세션 확인,
  * DB 클라이언트, 본문 파싱 — 을 라우트마다 손으로 적었다. 라우트가 열 개를
- * 넘으면 그중 하나는 반드시 한 줄을 빠뜨린다. 새 라우트는 이 파일을 거친다.
+ * 넘으면 그중 하나는 반드시 한 줄을 빠뜨린다. 지금은 모든 관리 라우트가 이
+ * 파일을 거친다.
  *
- * 순서는 기존과 같다: 변경 요청은 origin을 먼저 본다(쿠키가 실린 교차 출처
+ * 순서는 그때와 같다: 변경 요청은 origin을 먼저 본다(쿠키가 실린 교차 출처
  * 요청을 세션 조회 전에 끊는다).
  */
 
@@ -45,6 +47,26 @@ export function adminDb(label: string): Guarded<SupabaseClient> {
   } catch (error) {
     log.error(`${label}_config`, error);
     return { ok: false, response: jsonError('Admin database is not configured', 503) };
+  }
+}
+
+export const CLOUDINARY_NOT_CONFIGURED = 'Cloudinary is not configured';
+/** 업로드 서명과 업로드 결과 저장이 쓰는 문구. 화면에 그대로 보이므로 나눠 둔 채로 둔다. */
+export const CLOUDINARY_UPLOAD_NOT_CONFIGURED = 'Cloudinary upload is not configured';
+
+/**
+ * Cloudinary 설정(`CLOUDINARY_*`). 환경 변수가 빠졌으면 503 — `adminDb`와 같은
+ * 모양이다. 로그 이름은 `${label}_cloudinary`.
+ */
+export function adminCloudinary(
+  label: string,
+  message: string = CLOUDINARY_NOT_CONFIGURED,
+): Guarded<CloudinaryConfig> {
+  try {
+    return { ok: true, value: getCloudinaryConfig() };
+  } catch (error) {
+    log.error(`${label}_cloudinary`, error);
+    return { ok: false, response: jsonError(message, 503) };
   }
 }
 

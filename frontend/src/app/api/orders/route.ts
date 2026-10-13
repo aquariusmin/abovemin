@@ -3,9 +3,11 @@ import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, sendEmails } from '@/lib/order-email';
+import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, configuredBankInfo, sendEmails, type EmailMessage } from '@/lib/order-email';
+import { emailSentPatch, recordEmailSent, type OrderEmailKind } from '@/lib/order-email-status';
 import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
+import { orderPlacedBody } from '@/lib/order-placed';
 
 /**
  * 주문 한 건은 메일 두 통(손님·운영자)을 부른다. 이 엔드포인트는 로그인 없이
@@ -55,7 +57,7 @@ async function findOrderByIdempotencyKey(supabase: AdminClient, key: string | nu
 
 function replayResponse(order: ExistingOrder) {
   log.info('orders.idempotent_replay', { orderId: order.id });
-  return NextResponse.json({ success: true, orderId: order.id, total_price: order.total_price });
+  return NextResponse.json(orderPlacedBody(order.id, order.total_price, configuredBankInfo()));
 }
 
 export async function POST(request: Request) {
@@ -185,21 +187,46 @@ export async function POST(request: Request) {
   // "주문 완료"를 바로 본다 — 예전에는 메일 두 통이 끝날 때까지 버튼이 돌았고,
   // 그 사이 다시 누르면 주문이 두 번 들어갔다. 실패는 여기서도 삼킨다: 주문은
   // 이미 저장됐고, 입금 안내는 관리 화면에서 다시 보낼 수 있다.
+  //
+  // 보낸 뒤에는 **나간 메일만** 시각을 적는다(`lib/order-email-status.ts`).
+  // 실패가 로그에만 있으면 손님은 계좌를 못 받고 운영자는 주문이 온 줄 모른다 —
+  // 적어 두면 관리 화면이 "메일 미발송"으로 보여 준다. 전체 한도에 걸려
+  // 건너뛴 손님 메일도 null로 남는다.
   after(async () => {
-    const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
-    if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
-    const messages = buyerQuota.ok ? [buildBuyerEmail(emailOrder)] : [];
-    // 운영자 주소가 없으면 알림을 건너뛴다(`OWNER_EMAIL`의 주석). 주문은 이미
-    // 저장됐고 관리 화면에 보이지만, 알림이 안 간다는 사실은 로그에 남긴다.
-    if (OWNER_EMAIL) messages.push(buildOwnerEmail(emailOrder, OWNER_EMAIL));
-    else log.error('orders.owner_email_unset', { orderId });
-    if (messages.length === 0) return;
+    // 이 콜백에서 나가는 예외는 받을 곳이 없다. 기록은 부가 기능이다.
     try {
-      await sendEmails(messages);
-    } catch (emailErr) {
-      log.error('orders.email_send', emailErr);
+      const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
+      if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
+      const kinds: OrderEmailKind[] = [];
+      const messages: EmailMessage[] = [];
+      if (buyerQuota.ok) {
+        kinds.push('buyer');
+        messages.push(buildBuyerEmail(emailOrder));
+      }
+      // 운영자 주소가 없으면 알림을 건너뛴다(`OWNER_EMAIL`의 주석). 주문은 이미
+      // 저장됐고 관리 화면에 보이지만, 알림이 안 간다는 사실은 로그에 남긴다.
+      if (OWNER_EMAIL) {
+        kinds.push('owner');
+        messages.push(buildOwnerEmail(emailOrder, OWNER_EMAIL));
+      } else {
+        log.error('orders.owner_email_unset', { orderId });
+      }
+      if (messages.length === 0) return;
+
+      // 한 통씩 따로 간다 — 실패도 한 통씩, 어느 주문의 어느 메일인지와 함께 남긴다.
+      const outcomes = await sendEmails(messages);
+      outcomes.forEach((outcome, i) => {
+        if (!outcome.ok) log.error('orders.email_send', { orderId, kind: kinds[i], error: outcome.error });
+      });
+
+      const recorded = await recordEmailSent(supabase, orderId, emailSentPatch(kinds, outcomes, new Date().toISOString()));
+      if (recorded === 'failed') log.error('orders.email_status_record', { orderId });
+    } catch (afterErr) {
+      log.error('orders.email_after', { orderId, error: afterErr instanceof Error ? afterErr.message : String(afterErr) });
     }
   });
 
-  return NextResponse.json({ success: true, orderId, total_price });
+  // 계좌 정보를 응답에도 싣는다 — 확인 메일이 늦거나 스팸함에 들어가도 손님이
+  // 완료 화면만 보고 입금할 수 있어야 한다(`lib/order-placed.ts`).
+  return NextResponse.json(orderPlacedBody(orderId, total_price, configuredBankInfo()));
 }

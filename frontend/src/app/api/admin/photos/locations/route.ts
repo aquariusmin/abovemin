@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { countLocations, findLocationVariants } from '@/lib/admin/data-checks';
 import { LocationRename } from '@/lib/admin/schemas';
 import {

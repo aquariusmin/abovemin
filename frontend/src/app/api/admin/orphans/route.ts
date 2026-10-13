@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getCloudinaryConfig, type CloudinaryConfig } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
 import { OrphanDelete } from '@/lib/admin/schemas';
 import { partitionDeletable } from '@/lib/admin/orphans';
@@ -11,6 +10,7 @@ import {
   type CloudinaryResource,
 } from '@/lib/admin/cloudinary-admin';
 import {
+  adminCloudinary,
   adminDb,
   dbErrorResponse,
   guardMutation,
@@ -31,19 +31,10 @@ import {
  * 그 밖의 자산은 코드가 직접 가리킬 수 있어 DB만 보고 판정할 수 없다.
  */
 
-function cloudinaryConfig(label: string): { ok: true; value: CloudinaryConfig } | { ok: false; response: NextResponse } {
-  try {
-    return { ok: true, value: getCloudinaryConfig() };
-  } catch (error) {
-    log.error(`${label}_config`, error);
-    return { ok: false, response: jsonError('Cloudinary is not configured', 503) };
-  }
-}
-
 export async function GET() {
   const denied = await guardRead();
   if (denied) return denied;
-  const config = cloudinaryConfig('admin_orphans');
+  const config = adminCloudinary('admin_orphans');
   if (!config.ok) return config.response;
   const db = adminDb('admin_orphans');
   if (!db.ok) return db.response;
@@ -96,7 +87,7 @@ export async function DELETE(request: Request) {
   if (denied) return denied;
   const body = await parseBody(request, OrphanDelete);
   if (!body.ok) return body.response;
-  const config = cloudinaryConfig('admin_orphans_delete');
+  const config = adminCloudinary('admin_orphans_delete');
   if (!config.ok) return config.response;
   const db = adminDb('admin_orphans_delete');
   if (!db.ok) return db.response;

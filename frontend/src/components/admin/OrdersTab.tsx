@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { adminFetch, downloadText, errorMessage } from '@/lib/admin/client';
+import { ORDER_EMAIL_STATUS_MIGRATION } from '@/lib/admin/limits';
 import { ordersToCsv } from '@/lib/admin/orders-csv';
+import { emailTrackingStart, isBuyerEmailMissing } from '@/lib/order-email-status';
 import type { OrderItemRecord } from '@/lib/order-items';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
@@ -10,6 +12,7 @@ import { useRetryAfterRelogin } from './SessionRetry';
 import {
   BTN_SM,
   CHECKBOX_CLASS,
+  CHIP_KO,
   FILTER_CHIP_CLASS,
   INPUT_CLASS,
   INPUT_COMPACT,
@@ -46,6 +49,9 @@ interface Order {
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   admin_memo?: string | null;
+  /** `20261014000000_order_email_status` 이후 컬럼. 그 전의 주문은 null(=모름). */
+  buyer_email_sent_at?: string | null;
+  owner_email_sent_at?: string | null;
 }
 
 const STATUSES: OrderStatus[] = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
@@ -71,6 +77,7 @@ export default function OrdersTab() {
 
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [migrationPending, setMigrationPending] = useState(false);
+  const [emailStatusPending, setEmailStatusPending] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [filter, setFilter] = useState<OrderStatus | 'all'>(isStatus(statusParam) ? statusParam : 'all');
@@ -87,10 +94,11 @@ export default function OrdersTab() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await adminFetch<{ orders: Order[]; migrationPending: boolean }>('/api/admin/orders');
+        const data = await adminFetch<{ orders: Order[]; migrationPending: boolean; emailStatusPending?: boolean }>('/api/admin/orders');
         if (cancelled) return;
         setOrders(data.orders);
         setMigrationPending(data.migrationPending);
+        setEmailStatusPending(Boolean(data.emailStatusPending));
         setLoadError(null);
       } catch (e) {
         if (!cancelled) setLoadError(errorMessage(e, '주문을 불러오지 못했습니다.'));
@@ -121,6 +129,8 @@ export default function OrdersTab() {
     return [String(order.id), order.name, order.email, order.phone ?? '', order.tracking_number ?? '']
       .some(value => value.toLowerCase().includes(needle));
   });
+  // 옛 주문의 null은 "모름"이다 — 기록이 시작된 뒤의 주문만 미발송으로 본다.
+  const trackingStart = emailTrackingStart(orders);
   const revenue = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + o.total_price, 0);
 
   function replaceOrder(next: Order) {
@@ -152,6 +162,7 @@ export default function OrdersTab() {
       />
 
       {migrationPending && <MigrationNotice feature="송장 번호·관리자 메모" />}
+      {emailStatusPending && <MigrationNotice feature="주문 메일 발송 기록(메일 미발송 표시)" file={ORDER_EMAIL_STATUS_MIGRATION} />}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2" role="group" aria-label="주문 상태 필터">
@@ -191,6 +202,7 @@ export default function OrdersTab() {
               order={order}
               expanded={expandedId === order.id}
               migrationPending={migrationPending}
+              emailMissing={isBuyerEmailMissing(order, trackingStart)}
               onToggle={() => setExpandedId(expandedId === order.id ? null : order.id)}
               onUpdated={replaceOrder}
             />
@@ -207,12 +219,15 @@ function OrderCard({
   order,
   expanded,
   migrationPending,
+  emailMissing,
   onToggle,
   onUpdated,
 }: {
   order: Order;
   expanded: boolean;
   migrationPending: boolean;
+  /** 입금 안내 메일이 나간 기록이 없다(`isBuyerEmailMissing`). */
+  emailMissing: boolean;
   onToggle: () => void;
   onUpdated: (order: Order) => void;
 }) {
@@ -294,6 +309,11 @@ function OrderCard({
     try {
       await adminFetch('/api/admin/orders/email', 'POST', { id: order.id, kind });
       setMessage({ tone: 'ok', text: `${order.email}로 메일을 보냈습니다.` });
+      // 서버도 같은 때에 시각을 적는다. 컬럼이 아직 없으면(필드 자체가 없음)
+      // 화면도 지어내지 않는다.
+      if (kind === 'confirmation' && order.buyer_email_sent_at !== undefined) {
+        onUpdated({ ...order, buyer_email_sent_at: new Date().toISOString() });
+      }
     } catch (e) {
       setMessage({ tone: 'error', text: errorMessage(e, '메일을 보내지 못했습니다.') });
     } finally {
@@ -322,6 +342,14 @@ function OrderCard({
         <span className="flex items-center gap-3 sm:contents">
           <span className="w-12 shrink-0 font-mono text-[12px] text-muted-foreground">#{order.id}</span>
           <span className={`${ORDER_STATUS_CHIP[order.status]} shrink-0`}>{ORDER_STATUS_LABEL[order.status]}</span>
+          {emailMissing && (
+            <span
+              className={`chip-brick ${CHIP_KO} shrink-0 whitespace-nowrap`}
+              title="입금 안내 메일이 나간 기록이 없습니다. 주문을 열어 '주문 확인' 메일을 다시 보내 주세요."
+            >
+              메일 미발송
+            </span>
+          )}
           <span aria-hidden className="ml-auto text-xs text-muted-foreground sm:hidden">{expanded ? '▲' : '▼'}</span>
         </span>
         <span className="min-w-0 flex-1">

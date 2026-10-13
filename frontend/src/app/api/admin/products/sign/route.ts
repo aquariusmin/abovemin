@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCloudinaryConfig, signUploadParams, SHOP_UPLOAD_FOLDER } from '@/lib/cloudinary-upload';
-import { log } from '@/lib/logger';
-import { guardMutation, jsonError } from '@/lib/admin/route-helpers';
+import { signUploadParams, SHOP_UPLOAD_FOLDER } from '@/lib/cloudinary-upload';
+import { CLOUDINARY_UPLOAD_NOT_CONFIGURED, adminCloudinary, guardMutation } from '@/lib/admin/route-helpers';
 
 /**
  * 상품 이미지를 브라우저가 Cloudinary에 직접 올리기 위한 서명.
@@ -15,13 +14,9 @@ export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
 
-  let config;
-  try {
-    config = getCloudinaryConfig();
-  } catch (error) {
-    log.error('admin_products_sign_cloudinary', error);
-    return jsonError('Cloudinary upload is not configured', 503);
-  }
+  const cloudinary = adminCloudinary('admin_products_sign', CLOUDINARY_UPLOAD_NOT_CONFIGURED);
+  if (!cloudinary.ok) return cloudinary.response;
+  const config = cloudinary.value;
 
   const params = {
     folder: SHOP_UPLOAD_FOLDER,
