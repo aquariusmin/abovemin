@@ -30,7 +30,13 @@ interface Photo {
   iso?: number | null;
 }
 
-export default function PhotoGrid({ photos }: { photos: Photo[] }) {
+/**
+ * `eagerFirst`: 첫 칸을 바로, 높은 우선순위로 받는다. 이 그리드가 화면 맨 위에
+ * 오는 곳(앨범 페이지)에서는 첫 칸이 LCP라 기본값이 true다. 다른 내용 아래에
+ * 놓이는 곳(/archive — 앨범 표지들 밑)에서는 꺼야 한다: 보이지도 않는 사진이
+ * 진짜 LCP인 표지와 대역폭을 다툰다.
+ */
+export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo[]; eagerFirst?: boolean }) {
   // 열린 사진이 URL에 있다.
   //
   // 45장짜리 앨범에서 한 장을 누군가에게 보여 주려면 "japan 앨범 열고 열두
@@ -110,7 +116,7 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
     <>
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
         {photos.map((photo, i) => (
-          <PhotoTile key={photo.id} photo={photo} index={i} onOpen={open} />
+          <PhotoTile key={photo.id} photo={photo} index={i} onOpen={open} eager={eagerFirst && i === 0} />
         ))}
       </div>
 
@@ -137,7 +143,17 @@ export default function PhotoGrid({ photos }: { photos: Photo[] }) {
  * 모든 타일이 보이므로, CSS columns의 둘째·셋째 열 맨 위 타일도 하이드레이션을
  * 기다리지 않는다 — 판정 방식은 훅의 주석.
  */
-function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOpen: (index: number) => void }) {
+function PhotoTile({
+  photo,
+  index,
+  onOpen,
+  eager,
+}: {
+  photo: Photo;
+  index: number;
+  onOpen: (index: number) => void;
+  eager: boolean;
+}) {
   const reduce = useReducedMotion();
   const { ref, deferred, hidden } = useBelowFoldReveal<HTMLButtonElement>();
   // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
@@ -196,8 +212,8 @@ function PhotoTile({ photo, index, onOpen }: { photo: Photo; index: number; onOp
           style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
           draggable={false}
           fadeIn={deferred}
-          loading={index === 0 ? 'eager' : 'lazy'}
-          fetchPriority={index === 0 ? 'high' : 'auto'}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchPriority={eager ? 'high' : 'auto'}
         />
       </div>
       {hasCaption && (

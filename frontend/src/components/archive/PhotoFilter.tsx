@@ -267,12 +267,12 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
       {!active ? (
         // 조건을 고르기 전: 최근 사진 한 화면 분량. 컬렉션 전체는 바로 위
         // 그리드가 이미 더 나은 방식으로 보여 주고 있다.
-        <PhotoGrid key="recent" photos={recent} />
+        <PhotoGrid key="recent" photos={recent} eagerFirst={false} />
       ) : filtered.length > 0 ? (
         <>
           {/* 조건이 바뀌면 그리드를 새로 만든다. 재사용하면 사진이 자리만
               바뀌면서 스크롤 리빌 애니메이션이 어긋난다. */}
-          <PhotoGrid key={`${year}-${place}-${camera}`} photos={shown} />
+          <PhotoGrid key={`${year}-${place}-${camera}`} photos={shown} eagerFirst={false} />
           {filtered.length > shown.length && (
             <div className="mt-10 text-center">
               <button
