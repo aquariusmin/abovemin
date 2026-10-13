@@ -4,11 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
-import { hidesSiteChrome } from '@/lib/chrome';
 
 export default function Nav() {
   const pathname = usePathname();
-  const chromeless = hidesSiteChrome(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -85,8 +83,6 @@ export default function Nav() {
   ];
 
   const isActiveLink = (href: string) => pathname?.startsWith(href);
-
-  if (chromeless) return null;
 
   // Nav labels scale with the viewport instead of sitting at a fixed 11px:
   // cramped where the row is tightest (they only appear from `lg`) and

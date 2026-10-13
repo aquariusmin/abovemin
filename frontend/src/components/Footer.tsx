@@ -1,8 +1,4 @@
-"use client";
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { hidesSiteChrome } from '@/lib/chrome';
 import { CONTACT_EMAIL } from '@/lib/site';
 
 // About and Portfolio are deliberately absent here, as they are in `Nav`.
@@ -15,8 +11,8 @@ import { CONTACT_EMAIL } from '@/lib/site';
 // whole truth.
 // Notes는 공개된 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
 // `notFound()`를 부르므로, 조건 없이 링크하면 푸터에서 404로 가는 길이 생긴다.
-// 글은 DB에 있고 이 컴포넌트는 클라이언트라 직접 읽지 못한다 — 루트 레이아웃이
-// 서버에서 `hasPublishedNotes()`를 읽어 `hasNotes`로 넘긴다.
+// `SiteChrome`이 `hasPublishedNotes()`를 읽어 `hasNotes`로 넘긴다 — 읽기가
+// 실패했을 때 링크만 숨기는 처리를 거기 한 곳에 두기 위해서다.
 function navItems(hasNotes: boolean) {
   return [
     { href: '/archive', label: 'Archive' },
@@ -33,9 +29,6 @@ const CONNECT = [
 ];
 
 export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
-  const pathname = usePathname();
-  if (hidesSiteChrome(pathname)) return null;
-
   return (
     // The page's deepest surface. Ending on forest-black lets the warm canvas
     // above read as daylight and gives the wordmark one full-bleed moment.

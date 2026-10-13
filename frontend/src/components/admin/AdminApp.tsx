@@ -117,24 +117,6 @@ export default function AdminApp() {
     };
   }, []);
 
-  // 탭 바가 붙을 높이 = 사이트 내비게이션(fixed)의 실제 높이. 내비게이션은
-  // 글자 크기가 뷰포트를 따라 변하는 유동 높이라(모바일 약 64px, 데스크톱 약
-  // 77px) 숫자를 박아 두면 그 틈으로 아래 내용이 비치거나 탭 바 윗부분이
-  // 가려진다. 직접 재고, 크기가 바뀌면 다시 잰다.
-  //
-  // 기본값은 0이다. /admin은 공개 내비게이션을 그리지 않으므로(`lib/chrome.ts`)
-  // 보통은 잴 대상이 없고, 그때 64를 남겨 두면 탭 바 위로 빈 띠가 생긴다.
-  const [navOffset, setNavOffset] = useState(0);
-  useEffect(() => {
-    const nav = Array.from(document.querySelectorAll('nav')).find(
-      el => getComputedStyle(el).position === 'fixed',
-    );
-    if (!nav) return;
-    const observer = new ResizeObserver(() => setNavOffset(Math.round(nav.getBoundingClientRect().bottom)));
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [authed]);
-
   // 어느 탭에서든 401을 받으면(`adminFetch`가 이벤트를 낸다) 다시 로그인을 받는다.
   // `authed`를 내리면 대시보드가 언마운트되어 쓰던 초안이 사라진다 — 그래서
   // 대시보드 위에 로그인 대화상자를 띄운다(`SessionExpiredDialog`). 아직 로그인
@@ -193,7 +175,7 @@ export default function AdminApp() {
                   <h1 className="font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">관리</h1>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* /admin에는 사이트 내비게이션이 없어서(`lib/chrome.ts`) 여기가
+                  {/* /admin에는 사이트 내비게이션이 없어서(`(bare)` 라우트 그룹) 여기가
                       홈으로 가는 유일한 길이다. next/link가 아니라 <a>인 이유:
                       전체 이동이어야 저장 안 한 초안이 있을 때 beforeunload
                       경고(UnsavedGuard)가 뜬다 — 클라이언트 이동은 그걸 건너뛴다. */}
@@ -209,10 +191,10 @@ export default function AdminApp() {
               <hr className="rule-accent mt-6" />
             </header>
 
-            {/* 사이트 내비게이션(fixed) 바로 아래에 붙는다. 좁은 폭에서 일곱 탭이
-                한 줄에 안 들어가면 가로 스크롤로 둔다 — 줄바꿈하면 탭 바 높이가
+            {/* 화면 맨 위에 붙는다(/admin에는 사이트 내비게이션이 없다). 좁은 폭에서
+                일곱 탭이 한 줄에 안 들어가면 가로 스크롤로 둔다 — 줄바꿈하면 탭 바 높이가
                 폭마다 달라져 아래 내용이 튄다. */}
-            <div className="sticky z-30 border-b border-border bg-canvas/95 backdrop-blur" style={{ top: navOffset }}>
+            <div className="sticky top-0 z-30 border-b border-border bg-canvas/95 backdrop-blur">
               <div
                 role="tablist"
                 aria-label="관리 메뉴"
