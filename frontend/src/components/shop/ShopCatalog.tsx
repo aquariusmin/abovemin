@@ -233,7 +233,12 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                   alt={item.name}
                   width={0}
                   height={0}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  // 칸의 실제 폭(`PhotoGrid`와 같은 계산, 열 사이는 24px → md부터 32px).
+                  //   1480px~      (1400 − 2×32) ÷ 3 = 445.3px
+                  //   1024~1479px  (100vw − 80 − 64) ÷ 3 → 31vw 이하
+                  //   640~1023px   (100vw − 48 − 24) ÷ 2, md부터 (100vw − 80 − 32) ÷ 2 → 46vw 이하
+                  //   ~639px       100vw − 40px
+                  sizes="(min-width: 1480px) 446px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)"
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   // 사진을 받기 전에 자리를 잡는다. `width={0} height={0}`만으로는
                   // 높이 0인 칸이 놓였다가 사진이 올 때 카드의 글자와 그 열의
