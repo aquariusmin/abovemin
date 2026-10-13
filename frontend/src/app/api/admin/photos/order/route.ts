@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { isMissingSchemaError } from '@/lib/db-compat';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { PhotoOrder } from '@/lib/admin/schemas';
 import {
   adminDb,

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
-import { SETTINGS_CACHE_TAG } from '@/lib/cache-tags';
+import { revalidateSettings } from '@/lib/admin/revalidate';
 import { SettingsUpdate } from '@/lib/admin/schemas';
 import { adminDb, dbErrorResponse, guardMutation, guardRead, parseBody } from '@/lib/admin/route-helpers';
 
@@ -42,6 +41,6 @@ export async function PATCH(request: Request) {
     if (error) return dbErrorResponse(`admin_settings_upsert.${key}`, error);
   }
 
-  revalidateTag(SETTINGS_CACHE_TAG, { expire: 0 });
+  revalidateSettings();
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { log } from '@/lib/logger';
 import { fillPhotoMetadata, metadataProgress } from '@/lib/admin/metadata-fill';
 import { MetadataRecheck, firstIssue } from '@/lib/admin/schemas';

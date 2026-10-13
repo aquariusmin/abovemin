@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
-import { revalidateArchive } from '@/lib/cache-tags';
+import { revalidateArchive } from '@/lib/admin/revalidate';
 import { PHOTO_COLUMN_LEVEL, photoColumnSets, selectWithColumnSets } from '@/lib/admin/photo-columns';
 import {
   CLOUDINARY_UPLOAD_NOT_CONFIGURED,
