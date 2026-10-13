@@ -119,3 +119,28 @@ describe('ordersToCsv — 옵션', () => {
     expect(csv).toContain('숲 포스터 · A3 · 매트지 ×2 / Postcard ×1');
   });
 });
+
+describe('ordersToCsv — 추가 상품', () => {
+  it('상품 칸에 "상품 · 추가: 이름"으로 적는다(키가 없는 옛 줄은 이름만)', () => {
+    const csv = ordersToCsv([
+      {
+        id: 9,
+        created_at: '2026-10-14T01:00:00Z',
+        status: 'pending',
+        name: '박민수',
+        email: 'park@example.com',
+        phone: null,
+        zipcode: null,
+        address: '대구',
+        note: null,
+        items: [
+          { id: 9, name: '2027 Calendar', option_id: null, option_label: null, price: 18000, quantity: 1 },
+          { id: 9, name: '2027 Calendar', option_id: null, option_label: null, addon_id: 'stand', addon_label: '거치대', price: 3000, quantity: 1 },
+          { name: 'Postcard', price: 2000, quantity: 1 },
+        ],
+        total_price: 23000,
+      },
+    ]);
+    expect(csv).toContain('2027 Calendar ×1 / 2027 Calendar · 추가: 거치대 ×1 / Postcard ×1');
+  });
+});

@@ -8,7 +8,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import type { OrderInputValues } from '@/lib/orders-schema';
-import { toOrderItems } from '@/lib/cart-lines';
+import { isAddonLine, toOrderItems } from '@/lib/cart-lines';
+import { ADDON_LABEL } from '@/lib/product';
 import {
   clearPlacedOrder,
   placedOrderFromResponse,
@@ -91,7 +92,9 @@ export default function CheckoutPage() {
     // otherwise.
     //
     // 항목도 같은 이유로 id·옵션 id·수량만 싣는다(`toOrderItems`). 장바구니 줄의
-    // 가격은 화면 표시용이고, 서버는 옵션 가격까지 DB에서 다시 읽는다.
+    // 가격은 화면 표시용이고, 서버는 옵션 가격까지 DB에서 다시 읽는다. 추가 상품
+    // 줄은 `{ id: 부모 상품, addon_id, quantity }`로 나가고, 이름과 가격은 역시
+    // 서버가 `products.addons`에서 읽는다.
     const payload: OrderInputValues = {
       name: form.name.trim(),
       email: form.email.trim(),
@@ -371,7 +374,18 @@ export default function CheckoutPage() {
             <div className="rounded-lg surface-cream p-6 space-y-6">
               <p className="eyebrow text-slate">Order Summary</p>
               <div className="space-y-4">
-                {items.map(item => (
+                {items.map(item => isAddonLine(item) ? (
+                  // 추가 상품 줄: 사진 자리만큼 들여 써서 위 상품에 딸린 줄로 읽히게 한다.
+                  <div key={item.key} className="-mt-2 flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span aria-hidden className="w-14 shrink-0" />
+                      <p className="min-w-0 truncate text-xs text-slate">
+                        {ADDON_LABEL}: {item.addon_label}&nbsp;· × {item.quantity}
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-ink-body tabular-nums shrink-0">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</p>
+                  </div>
+                ) : (
                   <div key={item.key} className="flex justify-between items-center gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       {/* 높이만 맞추고 폭은 사진 비율대로 — 자르지 않는다. */}

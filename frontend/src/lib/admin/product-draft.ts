@@ -1,13 +1,18 @@
 import {
   availabilityProblem,
   IMAGE_LABELS,
+  MAX_ADDONS,
   MAX_IMAGE_LABEL,
   MAX_OPTION_LABEL,
+  MAX_RELATED,
   OPTION_ID_RE,
   optionsMinPrice,
+  parseAddons,
   parseImages,
   parseOptions,
+  parseRelatedIds,
   productStatus,
+  type ProductAddon,
   type ProductImage,
   type ProductOption,
   type ProductStatus,
@@ -48,6 +53,10 @@ export interface ProductDraft {
   sort_order: string;
   images: DraftImage[];
   options: DraftOption[];
+  /** 추가 상품. 입력 모양이 옵션과 같다(이름·가격·재고). */
+  addons: DraftOption[];
+  /** 함께 구매: 다른 상품의 id, 화면 순서대로. */
+  related_ids: number[];
 }
 
 /** 관리 API(`GET /api/admin/products`)가 돌려주는 행. 새 컬럼은 적용 전에 없다. */
@@ -65,6 +74,9 @@ export interface AdminProductRow {
   images?: unknown;
   options?: unknown;
   edition?: string | null;
+  /** 20261014010000_product_addons 이후 컬럼. */
+  addons?: unknown;
+  related_ids?: unknown;
 }
 
 export const EMPTY_PRODUCT_DRAFT: ProductDraft = {
@@ -79,6 +91,8 @@ export const EMPTY_PRODUCT_DRAFT: ProductDraft = {
   sort_order: '0',
   images: [],
   options: [],
+  addons: [],
+  related_ids: [],
 };
 
 function isPresetLabel(label: string): boolean {
@@ -100,13 +114,16 @@ export function draftFromProduct(row: AdminProductRow): ProductDraft {
       label: image.label ?? '',
       custom: Boolean(image.label) && !isPresetLabel(image.label ?? ''),
     })),
-    options: parseOptions(row.options).map(option => ({
-      id: option.id,
-      label: option.label,
-      price: String(option.price),
-      in_stock: option.in_stock,
-    })),
+    options: parseOptions(row.options).map(draftChoice),
+    addons: parseAddons(row.addons).map(draftChoice),
+    // 지워진 상품의 id도 그대로 둔다 — 편집기가 "지워진 상품"으로 보여 주고
+    // 관리자가 뺄 수 있게. 여기서 말없이 버리면 저장할 때 왜 바뀌었는지 모른다.
+    related_ids: parseRelatedIds(row.related_ids, row.id),
   };
+}
+
+function draftChoice(choice: ProductOption): DraftOption {
+  return { id: choice.id, label: choice.label, price: String(choice.price), in_stock: choice.in_stock };
 }
 
 export interface ProductPayload {
@@ -120,6 +137,8 @@ export interface ProductPayload {
   image_url: string;
   images: ProductImage[];
   options: ProductOption[];
+  addons: ProductAddon[];
+  related_ids: number[];
   sort_order?: number;
 }
 
@@ -127,8 +146,33 @@ export type PayloadResult = { ok: true; body: ProductPayload } | { ok: false; er
 
 const INT_RE = /^\d+$/;
 
-/** 입력 → 본문. 사람이 고칠 수 있는 첫 문제를 한국어로 돌려준다. */
-export function payloadFromDraft(draft: ProductDraft, { includeSortOrder }: { includeSortOrder: boolean }): PayloadResult {
+/**
+ * 옵션·추가 상품 입력 → 저장할 모양. 둘은 같은 규칙이라 한 함수가 본다 — `noun`은
+ * 오류 문구에 들어갈 이름이다("옵션", "추가 상품").
+ */
+function pricedChoices(list: readonly DraftOption[], noun: string): { ok: true; value: ProductOption[] } | { ok: false; error: string } {
+  const value: ProductOption[] = [];
+  for (const [i, entry] of list.entries()) {
+    const label = entry.label.trim();
+    if (!label) return { ok: false, error: `${i + 1}번째 ${noun}의 이름을 적어 주세요.` };
+    if (label.length > MAX_OPTION_LABEL) return { ok: false, error: `${i + 1}번째 ${noun} 이름은 ${MAX_OPTION_LABEL}자까지입니다.` };
+    if (!INT_RE.test(entry.price.trim())) {
+      return { ok: false, error: `“${label}” ${noun}의 가격은 0 이상의 정수(원)로 적어 주세요.` };
+    }
+    if (!OPTION_ID_RE.test(entry.id)) return { ok: false, error: `“${label}” ${noun}의 id가 올바르지 않습니다.` };
+    value.push({ id: entry.id, label, price: Number(entry.price.trim()), in_stock: entry.in_stock });
+  }
+  return { ok: true, value };
+}
+
+/**
+ * 입력 → 본문. 사람이 고칠 수 있는 첫 문제를 한국어로 돌려준다. `selfId`는 고치는
+ * 중인 상품의 id — 함께 구매에 자기 자신이 들어가지 않게 본다(새 상품은 없다).
+ */
+export function payloadFromDraft(
+  draft: ProductDraft,
+  { includeSortOrder, selfId }: { includeSortOrder: boolean; selfId?: number },
+): PayloadResult {
   const name = draft.name.trim();
   if (!name) return { ok: false, error: '상품명을 적어 주세요.' };
   const priceText = draft.price.trim();
@@ -149,17 +193,19 @@ export function payloadFromDraft(draft: ProductDraft, { includeSortOrder }: { in
     images.push({ url: image.url, label: label || null });
   }
 
-  const options: ProductOption[] = [];
-  for (const [i, option] of draft.options.entries()) {
-    const label = option.label.trim();
-    if (!label) return { ok: false, error: `${i + 1}번째 옵션의 이름을 적어 주세요.` };
-    if (label.length > MAX_OPTION_LABEL) return { ok: false, error: `${i + 1}번째 옵션 이름은 ${MAX_OPTION_LABEL}자까지입니다.` };
-    if (!INT_RE.test(option.price.trim())) {
-      return { ok: false, error: `“${label}” 옵션의 가격은 0 이상의 정수(원)로 적어 주세요.` };
-    }
-    if (!OPTION_ID_RE.test(option.id)) return { ok: false, error: `“${label}” 옵션의 id가 올바르지 않습니다.` };
-    options.push({ id: option.id, label, price: Number(option.price.trim()), in_stock: option.in_stock });
-  }
+  const parsedOptions = pricedChoices(draft.options, '옵션');
+  if (!parsedOptions.ok) return parsedOptions;
+  const options = parsedOptions.value;
+
+  if (draft.addons.length > MAX_ADDONS) return { ok: false, error: `추가 상품은 ${MAX_ADDONS}개까지 둘 수 있습니다.` };
+  const parsedAddons = pricedChoices(draft.addons, '추가 상품');
+  if (!parsedAddons.ok) return parsedAddons;
+  const addons = parsedAddons.value;
+
+  const related_ids = draft.related_ids;
+  if (related_ids.length > MAX_RELATED) return { ok: false, error: `함께 구매는 ${MAX_RELATED}개까지 고를 수 있습니다.` };
+  if (new Set(related_ids).size !== related_ids.length) return { ok: false, error: '함께 구매에 같은 상품이 두 번 들어 있습니다.' };
+  if (selfId !== undefined && related_ids.includes(selfId)) return { ok: false, error: '함께 구매에 이 상품 자신을 넣을 수 없습니다.' };
 
   // 옵션이 있으면 상품 가격 칸은 쓰지 않는다 — 서버가 가장 싼 옵션 값으로 맞춘다.
   // 여기서도 같게 맞춰 두어야 "바뀐 필드" 비교가 헛돌지 않는다.
@@ -180,6 +226,8 @@ export function payloadFromDraft(draft: ProductDraft, { includeSortOrder }: { in
       image_url: images[0].url,
       images,
       options,
+      addons,
+      related_ids: [...related_ids],
       ...(includeSortOrder ? { sort_order: Number(draft.sort_order.trim()) } : {}),
     },
   };
@@ -198,14 +246,32 @@ export function changedFields(before: ProductPayload, after: ProductPayload): Pa
  * 새 옵션의 id. 라벨에서 만들지 않는다 — 라벨은 한국어이고("A3 · 매트지"),
  * 라벨을 고쳐도 id는 그대로여야 장바구니에 담긴 줄이 계속 맞는다.
  */
-export function newOptionId(existing: readonly string[], random: () => number = Math.random): string {
+export function newOptionId(existing: readonly string[], random: () => number = Math.random, prefix = 'opt'): string {
   const taken = new Set(existing);
   for (let attempt = 0; attempt < 20; attempt++) {
-    const id = `opt-${Math.floor(random() * 36 ** 5).toString(36).padStart(5, '0')}`;
+    const id = `${prefix}-${Math.floor(random() * 36 ** 5).toString(36).padStart(5, '0')}`;
     if (!taken.has(id)) return id;
   }
   // 난수가 스무 번 겹칠 일은 없지만, 무한 반복으로 화면이 멈추는 것보다 낫다.
   let n = taken.size + 1;
-  while (taken.has(`opt-${n}`)) n++;
-  return `opt-${n}`;
+  while (taken.has(`${prefix}-${n}`)) n++;
+  return `${prefix}-${n}`;
+}
+
+/** 새 추가 상품의 id. 옵션과 같은 형식이고 머리말만 다르다(`add-k3f9a`). */
+export function newAddonId(existing: readonly string[], random: () => number = Math.random): string {
+  return newOptionId(existing, random, 'add');
+}
+
+/**
+ * 함께 구매에 고를 수 있는 상품: 자기 자신과 이미 고른 것을 뺀 나머지, 목록 순서
+ * 그대로. 초안도 고를 수 있다 — 공개 화면에는 판매를 시작한 뒤에 나타난다.
+ */
+export function relatedCandidates<P extends { id: number }>(
+  products: readonly P[],
+  selected: readonly number[],
+  selfId?: number,
+): P[] {
+  const taken = new Set(selected);
+  return products.filter(product => product.id !== selfId && !taken.has(product.id));
 }

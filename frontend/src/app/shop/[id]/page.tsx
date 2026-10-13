@@ -4,9 +4,10 @@ import { getProducts, getProductById } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ProductGallery from '@/components/shop/ProductGallery';
 import ProductPurchase from '@/components/shop/ProductPurchase';
+import RelatedProducts, { type RelatedItem } from '@/components/shop/RelatedProducts';
 import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
-import { isOptionAvailable, parseImages, priceRange, publicState, SOLD_OUT_LABEL } from '@/lib/product';
+import { isOptionAvailable, parseImages, priceRange, publicState, relatedProducts, SOLD_OUT_LABEL } from '@/lib/product';
 import BackLink from '@/components/BackLink';
 
 export const revalidate = 60;
@@ -81,12 +82,37 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const aspects = await Promise.all(images.map(image => cloudinaryAspect(image.url)));
   const gallery = images.map((image, i) => ({ ...image, aspect: aspects[i] }));
 
+  // 함께 구매. 이어 둔 상품이 있을 때만 목록을 읽는다 — 없으면(마이그레이션 전
+  // 포함) 조회가 하나도 늘지 않는다. 공개 목록에서 찾으므로 초안과 지워진 상품은
+  // 저절로 빠진다. 이 조회가 실패해도 상품 페이지는 떠야 한다: 구역만 뺀다.
+  //
+  // 여기 실리는 것은 **다른 상품의** 이름·가격·사진·상태다. 그 상품을 고치면
+  // 이 페이지도 다시 구워져야 하는데, 관리 API의 `revalidateShop`이
+  // `revalidatePath('/shop/[id]', 'page')`로 상세 페이지 **전부**를 무효화하므로
+  // 따로 할 일이 없다(`lib/admin/revalidate.ts`).
+  const relatedIds = product.related_ids ?? [];
+  const catalog = relatedIds.length ? await getProducts().catch(() => []) : [];
+  const related: RelatedItem[] = relatedProducts(relatedIds, catalog, product.id).map(item => {
+    const { min, max } = priceRange(item);
+    return {
+      id: item.id,
+      name: item.name,
+      image_url: item.images?.[0]?.url ?? item.image_url,
+      state: publicState(item) === 'available' ? 'available' : 'sold_out',
+      price: item.price,
+      priceMin: min,
+      priceMax: max,
+      hasOptions: (item.options?.length ?? 0) > 0,
+    };
+  });
+
   // `offers` only when there is a price to offer. A product still waiting on
   // one carries `price: 0`, and an Offer saying a thing costs ₩0 is a claim,
   // not a placeholder — search engines render it as free. Omitting the node
   // says "no offer yet", which is what is true.
   //
   // 옵션 상품은 옵션마다 Offer 하나. 가격이 정해진 옵션만 싣는다.
+  // 추가 상품은 싣지 않는다 — 혼자서는 살 수 없으니 이 상품의 Offer가 아니다.
   const availability = (inStock: boolean) =>
     inStock && !soldOut ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
   const offers = options.length
@@ -165,6 +191,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           <ProductPurchase
             product={{ id: product.id, name: product.name, price: product.price, image_url: images[0]?.url ?? product.image_url }}
             options={options}
+            addons={product.addons ?? []}
             priceMin={range.min}
             priceMax={range.max}
             soldOut={soldOut}
@@ -183,6 +210,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           )}
         </Reveal>
       </section>
+
+      {related.length > 0 && <RelatedProducts items={related} />}
     </main>
   );
 }

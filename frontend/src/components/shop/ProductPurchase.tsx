@@ -4,7 +4,9 @@ import { useId, useState } from 'react';
 import Link from 'next/link';
 import AddToCartButton from '@/components/AddToCartButton';
 import { formatPrice, formatPriceRange } from '@/lib/price';
-import { isOptionAvailable, SOLD_OUT_LABEL, type ProductOption } from '@/lib/product';
+import { MAX_LINE_QUANTITY } from '@/lib/cart-lines';
+import { isAddonAvailable, isOptionAvailable, SOLD_OUT_LABEL, type ProductAddon, type ProductOption } from '@/lib/product';
+import QuantityStepper from './QuantityStepper';
 
 interface Props {
   product: {
@@ -14,6 +16,8 @@ interface Props {
     image_url: string;
   };
   options: ProductOption[];
+  /** 이 상품에만 딸린 추가 상품. 없으면(마이그레이션 전 포함) 이 구역이 통째로 없다. */
+  addons: ProductAddon[];
   priceMin: number;
   priceMax: number;
   soldOut: boolean;
@@ -30,8 +34,14 @@ interface Props {
  * 선택지는 네이티브 라디오다. 방향키로 옮겨 다니고, 품절(disabled)은 건너뛰고,
  * 스크린리더가 "3개 중 2번째"를 읽는 것까지 브라우저가 해 준다 — 알약 모양은
  * 라벨이 입는다.
+ *
+ * 추가 상품은 옵션과 반대다: 고르지 않아도 되고 여러 개를 담을 수 있다. 그래서
+ * 라디오가 아니라 0에서 시작하는 수량이고, "담기"가 상품 줄과 고른 추가 상품을
+ * 한 번에 담는다. 추가 상품은 옵션이 아니라 상품에 붙는다 — 옵션을 바꿔도 고른
+ * 수량은 그대로다. 품절인 추가 상품은 보이되 고를 수 없다. 상품 자체가 품절이면
+ * 살 수 있는 것이 없으므로 구역을 그리지 않는다.
  */
-export default function ProductPurchase({ product, options, priceMin, priceMax, soldOut }: Props) {
+export default function ProductPurchase({ product, options, addons, priceMin, priceMax, soldOut }: Props) {
   const hasOptions = options.length > 0;
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     options.length === 1 && isOptionAvailable(options[0]) ? options[0].id : null,
@@ -39,6 +49,8 @@ export default function ProductPurchase({ product, options, priceMin, priceMax, 
   const selected = options.find(option => option.id === selectedId) ?? null;
   const groupId = useId();
   const hintId = `${groupId}-hint`;
+  const [addonQuantity, setAddonQuantity] = useState<Record<string, number>>({});
+  const showAddons = addons.length > 0 && !soldOut;
 
   const priceText = selected
     ? formatPrice(selected.price)
@@ -59,6 +71,26 @@ export default function ProductPurchase({ product, options, priceMin, priceMax, 
           price: selected ? selected.price : product.price,
           image_url: product.image_url,
         };
+
+  // 고른 추가 상품 → 같이 담을 줄. 이름은 부모 상품의 이름이고, 가격은 표시용이다.
+  const extras = showAddons
+    ? addons
+        .filter(addon => isAddonAvailable(addon) && (addonQuantity[addon.id] ?? 0) > 0)
+        .map(addon => ({
+          line: {
+            id: product.id,
+            option_id: null,
+            option_label: null,
+            addon_id: addon.id,
+            addon_label: addon.label,
+            name: product.name,
+            price: addon.price,
+            image_url: '',
+          },
+          quantity: addonQuantity[addon.id],
+        }))
+    : [];
+  const extrasTotal = extras.reduce((sum, extra) => sum + extra.line.price * extra.quantity, 0);
 
   return (
     <div className="space-y-6">
@@ -119,7 +151,57 @@ export default function ProductPurchase({ product, options, priceMin, priceMax, 
         </fieldset>
       )}
 
-      <AddToCartButton line={line} soldOut={soldOut} describedBy={hasOptions ? hintId : undefined} />
+      {showAddons && (
+        <fieldset className="space-y-1">
+          {/* 손님이 읽고 고르는 말이라 한국어다 — Hangul은 eyebrow의 대문자·자간을
+              받지 않으므로 label-ko. */}
+          <legend className="label-ko text-muted-foreground mb-2">추가 상품</legend>
+          <ul className="border-t border-hairline">
+            {addons.map(addon => {
+              const available = isAddonAvailable(addon);
+              return (
+                <li key={addon.id} className="flex min-h-14 items-center justify-between gap-4 border-b border-hairline py-2">
+                  <div className="min-w-0">
+                    <p className={`text-[14px] font-medium leading-snug break-keep ${available ? 'text-ink-body' : 'text-muted-foreground'}`}>
+                      {addon.label}
+                    </p>
+                    <p className="text-[13px] tabular-nums text-muted-foreground">
+                      {!addon.in_stock ? SOLD_OUT_LABEL : addon.price > 0 ? `+ ${formatPrice(addon.price)}` : formatPrice(addon.price)}
+                    </p>
+                  </div>
+                  {/* 살 수 없는 추가 상품에는 수량 버튼을 두지 않는다 — 왜 못
+                      고르는지는 가격 자리의 "품절"(또는 "가격 미정")이 말한다. */}
+                  {available && (
+                    <QuantityStepper
+                      name={addon.label}
+                      value={addonQuantity[addon.id] ?? 0}
+                      min={0}
+                      max={MAX_LINE_QUANTITY}
+                      onChange={next => setAddonQuantity(prev => ({ ...prev, [addon.id]: next }))}
+                      className="shrink-0"
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p aria-live="polite" className="pt-2 text-[13px] text-muted-foreground">
+            {extras.length === 0
+              ? '필요한 만큼 수량을 올리면 이 상품과 함께 담겨요.'
+              : line
+              ? `추가 상품을 더해 ${formatPrice(line.price + extrasTotal)}`
+              : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 담겨요.`}
+          </p>
+        </fieldset>
+      )}
+
+      <AddToCartButton
+        line={line}
+        soldOut={soldOut}
+        describedBy={hasOptions ? hintId : undefined}
+        extras={extras}
+        onAdded={() => setAddonQuantity({})}
+      />
 
       {/* 담을 수 없는 상품에서 "장바구니 보기"는 갈 이유가 없는 길이다. */}
       <div className="flex items-center gap-5 pt-1">

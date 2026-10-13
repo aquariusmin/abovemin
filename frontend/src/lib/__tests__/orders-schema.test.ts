@@ -87,6 +87,57 @@ describe('OrderInput — 옵션', () => {
   });
 });
 
+describe('OrderInput — 추가 상품', () => {
+  const base: OrderInputValues = {
+    name: '홍길동',
+    email: 'hong@example.com',
+    address: '서울시 중구 세종대로 110',
+    items: [
+      { id: 9, option_id: null, quantity: 1 },
+      { id: 9, addon_id: 'stand', quantity: 2 },
+    ],
+  };
+  const withItem = (item: Record<string, unknown>) => OrderInput.safeParse({ ...base, items: [{ id: 9, quantity: 1 }, item] });
+
+  it('추가 상품 줄은 부모 상품 id·추가 상품 id·수량으로 서버까지 간다', () => {
+    expect(OrderInput.parse(base).items).toEqual([
+      { id: 9, option_id: null, quantity: 1 },
+      { id: 9, addon_id: 'stand', quantity: 2 },
+    ]);
+  });
+
+  it('가격·이름을 실어 보내도 서버로 넘어가지 않는다', () => {
+    const parsed = OrderInput.parse({
+      ...base,
+      items: [{ id: 9, quantity: 1 }, { id: 9, addon_id: 'stand', addon_label: '공짜', price: 1, name: 'x', quantity: 1 }],
+    });
+    expect(parsed.items[1]).toEqual({ id: 9, addon_id: 'stand', quantity: 1 });
+  });
+
+  it('추가 상품이 아닌 줄은 키가 없거나 null', () => {
+    expect(withItem({ id: 9, addon_id: null, quantity: 1 }).success).toBe(true);
+    expect(withItem({ id: 9, option_id: 'a3', addon_id: null, quantity: 1 }).success).toBe(true);
+  });
+
+  it('형식이 틀린 추가 상품 id는 막는다', () => {
+    for (const addon_id of ['', 'Stand', 'stand+x', 'a:b', 'a'.repeat(33), ' stand', 7]) {
+      expect(withItem({ id: 9, addon_id, quantity: 1 }).success).toBe(false);
+    }
+  });
+
+  it('한 줄이 옵션과 추가 상품을 함께 가리키면 막는다', () => {
+    const both = withItem({ id: 9, option_id: 'a3', addon_id: 'stand', quantity: 1 });
+    expect(both.success).toBe(false);
+    expect(!both.success && both.error.issues[0].message).toContain('옵션과 추가 상품');
+  });
+
+  it('수량 규칙은 다른 줄과 같다', () => {
+    expect(withItem({ id: 9, addon_id: 'stand', quantity: 0 }).success).toBe(false);
+    expect(withItem({ id: 9, addon_id: 'stand', quantity: 100 }).success).toBe(false);
+    expect(withItem({ id: 9, addon_id: 'stand', quantity: 99 }).success).toBe(true);
+  });
+});
+
 describe('허니팟', () => {
   const base: OrderInputValues = {
     name: '홍길동',

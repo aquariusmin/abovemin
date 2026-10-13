@@ -15,13 +15,20 @@ interface Props {
   soldOut: boolean;
   /** 잠긴 이유를 설명하는 요소의 id(옵션 선택 안내). */
   describedBy?: string;
+  /**
+   * 같이 담을 추가 상품 줄들. 상품 줄과 **한 번에** 담긴다 — 추가 상품은 부모
+   * 줄 없이는 장바구니에 들어가지 않는다(`lib/cart-lines.ts`).
+   */
+  extras?: ReadonlyArray<{ line: NewCartLine; quantity: number }>;
+  /** 담은 직후. 고른 추가 상품 수량을 되돌리는 데 쓴다 — 다시 누르면 또 담기지 않게. */
+  onAdded?: () => void;
 }
 
-export default function AddToCartButton({ line, soldOut, describedBy }: Props) {
+export default function AddToCartButton({ line, soldOut, describedBy, extras, onAdded }: Props) {
   // Selector, not the whole store: destructuring subscribes this button to
   // every cart change, so adding one item re-rendered every Add button on the
-  // page. `addItem` is a stable reference, so this never re-renders at all.
-  const addItem = useCartStore(state => state.addItem);
+  // page. `addItems` is a stable reference, so this never re-renders at all.
+  const addItems = useCartStore(state => state.addItems);
   const [added, setAdded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -29,7 +36,8 @@ export default function AddToCartButton({ line, soldOut, describedBy }: Props) {
 
   const handleAddToCart = () => {
     if (!line || soldOut) return;
-    addItem(line);
+    addItems([{ line }, ...(extras ?? [])]);
+    onAdded?.();
     setAdded(true);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setAdded(false), 1500);

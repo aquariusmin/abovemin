@@ -14,16 +14,27 @@ import { OPTION_ID_RE } from './product';
  * 객체 리터럴에 스키마가 모르는 키가 있으면 TypeScript가 거기서 막는다.
  * 런타임 테스트는 그 뒤를 받친다(`orders-schema.test.ts`).
  */
-export const OrderItemInput = z.object({
-  id: z.number().int().positive(),
-  /**
-   * 옵션이 있는 상품이면 고른 옵션의 id. **가격은 받지 않는다** — 서버가 이
-   * id로 `products.options`에서 가격을 다시 읽는다(`lib/order-items.ts`).
-   * 옵션이 생기기 전의 장바구니는 이 키 없이 오므로 optional이다.
-   */
-  option_id: z.string().regex(OPTION_ID_RE).nullable().optional(),
-  quantity: z.number().int().positive().max(99),
-});
+export const OrderItemInput = z
+  .object({
+    id: z.number().int().positive(),
+    /**
+     * 옵션이 있는 상품이면 고른 옵션의 id. **가격은 받지 않는다** — 서버가 이
+     * id로 `products.options`에서 가격을 다시 읽는다(`lib/order-items.ts`).
+     * 옵션이 생기기 전의 장바구니는 이 키 없이 오므로 optional이다.
+     */
+    option_id: z.string().regex(OPTION_ID_RE).nullable().optional(),
+    /**
+     * 추가 상품 줄이면 그 추가 상품의 id — 이때 `id`는 **부모 상품**의 id다.
+     * 옵션과 마찬가지로 **가격도 이름도 받지 않는다**: 서버가 `products.addons`에서
+     * 다시 읽고, 같은 주문에 부모 상품의 줄이 있는지도 서버가 본다
+     * (`lib/order-items.ts`). id 형식은 옵션과 같다. 보통 줄은 이 키 없이 온다.
+     */
+    addon_id: z.string().regex(OPTION_ID_RE).nullable().optional(),
+    quantity: z.number().int().positive().max(99),
+  })
+  // 추가 상품은 옵션이 아니라 상품에 붙는다. 한 줄이 둘 다 가리키면 무엇을
+  // 주문한 것인지 정할 수 없다 — 추측하지 않고 막는다.
+  .refine(item => !(item.option_id && item.addon_id), '한 줄에 옵션과 추가 상품을 함께 보낼 수 없습니다.');
 
 export const OrderInput = z.object({
   name: z.string().min(1).max(100),

@@ -17,7 +17,8 @@ paths:
 
 주문은 `POST /api/orders` 하나로 들어온다. 아래는 깨지면 돈이나 개인정보 사고가 되는 불변식이다.
 
-- **가격은 서버가 다시 계산한다.** 요청 본문에 가격 필드가 없고(`orders-schema.ts`), `resolveOrderItems`(`lib/order-items.ts`)가 DB의 상품·옵션에서 금액을 만든다. 클라이언트가 보낸 금액을 믿는 경로를 만들지 않는다.
+- **가격은 서버가 다시 계산한다.** 요청 본문에 가격 필드가 없고(`orders-schema.ts` — 줄마다 상품 id, 옵션 id 또는 추가 상품 id, 수량뿐이다), `resolveOrderItems`(`lib/order-items.ts`)가 DB의 상품·옵션·추가 상품에서 금액을 만든다. 클라이언트가 보낸 금액을 믿는 경로를 만들지 않는다.
+- **추가 상품 줄은 혼자 주문되지 않는다.** 같은 주문에 부모 상품의 줄이 있고, 부모가 살 수 있는 상태이고, 추가 상품이 `products.addons`에 재고와 가격을 가지고 있을 때만 받는다. 이 판단도 `resolveOrderItems`가 DB 값으로 한다 — 장바구니가 부모 없는 추가 상품 줄을 지우는 것은 편의이지 방어가 아니다.
 - **중복 제출은 `idempotency_key`로 한 건이 된다.** 조회 → insert → 유니크 위반이면 다시 조회. 이 순서를 바꾸지 않는다.
 - **제한은 셋이다**: IP당, 수신 이메일당, 구매자 메일 전체. 전부 `rateLimitShared` — 인메모리 `rateLimit`은 서버리스에서 인스턴스마다 따로 센다.
 - **허니팟**(`website` 필드, `isHoneypotFilled`)을 지우지 않는다.

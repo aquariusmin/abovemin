@@ -3,12 +3,18 @@ import {
   availabilityProblem,
   isAvailable,
   isListed,
+  isAddonAvailable,
+  MAX_ADDONS,
+  MAX_RELATED,
   optionsMinPrice,
+  parseAddons,
   parseImages,
   parseOptions,
+  parseRelatedIds,
   priceRange,
   productStatus,
   publicState,
+  relatedProducts,
   syncedColumns,
   type ProductOption,
 } from '@/lib/product';
@@ -172,5 +178,86 @@ describe('availabilityProblem() / syncedColumns()', () => {
     expect(
       syncedColumns({ status: 'sold_out', price: 30000, options: [], images: [], image_url: 'https://x/old.jpg' }),
     ).toEqual({ price: 30000, image_url: 'https://x/old.jpg', in_stock: false });
+  });
+});
+
+describe('parseAddons()', () => {
+  it('옵션과 같은 규칙으로 읽고, 틀린 항목은 버린다', () => {
+    expect(
+      parseAddons([
+        { id: 'stand', label: ' 거치대 ', price: 3000, in_stock: true },
+        { id: 'Stand', label: '대문자 id', price: 1, in_stock: true },
+        { id: 'stand', label: '중복', price: 1, in_stock: true },
+        { id: 'env', label: '봉투', price: 500 },
+        { id: 'bad', label: '', price: 1, in_stock: true },
+        { id: 'neg', label: '음수', price: -1, in_stock: true },
+      ]),
+    ).toEqual([
+      { id: 'stand', label: '거치대', price: 3000, in_stock: true },
+      { id: 'env', label: '봉투', price: 500, in_stock: false },
+    ]);
+  });
+
+  it('컬럼이 없거나(마이그레이션 전) 배열이 아니면 빈 목록, 10개까지만', () => {
+    expect(parseAddons(undefined)).toEqual([]);
+    expect(parseAddons(null)).toEqual([]);
+    expect(parseAddons('[]')).toEqual([]);
+    const many = Array.from({ length: 14 }, (_, i) => ({ id: `a${i}`, label: `추가 ${i}`, price: 1000, in_stock: true }));
+    expect(parseAddons(many)).toHaveLength(MAX_ADDONS);
+  });
+
+  it('살 수 있는가: 재고가 있고 가격이 0원보다 커야', () => {
+    expect(isAddonAvailable(option())).toBe(true);
+    expect(isAddonAvailable(option({ in_stock: false }))).toBe(false);
+    expect(isAddonAvailable(option({ price: 0 }))).toBe(false);
+  });
+});
+
+describe('parseRelatedIds()', () => {
+  it('순서를 지키고, 중복·자기 자신·id가 아닌 값을 버린다', () => {
+    expect(parseRelatedIds([5, 2, 5, 7, '3', 0, -1, 1.5, null, 9], 7)).toEqual([5, 2, 9]);
+  });
+
+  it('6개까지만, 컬럼이 없거나 배열이 아니면 빈 목록', () => {
+    expect(parseRelatedIds([1, 2, 3, 4, 5, 6, 7, 8])).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(parseRelatedIds([1, 2, 3, 4, 5, 6, 7, 8])).toHaveLength(MAX_RELATED);
+    expect(parseRelatedIds(undefined)).toEqual([]);
+    expect(parseRelatedIds('1,2')).toEqual([]);
+    expect(parseRelatedIds({ 0: 1 })).toEqual([]);
+  });
+});
+
+describe('relatedProducts()', () => {
+  const item = (id: number, patch: Record<string, unknown> = {}) => ({
+    id,
+    name: `상품 ${id}`,
+    price: 10000,
+    in_stock: true,
+    status: 'available',
+    options: [],
+    ...patch,
+  });
+  const catalog = [item(1), item(2, { status: 'draft' }), item(3, { status: 'sold_out' }), item(4), item(5, { price: 0 })];
+
+  it('고른 순서대로, 목록의 순서가 아니라', () => {
+    expect(relatedProducts([4, 1], catalog).map(p => p.id)).toEqual([4, 1]);
+  });
+
+  it('초안과 0원 상품은 빼고, 품절은 남긴다', () => {
+    expect(relatedProducts([1, 2, 3, 5, 4], catalog).map(p => p.id)).toEqual([1, 3, 4]);
+  });
+
+  it('없는(지워진) id는 무시한다 — 나머지는 그대로 나온다', () => {
+    expect(relatedProducts([99, 4, 100, 1], catalog).map(p => p.id)).toEqual([4, 1]);
+    expect(relatedProducts([99], catalog)).toEqual([]);
+    expect(relatedProducts([4, 1], [])).toEqual([]);
+  });
+
+  it('자기 자신과 중복은 한 번도 나오지 않는다', () => {
+    expect(relatedProducts([1, 4, 1, 4], catalog, 4).map(p => p.id)).toEqual([1]);
+  });
+
+  it('마이그레이션 전의 상품(related_ids 없음)은 빈 목록', () => {
+    expect(relatedProducts(parseRelatedIds(undefined), catalog)).toEqual([]);
   });
 });

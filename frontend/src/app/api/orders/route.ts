@@ -119,11 +119,24 @@ export async function POST(request: Request) {
   // `status`·`options`는 마이그레이션(20260917020000_shop_ready) 이후 컬럼이다.
   // 없으면 예전 컬럼만 읽고, 상태는 backfill과 같은 규칙(`in_stock && price > 0`)
   // 으로 계산된다 — 적용 전에도 주문은 받는다.
+  //
+  // 추가 상품(`addons`)은 그 다음 마이그레이션(20261014010000_product_addons)의
+  // 컬럼이다. 없으면 한 겹 더 벗겨 `addons` 없이 읽는다 — 그때 상품 행에는
+  // 추가 상품이 없으므로, 추가 상품 줄이 든 주문만 "더 이상 판매하지 않는다"로
+  // 400이 되고 나머지 주문은 그대로 받는다. 추가 상품 줄의 `id`는 부모 상품이라
+  // 아래 목록에 이미 들어 있다.
   const productIds = [...new Set(items.map(i => i.id))];
-  const { data: products, error: prodErr } = await withColumnFallback(
+  // 세 조회의 행 모양이 서로 달라서, 겹친 폴백이 한 타입으로 모이도록 적어 둔다.
+  type ProductLookup = { data: unknown[] | null; error: unknown };
+  const { data: products, error: prodErr } = await withColumnFallback<ProductLookup>(
     'orders.product_lookup',
-    () => supabase.from('products').select('id, name, price, in_stock, status, options').in('id', productIds),
-    () => supabase.from('products').select('id, name, price, in_stock').in('id', productIds),
+    () => supabase.from('products').select('id, name, price, in_stock, status, options, addons').in('id', productIds),
+    () =>
+      withColumnFallback<ProductLookup>(
+        'orders.product_lookup.shop_ready',
+        () => supabase.from('products').select('id, name, price, in_stock, status, options').in('id', productIds),
+        () => supabase.from('products').select('id, name, price, in_stock').in('id', productIds),
+      ),
   );
 
   if (prodErr) {

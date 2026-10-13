@@ -71,6 +71,28 @@ describe('order-email', () => {
     }
   });
 
+  it('추가 상품 줄은 "상품 · 추가: 이름"으로 적고(이스케이프), 키가 없는 옛 줄은 그대로', () => {
+    const withAddon: EmailOrder = {
+      ...order,
+      items: [
+        { id: 9, name: '2027 Calendar', option_id: null, option_label: null, price: 18000, quantity: 1 },
+        { id: 9, name: '2027 Calendar', option_id: null, option_label: null, addon_id: 'stand', addon_label: '거치대 <원목>', price: 3000, quantity: 1 },
+        { id: 1, name: '엽서', price: 2000, quantity: 2 },
+      ],
+      total_price: 25000,
+    };
+    for (const message of [buildBuyerEmail(withAddon), buildOwnerEmail(withAddon, OWNER)]) {
+      expect(message.html).toContain('2027 Calendar · 추가: 거치대 &lt;원목&gt;');
+      expect(message.html).not.toContain('<원목>');
+      expect(message.html).toContain('엽서');
+      expect(message.html).not.toContain('엽서 · 추가');
+    }
+    // 운영자 메일의 한 줄 요약도 같은 이름을 쓴다.
+    expect(buildOwnerEmail(withAddon, OWNER).html).toContain('2027 Calendar · 추가: 거치대 &lt;원목&gt; ×1');
+    // 배송 안내는 상품 줄을 싣지 않는다 — 추가 상품이 있어도 만들어진다.
+    expect(buildShippingEmail(withAddon, { carrier: 'CJ', trackingNumber: '123' }).html).toContain('123');
+  });
+
   it('금액과 우편번호가 본문에 들어간다', () => {
     expect(buildBuyerEmail(order).html).toContain('₩ 60,000');
     expect(buildOwnerEmail(order, OWNER).html).toContain('[04524]');
