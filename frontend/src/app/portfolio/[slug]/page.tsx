@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
+import { PORTFOLIO_CARD, shareCard } from "@/lib/share-card";
 import {
   getKoreanPortfolioProject,
   getKoreanSubmissionPortfolioProject,
@@ -31,6 +32,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         "x-default": `/portfolio/${slug}`,
       },
     },
+    // The card carries this case study's own title and summary instead of the
+    // site default (`shareCard`).
+    ...shareCard({
+      title: project.title,
+      description: project.summary,
+      path: `/portfolio/${slug}`,
+      images: [PORTFOLIO_CARD],
+    }),
   };
 }
 

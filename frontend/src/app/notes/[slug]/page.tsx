@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getNoteBySlug, getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import { buildFallback } from '@/lib/build-phase';
+import { shareCard } from '@/lib/share-card';
 
 export const revalidate = 3600;
 
@@ -25,12 +26,14 @@ export async function generateMetadata({
     title: note.title,
     description: note.summary,
     alternates: { canonical: `/notes/${note.slug}` },
-    openGraph: {
+    // 일부만 적으면 루트의 `siteName`·`locale`이 사라지고, `twitter`는 사이트
+    // 기본 제목으로 남는다(`shareCard`).
+    ...shareCard({
       title: note.title,
       description: note.summary,
-      type: 'article',
-      publishedTime: note.date,
-    },
+      path: `/notes/${note.slug}`,
+      article: { publishedTime: note.date },
+    }),
   };
 }
 

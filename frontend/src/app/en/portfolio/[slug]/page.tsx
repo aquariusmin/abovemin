@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
+import { PORTFOLIO_CARD_EN, shareCard } from "@/lib/share-card";
 import {
   getEnglishSubmissionPortfolioProject,
   getEnglishSubmissionPortfolioProjects,
@@ -18,8 +19,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const project = getPortfolioProject(slug);
   if (!project) notFound();
+  const title = `${project.title} · English`;
   return {
-    title: `${project.title} · English`,
+    title,
     description: project.summary,
     alternates: {
       canonical: `/en/portfolio/${slug}`,
@@ -29,6 +31,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         "x-default": `/portfolio/${slug}`,
       },
     },
+    // The card carries this case study's own title and summary instead of the
+    // site default (`shareCard`), labelled as English.
+    ...shareCard({
+      title,
+      description: project.summary,
+      path: `/en/portfolio/${slug}`,
+      locale: "en_US",
+      images: [PORTFOLIO_CARD_EN],
+    }),
   };
 }
 
