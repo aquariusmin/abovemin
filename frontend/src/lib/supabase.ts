@@ -8,9 +8,12 @@ import { placeFromRow, type PlaceCoord } from './places';
 import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
 import {
   isListed,
+  parseAddons,
   parseImages,
   parseOptions,
+  parseRelatedIds,
   productStatus,
+  type ProductAddon,
   type ProductImage,
   type ProductOption,
   type ProductStatus,
@@ -88,6 +91,13 @@ export interface Product {
   images?: ProductImage[];
   options?: ProductOption[];
   edition?: string | null;
+  /**
+   * 마이그레이션(20261014010000_product_addons) 이후 컬럼. 적용 전에는 둘 다 빈
+   * 목록으로 채워진다 — 상품 페이지는 추가 상품도 함께 구매도 없이 전과 같다.
+   */
+  addons?: ProductAddon[];
+  /** 함께 구매로 보여 줄 다른 상품의 id(화면 순서). 지워진 상품의 id가 남아 있을 수 있다. */
+  related_ids?: number[];
   created_at?: string;
   updated_at?: string;
 }
@@ -379,12 +389,15 @@ export const hasPublishedNotes = unstable_cache(
 // 함수들을 거치므로, 초안이 새는 길은 여기 하나만 막으면 된다. 공개 읽기
 // 정책(RLS)이 아니라 코드에서 거르는 이유는 마이그레이션 파일 끝의 주석에 있다.
 //
-// `select('*')`를 유지한다: 새 컬럼(`status`, `images`, `options`, `edition`)을
-// 이름으로 고르면 마이그레이션 전 DB에서 조회가 실패한다. `publicProduct`가
-// 있으면 쓰고 없으면 옛 규칙으로 채운다.
+// `select('*')`를 유지한다: 새 컬럼(`status`, `images`, `options`, `edition`,
+// `addons`, `related_ids`)을 이름으로 고르면 마이그레이션 전 DB에서 조회가
+// 실패한다. `publicProduct`가 있으면 쓰고 없으면 옛 규칙으로 채운다 — 그래서
+// 이 조회들에는 `withColumnFallback`이 필요 없다(정렬 컬럼만 예외).
 
 /** DB 행 → 공개 화면의 상품. jsonb 안쪽은 믿지 않고 다시 읽는다. */
-function publicProduct(row: Product & { status?: unknown; images?: unknown; options?: unknown }): Product {
+function publicProduct(
+  row: Product & { status?: unknown; images?: unknown; options?: unknown; addons?: unknown; related_ids?: unknown },
+): Product {
   const edition = typeof row.edition === 'string' ? row.edition.trim() : '';
   return {
     id: row.id,
@@ -400,6 +413,8 @@ function publicProduct(row: Product & { status?: unknown; images?: unknown; opti
     images: parseImages(row.images, row.image_url),
     options: parseOptions(row.options),
     edition: edition || null,
+    addons: parseAddons(row.addons),
+    related_ids: parseRelatedIds(row.related_ids, row.id),
     ...(row.created_at ? { created_at: row.created_at } : {}),
     ...(row.updated_at ? { updated_at: row.updated_at } : {}),
   };

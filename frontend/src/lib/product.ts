@@ -124,6 +124,76 @@ export function optionsMinPrice(options: readonly ProductOption[]): number {
   return priced.length ? Math.min(...priced) : 0;
 }
 
+// ── 추가 상품 ─────────────────────────────────────────────────────────────────
+
+/** 마이그레이션 파일 — `addons`·`related_ids` 두 컬럼. */
+export const PRODUCT_ADDONS_MIGRATION = 'supabase/migrations/20261014010000_product_addons.sql';
+
+/**
+ * 추가 상품: 이 상품에만 딸린 것(달력의 거치대). 모양·id 형식이 옵션과 같아서
+ * 읽기·검증을 옵션의 것으로 그대로 한다 — 규칙을 두 벌 두지 않는다.
+ *
+ * 옵션과 다른 점은 쓰임이다: 고르지 않아도 되고, 어느 옵션을 골랐는지와
+ * 상관없이 **상품에** 붙고, 장바구니에서 제 수량을 가진 줄이 된다. 혼자서는
+ * 주문할 수 없다(`lib/order-items.ts`).
+ */
+export type ProductAddon = ProductOption;
+export const MAX_ADDONS = 10;
+export const MAX_ADDON_LABEL = MAX_OPTION_LABEL;
+/** 화면과 주문 기록에서 추가 상품 줄을 가리키는 말. */
+export const ADDON_LABEL = '추가';
+
+/**
+ * `products.addons`(jsonb) → 추가 상품 목록. 컬럼이 없는 행(마이그레이션 전)은
+ * 키가 `undefined`라 빈 목록이 된다.
+ */
+export function parseAddons(raw: unknown): ProductAddon[] {
+  return parseOptions(raw).slice(0, MAX_ADDONS);
+}
+
+/** 추가 상품 하나를 지금 살 수 있는가. 0원은 옵션처럼 "가격 미정"이다. */
+export const isAddonAvailable: (addon: ProductAddon) => boolean = isOptionAvailable;
+
+// ── 함께 구매 ─────────────────────────────────────────────────────────────────
+
+export const MAX_RELATED = 6;
+
+/**
+ * `products.related_ids`(jsonb) → 상품 id 목록. 양의 정수가 아닌 값, 중복, 자기
+ * 자신은 버리고 순서는 지킨다(순서가 화면 순서다). 컬럼이 없으면 빈 목록.
+ */
+export function parseRelatedIds(raw: unknown, selfId?: number): number[] {
+  if (!Array.isArray(raw)) return [];
+  const ids: number[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'number' || !Number.isSafeInteger(entry) || entry <= 0) continue;
+    if (entry === selfId || ids.includes(entry)) continue;
+    ids.push(entry);
+    if (ids.length === MAX_RELATED) break;
+  }
+  return ids;
+}
+
+/**
+ * 함께 구매에 실제로 보여 줄 상품들. `catalog`는 공개 목록이다 — 지워진 상품의
+ * id는 거기 없으니 조용히 빠지고, 초안은 한 번 더 거른다(공개 목록이 이미 뺐어도
+ * 이 함수만 보고 안전해야 한다). 품절은 남긴다: 샵 목록이 품절을 배지와 함께
+ * 보여 주는 것과 같다. 순서는 `ids`의 순서다.
+ */
+export function relatedProducts<P extends ProductStateInput & { id: number }>(
+  ids: readonly number[],
+  catalog: readonly P[],
+  selfId?: number,
+): P[] {
+  const byId = new Map(catalog.map(product => [product.id, product]));
+  const related: P[] = [];
+  for (const id of parseRelatedIds([...ids], selfId)) {
+    const product = byId.get(id);
+    if (product && isListed(product)) related.push(product);
+  }
+  return related;
+}
+
 // ── 판정 ──────────────────────────────────────────────────────────────────────
 
 export interface ProductStateInput {
