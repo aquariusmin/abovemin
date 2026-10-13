@@ -1,9 +1,5 @@
-"use client";
-
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, MotionConfig, useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
 import { cloudinary } from '@/lib/cloudinary';
 import { formatPrice } from '@/lib/price';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
@@ -11,12 +7,9 @@ import { photoPagePath } from '@/lib/photo-share';
 import { monthDayLabel } from '@/lib/timeline';
 import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
-import { revealTarget, useBelowFoldReveal } from '@/components/motion/useBelowFoldReveal';
+import Reveal from '@/components/motion/Reveal';
 
-const MotionLink = motion.create(Link);
-
-// Minimal shape of the fields this view actually renders (kept local so this
-// client component never pulls the server-side supabase module into its bundle).
+// Minimal shape of the fields this view actually renders.
 interface FeaturedProduct {
   id: number;
   name: string;
@@ -44,67 +37,24 @@ interface MemoryPhoto extends RecentPhoto {
   exact: boolean;
 }
 
-// Shared editorial easing — slow settle, no bounce.
-const EASE = [0.22, 1, 0.36, 1] as const;
-
-const RISE = { duration: 0.7, ease: EASE };
-
 /**
- * 스크롤 등장의 목표 상태. 예전에는 섹션 머리말과 사진 목록이
- * `initial="hidden"` + `whileInView`였다 — 서버 HTML이 opacity 0으로 나가서,
- * 첫 화면에 걸친 "최근 올라온 사진" 머리말과 첫 줄 사진이 하이드레이션이
- * 끝날 때까지 비어 있었다. 이제 서버 HTML에서는 모두 보이고, 마운트 때 뷰포트
- * 아래에 있던 것만 숨었다가 들어올 때 올라온다(`useBelowFoldReveal`, 그리드
- * 타일과 같은 원칙). 숨김은 즉시, 등장만 `RISE`로 — 전환을 목표 안에 실어서
- * 컴포넌트의 `transition`은 hover 같은 다른 움직임에 남겨 둔다.
+ * 스크롤 등장. 서버 HTML에서는 모두 보이고, 마운트 때 뷰포트 아래에 있던 것만
+ * 숨었다가 들어올 때 올라온다 — 첫 화면에 걸친 "최근 올라온 사진" 머리말과
+ * 첫 줄 사진이 하이드레이션을 기다리며 비지 않게 하려는 것이다.
+ *
+ * 예전에는 이 파일 전체가 클라이언트 컴포넌트였고 framer-motion으로 같은 일을
+ * 했다. 상태도 효과도 핸들러도 없는 490줄이 등장 효과 하나 때문에 통째로
+ * 하이드레이션됐다. 이제 서버 컴포넌트이고, 클라이언트 섬은 `Reveal`과
+ * `FadeImage`뿐이다. 값은 framer 때 맞춰 둔 그대로다: 0.7초,
+ * cubic-bezier(0.22, 1, 0.36, 1), 24px. 머리말 블록은 25%, 목록의 칸은 15%가
+ * 보이면 시작한다. 목록은 칸마다 자기 자리를 잰다 — CSS columns라 몇 번째
+ * 칸이 첫 화면인지 인덱스로 알 수 없다.
  */
-function useRise<T extends Element>(amount?: number) {
-  const reduce = useReducedMotion();
-  const { ref, hidden } = useBelowFoldReveal<T>(amount);
-  const target = revealTarget(hidden, reduce);
-  return { ref, animate: hidden ? target : { ...target, transition: RISE } };
-}
-
+const RISE = { duration: 0.7, y: 24 } as const;
 /** 섹션 머리말·닫는 띠처럼 한 덩어리로 올라오는 블록. */
-function RiseBlock({ className, children }: { className: string; children: ReactNode }) {
-  const { ref, animate } = useRise<HTMLDivElement>(0.25);
-  return (
-    <motion.div ref={ref} className={className} initial={false} animate={animate}>
-      {children}
-    </motion.div>
-  );
-}
-
-/**
- * 사진 목록의 한 칸. 예전의 목록 단위 stagger 대신 칸마다 자기 자리를 잰다 —
- * CSS columns라 몇 번째 칸이 첫 화면인지 인덱스로 알 수 없다.
- */
-function RiseItem({ className, children }: { className: string; children: ReactNode }) {
-  const { ref, animate } = useRise<HTMLLIElement>();
-  return (
-    <motion.li ref={ref} className={className} initial={false} animate={animate}>
-      {children}
-    </motion.li>
-  );
-}
-
-/** 소품 카드. hover로 뜨는 움직임은 컴포넌트 `transition`(0.3s)을 따른다. */
-function RiseProductLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
-  const { ref, animate } = useRise<HTMLAnchorElement>();
-  return (
-    <MotionLink
-      ref={ref}
-      href={href}
-      className={className}
-      initial={false}
-      animate={animate}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3, ease: EASE }}
-    >
-      {children}
-    </MotionLink>
-  );
-}
+const RISE_BLOCK = { ...RISE, amount: 0.25 } as const;
+/** 사진 목록의 한 칸, 소품 카드 한 장. */
+const RISE_ITEM = { ...RISE, amount: 0.15 } as const;
 
 interface HomeContentProps {
   heroImage: string;
@@ -153,335 +103,333 @@ export default function HomeContent({
   const heroWidth = Math.min(1400, Math.round(heroAspect * 850));
 
   return (
-    // reducedMotion="user" makes framer honour the OS "reduce motion" setting,
-    // dropping transforms while leaving content fully visible.
-    <MotionConfig reducedMotion="user">
-      <main className="bg-canvas text-ink-body">
+    <main className="bg-canvas text-ink-body">
 
-        {/* ── Hero: one photograph, sized by that photograph ─────────────────
-             The hero image is admin-configurable and arrives in any
-             orientation, so the frame takes ITS shape rather than the other way
-             round — `heroAspect` is the delivered width÷height, read on the
-             server. Box and picture being the same shape is what removes both
-             failure modes at once: nothing is cropped, and there is no leftover
-             strip to fill. The height cap narrows the frame instead of cropping
-             it, so a portrait photo stays whole and simply occupies a column.
+      {/* ── Hero: one photograph, sized by that photograph ─────────────────
+           The hero image is admin-configurable and arrives in any
+           orientation, so the frame takes ITS shape rather than the other way
+           round — `heroAspect` is the delivered width÷height, read on the
+           server. Box and picture being the same shape is what removes both
+           failure modes at once: nothing is cropped, and there is no leftover
+           strip to fill. The height cap narrows the frame instead of cropping
+           it, so a portrait photo stays whole and simply occupies a column.
 
-             Copy is laid over the lower band from `md` up, and sits below the
-             photo on phones, where a landscape shot is far too short to carry
-             it. Type scales in `cqw` so it fits the frame at any orientation. */}
-        {/* 아래 여백은 짧게. 다음 장이 cream 띠로 바뀌므로 간격이 아니라
-            면의 전환이 구분을 맡는다 — 예전에는 빈 canvas가 데스크톱에서
-            ~180px 이어졌다. */}
-        <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
-          {/* 히어로는 framer-motion의 `initial="hidden"`을 쓰지 않는다. 그러면
-              서버 HTML이 사진과 <h1>을 opacity 0으로 내보내고, JS가 받아져
-              하이드레이션이 끝날 때까지 첫 화면이 비어 있다 — 이 사진이 사이트
-              정문의 LCP다. 사진은 처음부터 보이고, 문구만 CSS 애니메이션
-              (`.hero-rise`)으로 살짝 올라온다. 불투명도는 건드리지 않으므로
-              JS와 상관없이 첫 페인트에 다 보인다. */}
+           Copy is laid over the lower band from `md` up, and sits below the
+           photo on phones, where a landscape shot is far too short to carry
+           it. Type scales in `cqw` so it fits the frame at any orientation. */}
+      {/* 아래 여백은 짧게. 다음 장이 cream 띠로 바뀌므로 간격이 아니라
+          면의 전환이 구분을 맡는다 — 예전에는 빈 canvas가 데스크톱에서
+          ~180px 이어졌다. */}
+      <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
+        {/* 히어로는 framer-motion의 `initial="hidden"`을 쓰지 않는다. 그러면
+            서버 HTML이 사진과 <h1>을 opacity 0으로 내보내고, JS가 받아져
+            하이드레이션이 끝날 때까지 첫 화면이 비어 있다 — 이 사진이 사이트
+            정문의 LCP다. 사진은 처음부터 보이고, 문구만 CSS 애니메이션
+            (`.hero-rise`)으로 살짝 올라온다. 불투명도는 건드리지 않으므로
+            JS와 상관없이 첫 페인트에 다 보인다. */}
+        <div
+          className="@container relative mx-auto w-full"
+          style={{ maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }}
+        >
           <div
-            className="@container relative mx-auto w-full"
-            style={{ maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }}
+            className="relative w-full overflow-hidden rounded-xl bg-stone"
+            style={{ aspectRatio: String(heroAspect) }}
           >
-            <div
-              className="relative w-full overflow-hidden rounded-xl bg-stone"
-              style={{ aspectRatio: String(heroAspect) }}
-            >
-              <Image
-                src={cloudinary(heroImage, { width: 1600 })}
-                fill
-                quality={90}
-                className="object-cover"
-                alt="phorage 대표 이미지 — 초록을 수집하다"
-                sizes={`(max-width: ${heroWidth}px) 100vw, ${heroWidth}px`}
-                /* Next 16 replaces `priority` with `preload`. Here it is the
-                   right migration and not just a rename: one photograph, above
-                   the fold at every width, and the LCP element of the site's
-                   front door — exactly the case the docs reserve `preload`
-                   for. (The masonry grids get `loading`/`fetchPriority`
-                   instead; see the note in `ArchiveGrid`.) */
-                preload
-                /* `preload` 혼자서는 우선순위를 올리지 않는다 — next/image는
-                   <link rel=preload>와 <img> 어느 쪽에도 fetchpriority를 붙이지
-                   않고, 브라우저는 레이아웃 전까지 이미지를 Low로 받는다.
-                   Lighthouse(lcp-discovery)가 짚은 것이 이것이고, 그동안 High로
-                   preload되던 woff2 다섯 개가 이 사진과 대역폭을 다퉜다(폰트
-                   쪽은 layout.tsx의 mono 주석). fetchPriority는 두 태그 모두에
-                   그대로 실린다. */
-                fetchPriority="high"
-              />
-              {/* Only needed where the copy actually sits on the picture. */}
-              {overlaid && (
-                <div aria-hidden className="scrim-hero absolute inset-0 hidden md:block" />
-              )}
-            </div>
-
-            <div
-              className={`hero-rise mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
-            >
-              {/* 문구 블록이 자기 scrim을 들고 다닌다.
-
-                  프레임 전체에 깔린 `.scrim-hero`는 사진 높이의 비율로 옅어지는데,
-                  문구 블록의 높이는 사진이 아니라 글자 크기가 정한다. 그래서
-                  맨 위의 eyebrow가 ramp의 옅은 구간(~30%)에 걸려, 밝은 노을
-                  하늘 위에서 moss 11px 글자가 읽히지 않았다. 이 층은 블록의
-                  실제 높이에 붙어 있고 위로 한 뼘 더 올라가므로, 사진의 비율이나
-                  제목 길이와 상관없이 eyebrow가 항상 어두운 쪽에 앉는다.
-                  사진은 자르지 않는다 — 프레임 규칙은 그대로다. */}
-              {overlaid && (
-                <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-20 lg:-top-24 -z-10 hidden md:block rounded-b-xl" />
-              )}
-              <p className={`eyebrow eyebrow-marked text-primary ${onPhoto('md:text-moss')} mb-4 md:mb-6`}>
-                phorage
-              </p>
-              {/* No hard <br/> between head and tail: the title is
-                  admin-configurable, so a forced break turns any longer title
-                  (or a Korean one) into a three-line rag. `text-balance` lets
-                  the browser even out the lines instead. */}
-              <h1 className={`font-serif font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
-                {titleHead ? <>{titleHead} </> : null}
-                {/* Lime underlay behind the last word — the one graphic flourish
-                    the hero gets, sized off the cap height. The word itself
-                    stays in the running colour: moss-on-moss would swallow the
-                    underlay, and over the scrim the bar is the accent, not the
-                    letterform. */}
-                <span className="relative inline-block">
-                  <span
-                    aria-hidden
-                    className={`absolute inset-x-0 bottom-[0.08em] h-[0.28em] rounded-full bg-moss/45 ${onPhoto('md:bg-moss/70')}`}
-                  />
-                  <span className="relative">{titleTail}</span>
-                </span>
-              </h1>
-              <p className={`mt-5 md:mt-6 text-sm sm:text-base md:text-lg leading-relaxed text-slate ${onPhoto('md:text-cream/85')} break-keep max-w-[46ch]`}>
-                {heroSubtitle}
-              </p>
-              <div className="mt-7 md:mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <Link
-                  href="/archive"
-                  className={`btn-primary ${onPhoto('md:bg-moss md:text-forest-black md:hover:bg-cream md:hover:text-forest-deep')}`}
-                >
-                  사진 보러 가기
-                </Link>
-                {/* 살 수 있는 것이 없으면 소품으로 가는 길을 앞에 내지 않는다. */}
-                {hasShop && (
-                  <Link
-                    href="/shop"
-                    className={`link-underline text-ink text-sm ${onPhoto('md:text-cream/85 md:hover:text-moss')}`}
-                  >
-                    소품 보러 가기
-                  </Link>
-                )}
-              </div>
-            </div>
+            <Image
+              src={cloudinary(heroImage, { width: 1600 })}
+              fill
+              quality={90}
+              className="object-cover"
+              alt="phorage 대표 이미지 — 초록을 수집하다"
+              sizes={`(max-width: ${heroWidth}px) 100vw, ${heroWidth}px`}
+              /* Next 16 replaces `priority` with `preload`. Here it is the
+                 right migration and not just a rename: one photograph, above
+                 the fold at every width, and the LCP element of the site's
+                 front door — exactly the case the docs reserve `preload`
+                 for. (The masonry grids get `loading`/`fetchPriority`
+                 instead; see the note in `ArchiveGrid`.) */
+              preload
+              /* `preload` 혼자서는 우선순위를 올리지 않는다 — next/image는
+                 <link rel=preload>와 <img> 어느 쪽에도 fetchpriority를 붙이지
+                 않고, 브라우저는 레이아웃 전까지 이미지를 Low로 받는다.
+                 Lighthouse(lcp-discovery)가 짚은 것이 이것이고, 그동안 High로
+                 preload되던 woff2 다섯 개가 이 사진과 대역폭을 다퉜다(폰트
+                 쪽은 layout.tsx의 mono 주석). fetchPriority는 두 태그 모두에
+                 그대로 실린다. */
+              fetchPriority="high"
+            />
+            {/* Only needed where the copy actually sits on the picture. */}
+            {overlaid && (
+              <div aria-hidden className="scrim-hero absolute inset-0 hidden md:block" />
+            )}
           </div>
-        </section>
 
-        {/* ── 최근 아카이브 ─────────────────────────────────────────────────────
-             DESIGN.md § Rhythm: canvas → cream 띠 → canvas → forest 띠 → 푸터.
-             홈은 히어로 한 장 뒤에 바로 푸터였고, 이 사이트의 본문인 사진은
-             홈 어디에도 없었다. 사진마다 그 사진의 페이지(`/archive/[slug]/[id]`)로
-             간다 — 예전에는 `?p=`로 앨범 전체를 내려받은 뒤 라이트박스를 열었다. */}
-        {recent.length > 0 && (
-          <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
-            <div className="max-w-[1400px] mx-auto">
-              <RiseBlock className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
-                <div className="space-y-3">
-                  <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
-                  <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
-                    최근 올라온 사진
-                  </h2>
-                </div>
-                <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
-              </RiseBlock>
-
-              {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
-                  사진에 맞춘다"는 원칙이 홈에서 깨진다. */}
-              <ul className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5">
-                {recent.map(photo => {
-                  // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
-                  // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
-                  // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
-                  const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
-                  return (
-                    <RiseItem key={photo.id} className="break-inside-avoid">
-                      <Link
-                        href={photoPagePath(photo)}
-                        className="group block"
-                      >
-                        <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
-                          <FadeImage
-                            src={cloudinary(photo.src, { watermark: true, width: 600 })}
-                            alt={photoLabel(photo)}
-                            width={0}
-                            height={0}
-                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                            className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
-                            style={storedRatioStyle(photo)}
-                            draggable={false}
-                            loading="lazy"
-                          />
-                        </div>
-                        {meta && (
-                          <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
-                            {meta}
-                          </p>
-                        )}
-                      </Link>
-                    </RiseItem>
-                  );
-                })}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {/* ── 몇 년 전 오늘 ─────────────────────────────────────────────────────
-             작은 섹션이다: 제목 한 줄과 사진 한 줄. 사진 수(최대 6)보다 칸을
-             많이 두지 않아서, 두세 장뿐인 날에도 띠가 비어 보이지 않는다.
-             cream 띠 다음이라 canvas 위에 둔다(DESIGN.md § Rhythm).
-
-             라벨은 사진마다 붙인다. 날짜가 딱 맞는 날은 "3년 전 오늘", 앞뒤 사흘로
-             넓혀 찾은 날은 "3년 전 · 9월 19일" — 오늘이 아닌 사진을 오늘이라고
-             부르지 않는다. */}
-        {onThisDay.length > 0 && (
-          // 아래에 소품 섹션(같은 canvas)이 이어지면 그쪽의 위 여백이 간격을 맡는다.
-          <section
-            className={`px-5 sm:px-6 md:px-10 pt-16 md:pt-24 ${hasShop ? 'pb-4 md:pb-8' : 'pb-16 md:pb-24'}`}
-            aria-labelledby="on-this-day-title"
+          <div
+            className={`hero-rise mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
           >
-            <div className="max-w-[1400px] mx-auto">
-              <RiseBlock className="mb-8 md:mb-10 space-y-3">
-                <p className="eyebrow eyebrow-marked text-primary">On this day</p>
-                <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
-                  몇 년 전 오늘
-                </h2>
-                {!onThisDay.some(photo => photo.exact) && (
-                  <p className="text-[15px] text-slate">이 즈음 찍은 사진은 이렇습니다.</p>
-                )}
-              </RiseBlock>
+            {/* 문구 블록이 자기 scrim을 들고 다닌다.
 
-              <ul
-                className={`columns-2 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5 ${
-                  onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : onThisDay.length >= 3 ? 'md:columns-3 lg:columns-4' : 'md:columns-3'
-                }`}
-              >
-                {onThisDay.map(photo => {
-                  const when = photo.exact
-                    ? `${photo.yearsAgo}년 전 오늘`
-                    : joinCaption([`${photo.yearsAgo}년 전`, monthDayLabel(photo.taken_at)].filter((v): v is string => Boolean(v)));
-                  const place = photoCaption({ location: photo.location }).location;
-                  return (
-                    <RiseItem key={photo.id} className="break-inside-avoid">
-                      <Link href={photoPagePath(photo)} className="group block">
-                        <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
-                          <FadeImage
-                            src={cloudinary(photo.src, { watermark: true, width: 600 })}
-                            alt={photoLabel(photo)}
-                            width={0}
-                            height={0}
-                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 17vw"
-                            className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
-                            style={storedRatioStyle(photo)}
-                            draggable={false}
-                            loading="lazy"
-                          />
-                        </div>
-                        <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
-                          {when}
-                        </p>
-                        {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
-                      </Link>
-                    </RiseItem>
-                  );
-                })}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {/* ── New collectibles preview ─────────────────────────────────────────
-             살 수 있는 소품이 하나라도 있을 때만. 카탈로그가 전부 자리표시자인
-             동안 이 섹션은 "이번 달 새로 나온 소품" 아래 ₩ 0짜리 카드 세 장을
-             걸고 있었다 — 홈에서 가장 큰 거짓말이었다. `featured`는 서버에서
-             이미 판매 중인 것만 거른 목록이다. */}
-        {featured.length > 0 && (
-        <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
-          <div className="max-w-[1400px] mx-auto">
-            <RiseBlock className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
-              <div className="space-y-3">
-                <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
-                <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
-                  이번 달 새로 나온 소품
-                </h2>
-              </div>
-              <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
-            </RiseBlock>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {featured.map(item => (
-                  <RiseProductLink
-                    key={item.id}
-                    href={`/shop/${item.id}`}
-                    className="group flex flex-col gap-3"
-                  >
-                    <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
-                      {item.image_url ? (
-                        <Image
-                          src={cloudinary(item.image_url, { width: 600 })}
-                          alt={item.name}
-                          fill={false}
-                          width={600}
-                          height={600}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                          sizes="(max-width: 1024px) 50vw, 25vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-accent/5" />
-                      )}
-                    </div>
-                    <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
-                    <p className="text-sm font-mono text-primary">{formatPrice(item.price)}</p>
-                  </RiseProductLink>
-                ))}
-              </div>
-          </div>
-        </section>
-        )}
-
-        {/* ── 닫는 띠 ──────────────────────────────────────────────────────────
-             페이지마다 forest 띠는 하나. 가장 앞에 내세울 행동은 아카이브이고,
-             소품은 살 수 있는 것이 있을 때만 두 번째로 붙는다. */}
-        <section className="band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
-          <RiseBlock className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
-            <div className="space-y-4 max-w-2xl">
-              <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
-              <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
-                {photoCount > 0
-                  ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
-                  : '큰 일은 작은 창고에서 시작하더라구요.'}
-              </h2>
-              <p className="text-[15px] md:text-base leading-relaxed text-cream/75 max-w-[46ch]">
-                사진을 앨범별로, 연도 또는 장소로 찾아볼 수 있습니다.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
+                프레임 전체에 깔린 `.scrim-hero`는 사진 높이의 비율로 옅어지는데,
+                문구 블록의 높이는 사진이 아니라 글자 크기가 정한다. 그래서
+                맨 위의 eyebrow가 ramp의 옅은 구간(~30%)에 걸려, 밝은 노을
+                하늘 위에서 moss 11px 글자가 읽히지 않았다. 이 층은 블록의
+                실제 높이에 붙어 있고 위로 한 뼘 더 올라가므로, 사진의 비율이나
+                제목 길이와 상관없이 eyebrow가 항상 어두운 쪽에 앉는다.
+                사진은 자르지 않는다 — 프레임 규칙은 그대로다. */}
+            {overlaid && (
+              <div aria-hidden className="scrim-hero-copy pointer-events-none absolute inset-x-0 bottom-0 -top-20 lg:-top-24 -z-10 hidden md:block rounded-b-xl" />
+            )}
+            <p className={`eyebrow eyebrow-marked text-primary ${onPhoto('md:text-moss')} mb-4 md:mb-6`}>
+              phorage
+            </p>
+            {/* No hard <br/> between head and tail: the title is
+                admin-configurable, so a forced break turns any longer title
+                (or a Korean one) into a three-line rag. `text-balance` lets
+                the browser even out the lines instead. */}
+            <h1 className={`font-serif font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
+              {titleHead ? <>{titleHead} </> : null}
+              {/* Lime underlay behind the last word — the one graphic flourish
+                  the hero gets, sized off the cap height. The word itself
+                  stays in the running colour: moss-on-moss would swallow the
+                  underlay, and over the scrim the bar is the accent, not the
+                  letterform. */}
+              <span className="relative inline-block">
+                <span
+                  aria-hidden
+                  className={`absolute inset-x-0 bottom-[0.08em] h-[0.28em] rounded-full bg-moss/45 ${onPhoto('md:bg-moss/70')}`}
+                />
+                <span className="relative">{titleTail}</span>
+              </span>
+            </h1>
+            <p className={`mt-5 md:mt-6 text-sm sm:text-base md:text-lg leading-relaxed text-slate ${onPhoto('md:text-cream/85')} break-keep max-w-[46ch]`}>
+              {heroSubtitle}
+            </p>
+            <div className="mt-7 md:mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href="/archive"
-                className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
+                className={`btn-primary ${onPhoto('md:bg-moss md:text-forest-black md:hover:bg-cream md:hover:text-forest-deep')}`}
               >
                 사진 보러 가기
               </Link>
+              {/* 살 수 있는 것이 없으면 소품으로 가는 길을 앞에 내지 않는다. */}
               {hasShop && (
-                <Link href="/shop" className="link-underline text-sm text-cream/85 hover:text-moss">
+                <Link
+                  href="/shop"
+                  className={`link-underline text-ink text-sm ${onPhoto('md:text-cream/85 md:hover:text-moss')}`}
+                >
                   소품 보러 가기
                 </Link>
               )}
             </div>
-          </RiseBlock>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 최근 아카이브 ─────────────────────────────────────────────────────
+           DESIGN.md § Rhythm: canvas → cream 띠 → canvas → forest 띠 → 푸터.
+           홈은 히어로 한 장 뒤에 바로 푸터였고, 이 사이트의 본문인 사진은
+           홈 어디에도 없었다. 사진마다 그 사진의 페이지(`/archive/[slug]/[id]`)로
+           간다 — 예전에는 `?p=`로 앨범 전체를 내려받은 뒤 라이트박스를 열었다. */}
+      {recent.length > 0 && (
+        <section className="band-cream texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
+          <div className="max-w-[1400px] mx-auto">
+            <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
+              <div className="space-y-3">
+                <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
+                <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                  최근 올라온 사진
+                </h2>
+              </div>
+              <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
+            </Reveal>
+
+            {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
+                사진에 맞춘다"는 원칙이 홈에서 깨진다. */}
+            <ul className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5">
+              {recent.map(photo => {
+                // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
+                // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
+                // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
+                const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
+                return (
+                  <Reveal as="li" {...RISE_ITEM} key={photo.id} className="break-inside-avoid">
+                    <Link
+                      href={photoPagePath(photo)}
+                      className="group block"
+                    >
+                      <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
+                        <FadeImage
+                          src={cloudinary(photo.src, { watermark: true, width: 600 })}
+                          alt={photoLabel(photo)}
+                          width={0}
+                          height={0}
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
+                          style={storedRatioStyle(photo)}
+                          draggable={false}
+                          loading="lazy"
+                        />
+                      </div>
+                      {meta && (
+                        <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
+                          {meta}
+                        </p>
+                      )}
+                    </Link>
+                  </Reveal>
+                );
+              })}
+            </ul>
+          </div>
         </section>
-      </main>
-    </MotionConfig>
+      )}
+
+      {/* ── 몇 년 전 오늘 ─────────────────────────────────────────────────────
+           작은 섹션이다: 제목 한 줄과 사진 한 줄. 사진 수(최대 6)보다 칸을
+           많이 두지 않아서, 두세 장뿐인 날에도 띠가 비어 보이지 않는다.
+           cream 띠 다음이라 canvas 위에 둔다(DESIGN.md § Rhythm).
+
+           라벨은 사진마다 붙인다. 날짜가 딱 맞는 날은 "3년 전 오늘", 앞뒤 사흘로
+           넓혀 찾은 날은 "3년 전 · 9월 19일" — 오늘이 아닌 사진을 오늘이라고
+           부르지 않는다. */}
+      {onThisDay.length > 0 && (
+        // 아래에 소품 섹션(같은 canvas)이 이어지면 그쪽의 위 여백이 간격을 맡는다.
+        <section
+          className={`px-5 sm:px-6 md:px-10 pt-16 md:pt-24 ${hasShop ? 'pb-4 md:pb-8' : 'pb-16 md:pb-24'}`}
+          aria-labelledby="on-this-day-title"
+        >
+          <div className="max-w-[1400px] mx-auto">
+            <Reveal {...RISE_BLOCK} className="mb-8 md:mb-10 space-y-3">
+              <p className="eyebrow eyebrow-marked text-primary">On this day</p>
+              <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                몇 년 전 오늘
+              </h2>
+              {!onThisDay.some(photo => photo.exact) && (
+                <p className="text-[15px] text-slate">이 즈음 찍은 사진은 이렇습니다.</p>
+              )}
+            </Reveal>
+
+            <ul
+              className={`columns-2 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5 ${
+                onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : onThisDay.length >= 3 ? 'md:columns-3 lg:columns-4' : 'md:columns-3'
+              }`}
+            >
+              {onThisDay.map(photo => {
+                const when = photo.exact
+                  ? `${photo.yearsAgo}년 전 오늘`
+                  : joinCaption([`${photo.yearsAgo}년 전`, monthDayLabel(photo.taken_at)].filter((v): v is string => Boolean(v)));
+                const place = photoCaption({ location: photo.location }).location;
+                return (
+                  <Reveal as="li" {...RISE_ITEM} key={photo.id} className="break-inside-avoid">
+                    <Link href={photoPagePath(photo)} className="group block">
+                      <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
+                        <FadeImage
+                          src={cloudinary(photo.src, { watermark: true, width: 600 })}
+                          alt={photoLabel(photo)}
+                          width={0}
+                          height={0}
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 17vw"
+                          className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
+                          style={storedRatioStyle(photo)}
+                          draggable={false}
+                          loading="lazy"
+                        />
+                      </div>
+                      <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
+                        {when}
+                      </p>
+                      {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
+                    </Link>
+                  </Reveal>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ── New collectibles preview ─────────────────────────────────────────
+           살 수 있는 소품이 하나라도 있을 때만. 카탈로그가 전부 자리표시자인
+           동안 이 섹션은 "이번 달 새로 나온 소품" 아래 ₩ 0짜리 카드 세 장을
+           걸고 있었다 — 홈에서 가장 큰 거짓말이었다. `featured`는 서버에서
+           이미 판매 중인 것만 거른 목록이다. */}
+      {featured.length > 0 && (
+      <section className="px-5 sm:px-6 md:px-10 py-16 md:py-28">
+        <div className="max-w-[1400px] mx-auto">
+          <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
+            <div className="space-y-3">
+              <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
+              <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
+                이번 달 새로 나온 소품
+              </h2>
+            </div>
+            <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
+          </Reveal>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {featured.map(item => (
+                <Reveal
+                  as="a"
+                  key={item.id}
+                  href={`/shop/${item.id}`}
+                  className="group lift-card flex flex-col gap-3"
+                  {...RISE_ITEM}
+                >
+                  <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
+                    {item.image_url ? (
+                      <Image
+                        src={cloudinary(item.image_url, { width: 600 })}
+                        alt={item.name}
+                        fill={false}
+                        width={600}
+                        height={600}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        sizes="(max-width: 1024px) 50vw, 25vw"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-accent/5" />
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
+                  <p className="text-sm font-mono text-primary">{formatPrice(item.price)}</p>
+                </Reveal>
+              ))}
+            </div>
+        </div>
+      </section>
+      )}
+
+      {/* ── 닫는 띠 ──────────────────────────────────────────────────────────
+           페이지마다 forest 띠는 하나. 가장 앞에 내세울 행동은 아카이브이고,
+           소품은 살 수 있는 것이 있을 때만 두 번째로 붙는다. */}
+      <section className="band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
+        <Reveal {...RISE_BLOCK} className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
+          <div className="space-y-4 max-w-2xl">
+            <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
+            <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
+              {photoCount > 0
+                ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
+                : '큰 일은 작은 창고에서 시작하더라구요.'}
+            </h2>
+            <p className="text-[15px] md:text-base leading-relaxed text-cream/75 max-w-[46ch]">
+              사진을 앨범별로, 연도 또는 장소로 찾아볼 수 있습니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
+            <Link
+              href="/archive"
+              className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
+            >
+              사진 보러 가기
+            </Link>
+            {hasShop && (
+              <Link href="/shop" className="link-underline text-sm text-cream/85 hover:text-moss">
+                소품 보러 가기
+              </Link>
+            )}
+          </div>
+        </Reveal>
+      </section>
+    </main>
   );
 }
