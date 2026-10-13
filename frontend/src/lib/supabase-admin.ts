@@ -1,3 +1,4 @@
+import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // 서버 전용. service-role 키 사용 — 클라이언트 번들에 포함되면 안 됨.

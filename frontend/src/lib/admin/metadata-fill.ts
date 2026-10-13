@@ -1,3 +1,4 @@
+import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CloudinaryConfig } from '@/lib/cloudinary-upload';
 import { publicIdFromUrl } from '@/lib/cloudinary';
