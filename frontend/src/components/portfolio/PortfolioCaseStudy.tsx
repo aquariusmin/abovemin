@@ -6,7 +6,6 @@ import {
   getPortfolioCasePath,
   getPortfolioPrintPath,
   type PortfolioLocale,
-  type PortfolioMode,
   type PortfolioRoute,
 } from "@/data/portfolioRouting";
 
@@ -81,17 +80,13 @@ export default function PortfolioCaseStudy({
   project,
   projects,
   locale,
-  mode = "normal",
-  route = mode,
+  route,
 }: {
   project: PortfolioProject;
   projects: PortfolioProject[];
   locale: PortfolioLocale;
-  mode?: PortfolioMode;
-  /** URL family for back / prev / next / alternate-locale links. Defaults to
-   *  `mode`; `/portfolio/[slug]` overrides it so the curated ordering renders
-   *  on the indexed URLs. */
-  route?: PortfolioRoute;
+  /** URL family for back / prev / next / print / alternate-locale links. */
+  route: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
   const copy = labels[locale];
@@ -109,19 +104,21 @@ export default function PortfolioCaseStudy({
             &larr; {copy.back}
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-            {mode === "submission" && (
-              <>
-                <a href="mailto:aquariusmin01@naver.com" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
-                  Email
-                </a>
-                <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
-                  GitHub
-                </a>
-                <Link href={getPortfolioPrintPath(locale, route)} className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
-                  {copy.print}
-                </Link>
-              </>
-            )}
+            {/* Contact and print, grouped. The fragment is what is left of a
+                removed `mode` condition; it is kept because flattening it
+                changes the nesting of the serialized RSC payload (the DOM
+                would be the same). */}
+            <>
+              <a href="mailto:aquariusmin01@naver.com" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
+                Email
+              </a>
+              <a href="https://github.com/aquariusmin" target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
+                GitHub
+              </a>
+              <Link href={getPortfolioPrintPath(locale, route)} className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
+                {copy.print}
+              </Link>
+            </>
             <Link href={getPortfolioCasePath(alternateLocale, route, project.slug)} hrefLang={alternateLocale} className={`text-[11px] font-semibold text-slate transition-colors hover:text-accent ${isKorean ? "uppercase tracking-[0.2em]" : "tracking-[0.14em]"}`}>
               {isKorean ? "English" : "한국어"}
             </Link>

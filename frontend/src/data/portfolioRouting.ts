@@ -1,24 +1,22 @@
 /**
- * Two independent axes, deliberately kept apart.
+ * One presentation, two URL families.
  *
- * `PortfolioMode` is the PRESENTATION: `submission` is the curated reading —
- * three defensible projects up front, everything else demoted to an Explore
- * archive, and copy written for someone screening a candidate. `normal` is the
- * old flat list of every project in data order.
+ * There is a single portfolio page: the curated reading — three defensible
+ * projects up front, everything else demoted to an Explore archive, copy
+ * written for someone screening a candidate (`portfolioCuration.ts`,
+ * `portfolioAccess.ts`). It is reachable two ways, and `PortfolioRoute` says
+ * which family a page's links stay in:
  *
- * `PortfolioRoute` is which URL family the links belong to. It used to be the
- * same value, and that coupling is what made `/portfolio` and
- * `/portfolio/submission` two different pages rather than one page reachable
- * two ways. `/portfolio` now renders the `submission` PRESENTATION while
- * staying on the `portfolio` ROUTE, so the public, indexed URLs are the ones
- * carrying the good version — the noindex `/portfolio/submission` family stays
- * put for links already handed out.
+ * - `normal` — `/portfolio/...`, the public, indexed URLs.
+ * - `submission` — `/portfolio/submission/...`, `noindex`, kept valid for
+ *   links already handed out.
  *
- * Everything downstream takes both and defaults `route` to `mode`, so a call
- * site that never cared keeps its old behaviour.
+ * There used to be a second axis, `PortfolioMode`, that picked between this
+ * presentation and an older flat list of every project. Every route had moved
+ * to the curated one, so the flat list and the axis were removed. The page
+ * components require `route`, so each route file states its own family.
  */
-export type PortfolioMode = "normal" | "submission";
-export type PortfolioRoute = PortfolioMode;
+export type PortfolioRoute = "normal" | "submission";
 export type PortfolioLocale = "en" | "ko";
 
 // Korean is the default locale and lives at the unprefixed path; English sits under /en.

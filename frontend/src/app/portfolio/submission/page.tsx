@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function PortfolioSubmissionPage() {
-  return <PortfolioOverview locale="ko" mode="submission" />;
+  return <PortfolioOverview locale="ko" route="submission" />;
 }

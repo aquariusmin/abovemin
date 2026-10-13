@@ -17,7 +17,6 @@ export default async function EnglishPortfolioPrintPage({
   return (
     <PortfolioPrintContent
       locale="en"
-      mode="submission"
       route={from === "submission" ? "submission" : "normal"}
     />
   );

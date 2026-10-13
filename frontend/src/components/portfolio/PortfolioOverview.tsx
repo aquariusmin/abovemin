@@ -1,52 +1,28 @@
-import KoreanProjectCard from "@/components/portfolio/KoreanProjectCard";
 import PortfolioClosingCta from "@/components/portfolio/PortfolioClosingCta";
 import PortfolioHero from "@/components/portfolio/PortfolioHero";
 import PortfolioJsonLd from "@/components/portfolio/PortfolioJsonLd";
 import ProjectCard from "@/components/portfolio/ProjectCard";
 import SelectedEvidenceHighlights from "@/components/portfolio/SelectedEvidenceHighlights";
 import Reveal from "@/components/motion/Reveal";
-import {
-  getKoreanSubmissionArchiveProjects,
-  getKoreanSubmissionFeaturedProjects,
-  koreanPortfolioProjects,
-} from "@/data/portfolio.ko";
-import {
-  getEnglishSubmissionArchiveProjects,
-  getEnglishSubmissionFeaturedProjects,
-  portfolioProjects,
-} from "@/data/portfolio";
+import { getPortfolio } from "@/data/portfolioAccess";
 import { portfolioCapabilities } from "@/data/portfolioCapabilities";
 import {
   getPortfolioBasePath,
   type PortfolioLocale,
-  type PortfolioMode,
   type PortfolioRoute,
 } from "@/data/portfolioRouting";
 
 export default function PortfolioOverview({
   locale,
-  mode = "normal",
-  route = mode,
+  route,
 }: {
   locale: PortfolioLocale;
-  mode?: PortfolioMode;
-  /** Which URL family the cards link into. Defaults to `mode`; `/portfolio`
-   *  overrides it so the curated presentation lives on the indexed URLs. */
-  route?: PortfolioRoute;
+  /** Which URL family the cards and links point into — the page itself is the
+   *  same on both. See `portfolioRouting.ts`. */
+  route: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
-  const isSubmission = mode === "submission";
-  const projects = isKorean ? koreanPortfolioProjects : portfolioProjects;
-  const featuredProjects = !isSubmission
-    ? projects
-    : isKorean
-      ? getKoreanSubmissionFeaturedProjects()
-      : getEnglishSubmissionFeaturedProjects();
-  const archiveProjects = !isSubmission
-    ? []
-    : isKorean
-      ? getKoreanSubmissionArchiveProjects()
-      : getEnglishSubmissionArchiveProjects();
+  const { featured: featuredProjects, archive: archiveProjects } = getPortfolio(locale);
   const basePath = getPortfolioBasePath(locale, route);
 
   return (
@@ -61,7 +37,7 @@ export default function PortfolioOverview({
       )}
 
       <div className="mx-auto max-w-[1400px] space-y-20 md:space-y-28">
-        <PortfolioHero locale={locale} mode={mode} route={route} />
+        <PortfolioHero locale={locale} route={route} />
 
         <section className="space-y-10">
           <Reveal className="grid gap-6 md:grid-cols-12 md:items-end" y={16}>
@@ -95,7 +71,7 @@ export default function PortfolioOverview({
           </div>
         </section>
 
-        <SelectedEvidenceHighlights locale={locale} mode={mode} />
+        <SelectedEvidenceHighlights locale={locale} />
 
         <section className="space-y-10" id="cases">
           <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end" y={16}>
@@ -104,37 +80,23 @@ export default function PortfolioOverview({
                 {isKorean ? "주요 프로젝트" : "Selected work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                {isSubmission
-                  ? isKorean
-                    ? "대표 프로젝트 3개를 먼저 보여줍니다."
-                    : "Three featured projects come first."
-                  : isKorean
-                    ? "지금 자세히 설명할 수 있는 일곱 가지 작업입니다."
-                    : "Seven projects I can walk through in detail."}
+                {isKorean
+                  ? "대표 프로젝트 3개를 먼저 보여줍니다."
+                  : "Three featured projects come first."}
               </h2>
             </div>
             <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
-              {isSubmission
-                ? isKorean
-                  ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
-                  : "This first screen leads with analysis I can defend myself. Each case shows the question, how the data was checked, and how far the conclusion reaches."
-                : isKorean
-                  ? "각 프로젝트에는 왜 시작했는지, 무엇을 확인했는지, 결론을 어디까지 말할 수 있는지를 같이 적었습니다."
-                : "Each project explains why I started it, what I checked, and where the conclusion should stop."}
+              {isKorean
+                ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
+                : "This first screen leads with analysis I can defend myself. Each case shows the question, how the data was checked, and how far the conclusion reaches."}
             </p>
           </Reveal>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {featuredProjects.map((project, i) =>
-              isKorean ? (
-                <Reveal key={project.slug} delay={i * 0.06} y={16} className="h-full">
-                  <KoreanProjectCard project={project} basePath={basePath} />
-                </Reveal>
-              ) : (
-                <Reveal key={project.slug} delay={i * 0.06} y={16} className="h-full">
-                  <ProjectCard project={project} basePath={basePath} />
-                </Reveal>
-              ),
-            )}
+            {featuredProjects.map((project, i) => (
+              <Reveal key={project.slug} delay={i * 0.06} y={16} className="h-full">
+                <ProjectCard project={project} locale={locale} basePath={basePath} />
+              </Reveal>
+            ))}
           </div>
         </section>
 
@@ -158,18 +120,14 @@ export default function PortfolioOverview({
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {archiveProjects.map((project, i) => (
                 <Reveal key={project.slug} delay={i * 0.04} y={16} className="h-full">
-                  {isKorean ? (
-                    <KoreanProjectCard project={project} basePath={basePath} />
-                  ) : (
-                    <ProjectCard project={project} basePath={basePath} />
-                  )}
+                  <ProjectCard project={project} locale={locale} basePath={basePath} />
                 </Reveal>
               ))}
             </div>
           </section>
         )}
 
-        <PortfolioClosingCta locale={locale} mode={mode} route={route} />
+        <PortfolioClosingCta locale={locale} route={route} />
       </div>
     </main>
   );
