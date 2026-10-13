@@ -30,3 +30,14 @@ backend/__pycache__/
 
 # misc
 *.log
+
+# Claude Code / 에이전트 설정
+# 개인 설정과 `npx skills`로 받은 외부 스킬은 올리지 않는다. 외부 스킬은
+# skills-lock.json으로 복원한다(`npx skills experimental_install`).
+# 직접 쓴 것(CLAUDE.md, .claude/settings.json, rules, hooks, 커스텀 스킬)은 추적한다.
+.claude/settings.local.json
+.claude/worktrees/
+.claude/skills/vercel-*
+.claude/skills/web-design-guidelines
+.agents/
+.aider-desk/

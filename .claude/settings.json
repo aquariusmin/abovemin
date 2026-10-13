@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main)",
+      "Bash(git push *:main *)",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "mcp__plugin_supabase_supabase__create_project",
+      "mcp__plugin_supabase_supabase__pause_project",
+      "mcp__plugin_supabase_supabase__restore_project",
+      "mcp__plugin_supabase_supabase__create_branch",
+      "mcp__plugin_supabase_supabase__delete_branch",
+      "mcp__plugin_supabase_supabase__merge_branch",
+      "mcp__plugin_supabase_supabase__rebase_branch",
+      "mcp__plugin_supabase_supabase__reset_branch",
+      "mcp__plugin_supabase_supabase__deploy_edge_function",
+      "mcp__plugin_supabase_supabase__create_edge_function_secret",
+      "mcp__vercel__buy_domain",
+      "mcp__vercel__create_or_transfer_domain",
+      "mcp__vercel__accept_project_transfer_request",
+      "mcp__vercel__get_project_deletion_link"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force*)",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "mcp__plugin_cloudinary_cloudinary-asset-mgmt__*",
+      "mcp__vercel__create_*",
+      "mcp__vercel__update_*",
+      "mcp__vercel__edit_*",
+      "mcp__vercel__add_*",
+      "mcp__vercel__put_*",
+      "mcp__vercel__patch_*",
+      "mcp__vercel__replace_*",
+      "mcp__vercel__upsert_*",
+      "mcp__vercel__assign_*",
+      "mcp__vercel__request_*",
+      "mcp__vercel__cancel_*",
+      "mcp__vercel__pause_*",
+      "mcp__vercel__unpause_*",
+      "mcp__vercel__restore_*",
+      "mcp__vercel__stage_*",
+      "mcp__vercel__start_*",
+      "mcp__vercel__complete_*",
+      "mcp__vercel__approve_*",
+      "mcp__vercel__activate_*",
+      "mcp__vercel__revoke_*",
+      "mcp__vercel__invalidate_*",
+      "mcp__vercel__issue_*",
+      "mcp__vercel__kill_*",
+      "mcp__vercel__stop_*",
+      "mcp__vercel__run_*",
+      "mcp__vercel__write_*",
+      "mcp__vercel__upload_*",
+      "mcp__vercel__record_*",
+      "mcp__vercel__verify_*",
+      "mcp__vercel__retry_*",
+      "mcp__vercel__rerequest_*",
+      "mcp__vercel__extend_*",
+      "mcp__vercel__change_*",
+      "mcp__vercel__reply_*",
+      "mcp__vercel__generate_route",
+      "mcp__vercel__import-*",
+      "mcp__vercel__test_drain"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-main-push.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
