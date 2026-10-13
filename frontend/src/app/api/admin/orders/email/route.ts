@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { rateLimitShared } from '@/lib/rate-limit';
 import { OrderEmail } from '@/lib/admin/schemas';
-import { buildBuyerEmail, buildShippingEmail, sendEmails, type EmailOrder } from '@/lib/order-email';
+import { buildBuyerEmail, buildShippingEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
+import { recordEmailSent } from '@/lib/order-email-status';
 import {
   adminDb,
   dbErrorResponse,
@@ -61,12 +62,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    await sendEmails([message]);
+    await sendEmailsOrThrow([message]);
   } catch (sendError) {
     log.error('admin_orders_email_send', sendError);
     return jsonError('메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.', 502);
   }
 
   log.info('admin_orders_email_resent', { id, kind });
+
+  // 입금 안내가 나갔다고 적는다 — 관리 화면의 "메일 미발송" 표시가 이걸로
+  // 지워진다. 배송 안내는 기록 대상이 아니다. 기록이 실패해도(컬럼이 아직
+  // 없는 경우 포함) 메일은 이미 나갔으므로 응답은 그대로 성공이다.
+  if (kind !== 'shipping') {
+    const recorded = await recordEmailSent(db.value, id, { buyer_email_sent_at: new Date().toISOString() });
+    if (recorded === 'failed') log.error('admin_orders_email_record', { id });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,7 @@
 import 'server-only';
 import { Resend } from 'resend';
 import { orderItemLabel, type OrderItemRecord } from './order-items';
+import type { EmailOutcome } from './order-email-status';
 
 /**
  * 주문 메일 본문. **주문 접수(`api/orders`)와 관리 화면의 재발송이 같은 함수를
@@ -206,14 +207,51 @@ export function buildShippingEmail(order: EmailOrder, shipping: ShippingInfo): E
   return { to: order.email, subject: `[phorage] 배송 시작 안내 — #${order.id}`, html };
 }
 
-/** 메일 한 통 이상을 보낸다. 실패는 호출부가 결정한다(주문 접수는 삼키고, 재발송은 알린다). */
-export async function sendEmails(messages: EmailMessage[]): Promise<void> {
+/** 메일 한 통을 보내는 함수. Resend SDK처럼 실패를 `{ error }`로 돌려줘도, 던져도 된다. */
+export type EmailSender = (message: EmailMessage) => Promise<{ error?: { message: string } | null }>;
+
+function resendSender(): EmailSender {
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const results = await Promise.all(
-    messages.map(message => resend.emails.send({ from: FROM_EMAIL, ...message })),
-  );
-  // Resend SDK는 실패를 throw하지 않고 `{ error }`로 돌려준다. 그걸 보지 않으면
-  // "보냈습니다"라고 띄워 놓고 아무것도 안 간다.
-  const failed = results.find(result => result.error);
-  if (failed?.error) throw new Error(failed.error.message);
+  return message => resend.emails.send({ from: FROM_EMAIL, ...message });
+}
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * 메일을 **한 통씩 따로** 보내고, 보낸 순서대로 결과를 돌려준다. 던지지 않는다.
+ *
+ * 예전에는 `Promise.all`이라 실패를 하나만 알렸다 — 손님 메일과 운영자 알림 중
+ * 어느 쪽이 나갔는지 알 수 없었고, 그래서 기록할 수도 없었다
+ * (`lib/order-email-status.ts`). 한 통이 실패해도 다른 한 통은 끝까지 간다.
+ *
+ * `send`는 테스트가 갈아 끼운다. 기본 sender를 만들다 실패하면(키 없음) 전부
+ * 실패로 답한다.
+ */
+export async function sendEmails(messages: EmailMessage[], send?: EmailSender): Promise<EmailOutcome[]> {
+  let sender: EmailSender;
+  try {
+    sender = send ?? resendSender();
+  } catch (error) {
+    return messages.map(() => ({ ok: false, error: errorText(error) }));
+  }
+  const settled = await Promise.allSettled(messages.map(async message => sender(message)));
+  return settled.map(result => {
+    if (result.status === 'rejected') return { ok: false, error: errorText(result.reason) };
+    // Resend SDK는 실패를 throw하지 않고 `{ error }`로 돌려준다. 그걸 보지 않으면
+    // "보냈습니다"라고 띄워 놓고 아무것도 안 간다.
+    const error = result.value?.error;
+    return error ? { ok: false, error: error.message } : { ok: true };
+  });
+}
+
+/**
+ * 하나라도 실패하면 던진다 — 관리 화면의 재발송과 배송 안내처럼 "보냈다/못
+ * 보냈다"만 필요한 호출부용. 예전 `sendEmails`의 동작이다.
+ */
+export async function sendEmailsOrThrow(messages: EmailMessage[], send?: EmailSender): Promise<void> {
+  const outcomes = await sendEmails(messages, send);
+  const failed = outcomes.find(outcome => !outcome.ok);
+  if (failed && !failed.ok) throw new Error(failed.error);
 }

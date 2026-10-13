@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { isMissingColumnError } from '@/lib/db-compat';
 import { OrderUpdate } from '@/lib/admin/schemas';
-import { buildShippingEmail, sendEmails, type EmailOrder } from '@/lib/order-email';
+import { buildShippingEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
 import {
   adminDb,
   dbErrorResponse,
@@ -20,17 +20,21 @@ export async function GET() {
 
   // 목록은 `select('*')`라 마이그레이션 전후 모두 읽힌다. 다만 주문이 0건이면
   // 행을 보고 새 컬럼이 있는지 알 수 없으므로, 한 컬럼만 따로 찔러 본다.
-  const [list, probe] = await Promise.all([
+  const [list, probe, emailProbe] = await Promise.all([
     db.value.from('orders').select('*').order('created_at', { ascending: false }),
     db.value.from('orders').select('admin_memo').limit(1),
+    // 메일 발송 기록(`20261014000000_order_email_status`)은 다른 파일이라 따로 본다.
+    db.value.from('orders').select('buyer_email_sent_at').limit(1),
   ]);
 
   if (list.error) return dbErrorResponse('admin_orders_fetch', list.error);
   if (probe.error && !isMissingColumnError(probe.error)) log.warn('admin_orders_probe', probe.error);
+  if (emailProbe.error && !isMissingColumnError(emailProbe.error)) log.warn('admin_orders_email_probe', emailProbe.error);
 
   return NextResponse.json({
     orders: list.data ?? [],
     migrationPending: Boolean(probe.error && isMissingColumnError(probe.error)),
+    emailStatusPending: Boolean(emailProbe.error && isMissingColumnError(emailProbe.error)),
   });
 }
 
@@ -80,7 +84,7 @@ export async function PATCH(request: Request) {
   let email: 'sent' | 'failed' | 'skipped' = 'skipped';
   if (becameShipped && notify !== false && order.tracking_number) {
     try {
-      await sendEmails([
+      await sendEmailsOrThrow([
         buildShippingEmail(order as EmailOrder, {
           carrier: order.tracking_carrier ?? null,
           trackingNumber: order.tracking_number,
