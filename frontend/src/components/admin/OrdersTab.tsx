@@ -6,6 +6,7 @@ import { ORDER_EMAIL_STATUS_MIGRATION } from '@/lib/admin/limits';
 import { ordersToCsv } from '@/lib/admin/orders-csv';
 import { emailTrackingStart, isBuyerEmailMissing } from '@/lib/order-email-status';
 import type { OrderItemRecord } from '@/lib/order-items';
+import { ADDON_LABEL } from '@/lib/product';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { useRetryAfterRelogin } from './SessionRetry';
@@ -383,6 +384,8 @@ function OrderCard({
                     <span className="min-w-0">
                       {item.name}
                       {item.option_label && <span className="text-slate">&nbsp;· {item.option_label}</span>}
+                      {/* 추가 상품 줄: 이름은 부모 상품, 뒤에 "추가: 거치대". 옛 주문에는 키가 없다. */}
+                      {item.addon_label && <span className="text-slate">&nbsp;· {ADDON_LABEL}: {item.addon_label}</span>}
                       {' '}×{item.quantity}
                     </span>
                     <span className="tabular-nums text-forest">₩&nbsp;{(item.price * item.quantity).toLocaleString()}</span>
