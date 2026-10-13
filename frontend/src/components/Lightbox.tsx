@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import Image from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
 import { exifParts, joinCaption, photoCaption, photoLabel } from '@/lib/caption';
@@ -43,6 +43,37 @@ interface LightboxProps {
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+}
+
+/** 라이트박스가 한 장에 대해 요청하는 주소. 이웃 사진을 미리 받을 때도 이것을 쓴다. */
+function lightboxSrc(photo: Photo): string {
+  return cloudinary(photo.src, { watermark: true, width: 2400 });
+}
+
+/**
+ * 라이트박스 프레임의 폭을 `sizes`로 옮긴 것.
+ *
+ * 프레임은 `min(100vw, 100dvh × 비율)`이다. `100vw`라고만 적으면 1440×900
+ * 화면의 세로 사진(프레임 600px)이 1440px짜리 후보를, 레티나에서는 2400px
+ * 상한까지 받는다. 화면이 사진보다 넓적하면 높이가 폭을 정하므로
+ * (`min-aspect-ratio`) 그때만 `비율 × 100vh`를 말한다.
+ *
+ * - `dvh`가 아니라 `vh`: 폰에서 `vh`(주소창이 접힌 높이)는 `dvh`보다 크거나
+ *   같다. 모자라게 고르는 쪽이 아니라 넉넉한 쪽으로 틀린다. 올림도 같은 이유.
+ * - **저장된** 크기에서만 계산한다. 이 사진이 방금 로드되며 알게 된 비율로
+ *   `sizes`를 좁히면 이미 받은 사진을 더 작은 후보로 한 번 더 받게 되고,
+ *   미리 받아 둔 이웃의 주소와도 어긋난다. 저장값이 없으면 예전대로 `100vw`.
+ * - 예외 하나: 읽은 비율이 저장값보다 **넓으면** 그쪽을 쓴다. 저장값이 회전 전
+ *   크기처럼 어긋난 사진에서 프레임보다 좁은 후보를 고르지 않게.
+ * - 프레임 크기는 여전히 `style`의 폭이 정한다 — `sizes`는 어느 후보를 받을지만
+ *   정한다(원본이 1500px 안팎이라 사진에서 프레임을 재지 않는다는 그 규칙).
+ */
+function lightboxSizes(photo: Photo, learnedRatio?: number): string {
+  if (!photo.width || !photo.height) return '100vw';
+  const stored = photo.width / photo.height;
+  const ratio = learnedRatio && learnedRatio > stored * 1.01 ? learnedRatio : stored;
+  const vh = Math.ceil(ratio * 10000) / 100;
+  return `(min-aspect-ratio: ${Math.round(ratio * 1000)}/1000) ${vh}vh, 100vw`;
 }
 
 export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext }: LightboxProps) {
@@ -101,6 +132,9 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   const storedRatio = photo.width && photo.height ? photo.width / photo.height : undefined;
   const ratio = ratios[photo.id] ?? storedRatio;
 
+  // 화면의 `<img>`가 로드를 마친 사진의 id. 이웃 미리 받기가 이것을 기다린다.
+  const [loadedId, setLoadedId] = useState<number | null>(null);
+
   const rememberRatio = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight, dataset } = e.currentTarget;
     if (!naturalWidth || !naturalHeight) return;
@@ -110,7 +144,47 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     const id = Number(dataset.photoId);
     if (!Number.isFinite(id)) return;
     setRatios(prev => (prev[id] ? prev : { ...prev, [id]: naturalWidth / naturalHeight }));
+    setLoadedId(id);
   }, []);
+
+  // ── 이웃 사진 미리 받기 ──────────────────────────────────────────────────
+  // 넘길 때마다 네트워크를 기다리지 않도록, **지금 사진이 다 온 뒤에** 앞뒤 한
+  // 장씩을 받아 둔다. 먼저 시작하면 보고 있는 사진과 대역폭을 다툰다.
+  //
+  // `<link rel=preload>`가 아니라 문서 밖의 `Image`다: 낮은 우선순위로 받고,
+  // 넘기지 않으면 "preload했는데 쓰지 않았다"는 경고도 없다. `srcset`과
+  // `sizes`를 화면의 `<Image>`와 같은 함수(`getImageProps` → 전역 로더,
+  // `lightboxSizes`)로 만들어 넣으므로 브라우저가 고르는 후보가 같고, 넘겼을
+  // 때는 캐시에서 나온다.
+  //
+  // 데이터 절약 모드에서는 하지 않는다 — 안 볼 수도 있는 사진 두 장이다.
+  const preloaded = useRef(new Set<number>());
+  const prevPhoto = photos[(currentIndex - 1 + photos.length) % photos.length];
+  const nextPhoto = photos[(currentIndex + 1) % photos.length];
+  useEffect(() => {
+    if (loadedId !== photo.id) return;
+    const { connection } = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (connection?.saveData) return;
+    // 다음 장이 먼저다 — 대부분 앞으로 넘긴다.
+    for (const neighbour of [nextPhoto, prevPhoto]) {
+      if (neighbour.id === photo.id || preloaded.current.has(neighbour.id)) continue;
+      preloaded.current.add(neighbour.id);
+      const { props } = getImageProps({
+        src: lightboxSrc(neighbour),
+        alt: '',
+        width: 0,
+        height: 0,
+        sizes: lightboxSizes(neighbour, ratios[neighbour.id]),
+      });
+      const image = new window.Image();
+      image.fetchPriority = 'low';
+      image.decoding = 'async';
+      // `sizes` → `srcset` → `src` 순서. 뒤집으면 `src`만 보고 한 번 더 받는다.
+      if (props.sizes) image.sizes = props.sizes;
+      if (props.srcSet) image.srcset = props.srcSet;
+      image.src = props.src;
+    }
+  }, [loadedId, photo.id, nextPhoto, prevPhoto, ratios]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); return; }
@@ -333,11 +407,11 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         transition={{ duration: 0.28, ease: EASE }}
       >
         <Image
-          src={cloudinary(photo.src, { watermark: true, width: 2400 })}
+          src={lightboxSrc(photo)}
           alt={label}
           width={0}
           height={0}
-          sizes="100vw"
+          sizes={lightboxSizes(photo, ratios[photo.id])}
           data-photo-id={photo.id}
           onLoad={rememberRatio}
           // The width is stated outright, `min(100vw, 100dvh × ratio)`, and the
