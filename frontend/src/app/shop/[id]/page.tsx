@@ -1,9 +1,11 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getProducts, getProductById } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ProductGallery from '@/components/shop/ProductGallery';
 import ProductPurchase from '@/components/shop/ProductPurchase';
-import { cloudinaryAspect } from '@/lib/cloudinary';
+import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
+import { shareCard } from '@/lib/share-card';
 import { isOptionAvailable, parseImages, priceRange, publicState, SOLD_OUT_LABEL } from '@/lib/product';
 import BackLink from '@/components/BackLink';
 
@@ -28,22 +30,33 @@ export async function generateStaticParams() {
   return products.map(p => ({ id: String(p.id) }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductById(Number(id));
 
   if (!product) return { title: 'Product Not Found' };
 
   const description = product.description || `${product.name} — phorage shop`;
+  const path = `/shop/${id}`;
+  // 사진·앨범 페이지와 같은 카드: 자르지 않은 1200×630 JPG(`cloudinaryOgImage`의
+  // 주석). 저장된 주소를 그대로 실으면 원본 크기가 가거나, `f_auto`가 크롤러가
+  // 못 읽는 포맷을 준다. Cloudinary가 아니면(자리표시자의 Unsplash) 크기를
+  // 모르므로 원본을 싣고, 이미지가 없으면 사이트 카드가 나간다(`shareCard`).
+  const stored = product.images?.[0]?.url ?? product.image_url;
+  const og = stored ? cloudinaryOgImage(stored) : null;
+  const images = og
+    ? [{ url: og, width: OG_WIDTH, height: OG_HEIGHT, alt: product.name }]
+    : stored
+      ? [{ url: stored, alt: product.name }]
+      : undefined;
+
   return {
     title: product.name,
     description,
-    alternates: { canonical: `/shop/${id}` },
-    openGraph: {
-      title: product.name,
-      description,
-      ...(product.image_url ? { images: [{ url: product.images?.[0]?.url ?? product.image_url }] } : {}),
-    },
+    alternates: { canonical: path },
+    // 일부만 적으면 루트의 `siteName`·`locale`이 사라지고 `twitter`는 사이트
+    // 기본 제목으로 남는다(`shareCard`).
+    ...shareCard({ title: product.name, description, path, images }),
   };
 }
 

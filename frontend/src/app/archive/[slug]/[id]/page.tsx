@@ -5,7 +5,15 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { getAllPhotos, getPhotoInAlbum, type Photo } from '@/lib/supabase';
 import { cloudinary, cloudinaryAspect, cloudinaryOgImage, DEFAULT_ASPECT, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { displayCamera, exifParts, joinCaption, photoCaption, photoLabel, takenDate } from '@/lib/caption';
-import { photoPageDescription, photoPagePath, photoPageTitle, printInquiryMailto } from '@/lib/photo-share';
+import {
+  photoDocumentTitle,
+  photoImageUrl,
+  photoJsonLd,
+  photoPageDescription,
+  photoPagePath,
+  photoPageTitle,
+  printInquiryMailto,
+} from '@/lib/photo-share';
 import { cameraArchiveHref } from '@/lib/camera';
 import { CONTACT_EMAIL, SITE_URL } from '@/lib/site';
 import BackLink from '@/components/BackLink';
@@ -60,10 +68,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const found = await findPhoto(params);
   if (!found) return { title: 'Photo Not Found' };
-  const { album, photo } = found;
+  const { album, photo, photos, index } = found;
 
-  const { title } = photoPageTitle(photo);
-  const fullTitle = `${title} — ${album.title}`;
+  // 앨범 안에서 이름이 겹치는 사진은 촬영일이나 순서로 가른다. h1은 그대로다
+  // (`photoDocumentTitle`의 주석).
+  const fullTitle = `${photoDocumentTitle(photos, index)} — ${album.title}`;
   const description = photoPageDescription(photo, album.title);
   const path = photoPagePath(photo);
   // 링크 미리보기는 자르지 않은 1200×630(`cloudinaryOgImage`의 주석). Cloudinary가
@@ -179,9 +188,21 @@ export default async function PhotoPage({ params }: { params: Params }) {
   const maxWidth = Math.min(1400, Math.round(ratio * SIZES_VIEWPORT_H * (FRAME_VH / 100)));
   const prevHref = prev ? photoPagePath(prev) : null;
   const nextHref = next ? photoPagePath(next) : null;
+  const jsonLd = photoJsonLd(photo, album, SITE_URL);
 
   return (
     <main className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-16 md:pb-24 min-h-screen bg-canvas text-ink-body">
+      {/* 구조화 데이터: 이 사진(`ImageObject`)과 Archive → 앨범 → 사진의 경로
+          (`BreadcrumbList`). 화면에는 아무것도 그리지 않는다. `<`를 유니코드
+          이스케이프로 바꾸는 이유는 `shop/[id]`의 주석과 같다 — 제목에
+          "</script>"가 들어 있으면 블록이 거기서 끝난다. */}
+      {jsonLd.map(node => (
+        <script
+          key={node['@type']}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(node).replace(/</g, '\\u003c') }}
+        />
+      ))}
       <PhotoKeyNav prevHref={prevHref} nextHref={nextHref} />
 
       <div className="max-w-[1400px] mx-auto">
@@ -199,7 +220,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
         <figure className="@container mx-auto" style={{ width: `min(100%, calc(${ratio} * ${FRAME_VH}svh))` }}>
           <div className="overflow-hidden rounded-lg bg-stone" style={placeholderStyle(photo.src)}>
             <Image
-              src={cloudinary(photo.src, { watermark: true, width: 2000 })}
+              src={photoImageUrl(photo.src)}
               alt={label}
               width={0}
               height={0}

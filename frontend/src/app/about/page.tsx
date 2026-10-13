@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Reveal from '@/components/motion/Reveal';
+import { sectionTitle, shareCard } from '@/lib/share-card';
+
+const TITLE = 'About';
+const DESCRIPTION = 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.';
 
 export const metadata: Metadata = {
-  title: 'About',
-  description: 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.',
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: '/about' },
+  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
+  ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/about' }),
 };
 
 const WHAT_I_DO = [
