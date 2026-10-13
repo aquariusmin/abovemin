@@ -8,12 +8,9 @@ import {
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import Nav from '@/components/Nav';
-import Footer from '@/components/Footer';
 import ThemeShell from '@/components/ThemeShell';
 import MotionProvider from '@/components/motion/MotionProvider';
 import { SITE_URL } from '@/lib/site';
-import { hasPublishedNotes } from '@/lib/supabase';
 
 /* Type system — see DESIGN.md § Typography.
 
@@ -118,10 +115,11 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // 푸터의 Notes 링크. 캐시된 값이고(`NOTES_PRESENCE_TAG`), 실패하면 링크를
-  // 숨긴다 — 푸터 한 줄 때문에 모든 페이지가 렌더에 실패할 수는 없다.
-  const hasNotes = await hasPublishedNotes().catch(() => false);
+// Nav·본문 여백·Footer는 여기 없다. 크롬이 있는 화면과 없는 화면을 라우트 그룹이
+// 가른다 — `(site)` / `(bare)`, 그리고 `portfolio/` 안의 같은 두 그룹
+// (`components/SiteChrome`, `components/BareFrame`). 루트 레이아웃은 하나로
+// 두어서 그 사이를 오가도 전체 새로고침이 일어나지 않는다.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="ko"
@@ -129,11 +127,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <ThemeShell>
         <a href="#main-content" className="skip-link">본문 바로가기</a>
-        <Nav />
-        <div id="main-content" className="flex-grow pt-[72px] md:pt-[88px]">
-          <MotionProvider>{children}</MotionProvider>
-        </div>
-        <Footer hasNotes={hasNotes} />
+        <MotionProvider>{children}</MotionProvider>
         {/* 방문 통계와 실사용자 Core Web Vitals.
 
             /portfolio는 URL로만 건네는 페이지다 — 열렸는지, 어디까지 읽혔는지,

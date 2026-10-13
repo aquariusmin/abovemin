@@ -401,9 +401,9 @@ what forced `good` off moss: **moss reads 1.89:1 on white.** It is a highlight
 or an underlay on a light surface, never type and never a status mark. Forest
 carries "good" instead, and moss-wash carries the row hover.
 
-**It cannot leak.** Every rule lives in `src/app/lab/lab-console.css`, nested
+**It cannot leak.** Every rule lives in `src/app/(site)/lab/lab-console.css`, nested
 under `.lab-console`; every custom property is `--lab-*` and is defined only in
-that scope; and the file is imported once, in `src/app/lab/layout.tsx`, so it
+that scope; and the file is imported once, in `src/app/(site)/lab/layout.tsx`, so it
 lands in its own route chunk and `/portfolio` never downloads it. If you add to
 that file, keep both properties — a bare selector or a `:root` token there
 would reach the whole site.

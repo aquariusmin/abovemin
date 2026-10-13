@@ -11,11 +11,11 @@ import { revalidatePath } from 'next/cache';
  * 바로 빠져야 한다.
  *
  * 상세는 동적 세그먼트라 패턴 + `'page'`로 넘긴다(`lib/cache-tags.ts`와 같은
- * 이유). 라우트 핸들러에서 부르면 표시만 해 두고 다음 방문 때 다시 굽는다.
+ * 이유). 패턴에는 라우트 그룹 `(site)`가 들어가야 한다 — 거기 주석 참고. 라우트 핸들러에서 부르면 표시만 해 두고 다음 방문 때 다시 굽는다.
  */
 export function revalidateShop(): void {
   revalidatePath('/');
   revalidatePath('/shop');
-  revalidatePath('/shop/[id]', 'page');
+  revalidatePath('/(site)/shop/[id]', 'page');
   revalidatePath('/sitemap.xml');
 }

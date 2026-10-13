@@ -13,7 +13,7 @@ import { publicIdFromUrl } from '@/lib/cloudinary';
  * 관리 화면이 올리는 폴더. 스캔도 삭제도 이 안쪽만 본다.
  *
  * 밖에 있는 자산은 코드가 직접 가리킬 수 있다 — 예를 들어 홈 히어로의 기본
- * 이미지(`app/page.tsx`)는 루트에 있고 DB 어디에도 없다. DB만 보고 판정하면
+ * 이미지(`app/(site)/page.tsx`)는 루트에 있고 DB 어디에도 없다. DB만 보고 판정하면
  * 그런 파일이 "미사용"으로 잡힌다. 그래서 범위 자체를 좁힌다.
  */
 export const MANAGED_PREFIXES = ['phorage/archive/', 'phorage/shop/'] as const;

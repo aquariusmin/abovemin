@@ -453,7 +453,7 @@ function NoteEditor({
           </div>
         </form>
 
-        {/* 미리보기 — 공개 글 페이지(`app/notes/[slug]`)와 같은 구성과 글씨를 한
+        {/* 미리보기 — 공개 글 페이지(`app/(site)/notes/[slug]`)와 같은 구성과 글씨를 한
             단계 작게. */}
         <div aria-label="미리보기" className="min-w-0 space-y-4 rounded-lg border border-border bg-canvas p-5 md:p-6 lg:sticky lg:top-24 lg:self-start">
           <p className="label-ko text-muted-foreground">미리보기</p>

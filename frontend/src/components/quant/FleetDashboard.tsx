@@ -21,7 +21,7 @@ type SortKey = "equity" | "pnl_pct" | "day_pnl_pct" | "updated_at" | "bot_name";
 const NUMERIC_SORT = new Set<SortKey>(["equity", "pnl_pct", "day_pnl_pct"]);
 
 export function FleetDashboard({
-  /** Server-rendered first paint. See `getFleet` in `app/lab/page.tsx`. */
+  /** Server-rendered first paint. See `getFleet` in `app/(site)/lab/page.tsx`. */
   initialBots = null,
   /** When the server read `initialBots` (epoch ms). Staleness is judged
    *  against this until the first client fetch, so the server HTML and the

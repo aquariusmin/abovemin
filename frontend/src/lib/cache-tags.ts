@@ -6,8 +6,8 @@ export const SETTINGS_CACHE_TAG = 'site-settings';
 export const NOTES_CACHE_TAG = 'notes';
 
 /**
- * "공개된 노트가 한 편이라도 있나"(`hasPublishedNotes`). 루트 레이아웃이 푸터
- * 링크를 위해 읽으므로 **모든 페이지**가 이 태그를 달고 있다. 그래서 목록 태그와
+ * "공개된 노트가 한 편이라도 있나"(`hasPublishedNotes`). `SiteChrome`이 푸터
+ * 링크를 위해 읽으므로 **크롬이 있는 모든 페이지**가 이 태그를 달고 있다. 그래서 목록 태그와
  * 나눴다 — 초안의 오타 하나를 고칠 때마다 사이트 전체의 ISR 캐시를 비울 이유가
  * 없다. 이 태그는 공개된 글이 0 ↔ 1 이상으로 바뀔 때만 무효화한다.
  */
@@ -27,16 +27,20 @@ export const NOTES_PRESENCE_TAG = 'notes-presence';
  * 그대로이고 왕복만 사라진다.
  *
  * 앨범 상세는 동적 세그먼트라 리터럴 경로가 아니라 라우트 패턴 + `'page'`로
- * 넘겨야 한다 (패턴에 세그먼트가 있으면 `type`이 필수다). 라우트 핸들러에서
- * 호출하면 표시만 해 두고 실제 재생성은 그 경로를 다음에 방문할 때 일어나므로,
- * 앨범이 몇 개든 한 번에 여러 번 다시 굽지 않는다.
+ * 넘겨야 한다 (패턴에 세그먼트가 있으면 `type`이 필수다). **패턴은 URL이 아니라
+ * 파일 경로다** — 라우트 그룹 이름(`(site)`)까지 적어야 한다. 페이지가 다는 태그가
+ * `_N_T_/(site)/archive/[slug]/page`라서, 그룹을 빼면 오류 없이 아무것도 무효화하지
+ * 않는다(리터럴 경로 `/archive`는 URL 그대로가 맞다). 폴더를 옮기면 여기도 고친다.
+ *
+ * 라우트 핸들러에서 호출하면 표시만 해 두고 실제 재생성은 그 경로를 다음에 방문할
+ * 때 일어나므로, 앨범이 몇 개든 한 번에 여러 번 다시 굽지 않는다.
  */
 export function revalidateNotes({ presenceChanged }: { presenceChanged: boolean }): void {
   // 라우트 핸들러에서 부르므로 `{ expire: 0 }` — 설정 저장(`api/admin/settings`)과
   // 같이, 다음 요청이 옛 목록을 받지 않게 바로 만료시킨다.
   revalidateTag(NOTES_CACHE_TAG, { expire: 0 });
   revalidatePath('/notes');
-  revalidatePath('/notes/[slug]', 'page');
+  revalidatePath('/(site)/notes/[slug]', 'page');
   revalidatePath('/notes/rss.xml');
   revalidatePath('/sitemap.xml');
   if (presenceChanged) {
@@ -53,10 +57,10 @@ export function revalidateArchive(): void {
   // 링크는 앨범에서 아무것도 열지 못한다.
   revalidatePath('/');
   revalidatePath('/archive');
-  revalidatePath('/archive/[slug]', 'page');
+  revalidatePath('/(site)/archive/[slug]', 'page');
   // 사진 한 장의 페이지와 타임라인. 숨긴 사진의 페이지가 300초 동안 더 열리거나,
   // 제목을 고쳤는데 링크 미리보기가 옛 제목을 들고 있지 않게.
-  revalidatePath('/archive/[slug]/[id]', 'page');
+  revalidatePath('/(site)/archive/[slug]/[id]', 'page');
   revalidatePath('/archive/timeline');
   // sitemap이 사진 페이지를 싣는다. 지운 사진의 주소를 계속 신고하지 않게.
   revalidatePath('/sitemap.xml');
