@@ -1,3 +1,4 @@
+import 'server-only';
 import { incrementWithTtl, kvEnabled } from './kv';
 import { log } from './logger';
 import { getSupabaseAdmin } from './supabase-admin';

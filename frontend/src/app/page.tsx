@@ -34,7 +34,9 @@ const RECENT_COUNT = 8;
 
 const DEFAULT_HERO_IMAGE =
   process.env.NEXT_PUBLIC_DEFAULT_HERO_IMAGE ||
-  'https://res.cloudinary.com/dmljaqqzc/image/upload/v1776151998/C92CC8C0-9B98-4F63-9331-674818552AD9_4_5005_c_rxmdjn.jpg';
+  // 관리 화면의 `hero_image`가 비었을 때만 쓰인다. 예전 값은 Cloudinary에서
+  // 지워진 자산이라 404였다 — 바꿀 때는 주소가 실제로 열리는지 확인한다.
+  'https://res.cloudinary.com/dmljaqqzc/image/upload/v1783768515/IMG_6969_xmbefy.jpg';
 
 export default async function Home() {
   // 조회 실패는 빌드 중에만 빈 값으로 그린다(`buildFallback`). 실행 중에

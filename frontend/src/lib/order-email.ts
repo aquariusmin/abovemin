@@ -1,3 +1,4 @@
+import 'server-only';
 import { Resend } from 'resend';
 import { orderItemLabel, type OrderItemRecord } from './order-items';
 
@@ -13,7 +14,14 @@ import { orderItemLabel, type OrderItemRecord } from './order-items';
  * 주문이 관리자 메일함에서 실행되면 안 된다.
  */
 
-export const OWNER_EMAIL = process.env.OWNER_EMAIL ?? 'owner@phorage.com';
+/**
+ * 운영자 알림을 받는 주소. **기본값을 두지 않는다.**
+ *
+ * 예전에는 `?? 'owner@phorage.com'`이었다. 환경변수가 빠진 배포(프리뷰, 프로젝트
+ * 이전, 복원 직후)에서는 손님 이름·연락처·주소가 든 알림이 오류 하나 없이 그
+ * 주소로 나갔을 것이다. 없으면 보내지 않고, 호출부가 로그로 알린다.
+ */
+export const OWNER_EMAIL: string | null = process.env.OWNER_EMAIL?.trim() || null;
 export const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.com>';
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
@@ -115,8 +123,8 @@ export function buildBuyerEmail(order: EmailOrder): EmailMessage {
   return { to: order.email, subject: `[phorage] 주문 접수 확인 — #${orderId}`, html };
 }
 
-/** 운영자에게 가는 새 주문 알림. */
-export function buildOwnerEmail(order: EmailOrder): EmailMessage {
+/** 운영자에게 가는 새 주문 알림. 받는 주소는 호출부가 `OWNER_EMAIL`을 확인해 넘긴다. */
+export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
   const safeName = escapeHtml(order.name);
   const safeEmail = escapeHtml(order.email);
   const safePhone = escapeHtml(order.phone || '-');
@@ -143,7 +151,7 @@ export function buildOwnerEmail(order: EmailOrder): EmailMessage {
   `;
 
   return {
-    to: OWNER_EMAIL,
+    to,
     subject: `[phorage] 새 주문 #${orderId} — ${subjectText(order.name)} / ₩${total_price.toLocaleString()}`,
     html,
   };
