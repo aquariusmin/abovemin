@@ -3,7 +3,7 @@ import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-import { buildBuyerEmail, buildOwnerEmail, sendEmails } from '@/lib/order-email';
+import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, sendEmails } from '@/lib/order-email';
 import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
 
@@ -188,9 +188,12 @@ export async function POST(request: Request) {
   after(async () => {
     const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
     if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
-    const messages = buyerQuota.ok
-      ? [buildBuyerEmail(emailOrder), buildOwnerEmail(emailOrder)]
-      : [buildOwnerEmail(emailOrder)];
+    const messages = buyerQuota.ok ? [buildBuyerEmail(emailOrder)] : [];
+    // 운영자 주소가 없으면 알림을 건너뛴다(`OWNER_EMAIL`의 주석). 주문은 이미
+    // 저장됐고 관리 화면에 보이지만, 알림이 안 간다는 사실은 로그에 남긴다.
+    if (OWNER_EMAIL) messages.push(buildOwnerEmail(emailOrder, OWNER_EMAIL));
+    else log.error('orders.owner_email_unset', { orderId });
+    if (messages.length === 0) return;
     try {
       await sendEmails(messages);
     } catch (emailErr) {
