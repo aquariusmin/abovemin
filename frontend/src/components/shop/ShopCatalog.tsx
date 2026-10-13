@@ -8,6 +8,7 @@ import { revealTarget, useBelowFoldReveal } from '@/components/motion/useBelowFo
 import { useCartStore } from '@/store/cartStore';
 import { formatPriceRange } from '@/lib/price';
 import { SOLD_OUT_LABEL } from '@/lib/product';
+import { placeholderStyle } from '@/components/photo-placeholder';
 
 /**
  * 목록 카드가 그리는 것만. 상태·가격 범위는 서버(`shop/page.tsx`)가
@@ -20,6 +21,8 @@ export interface CatalogItem {
   category: string;
   tag: string | null;
   image_url: string;
+  /** 카드 사진의 가로÷세로. 서버가 `cloudinaryAspect`로 읽는다. 못 읽었으면 null. */
+  aspect: number | null;
   edition: string | null;
   state: 'available' | 'sold_out';
   /** 장바구니에 담을 가격. 옵션이 없는 상품만 쓴다. */
@@ -198,7 +201,12 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               className="break-inside-avoid card-surface group has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring rounded-md"
             >
               {/* Media */}
-              <div className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary">
+              {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`) — 아카이브
+                  타일과 같다. 프레임 크기는 아래 이미지가 정한다. */}
+              <div
+                className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary"
+                style={placeholderStyle(item.image_url)}
+              >
                 {/* Sits above the stretched link but must not swallow its
                     clicks, hence pointer-events-none. */}
                 {/* 품절이면 태그 대신 상태를 단다. 태그와 상태 문구가 한 카드에서
@@ -227,6 +235,11 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                   height={0}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  // 사진을 받기 전에 자리를 잡는다. `width={0} height={0}`만으로는
+                  // 높이 0인 칸이 놓였다가 사진이 올 때 카드의 글자와 그 열의
+                  // 아래 카드가 사진 높이만큼 밀린다. `auto`가 앞에 있어 사진이
+                  // 도착하면 실제 비율이 이긴다 — 로드 뒤의 모습은 예전과 같다.
+                  style={item.aspect ? { aspectRatio: `auto ${item.aspect}` } : undefined}
                   draggable={false}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   fetchPriority={i === 0 ? 'high' : 'auto'}
