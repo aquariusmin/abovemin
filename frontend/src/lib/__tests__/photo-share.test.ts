@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  photoDocumentTitle,
+  photoImageUrl,
+  photoJsonLd,
   photoPageDescription,
   photoPagePath,
   photoPageTitle,
@@ -47,6 +50,119 @@ describe('photoPageTitle / photoPageDescription', () => {
     ).toBe('여수 · 2018.09.08 · iPhone 7 — Korea 컬렉션의 사진.');
     expect(photoPageDescription({ title: '-', location: '-', year: 2020 }, 'Swiss')).toBe('2020 — Swiss 컬렉션의 사진.');
     expect(photoPageDescription({}, 'Swiss')).toBe('Swiss 컬렉션의 사진.');
+  });
+});
+
+describe('photoDocumentTitle', () => {
+  it('앨범 안에서 이름이 하나뿐이면 그대로 — h1과 같다', () => {
+    const photos = [{ title: 'Morning', location: 'Kyoto' }, { title: '-', location: 'Kyoto' }];
+    expect(photoDocumentTitle(photos, 0)).toBe('Morning');
+    expect(photoDocumentTitle(photos, 1)).toBe('Kyoto');
+    // 화면의 제목은 어느 경우에도 바뀌지 않는다.
+    expect(photoPageTitle(photos[1])).toEqual({ title: 'Kyoto', repeatsLocation: true });
+  });
+
+  it('이름이 겹치면 촬영일로 가른다', () => {
+    const photos = [
+      { title: 'IMG_1234', location: '여수', taken_at: '2018-09-08T18:53:14+00:00' },
+      { title: '-', location: '여수', taken_at: '2018-09-09T09:00:00+00:00' },
+    ];
+    expect(photoDocumentTitle(photos, 0)).toBe('여수 · 2018.09.08');
+    expect(photoDocumentTitle(photos, 1)).toBe('여수 · 2018.09.09');
+  });
+
+  it('촬영일이 없으면 앨범 안의 순서', () => {
+    const photos = [
+      { title: '-', location: '여수', taken_at: '2018-09-08T18:53:14+00:00' },
+      { title: 'Somewhere' },
+      { title: '-', location: '여수' },
+    ];
+    expect(photoDocumentTitle(photos, 0)).toBe('여수 · 2018.09.08');
+    expect(photoDocumentTitle(photos, 2)).toBe('여수 · 3/3');
+  });
+
+  it('같은 곳에서 같은 날 찍은 사진끼리는 촬영일로 갈리지 않으므로 순서', () => {
+    const photos = [
+      { location: '여수', taken_at: '2018-09-08T10:00:00+00:00' },
+      { location: '여수', taken_at: '2018-09-08T18:00:00+00:00' },
+      { location: '여수', taken_at: '2018-09-10T18:00:00+00:00' },
+    ];
+    expect(photoDocumentTitle(photos, 0)).toBe('여수 · 1/3');
+    expect(photoDocumentTitle(photos, 1)).toBe('여수 · 2/3');
+    expect(photoDocumentTitle(photos, 2)).toBe('여수 · 2018.09.10');
+  });
+
+  it('제목을 장소로 채운 행과 대소문자만 다른 이름, 무제도 겹친 것으로 본다', () => {
+    const photos = [{ title: 'Osaka', location: 'OSAKA' }, { title: 'OSAKA' }, { title: '-' }, {}];
+    expect(photoDocumentTitle(photos, 0)).toBe('Osaka · 1/4');
+    expect(photoDocumentTitle(photos, 1)).toBe('OSAKA · 2/4');
+    expect(photoDocumentTitle(photos, 2)).toBe(`${UNTITLED} · 3/4`);
+    expect(photoDocumentTitle(photos, 3)).toBe(`${UNTITLED} · 4/4`);
+  });
+
+  it('한 앨범의 문서 제목은 모두 다르다', () => {
+    const photos = [
+      { location: '여수', taken_at: '2018-09-08T10:00:00+00:00' },
+      { location: '여수', taken_at: '2018-09-08T18:00:00+00:00' },
+      { location: '여수' },
+      { title: 'Morning', location: '여수' },
+      { title: 'morning' },
+      {},
+    ];
+    const titles = photos.map((_, i) => photoDocumentTitle(photos, i));
+    expect(new Set(titles).size).toBe(photos.length);
+  });
+});
+
+describe('photoJsonLd', () => {
+  const src = 'https://res.cloudinary.com/demo/image/upload/v1/phorage/archive/a.jpg';
+  const album = { slug: 'korea', title: 'Korea' };
+  const origin = 'https://www.abovemin.com';
+
+  it('ImageObject — 가진 값만, 페이지가 그리는 이미지 주소로', () => {
+    const [image] = photoJsonLd(
+      { id: 7, album_slug: 'korea', src, title: '-', location: '여수', taken_at: '2018-09-08T23:53:14+00:00' },
+      album,
+      origin,
+    );
+    expect(image).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'ImageObject',
+      name: '여수',
+      contentUrl: photoImageUrl(src),
+      url: 'https://www.abovemin.com/archive/korea/7',
+      dateCreated: '2018-09-08',
+      creator: { '@type': 'Organization', name: 'phorage', url: origin },
+      contentLocation: { '@type': 'Place', name: '여수' },
+    });
+    // 워터마크(사인 오버레이)가 실린 주소여야 한다 — 페이지가 그리는 것과 같은 것.
+    expect(image.contentUrl).toContain('l_phorage:brand:signature');
+  });
+
+  it('촬영일·장소가 없으면 그 칸이 없다. 좌표와 크기는 어느 경우에도 없다', () => {
+    const [image] = photoJsonLd({ id: 7, album_slug: 'korea', src, title: 'Morning', location: '-' }, album, origin);
+    expect(image).not.toHaveProperty('dateCreated');
+    expect(image).not.toHaveProperty('contentLocation');
+    const text = JSON.stringify(image);
+    for (const key of ['geo', 'latitude', 'longitude', 'width', 'height', 'datePublished']) {
+      expect(text).not.toContain(`"${key}"`);
+    }
+  });
+
+  it('제목이 장소와 같아도 장소는 장소로 실린다', () => {
+    const [image] = photoJsonLd({ id: 7, album_slug: 'korea', src, title: 'Osaka', location: 'OSAKA' }, album, origin);
+    expect(image.name).toBe('Osaka');
+    expect(image.contentLocation).toEqual({ '@type': 'Place', name: 'OSAKA' });
+  });
+
+  it('BreadcrumbList — Archive → 앨범 → 사진, 절대 주소', () => {
+    const [, crumbs] = photoJsonLd({ id: 7, album_slug: 'korea', src, title: 'Morning' }, album, origin);
+    expect(crumbs['@type']).toBe('BreadcrumbList');
+    expect(crumbs.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Archive', item: 'https://www.abovemin.com/archive' },
+      { '@type': 'ListItem', position: 2, name: 'Korea', item: 'https://www.abovemin.com/archive/korea' },
+      { '@type': 'ListItem', position: 3, name: 'Morning', item: 'https://www.abovemin.com/archive/korea/7' },
+    ]);
   });
 });
 

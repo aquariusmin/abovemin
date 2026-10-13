@@ -4,7 +4,9 @@ import { cloudinary } from '@/lib/cloudinary';
 
 const BASE = 'https://res.cloudinary.com/dmljaqqzc/image/upload';
 const real = `${BASE}/v1/phorage/photo.jpg`;
-const WATERMARK = 'l_text:Arial_18_bold:phorage,o_40,co_white,g_south_east,x_20,y_20';
+// 서명 이미지 → 바탕 폭의 12%로 → 불투명도 60% → 우하단. 네 조각이다.
+const WATERMARK =
+  'l_phorage:brand:signature/c_scale,fl_relative,w_0.12/o_60/fl_layer_apply,g_south_east,x_0.025,y_0.03';
 
 describe('imageLoader — Cloudinary', () => {
   it('요청 폭으로 변환을 다시 쓰고 /_next/image를 거치지 않는다', () => {
@@ -21,6 +23,37 @@ describe('imageLoader — Cloudinary', () => {
   it('워터마크 체인은 그대로, 줄이는 변환 뒤에 남는다', () => {
     const out = imageLoader({ src: cloudinary(real, { width: 800, watermark: true }), width: 640 });
     expect(out).toBe(`${BASE}/f_auto,q_auto,c_limit,w_640/${WATERMARK}/v1/phorage/photo.jpg`);
+  });
+
+  it('워터마크 네 조각은 어느 후보에서든 그대로, 순서대로, 줄인 뒤에 남는다', () => {
+    // 크기는 Cloudinary가 줄인 뒤의 폭에서 계산한다(fl_relative) — 주소의 체인은 같다.
+    const src = cloudinary(real, { width: 1500, watermark: true });
+    for (const width of [256, 640, 1500]) {
+      expect(imageLoader({ src, width })).toBe(
+        `${BASE}/f_auto,q_auto,c_limit,w_${width}/${WATERMARK}/v1/phorage/photo.jpg`,
+      );
+    }
+  });
+
+  it('워터마크의 w_0.12를 호출부의 폭 상한으로도, 전달 세그먼트로도 읽지 않는다', () => {
+    const src = cloudinary(real, { width: 800, watermark: true });
+    expect(imageLoader({ src, width: 640 })).toContain('/f_auto,q_auto,c_limit,w_640/l_phorage:brand:signature/c_scale,fl_relative,w_0.12/o_60/');
+    expect(imageLoader({ src, width: 1080 })).toContain('/f_auto,q_auto,c_limit,w_800/l_phorage:brand:signature/');
+  });
+
+  it('로더를 두 번 거쳐도 체인이 늘거나 줄지 않는다', () => {
+    const once = imageLoader({ src: cloudinary(real, { width: 800, watermark: true }), width: 640 });
+    expect(imageLoader({ src: once, width: 640 })).toBe(once);
+    expect(imageLoader({ src: once, width: 256, quality: 90 })).toBe(
+      `${BASE}/f_auto,q_90,c_limit,w_256/${WATERMARK}/v1/phorage/photo.jpg`,
+    );
+  });
+
+  it('저장된 f_auto,q_auto가 있는 주소에 워터마크를 얹어도 저장된 것만 걷힌다', () => {
+    const cover = `${BASE}/f_auto,q_auto/phorage/archive/photo_17.jpg`;
+    expect(imageLoader({ src: cloudinary(cover, { width: 800, watermark: true }), width: 384 })).toBe(
+      `${BASE}/f_auto,q_auto,c_limit,w_384/${WATERMARK}/phorage/archive/photo_17.jpg`,
+    );
   });
 
   it('호출부가 적은 폭을 넘겨 요청하지 않는다', () => {

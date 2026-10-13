@@ -14,11 +14,44 @@
 interface OptimizeOptions {
   /** 가로 픽셀 상한. 그리드 썸네일 vs 라이트박스 원본에 맞게 조절. */
   width?: number;
-  /** 우하단 "phorage" 워터마크 오버레이 추가 여부. */
+  /** 우하단 서명 워터마크(`WATERMARK`) 추가 여부. */
   watermark?: boolean;
 }
 
-const WATERMARK = 'l_text:Arial_18_bold:phorage,o_40,co_white,g_south_east,x_20,y_20';
+/**
+ * 우하단 서명 워터마크. 글자("phorage")가 아니라 서명 **이미지**를 얹는다.
+ * 크기와 여백이 전달되는 이미지에 비례하므로, 256px 썸네일이든 2400px
+ * 라이트박스든 사진의 같은 비율을 차지한다. (예전의 고정 18px 글자는 줄인 뒤에
+ * 얹혀 256px에서는 폭의 27%, 1500px에서는 4.7%였고, 기기가 고르는 srcset 후보에
+ * 따라 같은 사진의 비율이 달라졌다.)
+ *
+ * 네 조각이 이 순서로 붙는다:
+ *  1. `l_phorage:brand:signature` — 얹을 자산 `phorage/brand/signature`
+ *     (PNG, 투명 바탕에 흰 획). 레이어 주소에서는 `/`를 `:`로 적는다.
+ *  2. `c_scale,fl_relative,w_0.12` — 레이어 폭 = 바탕 사진 폭의 12%.
+ *     `fl_relative`가 "레이어 자신의 크기"가 아니라 "바탕의 크기" 기준으로 만든다.
+ *  3. `o_60` — 불투명도 60%.
+ *  4. `fl_layer_apply,g_south_east,x_0.025,y_0.03` — 우하단에 얹는다. 소수 여백은
+ *     바탕에 대한 비율이다(x는 폭, y는 높이). 실측: 획의 폭은 사진 폭의
+ *     11.3~11.5%, 오른쪽 여백 2.1~2.3%, 아래 여백은 높이의 2.9~3.5%
+ *     (256~1500px 렌디션, 가로·세로 사진).
+ *
+ * 이 자산은 관리 대상 접두사(`phorage/archive/`, `phorage/shop/` —
+ * `lib/admin/orphans.ts`의 `MANAGED_PREFIXES`) **밖**에 있다. DB 어디에도 주소가
+ * 없는 자산이라 안에 두면 미사용 자산 정리가 삭제 후보로 내놓는다. 옮기지 않는다.
+ *
+ * 조각 어느 것도 "전달 최적화뿐"으로 보이면 안 된다(`isDeliverySegment`) — 그러면
+ * 로더가 걷어 낸다. 2번은 `c_scale`·`fl_relative` 덕에, 3번은 `o` 덕에 남는다.
+ *
+ * 체인을 바꾸면 워터마크가 든 모든 렌디션의 주소가 바뀌어 Cloudinary가 한 번씩
+ * 다시 만든다(변환 사용량).
+ */
+const WATERMARK = [
+  'l_phorage:brand:signature',
+  'c_scale,fl_relative,w_0.12',
+  'o_60',
+  'fl_layer_apply,g_south_east,x_0.025,y_0.03',
+].join('/');
 
 /**
  * 진짜 Cloudinary 딜리버리 URL인지 **호스트로** 확인한다.
@@ -63,10 +96,11 @@ export function cloudinary(url: string, { width = 1600, watermark = false }: Opt
   if (!isCloudinaryUrl(url)) return url;
 
   // 리사이즈/최적화를 먼저 적용한 뒤, 워터마크는 "체이닝된 별도 변환"으로 얹는다.
-  // 원본이 25MP를 넘는 카메라 사진(예: 42MP)의 경우, 오버레이(l_text)를 같은
+  // 원본이 25MP를 넘는 카메라 사진(예: 42MP)의 경우, 오버레이(`l_…`)를 같은
   // 변환에 묶으면 Cloudinary가 원본 전체를 디코딩하다 25MP 한도(무료 플랜)에
   // 걸려 400을 반환한다. 먼저 w_N으로 줄이면 오버레이는 작은 이미지에만 적용돼
   // 한도에 걸리지 않는다.
+  // 워터마크는 네 조각짜리 체인이다(`WATERMARK`) — 통째로 줄인 뒤에 붙는다.
   //
   // 크롭(c_fill)은 의도적으로 제공하지 않는다. 히어로를 포함해 이 사이트의
   // 이미지는 잘라내지 않고 프레임 쪽이 사진에 맞추는 것이 원칙이다.
@@ -131,7 +165,10 @@ function isDeliverySegment(segment: string): boolean {
  * 앞머리의 전달 최적화 세그먼트(와 저장된 `f_auto,q_auto`)는 걷어 내고
  * `f_auto,q_…,c_limit,w_<width>`로 **맨 앞에** 새로 붙인다. 워터마크처럼
  * 전달 최적화가 아닌 세그먼트는 순서 그대로 남는다 — 줄인 **뒤에** 오버레이가
- * 얹혀야 25MP 한도에 걸리지 않는다(`cloudinary()`의 주석).
+ * 얹혀야 25MP 한도에 걸리지 않고(`cloudinary()`의 주석), 워터마크의 12%가 이
+ * 후보의 폭에 대한 12%가 된다. 워터마크는 네 조각이고 넷 다 순서대로 남아야
+ * 한다: `c_scale,fl_relative,w_0.12`에는 `w_`가 있지만 `c_scale` 때문에 전달
+ * 세그먼트로 보이지 않고, 폭 상한(`w_<정수>`)으로도 읽히지 않는다.
  *
  * - 폭은 호출부가 적은 `w_N`을 넘지 않는다. srcset은 3840w까지 후보를 만들지만
  *   호출부가 정한 상한이 그 사진에 필요한 최대치다.
@@ -184,7 +221,7 @@ export const OG_HEIGHT = 630;
  *
  * 체인 순서가 요구사항이다: 먼저 카드 안에 들어가게 줄이고(`c_limit`), 그
  * 작은 이미지에 워터마크를 얹고, 마지막에 여백을 붙인다. 여백을 먼저 붙이면
- * 워터마크가 사진이 아니라 크림색 여백 위에 앉아(흰 글자) 보이지 않고, 원본에
+ * 워터마크가 사진이 아니라 크림색 여백 위에 앉아(흰 획) 보이지 않고, 원본에
  * 바로 오버레이를 얹으면 25MP 한도에 걸린다(`cloudinary()`의 주석).
  *
  * `f_jpg`: 카드를 긁어 가는 크롤러 상당수가 AVIF/WebP를 읽지 못한다.
@@ -235,7 +272,8 @@ export async function cloudinaryAspect(url: string): Promise<number | null> {
 }
 
 /**
- * 워터마크 + 최적화. 기존 호출부 호환용 래퍼.
+ * 워터마크 + 최적화. 기존 호출부 호환용 래퍼. 워터마크는 서명 이미지 체인이다
+ * (`WATERMARK`).
  * @deprecated 대신 `cloudinary(url, { watermark: true, width })`를 사용하세요.
  */
 export function withWatermark(url: string, width = 1600): string {

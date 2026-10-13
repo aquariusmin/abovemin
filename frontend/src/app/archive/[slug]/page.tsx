@@ -6,6 +6,7 @@ import PhotoGrid from '@/components/PhotoGrid';
 import Reveal from '@/components/motion/Reveal';
 import BackLink from '@/components/BackLink';
 import { cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
+import { shareCard } from '@/lib/share-card';
 
 /**
  * 공개할 앨범 = 사진이 한 장이라도 있는 앨범.
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // 사진 페이지와 같은 카드: 자르지 않은 1200×630(`cloudinaryOgImage`의 주석).
   // 커버를 그대로 실으면 4000px 원본이 가거나, 저장된 `f_auto`가 크롤러가 못
   // 읽는 포맷을 준다. Cloudinary가 아니면 크기를 모르므로 원본을 싣는다.
-  // 커버가 없으면 이미지를 적지 않는다 — 루트의 `opengraph-image`가 나간다.
+  // 커버가 없으면 사이트 카드가 나간다(`shareCard`의 기본값).
   const og = album.cover ? cloudinaryOgImage(album.cover) : null;
   const images = og
     ? [{ url: og, width: OG_WIDTH, height: OG_HEIGHT, alt: album.title }]
@@ -50,23 +51,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical: path },
     // `openGraph`·`twitter`는 부모 것을 통째로 갈아 끼우므로(얕은 병합) 사이트
-    // 이름·언어·종류를 다시 적는다. `twitter`를 적지 않으면 제목과 설명이
-    // 사이트 기본값으로 남는다.
-    openGraph: {
-      title: album.title,
-      description,
-      url: path,
-      siteName: 'phorage',
-      locale: 'ko_KR',
-      type: 'website',
-      ...(images ? { images } : {}),
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: album.title,
-      description,
-      ...(images ? { images } : {}),
-    },
+    // 이름·언어·종류·이미지를 다시 적는다(`shareCard`).
+    ...shareCard({ title: album.title, description, path, images }),
   };
 }
 

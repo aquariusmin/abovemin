@@ -5,6 +5,7 @@ import {
   cloudinaryPlaceholder,
   isRenderableImageUrl,
   publicIdFromUrl,
+  withWatermark,
   DEFAULT_ASPECT,
   OG_HEIGHT,
   OG_WIDTH,
@@ -13,6 +14,9 @@ import { isOwnCloudinaryUrl, signUploadParams, uploadFolder } from '@/lib/cloudi
 
 const CLOUD = 'dmljaqqzc';
 const real = `https://res.cloudinary.com/${CLOUD}/image/upload/v1/photo.jpg`;
+// 서명 이미지 → 바탕 폭의 12% → 불투명도 60% → 우하단.
+const WATERMARK =
+  'l_phorage:brand:signature/c_scale,fl_relative,w_0.12/o_60/fl_layer_apply,g_south_east,x_0.025,y_0.03';
 
 describe('cloudinary()', () => {
   it('변환 파라미터를 /upload/ 뒤에 넣는다', () => {
@@ -25,8 +29,32 @@ describe('cloudinary()', () => {
     // 한 변환에 묶으면 25MP 넘는 원본에서 Cloudinary가 400을 준다.
     // 먼저 줄이고 그 다음 오버레이 — 순서가 요구사항이다.
     const out = cloudinary(real, { width: 800, watermark: true });
-    expect(out).toContain('w_800,dpr_auto/l_text:');
-    expect(out.indexOf('w_800')).toBeLessThan(out.indexOf('l_text'));
+    expect(out).toContain('w_800,dpr_auto/l_phorage:brand:signature/');
+    expect(out.indexOf('w_800')).toBeLessThan(out.indexOf('l_phorage'));
+  });
+
+  it('워터마크는 서명 이미지 네 조각이고 크기·여백이 바탕에 비례한다', () => {
+    expect(cloudinary(real, { width: 800, watermark: true })).toBe(
+      `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,c_limit,w_800,dpr_auto/${WATERMARK}/v1/photo.jpg`,
+    );
+    expect(WATERMARK.split('/')).toEqual([
+      'l_phorage:brand:signature',
+      'c_scale,fl_relative,w_0.12',
+      'o_60',
+      'fl_layer_apply,g_south_east,x_0.025,y_0.03',
+    ]);
+    // 고정 픽셀 글자 워터마크는 더 쓰지 않는다.
+    expect(cloudinary(real, { watermark: true })).not.toContain('l_text');
+  });
+
+  it('withWatermark도 같은 체인을 쓴다', () => {
+    expect(withWatermark(real, 600)).toBe(cloudinary(real, { width: 600, watermark: true }));
+    expect(withWatermark(real)).toContain(`w_1600,dpr_auto/${WATERMARK}/v1/photo.jpg`);
+  });
+
+  it('워터마크를 얹은 주소에서 미리보기를 만들면 체인이 통째로 걷힌다', () => {
+    const preview = cloudinaryPlaceholder(cloudinary(real, { width: 800, watermark: true }))!;
+    expect(preview).toBe(`https://res.cloudinary.com/${CLOUD}/image/upload/w_32,q_auto:low,e_blur:400,f_auto/v1/photo.jpg`);
   });
 
   it('우리 것이 아닌 URL은 손대지 않는다', () => {
@@ -84,9 +112,11 @@ describe('cloudinaryOgImage()', () => {
   });
 
   it('줄이고 → 워터마크 → 페이지 바탕색으로 1200×630을 채운다', () => {
-    expect(og).toContain('/upload/c_limit,w_1200,h_630/l_text:');
+    expect(og).toBe(
+      `https://res.cloudinary.com/${CLOUD}/image/upload/c_limit,w_1200,h_630/${WATERMARK}/c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg,q_auto/v1/photo.jpg`,
+    );
     expect(og.endsWith('/c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg,q_auto/v1/photo.jpg')).toBe(true);
-    expect(og.indexOf('l_text')).toBeLessThan(og.indexOf('c_pad'));
+    expect(og.indexOf('fl_layer_apply')).toBeLessThan(og.indexOf('c_pad'));
     expect([OG_WIDTH, OG_HEIGHT]).toEqual([1200, 630]);
   });
 
@@ -157,6 +187,11 @@ describe('publicIdFromUrl()', () => {
     // 변환이 붙어도 같은 id여야 한다. DB에는 변환이 박힌 URL도 있다.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/v1768121750/phorage/archive/korea/a.jpg`, 'phorage/archive/korea/a'],
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,c_limit,w_800/l_text:Arial_18_bold:phorage/v1/x/y.png`, 'x/y'],
+    // 지금의 워터마크 체인(네 조각). 레이어 이름 `phorage:brand:signature`를
+    // 사진의 id로 읽으면 안 된다 — 로더가 다시 쓴 주소, 공유 카드 주소도 마찬가지.
+    [cloudinary(`https://res.cloudinary.com/${CLOUD}/image/upload/v1768121750/phorage/archive/korea/a.jpg`, { width: 800, watermark: true }), 'phorage/archive/korea/a'],
+    [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,c_limit,w_640/${WATERMARK}/phorage/archive/photo_17.jpg`, 'phorage/archive/photo_17'],
+    [cloudinaryOgImage(`https://res.cloudinary.com/${CLOUD}/image/upload/v1/phorage/shop/b.jpg`)!, 'phorage/shop/b'],
     // 버전 없는 URL.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/phorage/archive/a.jpg`, 'phorage/archive/a'],
     // 버전 없이 변환만 붙은 URL — 실제 앨범 커버의 형태다. 이 경우를 놓쳐서

@@ -15,6 +15,31 @@ export interface GalleryImage {
 const SWIPE_THRESHOLD = 48;
 
 /**
+ * 큰 사진의 `sizes` — 사진 칸(`md:col-span-7`)의 실제 폭.
+ *
+ * 상세 레이아웃은 `max-w-6xl`(1152px)에서 멈춘다(뷰포트 1232px = 1152 + 좌우
+ * 여백 80). 12칸 그리드의 7칸은 `(폭 − 11×간격) × 7/12 + 6×간격`이다.
+ *   1232px~      1152px, 간격 64 → 645.3px
+ *   1024~1231px  58.3vw − 73.3px (간격 64)  → 53vw 이하
+ *   768~1023px   58.3vw − 66.7px (간격 48)  → 53vw 이하
+ *   ~767px       한 칸: 100vw − 40px(640px부터 − 48px)
+ * 예전의 `58vw`는 상한도 간격도 없어 1920px 화면에서 646px 칸에 1114px라고 말했다.
+ *
+ * 비율을 아는 사진은 한 번 더 좁힌다. 프레임은 `min(칸, 비율 × 78svh)`라서,
+ * 세로 사진은 흔한 데스크톱 화면에서 칸보다 좁다(1440×900의 2:3 사진은 472px).
+ * 칸 폭이 고정인 1232px 이상에서는 "높이가 폭을 정하는가"가 화면 높이만의
+ * 조건이므로 `max-height`로 적을 수 있다. 그 아래 구간은 칸 폭 그대로 둔다 —
+ * 넉넉한 쪽으로 틀린다. `svh` 대신 `vh`: 크거나 같다.
+ */
+function mainSizes(ratio: number | null): string {
+  const column = '(min-width: 1232px) 646px, (min-width: 768px) 53vw, calc(100vw - 40px)';
+  if (!ratio) return column;
+  const heightBound = Math.floor(645 / (0.78 * ratio));
+  const width = Math.ceil(78 * ratio * 100) / 100;
+  return `(min-width: 1232px) and (max-height: ${heightBound}px) ${width}vh, ${column}`;
+}
+
+/**
  * 상품 상세의 사진들 — 큰 사진 한 장과 그 아래 썸네일 줄.
  *
  * **프레임이 사진을 따른다**(DESIGN.md § Image Treatment). 포스터의 앞면은
@@ -100,7 +125,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
                 src={cloudinary(current.url, { width: 1600 })}
                 alt={alt(current, index)}
                 fill
-                sizes="(max-width: 768px) 100vw, 58vw"
+                sizes={mainSizes(ratio)}
                 className="object-contain"
                 /* 첫 사진이 이 페이지의 LCP다. 다른 장으로 넘긴 뒤에는
                    preload할 이유가 없다. */
@@ -115,7 +140,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
               alt={alt(current, index)}
               width={0}
               height={0}
-              sizes="(max-width: 768px) 100vw, 58vw"
+              sizes={mainSizes(null)}
               className="h-auto w-auto max-w-full max-h-[78svh] rounded-lg border border-border-light bg-stone"
               preload={index === 0}
               fetchPriority={index === 0 ? 'high' : 'auto'}

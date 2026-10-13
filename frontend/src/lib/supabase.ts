@@ -191,7 +191,7 @@ export const getAlbumWithPhotos = cache(
 export async function getPhotoInAlbum(
   slug: string,
   id: number,
-): Promise<{ album: Album; photo: Photo; index: number; total: number; prev: Photo | null; next: Photo | null } | null> {
+): Promise<{ album: Album; photo: Photo; photos: Photo[]; index: number; total: number; prev: Photo | null; next: Photo | null } | null> {
   const result = await getAlbumWithPhotos(slug);
   if (!result) return null;
   const { album, photos } = result;
@@ -202,6 +202,8 @@ export async function getPhotoInAlbum(
   return {
     album,
     photo: photos[index],
+    // 앨범 안에서 같은 이름을 가진 사진을 가려내는 데 쓴다(`photoDocumentTitle`).
+    photos,
     index,
     total: photos.length,
     prev: many ? photos[(index - 1 + photos.length) % photos.length] : null,

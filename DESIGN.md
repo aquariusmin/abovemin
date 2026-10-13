@@ -257,7 +257,7 @@ An inline-SVG world map, not a tile map: `moss-wash` land with a `forest/25` hai
 
 One photograph per URL — the address the lightbox's "링크 복사" and print inquiry now hand out (old `?p=` album deep links still open the lightbox). The frame follows the Image Treatment rule: its width is `min(100%, ratio × 74svh)`, so a landscape fills the 1400px container and a portrait becomes a centred column; the caption shares that width (`@container` on the `<figure>`). Below the photo: album name as `.eyebrow-marked`, the caption as a display `h1` (falls back to the place, then "무제"), `.btn-outline` "링크 복사" beside the page's single `.btn-primary` print inquiry, a `.rule-accent`, then a `<dl>` of Korean `label-ko` terms — 촬영일, 장소, 카메라 (a `.link-leaf` to `/archive?camera=…`), 설정 in mono, 컬렉션. Previous/next are `.card-hair` cards with a fixed-height thumbnail whose width comes from the ratio; ←/→ do the same.
 
-The share card is **padded, not cropped**: Cloudinary `c_limit` to 1200×630, watermark, then `c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg`. The fill is the paper canvas, so a portrait reads as a print laid on the site's page rather than a band cut from the middle.
+The share card is **padded, not cropped**: Cloudinary `c_limit` to 1200×630, the signature watermark (an image overlay sized to 12% of the fitted photo's width, bottom-right — `WATERMARK` in `lib/cloudinary.ts`), then `c_pad,w_1200,h_630,b_rgb:fcfaf4,f_jpg`. The fill is the paper canvas, so a portrait reads as a print laid on the site's page rather than a band cut from the middle.
 
 ### Image placeholder
 
@@ -423,28 +423,39 @@ reading — three defensible projects first, the rest demoted to an Explore
 archive, copy written for someone screening a candidate — is now what the
 public route shows.
 
-Two axes in `src/data/portfolioRouting.ts` keep that from collapsing into a
-redirect:
+One axis in `src/data/portfolioRouting.ts` keeps that from collapsing into a
+redirect: **`PortfolioRoute`**, *which URL family a page's links stay in* —
+`normal` (`/portfolio/...`, indexed) or `submission`
+(`/portfolio/submission/...`, `noindex`, nav suppressed, kept valid for links
+already handed out). The page components (`PortfolioOverview`,
+`PortfolioCaseStudy`, `PortfolioPrintContent`) take `route` as a required prop,
+so every route file states its own family.
 
-- **`PortfolioMode`** is the *presentation*: `submission` (curated) or `normal`
-  (the flat list of every project in data order).
-- **`PortfolioRoute`** is *which URL family the links belong to*.
+There is no presentation axis. A `PortfolioMode` (`submission` / `normal`) used
+to pick between the curated reading and an older flat list of every project in
+data order; once every route passed `submission`, the flat list, its copy and
+the prop were deleted. Do not bring a second presentation back as a prop — a
+different reading is a different page.
 
-They used to be one value, and that coupling is what made the two paths two
-different pages. `/portfolio` passes `mode="submission" route="normal"`, so the
-indexed URLs carry the good version while `/portfolio/submission` stays valid —
-`noindex`, nav suppressed — for links already handed out. Every component
-downstream defaults `route` to `mode`, so a call site that never cared keeps its
-old behaviour.
+What `route` changes, and nothing else:
 
-The one intentional difference between the two: the closing CTA's "소개 더 보기"
-link appears on `/portfolio` and not on `/portfolio/submission`. It is keyed to
-`route`, not `mode` — a submission handout has no site to wander into, and a
-site page should link onward.
+- every internal link — cards, back, prev/next, the language switch, and the
+  print link (which carries `?from=submission` so the sheet can link back);
+- the closing CTA's "소개 더 보기" link, which appears on `/portfolio` and not
+  on `/portfolio/submission` — a submission handout has no site to wander
+  into, and a site page should link onward;
+- `ProfilePage` + `Person` JSON-LD (`PortfolioJsonLd.tsx`), emitted only for
+  `route === "normal"` so the noindex family never describes the same person
+  at a second URL.
 
-`/portfolio` also emits `ProfilePage` + `Person` JSON-LD
-(`PortfolioJsonLd.tsx`), gated on `route === "normal"` so the noindex family
-never describes the same person at a second URL.
+Korean and English are the same components. `getPortfolio(locale)`
+(`src/data/portfolioAccess.ts`) is the only place that picks between the two
+data files; it returns the curated `featured` / `archive` / `projects` lists and
+a `getProject(slug)` lookup, renumbered identically for both languages, plus
+`slugs` in data-file order for `generateStaticParams`.
+`ProjectCard` takes `locale` and keeps two typographic treatments on purpose:
+English uses `.eyebrow` and `.chip`, Korean spells the same labels out in sans
+with tighter tracking, because mono uppercase tracking scatters Hangul.
 
 ## Known Gaps
 

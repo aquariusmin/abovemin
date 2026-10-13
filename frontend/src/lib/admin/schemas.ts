@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR } from './limits';
+import { isRenderableImageUrl } from '@/lib/cloudinary';
 import { NOTE_SLUG_RE } from '@/lib/notes';
 import {
   MAX_ADDONS,
@@ -22,6 +23,9 @@ export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
  * (`orders-schema.ts` 주석), 관리 API에서는 반대 방향이 문제다 — 화면이
  * `cover`를 보냈는데 서버가 `cover_photo_id`만 안다면, 버리지 말고 400으로
  * 알려야 고칠 수 있다. 화이트리스트 밖의 키는 거절한다.
+ *
+ * 예외는 "손 검증에서 옮긴 것" 묶음 하나다(사진 한 장·순서·서명·사이트 설정).
+ * 그쪽은 옮기기 전에 받던 입력을 그대로 받는다 — 이유는 그 묶음 머리에 있다.
  *
  * 메시지는 한국어로 적는다. 관리 화면이 서버 메시지를 그대로 보여준다.
  */
@@ -161,6 +165,194 @@ export const PlaceCoord = z.strictObject(
   },
   { error: '좌표가 올바르지 않습니다.' },
 );
+
+// ── 사진 한 장·순서·사이트 설정 (손 검증에서 옮긴 것) ─────────────────────────
+//
+// 이 묶음은 **위의 규칙과 일부러 다르다.** `api/admin/photos`(+ `order`, `sign`)와
+// `api/admin/settings`는 이 파일보다 먼저 생겼고 본문을 손으로 검증했다. 스키마로
+// 옮기면서 받는 입력과 돌려주는 메시지를 한 글자도 바꾸지 않았다 — 화면이 서버
+// 메시지를 그대로 보여 주고, 무엇을 받는지는 이미 계약이다.
+//
+//  - **모르는 키를 거절하지 않고 버린다**(`z.object`, strict 아님). 옛 코드는
+//    아는 키만 꺼내 읽었다.
+//  - **id와 연도는 `Number()`로 읽는다.** `"12"`, `"12.0"`, `[12]`도 12이고,
+//    `true`는 1이다. zod의 `z.number()`는 이것들을 거절하므로 쓰지 않는다.
+//    정수 판정도 `Number.isInteger` 그대로다(`.int()`는 안전 정수 범위까지 본다).
+//  - **장소는 자르기 전 길이로 200자**를 본다(제목은 자른 뒤 길이).
+//  - 메시지는 옛 문구 그대로다(`Invalid id`, `Invalid album_slug` 포함).
+//
+// 조이려면(strict, 숫자만 받기) 화면이 보내는 모양을 확인하고 따로 한다.
+
+/** `Number(value)`가 조건에 맞는 정수일 때만 통과. 실패는 전부 같은 메시지. */
+function looseInt(message: string, accept: (n: number) => boolean) {
+  return z.unknown().transform((value, ctx) => {
+    const n = Number(value);
+    if (!Number.isInteger(n) || !accept(n)) {
+      ctx.issues.push({ code: 'custom', message, input: value });
+      return z.NEVER;
+    }
+    return n;
+  });
+}
+
+const INVALID_ALBUM_SLUG = 'Invalid album_slug';
+const INVALID_ID = 'Invalid id';
+
+/** 요청이 가리키는 앨범. 형식은 `AlbumSlug`와 같고 메시지만 옛 문구다. */
+const AlbumSlugParam = z.string(INVALID_ALBUM_SLUG).regex(ALBUM_SLUG_RE, INVALID_ALBUM_SLUG);
+
+const PhotoId = looseInt(INVALID_ID, id => id > 0);
+
+const PhotoTitle = z
+  .string('제목이 비어 있습니다.')
+  .trim()
+  .min(1, '제목이 비어 있습니다.')
+  .max(200, '제목이 너무 깁니다.');
+
+/** 빈 값은 받는다("장소 없음"). 길이는 **자르기 전**에 본다 — 순서가 뜻이다. */
+const PhotoLocation = z.string('장소가 올바르지 않습니다.').max(200, '장소가 올바르지 않습니다.').trim();
+
+const PhotoYear = looseInt(
+  '연도가 올바르지 않습니다.',
+  year => year >= MIN_YEAR && year <= new Date().getFullYear() + 1,
+);
+
+/**
+ * 좌표가 틀리면 사진 저장까지 막지 않고 좌표만 버린다 — 좌표는 지도용 부가
+ * 정보다. (0, 0)은 GPS가 잡히기 전의 값이라 같이 버린다.
+ */
+const OptionalPlaceCoord = z
+  .unknown()
+  // `optional()`이 있어야 키가 아예 없을 때도 변환이 돈다(없으면 "필수 키 없음").
+  .optional()
+  .transform(value => {
+    if (value === undefined || value === null) return null;
+    const coord = PlaceCoord.safeParse(value);
+    return coord.success && !(coord.data.lat === 0 && coord.data.lng === 0) ? coord.data : null;
+  });
+
+/** 한 번에 넣을 수 있는 장수. 업로드 UI가 배치로 보내므로 상한만 둔다. */
+export const MAX_PHOTO_BATCH = 60;
+/** 한 앨범에 이보다 많은 사진이 쌓이면 순서 변경 UI 자체를 다시 생각해야 한다. */
+export const MAX_PHOTO_ORDER = 500;
+
+/**
+ * 새 사진 저장의 **봉투**. 사진 하나하나는 여기서 보지 않는다(`unknown`) —
+ * `src`가 이 사이트의 Cloudinary인지는 클라우드 이름을 알아야 하고, 그 설정이
+ * 없으면 503이 항목 오류보다 먼저다. 라우트가 `photoCreateItem`으로 하나씩 본다.
+ */
+export const PhotoCreate = z.object(
+  {
+    album_slug: AlbumSlugParam,
+    photos: z
+      .array(z.unknown(), '저장할 사진이 없습니다.')
+      .min(1, '저장할 사진이 없습니다.')
+      .max(MAX_PHOTO_BATCH, `한 번에 ${MAX_PHOTO_BATCH}장까지 저장할 수 있습니다.`),
+  },
+  INVALID_ALBUM_SLUG,
+);
+
+const NOT_OWN_SRC = '이 사이트의 Cloudinary 주소가 아닙니다.';
+
+/**
+ * 새 사진 한 장. `isOwnSrc`는 라우트가 넘긴다(`isOwnCloudinaryUrl` + 클라우드
+ * 이름). 키 순서가 곧 오류 순서다: src → 제목 → 장소 → 연도.
+ *
+ * 배열을 `{}`로 읽는 이유: 옛 검증은 `typeof raw === 'object'`만 봤고 배열은
+ * 그걸 통과해 "주소가 아닙니다"에서 걸렸다. 메시지를 그대로 두려는 것뿐이다.
+ */
+export function photoCreateItem(isOwnSrc: (src: string) => boolean) {
+  return z.preprocess(
+    raw => (Array.isArray(raw) ? {} : raw),
+    z.object(
+      {
+        src: z.string(NOT_OWN_SRC).refine(isOwnSrc, NOT_OWN_SRC),
+        title: PhotoTitle,
+        location: PhotoLocation,
+        year: PhotoYear,
+        place_coord: OptionalPlaceCoord,
+      },
+      '사진 항목이 올바르지 않습니다.',
+    ),
+  );
+}
+export type PhotoCreateItemInput = z.output<ReturnType<typeof photoCreateItem>>;
+
+/** 사진 한 장 수정. 보낸 필드만 바뀐다. `src`는 받지 않는다(보내면 버린다). */
+export const PhotoUpdate = z
+  .object(
+    {
+      id: PhotoId,
+      // 불리언이 아닌 값(`"false"`)을 진릿값으로 읽으면 반대로 동작한다.
+      hidden: z.boolean('숨김 값이 올바르지 않습니다.').optional(),
+      title: PhotoTitle.optional(),
+      location: PhotoLocation.optional(),
+      year: PhotoYear.optional(),
+    },
+    INVALID_ID,
+  )
+  .refine(
+    body => ['hidden', 'title', 'location', 'year'].some(key => body[key as keyof typeof body] !== undefined),
+    '변경할 내용이 없습니다.',
+  );
+
+export const PhotoDelete = z.object({ id: PhotoId }, INVALID_ID);
+
+/**
+ * 앨범 안 사진 순서. 두 단계로 본다(`pipe`) — 길이가 틀리면 그 메시지가 먼저고,
+ * id 하나하나는 그다음이다. 한 단계로 합치면 501개짜리 목록에 섞인 잘못된 id가
+ * 먼저 보고된다.
+ */
+export const PhotoOrder = z.object(
+  {
+    album_slug: AlbumSlugParam,
+    ids: z
+      .array(z.unknown(), '순서 목록이 올바르지 않습니다.')
+      .min(1, '순서 목록이 올바르지 않습니다.')
+      .max(MAX_PHOTO_ORDER, '순서 목록이 올바르지 않습니다.')
+      .pipe(
+        z
+          .array(looseInt('순서 목록에 잘못된 id가 있습니다.', id => id > 0))
+          .refine(ids => new Set(ids).size === ids.length, '순서 목록에 중복된 id가 있습니다.'),
+      ),
+  },
+  INVALID_ALBUM_SLUG,
+);
+
+/** 업로드 서명을 받을 앨범. */
+export const PhotoSign = z.object({ album_slug: AlbumSlugParam }, INVALID_ALBUM_SLUG);
+
+export const SETTINGS_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'] as const;
+export type SettingsKey = (typeof SETTINGS_KEYS)[number];
+
+/**
+ * 사이트 설정. 아는 키이면서 값이 문자열인 것만 **고르고**, 나머지는 거절하지
+ * 않고 버린다. 결과는 `[키, 값]` 목록이다 — 보낸 순서대로 저장한다.
+ *
+ * 본문을 읽지 못했거나(`undefined`) 배열이면 빈 객체로 본다: 옛 코드가 그 둘에
+ * "Invalid body"가 아니라 "No valid keys"로 답했다.
+ *
+ * `hero_image`는 홈에서 `next/image`로 렌더된다. 허용되지 않은 호스트가 들어가면
+ * 렌더 도중 throw가 나고 홈 전체가 error 바운더리로 떨어지므로 저장을 막는다 —
+ * 잘못된 값이 들어간 뒤에는 관리 화면에서 되돌리기 전까지 홈이 깨져 있다.
+ * 빈 문자열은 "기본 이미지로"라는 뜻이라 받는다.
+ */
+export const SettingsUpdate = z
+  .preprocess(
+    body => (body === undefined || Array.isArray(body) ? {} : body),
+    z.record(z.string(), z.unknown(), 'Invalid body'),
+  )
+  .transform(body =>
+    Object.entries(body).filter(
+      (entry): entry is [SettingsKey, string] =>
+        (SETTINGS_KEYS as readonly string[]).includes(entry[0]) && typeof entry[1] === 'string',
+    ),
+  )
+  .refine(updates => updates.length > 0, 'No valid keys')
+  .refine(updates => {
+    const heroImage = updates.find(([key]) => key === 'hero_image')?.[1];
+    return heroImage === undefined || heroImage === '' || isRenderableImageUrl(heroImage);
+  }, '히어로 이미지는 res.cloudinary.com 또는 images.unsplash.com의 https 주소여야 합니다.');
 
 // ── 데이터 점검 고치기 ────────────────────────────────────────────────────────
 

@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioCaseStudy from "@/components/portfolio/PortfolioCaseStudy";
-import {
-  getEnglishSubmissionPortfolioProject,
-  getEnglishSubmissionPortfolioProjects,
-  getPortfolioProject,
-  portfolioProjects,
-} from "@/data/portfolio";
+import { getPortfolio } from "@/data/portfolioAccess";
+
+const portfolio = getPortfolio("en");
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return portfolioProjects.map((project) => ({ slug: project.slug }));
+  return portfolio.slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getPortfolioProject(slug);
+  const project = portfolio.getProject(slug);
   if (!project) notFound();
   return {
     title: `${project.title} · English`,
@@ -28,14 +25,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EnglishPortfolioSubmissionCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = getEnglishSubmissionPortfolioProject(slug);
+  const project = portfolio.getProject(slug);
   if (!project) notFound();
   return (
     <PortfolioCaseStudy
       project={project}
-      projects={getEnglishSubmissionPortfolioProjects()}
+      projects={portfolio.projects}
       locale="en"
-      mode="submission"
+      route="submission"
     />
   );
 }

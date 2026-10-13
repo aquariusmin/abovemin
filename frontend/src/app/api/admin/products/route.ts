@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { log } from '@/lib/logger';
-import { getCloudinaryConfig, isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
+import { isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import { isMissingColumnError, withColumnFallback } from '@/lib/db-compat';
 import { Id, ProductCreate, ProductUpdate } from '@/lib/admin/schemas';
 import { revalidateShop } from '@/lib/admin/revalidate';
 import { writeWithFallback, type BlockedBy } from '@/lib/admin/product-columns';
 import {
+  adminCloudinary,
   adminDb,
   dbErrorResponse,
   guardMutation,
@@ -56,13 +57,9 @@ function isAllowedProductImage(url: string, cloudName: string): boolean {
 function checkImages(urls: Array<string | undefined>): Response | null {
   const given = urls.filter((url): url is string => url !== undefined);
   if (given.length === 0) return null;
-  let cloudName: string;
-  try {
-    cloudName = getCloudinaryConfig().cloudName;
-  } catch (error) {
-    log.error('admin_products_cloudinary', error);
-    return jsonError('Cloudinary is not configured', 503);
-  }
+  const cloudinary = adminCloudinary('admin_products');
+  if (!cloudinary.ok) return cloudinary.response;
+  const { cloudName } = cloudinary.value;
   if (!given.every(url => isAllowedProductImage(url, cloudName))) {
     return jsonError('상품 이미지는 이 사이트의 Cloudinary 업로드 주소여야 합니다.', 400);
   }

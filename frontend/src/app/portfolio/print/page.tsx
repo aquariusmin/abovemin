@@ -19,7 +19,6 @@ export default async function PortfolioPrintPage({
   return (
     <PortfolioPrintContent
       locale="ko"
-      mode="submission"
       route={from === "submission" ? "submission" : "normal"}
     />
   );

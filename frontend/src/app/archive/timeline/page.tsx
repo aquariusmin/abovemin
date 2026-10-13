@@ -11,6 +11,7 @@ import Reveal from '@/components/motion/Reveal';
 import TimelineYearIndex from '@/components/archive/TimelineYearIndex';
 import { storedRatioStyle } from '@/components/photo-placeholder';
 import { buildFallback } from '@/lib/build-phase';
+import { sectionTitle, shareCard } from '@/lib/share-card';
 
 const TITLE = 'Timeline';
 const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로 — 연도와 달로 나눠 봅니다.';
@@ -20,19 +21,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/archive/timeline' },
-  openGraph: {
-    title: `${TITLE} | phorage`,
-    description: DESCRIPTION,
-    url: '/archive/timeline',
-    siteName: 'phorage',
-    locale: 'ko_KR',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: `${TITLE} | phorage`,
-    description: DESCRIPTION,
-  },
+  ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/archive/timeline' }),
 };
 
 // `/archive`와 같다. `revalidateArchive()`가 사진이 바뀔 때 이 경로도 무효화한다.
@@ -134,7 +123,15 @@ export default async function TimelinePage() {
                               alt={photoLabel(photo)}
                               width={0}
                               height={0}
-                              sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 220px"
+                              // 칸의 실제 폭. md부터는 왼쪽에 달 제목 칸(9rem + 간격 2rem
+                              // = 176px)이 있어 목록이 그만큼 좁다 — 예전의 `25vw`는 그것을
+                              // 빼지 않아 태블릿에서 17vw짜리 칸에 25vw라고 말했다.
+                              //   1480px~      (1400 − 176 − 5×12) ÷ 6 = 194px
+                              //   1024~1479px  (100vw − 80 − 176 − 60) ÷ 6 = 16.7vw − 52.7px → 14vw 이하
+                              //   768~1023px   (100vw − 80 − 176 − 36) ÷ 4 = 25vw − 73px     → 18vw 이하
+                              //   640~767px    (100vw − 48 − 24) ÷ 4 = 25vw − 18px           → 23vw 이하
+                              //   ~639px       (100vw − 40 − 16) ÷ 3 = 33.3vw − 18.7px       → 31vw 이하
+                              sizes="(min-width: 1480px) 194px, (min-width: 1024px) 14vw, (min-width: 768px) 18vw, (min-width: 640px) 23vw, 31vw"
                               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.04]"
                               style={storedRatioStyle(photo)}
                               loading="lazy"
