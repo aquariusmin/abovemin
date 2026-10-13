@@ -26,6 +26,16 @@ export const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.c
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
 /**
+ * 주문 완료 화면에 보여 줄 계좌 정보. 메일과 같은 환경변수에서 오지만, 설정되지
+ * 않았을 때는 위의 자리표시 문구가 아니라 `null`이다 — 화면은 "메일을
+ * 확인해주세요"로 안내하고, 손님에게 "미설정"을 계좌처럼 보여 주지 않는다.
+ */
+export function configuredBankInfo(value: string | undefined = process.env.BANK_INFO): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+/**
  * 옵션을 고른 줄은 `option_label`을 함께 적는다("포스터 · A3 · 매트지"). 옵션
  * 이전의 주문(키 자체가 없음)은 이름만 — 관리 화면의 재발송이 옛 주문도 보낸다.
  */

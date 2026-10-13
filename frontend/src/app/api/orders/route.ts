@@ -3,9 +3,10 @@ import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, sendEmails } from '@/lib/order-email';
+import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, configuredBankInfo, sendEmails } from '@/lib/order-email';
 import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
+import { orderPlacedBody } from '@/lib/order-placed';
 
 /**
  * 주문 한 건은 메일 두 통(손님·운영자)을 부른다. 이 엔드포인트는 로그인 없이
@@ -55,7 +56,7 @@ async function findOrderByIdempotencyKey(supabase: AdminClient, key: string | nu
 
 function replayResponse(order: ExistingOrder) {
   log.info('orders.idempotent_replay', { orderId: order.id });
-  return NextResponse.json({ success: true, orderId: order.id, total_price: order.total_price });
+  return NextResponse.json(orderPlacedBody(order.id, order.total_price, configuredBankInfo()));
 }
 
 export async function POST(request: Request) {
@@ -201,5 +202,7 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json({ success: true, orderId, total_price });
+  // 계좌 정보를 응답에도 싣는다 — 확인 메일이 늦거나 스팸함에 들어가도 손님이
+  // 완료 화면만 보고 입금할 수 있어야 한다(`lib/order-placed.ts`).
+  return NextResponse.json(orderPlacedBody(orderId, total_price, configuredBankInfo()));
 }
