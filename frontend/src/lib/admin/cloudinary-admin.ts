@@ -1,6 +1,8 @@
+import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CloudinaryConfig } from '@/lib/cloudinary-upload';
 import { log } from '@/lib/logger';
+import { selectAll } from '@/lib/select-all';
 import { MANAGED_PREFIXES, collectReferencedPublicIds } from './orphans';
 
 /**
@@ -35,17 +37,22 @@ function authHeader(config: CloudinaryConfig): string {
  *
  * 숨긴 사진(`hidden`)도 참조로 친다 — 숨김은 되돌릴 수 있는 상태이고, 되돌렸을
  * 때 파일이 없으면 안 된다. 테이블이 늘어나면 여기도 늘어나야 한다.
+ *
+ * 모든 조회는 `selectAll`로 끝까지 읽는다. 행 수 상한에 걸려 잘린 목록은 오류
+ * 없이 오고, 잘려 나간 사진의 원본은 "참조 없음"으로 보여 삭제 대상이 된다.
  */
 export async function loadReferencedPublicIds(
   db: SupabaseClient,
 ): Promise<{ ok: true; ids: Set<string> } | { ok: false; error: unknown }> {
   const [photos, albums, products, settings] = await Promise.all([
-    db.from('photos').select('src'),
-    db.from('albums').select('cover'),
+    selectAll<{ src: unknown }>((from, to) => db.from('photos').select('src').order('id').range(from, to)),
+    selectAll<{ cover: unknown }>((from, to) => db.from('albums').select('cover').order('slug').range(from, to)),
     // `*`: `images`(20260917020000_shop_ready)는 마이그레이션 전 DB에 없다. 이름으로
     // 고르면 스캔 자체가 실패한다.
-    db.from('products').select('*'),
-    db.from('site_settings').select('value'),
+    selectAll<{ image_url?: unknown; images?: unknown }>((from, to) =>
+      db.from('products').select('*').order('id').range(from, to),
+    ),
+    selectAll<{ value: unknown }>((from, to) => db.from('site_settings').select('value').order('key').range(from, to)),
   ]);
   const failed = [photos, albums, products, settings].find(result => result.error);
   if (failed?.error) return { ok: false, error: failed.error };
