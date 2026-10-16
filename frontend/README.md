@@ -113,6 +113,19 @@
 - **앨범 설명** — 관리 화면의 앨범 "설명"이 앨범 페이지 제목 아래와 검색 설명에 나옵니다. 비어 있으면 줄이 없습니다.
 - **그리드** — 크기가 저장된 사진은 이미지가 오기 전에 비율만큼 자리를 잡고, 그 칸에 흐린 32px 미리보기를 깝니다(크기 자체가 아니라 비율만 씁니다).
 
+## Lab · 시장 대시보드 (`/lab/markets`, 본인 전용)
+
+PC의 [market-intelligence-dashboard](https://github.com/aquariusmin/market-intelligence-dashboard)가 계산한 결과를 보여 주는 본인 전용 페이지입니다(개요 · 뉴스·공시 · 모델 검증 · 운영 상태).
+
+- **보이는 사람:** 관리자 세션(`/admin` 로그인)이 있을 때만. 없으면 그냥 404이고, `noindex`이며, Nav·sitemap에 없습니다. 페이지마다 `requireOwner()`(`lib/markets/store.ts`)를 부릅니다.
+- **데이터 흐름:** PC cron → `mi_cli.py publish` → `POST /api/lab/markets/ingest`(Bearer 토큰) → 비공개 Storage 버킷 `mi-dashboard`의 `v1/{core,news,performance}.json`을 덮어씀 → 페이지가 service-role로 읽음. PC에는 service-role 키가 없고, 업로드 토큰은 이 세 파일을 바꾸는 일만 할 수 있습니다.
+- **재배포 금지 데이터:** KRX·토스증권 시세 파생값이라 공개 테이블이나 공개 버킷에 두지 않습니다. S&P 500·NASDAQ 100은 FRED 저장 금지 때문에 SPY·QQQ(토스) 기준으로 올라옵니다.
+- **켜기 (한 번만):**
+  1. `supabase/migrations/20261016120000_mi_dashboard_bucket.sql`을 SQL Editor에서 실행(비공개 버킷 생성, 순서 무관).
+  2. Vercel 환경변수 `MI_PUBLISH_TOKEN`(32자 이상 무작위 문자열)을 Production에 추가하고 재배포.
+  3. PC의 `~/.config/mi/env`에 같은 `MI_PUBLISH_TOKEN`과 `MI_PUBLISH_URL=https://www.abovemin.com/api/lab/markets/ingest`(apex는 307 리다이렉트라 `www`).
+- **로컬에서 보기:** `mi_cli.py publish --out <폴더>`로 묶음을 만들고 `MI_LOCAL_BUNDLE_DIR=<폴더> npm run dev`. 이 변수는 production에서 무시됩니다. 관리자 로그인은 평소처럼 필요합니다.
+
 ## Archive photo upload
 
 아카이브 사진은 두 가지 방법으로 추가합니다. Cloudinary 콘솔과 Supabase Studio를 오갈 필요는 없습니다.
