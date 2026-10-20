@@ -109,7 +109,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "0.96 h dwell at Haeundae", ko: "해운대역 체류 0.96시간" },
     demonstrates: {
       en: "Constructing a variable the source data does not contain, finding the first metric broken, and repairing it before reporting.",
-      ko: "원자료에 없는 변수를 만들고, 첫 지표가 깨진 것을 확인한 뒤 보정하고 나서 보고하는 과정입니다.",
+      ko: "승하차 기록으로 체류시간을 추정했습니다. 처음 계산에서 음수가 나온 원인을 찾아 기준점을 보정했습니다.",
     },
     caution: {
       en: "In-progress work ahead of a September 2026 submission; dwell is estimated from gate records, not measured mobility data.",
@@ -121,7 +121,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "7,043 telecom customer records", ko: "통신 고객 데이터 7,043건" },
     demonstrates: {
       en: "Customer segmentation, explainable classification, and action-oriented retention planning.",
-      ko: "고객 세분화, 설명 가능한 분류모형, 분석 기반 고객 유지 전략 수립까지 이어지는 과정입니다.",
+      ko: "계약과 이용 기간별 이탈률을 비교하고, 분류모형과 SHAP 분석을 바탕으로 고객군별 유지 방안을 제안했습니다.",
     },
     caution: {
       en: "The 5.0 percentage-point churn reduction is a proposed target, not an achieved result.",
@@ -133,7 +133,7 @@ export const portfolioEvidenceHighlights = [
     evidence: { en: "R-squared = 0.819", ko: "R² = 0.819" },
     demonstrates: {
       en: "Testing night lights as an auxiliary economic indicator, while separating data QA from model claims.",
-      ko: "야간조도를 경제 보조 지표로 검증하고, 데이터 QA와 모형 주장을 분리해 기록한 작업입니다.",
+      ko: "야간조도와 GDP의 관계를 회귀분석으로 살펴봤습니다. 파일 간 데이터가 어긋난 부분을 확인하고 재현 가능한 결과를 정리했습니다.",
     },
     caution: {
       en: "This is explanatory fit in a simple model, not prediction accuracy or causal proof.",

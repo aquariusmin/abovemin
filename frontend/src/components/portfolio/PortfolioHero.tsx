@@ -34,17 +34,17 @@ export default function PortfolioHero({
               tops out at `md:text-6xl`; this was the one outlier. */}
           <h1 className="max-w-5xl break-keep font-serif text-[clamp(2.25rem,5vw+0.5rem,4.5rem)] font-medium leading-[1.05] tracking-tight text-ink">
             {isKorean
-              ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+              ? "데이터로 궁금한 것을 확인하고, 결과를 이해하기 쉽게 정리합니다."
               : "I test the assumptions behind data and turn it into metrics a decision can rest on."}
           </h1>
           <p className="max-w-3xl break-keep text-base font-medium leading-relaxed text-accent md:text-xl">
             {isKorean
-              ? "국제통상·경영 배경 위에서 공공데이터, 고객 데이터, 대체 경제지표를 분석합니다. 좋은 숫자를 만드는 것보다 그 숫자가 어디까지 말할 수 있는지 확인하는 데 집중합니다."
+              ? "국제통상과 경영을 공부한 이상민입니다. 공공데이터와 고객 데이터, 경제지표를 다루며 관심 있는 주제를 직접 분석해 왔습니다. 분석 과정에서 예상과 다른 결과가 나오면 데이터와 계산 방법부터 다시 살펴봅니다."
               : "With a background in international trade and business, I analyse public data, customer data, and alternative economic indicators. I care less about producing a good number than about checking how far that number can speak."}
           </p>
           <p className="max-w-3xl break-keep text-sm leading-relaxed text-slate md:text-base">
             {isKorean
-              ? "대표 프로젝트는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight 세 가지입니다. 북극항로처럼 AI 도움으로 낯선 도메인을 탐색한 작업은 Explore 영역에 낮은 비중으로 분리했습니다."
+              ? "부산 도시철도 이용객의 체류시간 추정, 통신 고객 이탈 분석, 야간조도와 GDP의 관계를 살펴본 프로젝트를 소개합니다. 북극항로 분석 등 다른 작업도 아래에 함께 정리했습니다."
               : "The three featured projects are the Busan urban-rail dwell analysis, telecom churn XAI, and satellite night-light GDP analysis. Work that explored an unfamiliar domain with AI help, like the Arctic route study, is set apart in Explore with less weight."}
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-slate">
@@ -74,7 +74,7 @@ export default function PortfolioHero({
 
       <div className="space-y-5 md:col-span-4 md:border-l md:border-hairline md:pl-8">
         <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
-          {isKorean ? "문제 해결 흐름" : "Working method"}
+          {isKorean ? "분석 순서" : "Working method"}
         </p>
         <ol className="space-y-3 text-sm text-slate">
           {(isKorean

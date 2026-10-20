@@ -39,12 +39,12 @@ export default function PortfolioPrintContent({
           </div>
           <p className="mt-6 max-w-3xl break-keep text-lg font-semibold leading-relaxed text-accent">
             {isKorean
-              ? "데이터의 가정을 검증하고, 의사결정 가능한 지표로 바꿉니다."
+              ? "데이터로 궁금한 것을 확인하고, 결과를 이해하기 쉽게 정리합니다."
               : "I test the assumptions behind data and turn it into metrics a decision can rest on."}
           </p>
           <p className="mt-3 max-w-3xl break-keep text-xs leading-relaxed text-slate">
             {isKorean
-              ? "대표 사례는 부산 도시철도 체류 분석, 통신 고객 이탈 XAI, Satellite GDP Insight입니다. 북극항로 등 탐색형 작업은 보조 자료로 낮춰 배치했습니다."
+              ? "부산 도시철도 체류시간 추정, 통신 고객 이탈 분석, 야간조도와 GDP 분석을 중심으로 작업 과정과 결과를 정리했습니다."
               : "The featured cases are the Busan urban-rail dwell analysis, telecom churn XAI, and satellite night-light GDP analysis. Exploratory work such as the Arctic route study is placed lower as supporting material."}
           </p>
         </header>
@@ -68,7 +68,7 @@ export default function PortfolioPrintContent({
           <div className="portfolio-print-section mb-5">
             <p className={`text-[9px] font-semibold text-slate ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>{isKorean ? "프로젝트 요약" : "Case study summary"}</p>
             <h2 className="mt-2 font-serif text-2xl font-semibold">
-              {isKorean ? "대표 3개와 Explore 작업" : "Three featured projects and Explore work"}
+              {isKorean ? "주요 프로젝트와 그 밖의 작업" : "Three featured projects and Explore work"}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -88,7 +88,7 @@ export default function PortfolioPrintContent({
                   ))}
                 </div>
                 <p className="mt-3 break-keep text-[10px] leading-relaxed text-slate">
-                  <span className="font-semibold text-ink">{isKorean ? "의사결정 가치 · " : "Decision value · "}</span>{project.decisionValue}
+                  <span className="font-semibold text-ink">{isKorean ? "활용 방향 · " : "Decision value · "}</span>{project.decisionValue}
                 </p>
                 {project.caution && (
                   <p className="mt-3 break-keep border-l-2 border-brick/30 pl-2 text-[9px] leading-relaxed text-muted-foreground">
@@ -101,7 +101,7 @@ export default function PortfolioPrintContent({
         </section>
 
         <footer className="portfolio-print-section mt-8 border-t border-black/10 pt-4 text-[9px] leading-relaxed text-muted-foreground">
-          <p>{isKorean ? "본 문서는 공개용 요약본이며, 전화번호와 미검증 성과를 포함하지 않습니다." : "This is a public-safe summary and excludes phone information and unverified outcome claims."}</p>
+          <p>{isKorean ? "프로젝트별 분석 과정과 결과를 간추린 포트폴리오입니다." : "This is a public-safe summary and excludes phone information and unverified outcome claims."}</p>
           <p className="mt-1">{isKorean ? "웹에서 프로젝트 상세와 원본 저장소 링크를 함께 확인할 수 있습니다." : "The web portfolio includes detailed cases and links to the source repositories."}</p>
         </footer>
       </article>

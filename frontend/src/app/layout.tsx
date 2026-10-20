@@ -121,7 +121,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // 푸터의 Notes 링크. 캐시된 값이고(`NOTES_PRESENCE_TAG`), 실패하면 링크를
   // 숨긴다 — 푸터 한 줄 때문에 모든 페이지가 렌더에 실패할 수는 없다.
-  const hasNotes = await hasPublishedNotes().catch(() => false);
+  // Copy preview runs without a database; keep this opt-in and development-only.
+  const isLocalPortfolioPreview =
+    process.env.NODE_ENV === 'development' && process.env.PORTFOLIO_COPY_PREVIEW === '1';
+  const hasNotes = isLocalPortfolioPreview
+    ? false
+    : await hasPublishedNotes().catch(() => false);
   return (
     <html
       lang="ko"
@@ -146,8 +151,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
             둘 다 같은 오리진(`/_vercel/…`)에서 스크립트를 받고 같은 곳으로
             비콘을 보내므로 CSP를 손댈 필요가 없다. 쿠키도 쓰지 않는다. */}
-        <Analytics />
-        <SpeedInsights />
+        {!isLocalPortfolioPreview && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </ThemeShell>
     </html>
   );

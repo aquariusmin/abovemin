@@ -34,7 +34,7 @@ const styles = {
 
 const labels = {
   en: { question: "Business question", cta: "View case study →" },
-  ko: { question: "비즈니스·연구 질문", cta: "사례 자세히 보기 →" },
+  ko: { question: "분석 질문", cta: "프로젝트 자세히 보기 →" },
 } as const;
 
 export default function ProjectCard({

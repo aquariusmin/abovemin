@@ -43,15 +43,15 @@ export default function PortfolioOverview({
           <Reveal className="grid gap-6 md:grid-cols-12 md:items-end" y={16}>
             <div className="space-y-4 md:col-span-7">
               <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>
-                {isKorean ? "제가 일하는 방식" : "How I work"}
+                {isKorean ? "관심 분야와 작업 방식" : "How I work"}
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                {isKorean ? "숫자를 정리한 뒤, 그 숫자로 무엇을 말할 수 있는지까지 봅니다." : "I try to make the numbers useful before I make them impressive."}
+                {isKorean ? "궁금한 점에서 시작해 데이터를 찾아봅니다." : "I try to make the numbers useful before I make them impressive."}
               </h2>
             </div>
             <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
               {isKorean
-                ? "먼저 왜 이 질문을 봐야 하는지 정리하고, 확인한 사실과 아직 가정으로 남겨야 할 부분을 나눠서 보고서와 화면으로 옮깁니다."
+                ? "질문에 맞는 자료를 찾고, 분석 방법을 정한 뒤 결과를 보고서나 대시보드로 정리합니다. 자료가 부족하거나 추가 확인이 필요한 부분도 함께 적습니다."
                 : "I start by asking why the question matters, then separate what I checked from what still needs another pass."}
             </p>
           </Reveal>
@@ -81,13 +81,13 @@ export default function PortfolioOverview({
               </p>
               <h2 className="break-keep font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl">
                 {isKorean
-                  ? "대표 프로젝트 3개를 먼저 보여줍니다."
+                  ? "주요 프로젝트 세 가지"
                   : "Three featured projects come first."}
               </h2>
             </div>
             <p className="max-w-md break-keep text-sm leading-relaxed text-muted-foreground">
               {isKorean
-                ? "채용용 첫 화면에서는 제가 직접 방어할 수 있는 분석 과정을 우선 배치했습니다. 각 사례는 질문, 데이터 검증, 결론의 범위를 함께 보여줍니다."
+                ? "각 프로젝트에 사용한 데이터와 분석 과정, 주요 결과를 담았습니다. 진행 중 겪었던 문제와 수정한 내용도 상세 페이지에서 볼 수 있습니다."
                 : "This first screen leads with analysis I can defend myself. Each case shows the question, how the data was checked, and how far the conclusion reaches."}
             </p>
           </Reveal>
@@ -107,13 +107,13 @@ export default function PortfolioOverview({
                 <p className={isKorean ? "label-ko text-slate" : "eyebrow text-slate"}>Explore / Archive</p>
                 <h2 id="submission-archive" className="break-keep font-serif text-2xl font-medium tracking-tight text-ink md:text-3xl">
                   {isKorean
-                    ? "낯선 도메인과 보조 프로젝트는 낮은 비중으로 둡니다."
+                    ? "함께 진행한 작업들"
                     : "Unfamiliar domains and side projects carry less weight."}
                 </h2>
               </div>
               <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
                 {isKorean
-                  ? "북극항로는 AI 도움을 받아 확장한 탐색형 작업이라 대표 프로젝트에서 제외했습니다. 그래도 재현성, 한계 명시, 시스템 구현 습관을 확인할 수 있는 보조 자료로 남겨둡니다."
+                  ? "수업 과제부터 자동매매 시스템, 사진 굿즈 제작까지 관심을 따라 진행한 작업입니다. 북극항로 분석은 AI의 도움을 받아 GIS와 기후 데이터를 공부하며 시도했습니다."
                   : "The Arctic route study was extended with AI help as exploratory work, so it is left out of the featured set. It stays here as supporting material that still shows habits of reproducibility, stated limits, and building systems."}
               </p>
             </Reveal>

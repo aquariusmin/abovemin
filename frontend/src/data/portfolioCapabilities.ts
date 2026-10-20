@@ -14,9 +14,9 @@ export const portfolioCapabilities: Record<PortfolioLocale, PortfolioCapability[
     { title: "Execution", body: "Dashboards, reports, MVP flows, operating checks, and clear next-step recommendations." },
   ],
   ko: [
-    { title: "시장", body: "국제무역, 거시경제 맥락, 대체 데이터, 국가·산업 스크리닝을 연결합니다." },
-    { title: "재무", body: "재무제표, 가치평가 논리, 민감도, 가정 점검에 관심을 두고 봅니다." },
-    { title: "분석", body: "Python, 통계, 회귀, 분류, 설명 가능한 AI와 설문 분석을 활용합니다." },
-    { title: "실행", body: "대시보드, 보고서, MVP 흐름, 운영 점검과 다음 액션까지 정리합니다." },
+    { title: "시장", body: "국제무역과 거시경제를 공부하며 국가·산업별 자료와 대체 경제지표를 살펴봤습니다." },
+    { title: "재무", body: "재무제표를 읽고, 가치평가에 사용한 가정에 따라 결과가 얼마나 달라지는지 비교합니다." },
+    { title: "분석", body: "Python으로 데이터를 정리하고 회귀·분류모형, SHAP, 설문 통계 등을 활용해 분석합니다." },
+    { title: "실행", body: "분석 결과를 보고서와 대시보드로 정리하고, 직접 서비스를 만들어 사용 과정을 확인합니다." },
   ],
 };

@@ -16,17 +16,17 @@ export default function SelectedEvidenceHighlights({
       <div className="grid gap-5 md:grid-cols-12 md:items-end">
         <div className="space-y-4 md:col-span-7">
           <p className={`text-[11px] font-semibold text-slate ${locale === "ko" ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>
-            {locale === "ko" ? "대표 근거" : "Selected evidence highlights"}
+            {locale === "ko" ? "주요 결과" : "Selected evidence highlights"}
           </p>
           <h2 id={`selected-evidence-${locale}`} className="break-keep font-serif text-3xl font-semibold tracking-tight md:text-4xl">
             {locale === "ko"
-              ? "대표 프로젝트의 숫자만 먼저 보여줍니다."
+              ? "분석에서 확인한 결과"
               : "The featured projects' numbers come first."}
           </h2>
         </div>
         <p className="break-keep text-sm leading-relaxed text-slate md:col-span-5">
           {locale === "ko"
-            ? "채용 담당자가 먼저 볼 세 가지 사례만 남겼습니다. 북극항로처럼 면접에서 깊게 방어하기 어려운 작업은 아래 Explore 영역으로 낮춰 배치했습니다."
+            ? "세 프로젝트의 주요 수치와 분석 내용을 요약했습니다. 수치가 뜻하는 바와 해석할 때 주의할 점을 함께 적었습니다."
             : "Only the three cases a recruiter should see first are kept here. Work that is harder to defend in depth in an interview, like the Arctic route study, sits lower in the Explore section below."}
         </p>
       </div>
