@@ -436,8 +436,7 @@ export const NoteDelete = z.strictObject({ id: Id });
 const Price = z
   .number({ error: '가격은 숫자여야 합니다.' })
   .int('가격은 원 단위 정수여야 합니다.')
-  .min(0, '가격은 0 이상이어야 합니다.')
-  .max(100_000_000, '가격이 너무 큽니다.');
+  .min(0, '가격은 0 이상이어야 합니다.');
 
 /**
  * 갤러리 한 장. 주소가 이 사이트의 Cloudinary인지는 라우트가 본다(클라우드
