@@ -10,7 +10,7 @@ import PhotoFilter from '@/components/archive/PhotoFilter';
 import { sectionTitle, shareCard } from '@/lib/share-card';
 
 const TITLE = 'Archive';
-const DESCRIPTION = "Yesterday's light, collected today. phorage의 사진 아카이브.";
+const DESCRIPTION = 'phorage의 사진 아카이브. 다녀온 곳마다 앨범을 하나씩 만들어 모았습니다.';
 
 // `openGraph`·`twitter`는 루트 것을 통째로 갈아 끼운다(얕은 병합). 적지 않으면
 // 공유 카드가 사이트 기본 제목과 설명을 달고 나간다. 이미지도 같이 갈리므로
@@ -72,7 +72,7 @@ export default async function Archive() {
         <header className="space-y-6">
           <p className="eyebrow eyebrow-marked text-primary">The Archive</p>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink max-w-[16ch]">
-            Yesterday&rsquo;s light,<br className="hidden sm:block" /> collected today.
+            다녀온 곳마다,<br className="hidden sm:block" /> 앨범 하나씩.
           </h1>
           <div className="rule-accent max-w-[1400px]" />
         </header>
@@ -82,7 +82,7 @@ export default async function Archive() {
         <ArchiveGrid albums={albumCards} />
       ) : (
         <p className="max-w-[1400px] mx-auto text-center text-sm text-muted-foreground py-20 border border-dashed border-hairline rounded-lg">
-          아직 공개된 컬렉션이 없습니다.
+          아직 공개된 앨범이 없습니다.
         </p>
       )}
 
@@ -100,7 +100,7 @@ export default async function Archive() {
                 전체에서 찾기
               </h2>
               <p className="text-[15px] text-slate">
-                컬렉션과 상관없이 연도·장소·카메라로 좁혀 봅니다.
+                앨범과 상관없이 연도·장소·카메라로 찾습니다.
               </p>
             </div>
             {/* 고르지 않고 시간순으로 늘어놓은 보기. 상단 내비가 아니라 여기 둔다 —

@@ -99,7 +99,7 @@ export function buildBuyerEmail(order: EmailOrder): EmailMessage {
       </div>
       <p style="font-size:14px;line-height:1.8;color:#555;">
         안녕하세요, <strong>${safeName}</strong>님.<br>
-        주문 번호 <strong>#${orderId}</strong>이 정상적으로 접수되었습니다.
+        주문 번호 <strong>#${orderId}</strong>로 주문을 받았습니다.
       </p>
       <table style="width:100%;border-collapse:collapse;margin:24px 0;">
         <thead>
@@ -123,7 +123,7 @@ export function buildBuyerEmail(order: EmailOrder): EmailMessage {
         <p style="font-size:13px;color:#555;margin:0;">입금자명: <strong>${safeName}</strong> / 금액: <strong>₩ ${total_price.toLocaleString()}</strong></p>
       </div>
       <p style="font-size:13px;color:#888;line-height:1.8;">
-        입금 확인 후 배송이 시작됩니다. 문의사항은 이 이메일로 회신해주세요.
+        입금이 확인되면 발송합니다. 궁금한 점은 이 메일에 답장해 주세요.
       </p>
       <div style="border-top:1px solid #eee;margin-top:40px;padding-top:20px;">
         <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the greenery</p>
@@ -196,7 +196,7 @@ export function buildShippingEmail(order: EmailOrder, shipping: ShippingInfo): E
         <p style="font-size:13px;color:#555;margin:0;">받는 곳: ${safeAddress}</p>
       </div>
       <p style="font-size:13px;color:#888;line-height:1.8;">
-        송장번호는 택배사 조회가 열리기까지 반나절쯤 걸릴 수 있습니다. 문의사항은 이 이메일로 회신해주세요.
+        택배사 조회는 반나절쯤 지나야 될 수 있습니다. 궁금한 점은 이 메일에 답장해 주세요.
       </p>
       <div style="border-top:1px solid #eee;margin-top:40px;padding-top:20px;">
         <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the greenery</p>

@@ -147,9 +147,9 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
           </div>
           <p id={hintId} className="text-[13px] text-muted-foreground">
             {soldOut
-              ? '모든 옵션이 품절되었어요.'
+              ? '모든 옵션이 품절입니다.'
               : selected
-              ? `${selected.label}을(를) 골랐어요.`
+              ? `${selected.label} 선택됨`
               : '옵션을 먼저 골라 주세요.'}
           </p>
         </fieldset>
@@ -191,10 +191,10 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
           </ul>
           <p aria-live="polite" className="pt-2 text-[13px] text-muted-foreground">
             {extras.length === 0
-              ? '필요한 만큼 수량을 올리면 이 상품과 함께 담겨요.'
+              ? '수량을 정하면 이 상품과 함께 담깁니다.'
               : line
               ? `추가 상품을 더해 ${formatPrice(line.price + extrasTotal)}`
-              : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 담겨요.`}
+              : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 담깁니다.`}
           </p>
         </fieldset>
       )}

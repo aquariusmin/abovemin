@@ -122,7 +122,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
       <header className="max-w-[1400px] mx-auto mb-10 md:mb-16">
         <p className="eyebrow eyebrow-marked text-primary mb-4">Shop Collection</p>
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] text-ink max-w-3xl">
-          Tangible light for your space.
+          사진으로 만든 작은 것들.
         </h1>
 
         {/* Filter + sort bar — 고를 상품이 없으면 "전체" 칩 하나와 정렬만
@@ -176,16 +176,16 @@ export default function ShopCatalog({ products, loadError }: { products: Product
       {loadError ? (
         <div className="max-w-[1400px] mx-auto py-20 text-center">
           <p className="eyebrow text-muted-foreground mb-3">Error</p>
-          <p className="text-lg text-ink-body">상품을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
+          <p className="text-lg text-ink-body">상품을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
         </div>
       ) : products.length === 0 ? (
         <div className="max-w-[1400px] mx-auto py-20 text-center">
           <p className="eyebrow text-muted-foreground mb-3">No stock</p>
-          <p className="text-lg text-ink-body">아직 준비된 소품이 없어요. 곧 새로운 컬렉션으로 찾아올게요.</p>
+          <p className="text-lg text-ink-body">지금은 판매 중인 소품이 없습니다.</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="max-w-[1400px] mx-auto py-20 text-center">
-          <p className="text-lg text-ink-body">이 카테고리에는 아직 상품이 없어요.</p>
+          <p className="text-lg text-ink-body">이 카테고리에는 아직 상품이 없습니다.</p>
         </div>
       ) : (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto">

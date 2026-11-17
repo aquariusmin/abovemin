@@ -96,7 +96,7 @@ export default async function Home() {
   const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
   const heroSubtitle =
     settings['hero_subtitle'] ||
-    '무심코 지나친 숲의 색깔, 도시의 틈새에 자라난 초록. phorage는 자연과 일상이 교차하는 지점을 기록합니다.';
+    '숲의 색, 보도블록 틈에 자란 풀. 지나가다 눈에 들어온 초록을 찍어 모읍니다.';
 
   const titleHead = heroTitle.split(' ').slice(0, -1).join(' ');
   const titleTail = heroTitle.split(' ').slice(-1).join(' ');

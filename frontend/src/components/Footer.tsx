@@ -66,7 +66,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
               phorage
             </h2>
             <p className="text-[13px] leading-relaxed text-cream/65 max-w-xs break-keep">
-              작은 관심을 기록하고 만들어갑니다.
+              사진을 찍고, 그 사진으로 작은 것들을 만듭니다.
             </p>
           </div>
 
@@ -113,7 +113,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           {/* Rendered at request/build time rather than typed in, so the
               footer does not quietly go stale on 1 January. */}
           <span>&copy; {new Date().getFullYear()} phorage studio</span>
-          <span>Digital studio · Seoul</span>
+          <span>Photography · Seoul</span>
         </div>
       </div>
     </footer>

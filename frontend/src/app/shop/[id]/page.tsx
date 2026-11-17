@@ -237,8 +237,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               <ol className="mt-4 space-y-3 text-[14px] leading-relaxed text-ink-body">
                 {[
                   ['주문서 작성', '장바구니에서 이름·연락처·주소를 적어 주문합니다.'],
-                  ['입금 안내', '입금하실 금액과 계좌를 화면과 메일로 바로 알려 드립니다.'],
-                  ['확인 후 발송', '입금을 확인하면 보내 드리고, 송장번호를 메일로 전합니다.'],
+                  ['입금 안내', '주문하면 입금할 금액과 계좌가 화면과 메일로 바로 나옵니다.'],
+                  ['확인 후 발송', '입금이 확인되면 발송하고, 송장번호를 메일로 보냅니다.'],
                 ].map(([title, body], index) => (
                   <li key={title} className="flex gap-3">
                     <span

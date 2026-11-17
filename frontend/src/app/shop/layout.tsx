@@ -10,7 +10,7 @@ import type { Metadata } from 'next';
 // /shop/[id]까지 내려오지 못해서 상품 상세만 탭에 "달력"으로 떴다(다른
 // 페이지는 "Archive | phorage"). /shop의 제목은 page.tsx가 이미 갖고 있다.
 export const metadata: Metadata = {
-  description: 'phorage에서 엄선한 소품들. 자연에서 영감 받은 포스터, 문구, 라이프스타일 아이템.',
+  description: 'phorage의 사진으로 만든 엽서, 달력, 포스터.',
 };
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {

@@ -250,7 +250,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
               <div className="flex flex-wrap items-center gap-3">
                 <CopyLinkButton path={path} />
                 <a href={inquiryHref} className="btn-primary">
-                  이 사진으로 프린트 문의
+                  이 사진 프린트 문의
                 </a>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
                   <span className="font-mono text-[13px] tracking-normal whitespace-nowrap">{joinCaption(settings)}</span>
                 </Detail>
               )}
-              <Detail term="컬렉션">
+              <Detail term="앨범">
                 <Link href={`/archive/${album.slug}`} className="link-leaf">
                   {album.title}
                 </Link>
@@ -295,7 +295,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
             ←/→ 키도 같은 곳으로 간다(`PhotoKeyNav`). */}
         {prev && next && (
           <nav
-            aria-label="이 컬렉션의 다른 사진"
+            aria-label="이 앨범의 다른 사진"
             className="mx-auto mt-16 md:mt-24 pt-8 md:pt-10 border-t border-hairline grid grid-cols-2 gap-4 md:gap-6"
             // 위의 사진·캡션과 같은 폭에 맞춘다. 세로 사진의 좁은 기둥 아래에서는
             // 카드 두 장이 들어갈 최소 폭(42rem)까지만 넓힌다.

@@ -62,7 +62,7 @@ export default function AddToCartButton({ line, soldOut, describedBy, extras, on
     : !line
     ? '옵션을 골라 주세요'
     : added
-    ? '장바구니에 담았어요'
+    ? '장바구니에 담았습니다'
     : '장바구니에 담기';
 
   const announced = line?.option_label ? `${line.name} ${line.option_label}` : line?.name;

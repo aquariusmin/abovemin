@@ -250,7 +250,7 @@ export default function PhotoFilter({ photos, mapPlaces = [] }: { photos: Photo[
           <p className="text-sm text-slate" aria-live="polite">
             {active
               ? <>전체 {photos.length}장 중 <span className="font-medium text-ink tabular-nums">{filtered.length}장</span></>
-              : <>최근 올라온 {recent.length}장을 보여 드립니다. 연도·장소·카메라를 고르면 전체 {photos.length}장에서 찾습니다.</>}
+              : <>최근 올라온 {recent.length}장입니다. 조건을 고르면 전체 {photos.length}장에서 찾습니다.</>}
           </p>
           {active && (
             <button

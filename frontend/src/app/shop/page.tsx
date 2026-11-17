@@ -9,7 +9,7 @@ import { sectionTitle, shareCard } from '@/lib/share-card';
 export const revalidate = 60;
 
 const TITLE = 'Shop';
-const DESCRIPTION = 'Tangible light for your space. phorage가 엄선한 소품 컬렉션.';
+const DESCRIPTION = 'phorage의 사진으로 만든 엽서, 달력, 포스터.';
 
 export const metadata: Metadata = {
   title: TITLE,

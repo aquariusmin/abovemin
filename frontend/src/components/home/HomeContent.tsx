@@ -164,7 +164,7 @@ export default function HomeContent({
               fill
               quality={90}
               className="object-cover"
-              alt="phorage 대표 이미지 — 초록을 수집하다"
+              alt="phorage 대표 사진"
               sizes={`(max-width: ${heroWidth}px) 100vw, ${heroWidth}px`}
               /* Next 16 replaces `priority` with `preload`. Here it is the
                  right migration and not just a rename: one photograph, above
@@ -235,7 +235,7 @@ export default function HomeContent({
                 href="/archive"
                 className={`btn-primary ${onPhoto('md:bg-moss md:text-forest-black md:hover:bg-cream md:hover:text-forest-deep')}`}
               >
-                사진 보러 가기
+                사진 보기
               </Link>
               {/* 살 수 있는 것이 없으면 소품으로 가는 길을 앞에 내지 않는다. */}
               {hasShop && (
@@ -243,7 +243,7 @@ export default function HomeContent({
                   href="/shop"
                   className={`link-underline text-ink text-sm ${onPhoto('md:text-cream/85 md:hover:text-moss')}`}
                 >
-                  소품 보러 가기
+                  소품 보기
                 </Link>
               )}
             </div>
@@ -352,7 +352,7 @@ export default function HomeContent({
                 몇 년 전 오늘
               </h2>
               {!onThisDay.some(photo => photo.exact) && (
-                <p className="text-[15px] text-slate">이 즈음 찍은 사진은 이렇습니다.</p>
+                <p className="text-[15px] text-slate">딱 오늘 찍은 사진은 없어서, 이맘때 찍은 사진을 골랐습니다.</p>
               )}
             </Reveal>
 
@@ -423,7 +423,7 @@ export default function HomeContent({
             <div className="space-y-3">
               <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
               <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
-                이번 달 새로 나온 소품
+                새로 나온 소품
               </h2>
             </div>
             <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
@@ -455,7 +455,7 @@ export default function HomeContent({
                 )}
               </div>
               <div className="max-w-md">
-                <p className="eyebrow text-muted-foreground">이번 달의 소품</p>
+                <p className="eyebrow text-muted-foreground">새 소품</p>
                 <p className="mt-4 font-serif text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors">
                   {featured[0].name}
                 </p>
@@ -512,10 +512,10 @@ export default function HomeContent({
             <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
               {photoCount > 0
                 ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
-                : '큰 일은 작은 창고에서 시작하더라구요.'}
+                : '아직 올린 사진이 없습니다.'}
             </h2>
             <p className="text-[15px] md:text-base leading-relaxed text-cream/75 max-w-[46ch]">
-              사진을 앨범별로, 연도 또는 장소로 찾아볼 수 있습니다.
+              앨범별로 보거나, 연도와 장소로 찾아보세요.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
@@ -523,11 +523,11 @@ export default function HomeContent({
               href="/archive"
               className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
             >
-              사진 보러 가기
+              사진 보기
             </Link>
             {hasShop && (
               <Link href="/shop" className="link-underline text-sm text-cream/85 hover:text-moss">
-                소품 보러 가기
+                소품 보기
               </Link>
             )}
           </div>
