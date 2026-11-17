@@ -78,14 +78,18 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
           {/* Forest-black scrim rather than neutral black — keeps the
               photography warm and ties the overlay to the palette.
 
-              The midpoint used to be `/15`, and that is where the caption
-              actually sits: the "N pieces" eyebrow is the topmost line of
-              the block, so it lands in the thinnest part of the gradient.
-              Over a bright cover — the Japan album opens on a white sky —
-              moss-green at 15% scrim was unreadable. These are the
-              Lightbox caption's values (`/85 → /45`), which carry the same
-              two-line treatment over arbitrary photographs. */}
-          <div className="absolute inset-0 bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent transition-opacity duration-500 group-hover:from-forest-black/70" />
+              A band under the caption, not a wash over the whole cover. It
+              used to run the full height (`/85 → /45 → 0`), which kept the
+              eyebrow legible over the Japan cover's white sky but dimmed every
+              cover by half: the USA cover read as a black card with a spire on
+              it. The band is a fixed height measured from the caption, so the
+              eyebrow — the top line of the caption block — still always sits
+              on the dark part, whatever the cover's ratio; everything above it
+              is the photograph at its own exposure. */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-52 md:h-56 bg-gradient-to-t from-forest-black/85 via-forest-black/60 via-50% to-transparent transition-opacity duration-500 group-hover:opacity-90"
+          />
 
           <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
             <p className="eyebrow text-moss mb-2">{album.photo_count} pieces</p>

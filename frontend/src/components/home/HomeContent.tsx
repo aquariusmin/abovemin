@@ -8,6 +8,7 @@ import { monthDayLabel } from '@/lib/timeline';
 import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
+import { balanceColumns, photoRatio } from '@/lib/layout-photos';
 
 // Minimal shape of the fields this view actually renders.
 interface FeaturedProduct {
@@ -86,13 +87,30 @@ export default function HomeContent({
   featured,
 }: HomeContentProps) {
   const hasShop = featured.length > 0;
+  const recentColumns = balanceColumns(recent, 4, photoRatio, 0.12);
+
+  // 몇 년 전 오늘이 서너 장 이하면 masonry가 아니라 한 줄로 편다(`md`부터):
+  // 칸마다 `flex-grow`가 그 사진의 비율이라 모든 사진의 높이가 같아지고 줄이
+  // 폭을 채운다 — 자르지 않고. 줄의 높이는 `MEMORY_ROW`를 넘지 않는다.
+  // 예전에는 두 장이 세 열 중 두 열에 앉아 오른쪽 3분의 1이 비었다.
+  const MEMORY_ROW = 440;
+  const memoryRow = onThisDay.length > 0 && onThisDay.length <= 3;
+  const memoryRatios = onThisDay.map(photoRatio);
+  const memoryRatioSum = memoryRatios.reduce((sum, r) => sum + r, 0);
 
   // Whether the copy can sit ON the photograph. A panorama leaves a frame too
   // short to carry it: at `md` a 3:1 photo is ~230px tall while the copy needs
   // ~300, and the absolutely-positioned block would spill out of the top of the
   // frame and into the nav. Past this ratio the copy stays in flow beneath the
   // photo at every width — the same treatment phones already get.
-  const overlaid = heroAspect <= 2.2;
+  //
+  // A portrait photo takes the copy off the picture too, for the opposite
+  // reason: its frame is a ~510px column on a 1440px screen with ~460px of
+  // empty canvas either side, and the copy covered the lower half of the one
+  // thing on the page worth looking at. From `lg` the copy sits in that empty
+  // canvas beside the photo instead; below `lg` it sits beneath, as on phones.
+  const split = heroAspect < 1;
+  const overlaid = !split && heroAspect <= 2.2;
   /** Applies overlay-only classes, so one ratio decides layout AND palette. */
   const onPhoto = (classes: string) => (overlaid ? classes : '');
 
@@ -128,11 +146,17 @@ export default function HomeContent({
             (`.hero-rise`)으로 살짝 올라온다. 불투명도는 건드리지 않으므로
             JS와 상관없이 첫 페인트에 다 보인다. */}
         <div
-          className="@container relative mx-auto w-full"
-          style={{ maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }}
+          className={`@container relative mx-auto w-full ${split ? 'max-w-[1400px] lg:flex lg:items-end lg:justify-center lg:gap-14 xl:gap-20' : ''}`}
+          style={
+            split
+              // The photo's own width, shared with the copy below `lg` so the
+              // two line up as one column. `min(100%, …)` resolves where used.
+              ? ({ '--hero-w': `min(100%, calc(${heroAspect} * 76vh))` } as React.CSSProperties)
+              : { maxWidth: `min(1400px, calc(${heroAspect} * 76vh))` }
+          }
         >
           <div
-            className="relative w-full overflow-hidden rounded-xl bg-stone"
+            className={`relative overflow-hidden rounded-xl bg-stone ${split ? 'mx-auto w-[var(--hero-w)] lg:mx-0 lg:shrink-0' : 'w-full'}`}
             style={{ aspectRatio: String(heroAspect) }}
           >
             <Image
@@ -165,7 +189,9 @@ export default function HomeContent({
           </div>
 
           <div
-            className={`hero-rise mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')}`}
+            className={`hero-rise mt-7 ${onPhoto('md:mt-0 md:absolute md:inset-x-0 md:bottom-0 md:p-10 lg:p-14 md:isolate')} ${
+              split ? 'max-lg:mx-auto max-lg:max-w-[var(--hero-w)] lg:mt-0 lg:max-w-[32rem] lg:pb-2' : ''
+            }`}
           >
             {/* 문구 블록이 자기 scrim을 들고 다닌다.
 
@@ -244,42 +270,56 @@ export default function HomeContent({
             </Reveal>
 
             {/* 사진의 비율을 그대로 두는 masonry. 정사각으로 자르면 "프레임이
-                사진에 맞춘다"는 원칙이 홈에서 깨진다. */}
-            <ul className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5">
-              {recent.map(photo => {
-                // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
-                // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
-                // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
-                const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
-                return (
-                  <Reveal as="li" {...RISE_ITEM} key={photo.id} className="break-inside-avoid">
-                    <Link
-                      href={photoPagePath(photo)}
-                      className="group block"
-                    >
-                      <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
-                        <FadeImage
-                          src={cloudinary(photo.src, { watermark: true, width: 600 })}
-                          alt={photoLabel(photo)}
-                          width={0}
-                          height={0}
-                          sizes="(min-width: 1480px) 335px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 47vw"
-                          className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
-                          style={storedRatioStyle(photo)}
-                          draggable={false}
-                          loading="lazy"
-                        />
-                      </div>
-                      {meta && (
-                        <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
-                          {meta}
-                        </p>
-                      )}
-                    </Link>
-                  </Reveal>
-                );
-              })}
-            </ul>
+                사진에 맞춘다"는 원칙이 홈에서 깨진다.
+
+                CSS `columns`가 아니라 미리 나눈 네 열이다(`balanceColumns`).
+                순서대로 흘려 넣으면 세로 사진이 몰린 열이 한 장만큼 길어져, 띠의
+                끝에 사진 한 장 크기의 빈칸이 남았다. 네 열을 둘씩 묶어 두므로
+                `lg` 아래에서는 묶음이 한 열로 이어져 두 열이 된다 — 묶음끼리도
+                높이가 비슷하다. 캡션과 간격(열 폭의 약 12%)도 높이에 센다. */}
+            <div className="grid grid-cols-2 items-start gap-3 md:gap-5">
+              {[0, 2].map(half => (
+                <div key={half} className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 md:gap-5">
+                  {recentColumns.slice(half, half + 2).map((column, c) => (
+                    <ul key={c} className="flex flex-col gap-3 md:gap-5">
+                      {column.map(photo => {
+                        // 최근 사진의 제목은 파일명에서 자동 생성된 것이 많다
+                        // ("54D43E53 EFB0 …"). 여기서는 장소와 연도만 적는다 — 제목을
+                        // 넘기지 않아야 "제목과 같은 장소" 접기에 장소가 먹히지 않는다.
+                        const meta = joinCaption(photoCaption({ location: photo.location, year: photo.year }).meta);
+                        return (
+                          <Reveal as="li" {...RISE_ITEM} key={photo.id}>
+                            <Link
+                              href={photoPagePath(photo)}
+                              className="group block"
+                            >
+                              <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
+                                <FadeImage
+                                  src={cloudinary(photo.src, { watermark: true, width: 600 })}
+                                  alt={photoLabel(photo)}
+                                  width={0}
+                                  height={0}
+                                  sizes="(min-width: 1480px) 335px, (min-width: 1024px) 23vw, 47vw"
+                                  className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
+                                  style={storedRatioStyle(photo)}
+                                  draggable={false}
+                                  loading="lazy"
+                                />
+                              </div>
+                              {meta && (
+                                <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
+                                  {meta}
+                                </p>
+                              )}
+                            </Link>
+                          </Reveal>
+                        );
+                      })}
+                    </ul>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -298,8 +338,15 @@ export default function HomeContent({
           className={`px-5 sm:px-6 md:px-10 pt-16 md:pt-24 ${hasShop ? 'pb-4 md:pb-8' : 'pb-16 md:pb-24'}`}
           aria-labelledby="on-this-day-title"
         >
-          <div className="max-w-[1400px] mx-auto">
-            <Reveal {...RISE_BLOCK} className="mb-8 md:mb-10 space-y-3">
+          {/* 한 줄로 펴는 날(`memoryRow`)에는 `lg`부터 머리말을 왼쪽에, 사진 줄을
+              오른쪽에 둔다. 줄의 높이 상한 때문에 두 장이면 줄이 ~900px에서
+              멈추는데, 머리말 아래에 두면 그 오른쪽이 그대로 비었다. */}
+          <div
+            className={`max-w-[1400px] mx-auto ${
+              memoryRow ? 'lg:grid lg:grid-cols-[minmax(14rem,1fr)_auto] lg:items-end lg:gap-16' : ''
+            }`}
+          >
+            <Reveal {...RISE_BLOCK} className={`mb-8 md:mb-10 space-y-3 ${memoryRow ? 'lg:mb-10' : ''}`}>
               <p className="eyebrow eyebrow-marked text-primary">On this day</p>
               <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
                 몇 년 전 오늘
@@ -311,16 +358,25 @@ export default function HomeContent({
 
             <ul
               className={`columns-2 gap-3 md:gap-5 [&>li]:mb-3 md:[&>li]:mb-5 ${
-                onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : onThisDay.length >= 3 ? 'md:columns-3 lg:columns-4' : 'md:columns-3'
+                memoryRow
+                  ? 'md:columns-auto md:flex md:items-start md:[&>li]:mb-0'
+                  : onThisDay.length >= 5 ? 'md:columns-3 lg:columns-6' : 'md:columns-3 lg:columns-4'
               }`}
+              style={memoryRow ? { maxWidth: `calc(${memoryRatioSum.toFixed(3)} * ${MEMORY_ROW}px + ${(onThisDay.length - 1) * 20}px)` } : undefined}
             >
-              {onThisDay.map(photo => {
+              {onThisDay.map((photo, index) => {
                 const when = photo.exact
                   ? `${photo.yearsAgo}년 전 오늘`
                   : joinCaption([`${photo.yearsAgo}년 전`, monthDayLabel(photo.taken_at)].filter((v): v is string => Boolean(v)));
                 const place = photoCaption({ location: photo.location }).location;
                 return (
-                  <Reveal as="li" {...RISE_ITEM} key={photo.id} className="break-inside-avoid">
+                  // `Reveal`은 style을 받지 않으므로 비율(`flex`)은 바깥 <li>가 든다.
+                  <li
+                    key={photo.id}
+                    className="break-inside-avoid min-w-0"
+                    style={memoryRow ? { flex: `${memoryRatios[index].toFixed(3)} 1 0%` } : undefined}
+                  >
+                  <Reveal {...RISE_ITEM}>
                     <Link href={photoPagePath(photo)} className="group block">
                       <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
                         <FadeImage
@@ -329,11 +385,11 @@ export default function HomeContent({
                           width={0}
                           height={0}
                           sizes={
-                            onThisDay.length >= 5
+                            memoryRow
+                              ? `(min-width: 768px) ${Math.round(memoryRatios[index] * MEMORY_ROW)}px, 47vw`
+                              : onThisDay.length >= 5
                               ? '(min-width: 1480px) 217px, (min-width: 1024px) 15vw, (min-width: 768px) 30vw, 47vw'
-                              : onThisDay.length >= 3
-                                ? '(min-width: 1480px) 335px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 47vw'
-                                : '(min-width: 1480px) 454px, (min-width: 768px) 31vw, 47vw'
+                              : '(min-width: 1480px) 335px, (min-width: 1024px) 23vw, (min-width: 768px) 30vw, 47vw'
                           }
                           className="w-full h-auto block duration-700 group-hover:scale-[1.03]"
                           style={storedRatioStyle(photo)}
@@ -347,6 +403,7 @@ export default function HomeContent({
                       {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
                     </Link>
                   </Reveal>
+                  </li>
                 );
               })}
             </ul>
@@ -372,7 +429,46 @@ export default function HomeContent({
             <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
           </Reveal>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {/* 소품 수에 맞춘 배치. 네 칸 그리드에 한두 장만 놓이면 띠의
+              4분의 3이 비어, 섹션이 덜 만든 페이지처럼 보였다.
+                1개   — 사진과 이름·가격을 나란히 크게 둔다. 사진은 자르지 않는다.
+                2–3개 — 그 수만큼의 칸, 폭은 칸 수에 맞게 줄인다. */}
+          {featured.length === 1 ? (
+            <Reveal
+              as="a"
+              href={`/shop/${featured[0].id}`}
+              className="group grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-14 lg:gap-20"
+              {...RISE_ITEM}
+            >
+              <div className="flex justify-center md:justify-end">
+                {featured[0].image_url ? (
+                  <Image
+                    src={cloudinary(featured[0].image_url, { width: 1200 })}
+                    alt={featured[0].name}
+                    width={0}
+                    height={0}
+                    sizes="(min-width: 1480px) 650px, (min-width: 768px) 45vw, calc(100vw - 40px)"
+                    className="h-auto w-auto max-w-full max-h-[min(36rem,70svh)] rounded-lg border border-card-border bg-stone transition-transform duration-700 group-hover:scale-[1.01]"
+                  />
+                ) : (
+                  <div className="aspect-square w-full rounded-lg bg-accent/5" />
+                )}
+              </div>
+              <div className="max-w-md">
+                <p className="eyebrow text-muted-foreground">이번 달의 소품</p>
+                <p className="mt-4 font-serif text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors">
+                  {featured[0].name}
+                </p>
+                <p className="mt-4 text-lg font-mono tabular-nums text-primary">{formatPrice(featured[0].price)}</p>
+                <span className="mt-8 inline-block link-underline text-sm text-ink">자세히 보기 →</span>
+              </div>
+            </Reveal>
+          ) : (
+          <div
+            className={`grid grid-cols-2 gap-4 md:gap-6 ${
+              featured.length === 2 ? 'max-w-[920px]' : featured.length === 3 ? 'lg:grid-cols-3 max-w-[1120px]' : 'lg:grid-cols-4'
+            }`}
+          >
               {featured.map(item => (
                 <Reveal
                   as="a"
@@ -401,6 +497,7 @@ export default function HomeContent({
                 </Reveal>
               ))}
             </div>
+          )}
         </div>
       </section>
       )}

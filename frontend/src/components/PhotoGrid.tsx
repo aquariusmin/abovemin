@@ -7,6 +7,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { revealTarget, useBelowFoldReveal } from './motion/useBelowFoldReveal';
 import Lightbox from './Lightbox';
 import { cloudinary } from '@/lib/cloudinary';
+import { featureIndices } from '@/lib/layout-photos';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -36,7 +37,22 @@ interface Photo {
  * 놓이는 곳(/archive — 앨범 표지들 밑)에서는 꺼야 한다: 보이지도 않는 사진이
  * 진짜 LCP인 표지와 대역폭을 다툰다.
  */
-export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo[]; eagerFirst?: boolean }) {
+/**
+ * `feature`: 앨범 페이지에서만 켠다. 열두 장쯤마다 가로 사진 한 장을 그리드
+ * 전체 폭으로 크게 놓아(`column-span: all`), 같은 크기의 칸이 끝까지 이어지는
+ * 단조로움을 끊는다. 고르는 규칙은 `featureIndices`. 순서는 바뀌지 않으므로
+ * 라이트박스의 앞뒤도 그대로다. 필터 결과(`/archive`)는 앨범의 이야기가 아니라
+ * 검색 결과라 켜지 않는다.
+ */
+export default function PhotoGrid({
+  photos,
+  eagerFirst = true,
+  feature = false,
+}: {
+  photos: Photo[];
+  eagerFirst?: boolean;
+  feature?: boolean;
+}) {
   // 열린 사진이 URL에 있다.
   //
   // 45장짜리 앨범에서 한 장을 누군가에게 보여 주려면 "japan 앨범 열고 열두
@@ -125,6 +141,8 @@ export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo
     [lightboxIndex, photos, setQuery],
   );
 
+  const featured = feature ? featureIndices(photos) : null;
+
   if (photos.length === 0) {
     return (
       <div className="max-w-[1400px] mx-auto border border-hairline rounded-lg py-20 md:py-28 px-6 text-center">
@@ -140,7 +158,14 @@ export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo
     <>
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 max-w-[1400px] mx-auto [&>button]:mb-4 md:[&>button]:mb-6">
         {photos.map((photo, i) => (
-          <PhotoTile key={photo.id} photo={photo} index={i} onOpen={open} eager={eagerFirst && i === 0} />
+          <PhotoTile
+            key={photo.id}
+            photo={photo}
+            index={i}
+            onOpen={open}
+            eager={eagerFirst && i === 0}
+            featured={featured?.has(i) ?? false}
+          />
         ))}
       </div>
 
@@ -172,11 +197,14 @@ function PhotoTile({
   index,
   onOpen,
   eager,
+  featured,
 }: {
   photo: Photo;
   index: number;
   onOpen: (index: number) => void;
   eager: boolean;
+  /** 그리드 전체 폭에 크게 — `PhotoGrid`의 `feature`. */
+  featured: boolean;
 }) {
   const reduce = useReducedMotion();
   const { ref, deferred, hidden } = useBelowFoldReveal<HTMLButtonElement>();
@@ -201,7 +229,9 @@ function PhotoTile({
       ref={ref}
       type="button"
       id={`photo-${photo.id}`}
-      className="break-inside-avoid group block w-full text-left cursor-pointer"
+      // 크게 놓는 사진은 열을 가로지른다(`column-span: all`). 그 앞의 사진들이
+      // 위에서 열을 채우고, 뒤의 사진들은 그 아래에서 새로 열을 채운다.
+      className={`break-inside-avoid group block w-full text-left cursor-pointer ${featured ? '[column-span:all] sm:my-6 md:my-10' : ''}`}
       onClick={() => onOpen(index)}
       aria-labelledby={hasCaption ? `${captionId} ${actionId}` : undefined}
       aria-label={hasCaption ? undefined : `${label} 크게 보기`}
@@ -209,6 +239,12 @@ function PhotoTile({
       animate={revealTarget(hidden, reduce)}
       transition={{ duration: 0.6, ease: EASE }}
     >
+      {/* 크게 놓는 사진의 폭은 `min(100%, 비율 × 78svh)` — 가로 사진이 화면
+          높이를 넘지 않게 하고, 캡션도 같은 폭에 맞춰 가운데에 둔다. */}
+      <div
+        className={featured ? 'mx-auto' : undefined}
+        style={featured && photo.width && photo.height ? { width: `min(100%, calc(${(photo.width / photo.height).toFixed(4)} * 78svh))` } : undefined}
+      >
       {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`). 프레임 크기는
           아래 이미지가 정하므로, 사진이 오면 판을 정확히 덮는다. */}
       <div className="relative overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
@@ -219,7 +255,7 @@ function PhotoTile({
             this case explicitly and point at these two props instead.
             Same treatment the Lightbox already uses. */}
         <FadeImage
-          src={cloudinary(photo.src, { watermark: true, width: 800 })}
+          src={cloudinary(photo.src, { watermark: true, width: featured ? 1600 : 800 })}
           alt={label}
           width={0}
           height={0}
@@ -230,7 +266,7 @@ function PhotoTile({
           //   640~1023px   (100vw − 48 − 16) ÷ 2, md부터 (100vw − 80 − 24) ÷ 2 → 46vw 이하
           //   ~639px       100vw − 40px
           // 예전의 `33vw`는 상한이 없어 1920px 화면에서 451px 칸에 634px라고 말했다.
-          sizes="(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)"
+          sizes={featured ? '(min-width: 640px) 75vw, calc(100vw - 40px)' : '(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)'}
           className="w-full h-auto block duration-700 group-hover:scale-105"
           // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
           // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
@@ -261,6 +297,7 @@ function PhotoTile({
           )}
         </div>
       )}
+      </div>
       {hasCaption && <span id={actionId} className="sr-only">크게 보기</span>}
     </motion.button>
   );

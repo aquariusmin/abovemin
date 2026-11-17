@@ -4,6 +4,7 @@ import { getProducts, getProductById } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ProductGallery from '@/components/shop/ProductGallery';
 import ProductPurchase from '@/components/shop/ProductPurchase';
+import { splitProductDescription } from '@/lib/product-specs';
 import RelatedProducts, { type RelatedItem } from '@/components/shop/RelatedProducts';
 import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
@@ -72,6 +73,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   const state = publicState(product);
   const soldOut = state !== 'available';
+  const { story, specs } = splitProductDescription(product.description ?? '');
   const options = product.options ?? [];
   const range = priceRange(product);
   const images = parseImages(product.images, product.image_url);
@@ -197,16 +199,62 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             soldOut={soldOut}
           />
 
-          {product.description && (
+          {(story || specs.length > 0) && (
             <>
               <hr className="rule" />
-              <div className="space-y-3">
-                <p className="eyebrow text-muted-foreground">Story</p>
-                <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
-                  {product.description}
-                </p>
-              </div>
+              {story && (
+                <div className="space-y-3">
+                  <p className="eyebrow text-muted-foreground">Story</p>
+                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-body break-keep">
+                    {story}
+                  </p>
+                </div>
+              )}
+              {/* 설명 속 "항목: 값" 줄(`splitProductDescription`). 사진 페이지의
+                  촬영 정보와 같은 꼴 — 한국어 label-ko 용어와 값. */}
+              {specs.length > 0 && (
+                <div className="space-y-3">
+                  <p className="eyebrow text-muted-foreground">Details</p>
+                  <dl className="divide-y divide-hairline border-y border-hairline">
+                    {specs.map(spec => (
+                      <div key={spec.label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-3">
+                        <dt className="label-ko text-slate">{spec.label}</dt>
+                        <dd className="text-[15px] text-ink-body tabular-nums">{spec.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
             </>
+          )}
+
+          {/* 주문 안내. PG 없이 계좌이체로 받으므로, 담기 전에 "그다음 무엇이
+              오는지"가 보여야 한다. 체크아웃에도 같은 말이 있지만 그곳은 이미
+              마음을 정한 사람의 자리다. 기간은 약속하지 않는다. */}
+          {!soldOut && (
+            <section aria-labelledby="order-steps" className="rounded-lg surface-cream p-5 md:p-6">
+              <h2 id="order-steps" className="eyebrow text-slate">How to order</h2>
+              <ol className="mt-4 space-y-3 text-[14px] leading-relaxed text-ink-body">
+                {[
+                  ['주문서 작성', '장바구니에서 이름·연락처·주소를 적어 주문합니다.'],
+                  ['입금 안내', '입금하실 금액과 계좌를 화면과 메일로 바로 알려 드립니다.'],
+                  ['확인 후 발송', '입금을 확인하면 보내 드리고, 송장번호를 메일로 전합니다.'],
+                ].map(([title, body], index) => (
+                  <li key={title} className="flex gap-3">
+                    <span
+                      aria-hidden
+                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-[11px] text-primary-foreground"
+                    >
+                      {index + 1}
+                    </span>
+                    <p>
+                      <span className="font-medium text-ink">{title}</span>
+                      <span className="text-slate"> — {body}</span>
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </section>
           )}
         </Reveal>
       </section>

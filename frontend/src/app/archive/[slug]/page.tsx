@@ -5,6 +5,7 @@ import { getAlbumsWithCounts, getAlbumWithPhotos } from '@/lib/supabase';
 import PhotoGrid from '@/components/PhotoGrid';
 import Reveal from '@/components/motion/Reveal';
 import BackLink from '@/components/BackLink';
+import { albumFacts } from '@/lib/layout-photos';
 import { cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
 
@@ -92,6 +93,13 @@ export default async function CollectionPage({
   if (!result || result.photos.length === 0) notFound();
   const { album, photos } = result;
   const description = album.description?.trim() || null;
+  // 머리말 아래의 한 줄: 언제, 어디서. 설명이 없는 앨범(대부분)도 제목 다음에
+  // 무엇을 보게 될지 말해 준다. 사진에서 세므로 따로 입력할 것이 없다.
+  const facts = albumFacts(photos);
+  const factLine = [
+    facts.years,
+    facts.places.length > 0 ? `${facts.places.join(', ')}${facts.more > 0 ? ` 외 ${facts.more}곳` : ''}` : null,
+  ].filter((v): v is string => Boolean(v));
 
   // 빈 앨범을 건너뛴 순서 안에서 앞뒤를 고른다. 목록이 비었거나 이 앨범이
   // 그 안에 없으면(조회 실패) 링크를 빼는 쪽이 맞다 — `albums[NaN]`은 터진다.
@@ -115,6 +123,17 @@ export default async function CollectionPage({
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
               {album.title}
             </h1>
+            {factLine.length > 0 && (
+              <p className="text-[15px] text-slate">
+                {factLine.map((part, i) => (
+                  <span key={part}>
+                    {/* `·`는 앞 낱말에 붙인다(DESIGN.md § Line Breaking). */}
+                    {i > 0 && <>&nbsp;·{' '}</>}
+                    {i === 0 ? <span className="font-mono tabular-nums">{part}</span> : part}
+                  </span>
+                ))}
+              </p>
+            )}
             {/* 앨범 소개(관리 화면의 "설명"). 없으면 줄 자체가 없다. 평문이다 —
                 관리자가 넣은 줄바꿈만 살리고(`pre-line`), 마크업은 해석하지 않는다.
                 줄 나눔은 body의 `keep-all`을 그대로 받는다. `max-w-[60ch]`: 제목 폭이
@@ -130,7 +149,7 @@ export default async function CollectionPage({
       </Reveal>
 
       {/* Photo grid + lightbox */}
-      <PhotoGrid photos={photos} />
+      <PhotoGrid photos={photos} feature />
 
       {/* 이전 / 다음 컬렉션. 한 앨범을 다 본 사람이 목록으로 되돌아가지 않고
           다음 이야기로 넘어가게 한다. */}
