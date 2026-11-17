@@ -155,13 +155,13 @@ export default async function CollectionPage({
           다음 이야기로 넘어가게 한다. */}
       {(prevAlbum || nextAlbum) && (
         <Reveal className="max-w-[1400px] mx-auto mt-16 md:mt-24 pt-8 md:pt-10 border-t border-hairline" y={16}>
-          <nav aria-label="다른 컬렉션" className="grid grid-cols-2 gap-4 md:gap-6">
+          <nav aria-label="다른 앨범" className="grid grid-cols-2 gap-4 md:gap-6">
           {prevAlbum && (
             <Link
               href={`/archive/${prevAlbum.slug}`}
               className="group card-hair px-5 py-4 md:px-6 md:py-5 min-w-0"
             >
-              <span className="label-ko text-muted-foreground">&larr; 이전 컬렉션</span>
+              <span className="label-ko text-muted-foreground">&larr; 이전 앨범</span>
               <span className="mt-1 block font-serif text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate">
                 {prevAlbum.title}
               </span>
@@ -172,7 +172,7 @@ export default async function CollectionPage({
               href={`/archive/${nextAlbum.slug}`}
               className="group card-hair px-5 py-4 md:px-6 md:py-5 min-w-0 text-right col-start-2"
             >
-              <span className="label-ko text-muted-foreground">다음 컬렉션 &rarr;</span>
+              <span className="label-ko text-muted-foreground">다음 앨범 &rarr;</span>
               <span className="mt-1 block font-serif text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate">
                 {nextAlbum.title}
               </span>

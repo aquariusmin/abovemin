@@ -7,7 +7,7 @@ import { buildFallback } from '@/lib/build-phase';
 import { sectionTitle, shareCard } from '@/lib/share-card';
 
 const TITLE = 'Notes';
-const DESCRIPTION = '공개 데이터를 짧게 들여다보고, 말할 수 있는 범위를 함께 적습니다.';
+const DESCRIPTION = '공개 데이터를 짧게 들여다본 기록. 데이터로 말할 수 있는 데까지만 씁니다.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -39,8 +39,8 @@ export default async function NotesPage() {
             말할 수 있는 만큼만.
           </h1>
           <p className="max-w-2xl break-keep text-[15px] leading-relaxed text-slate">
-            공개 데이터를 짧게 들여다본 기록입니다. 결론보다 그 결론이 어디까지
-            버티는지를 먼저 적습니다.
+            공개 데이터를 짧게 들여다본 기록입니다. 데이터로 말할 수 있는 데까지만
+            씁니다.
           </p>
           <div className="rule-accent" />
         </header>

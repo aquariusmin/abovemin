@@ -63,7 +63,7 @@ export default function AddAddonsOnly({ productId, productName, extras, onAdded 
       {(offered || added) && (
         <div className="space-y-2">
           <p className="text-[13px] text-muted-foreground break-keep">
-            이 상품은 이미 장바구니에 있어요. 추가 상품만 더 담을 수도 있어요.
+            이 상품은 이미 장바구니에 있습니다. 추가 상품만 따로 담을 수 있습니다.
           </p>
           <button
             type="button"
@@ -74,7 +74,7 @@ export default function AddAddonsOnly({ productId, productName, extras, onAdded 
             className={`btn-outline w-full min-h-11 px-6 py-3 ${added ? 'border-moss bg-moss text-forest-black' : ''}`}
           >
             {added && <span aria-hidden className="text-base leading-none">✓</span>}
-            {added ? '추가 상품을 담았어요' : '추가 상품만 담기'}
+            {added ? '추가 상품을 담았습니다' : '추가 상품만 담기'}
           </button>
         </div>
       )}

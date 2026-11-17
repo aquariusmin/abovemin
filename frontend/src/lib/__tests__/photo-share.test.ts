@@ -47,9 +47,9 @@ describe('photoPageTitle / photoPageDescription', () => {
         { title: 'Somewhere', location: '여수', year: 2018, taken_at: '2018-09-08T18:53:14+00:00', camera: 'Apple iPhone 7' },
         'Korea',
       ),
-    ).toBe('여수 · 2018.09.08 · iPhone 7 — Korea 컬렉션의 사진.');
-    expect(photoPageDescription({ title: '-', location: '-', year: 2020 }, 'Swiss')).toBe('2020 — Swiss 컬렉션의 사진.');
-    expect(photoPageDescription({}, 'Swiss')).toBe('Swiss 컬렉션의 사진.');
+    ).toBe('여수 · 2018.09.08 · iPhone 7 — Korea 앨범의 사진.');
+    expect(photoPageDescription({ title: '-', location: '-', year: 2020 }, 'Swiss')).toBe('2020 — Swiss 앨범의 사진.');
+    expect(photoPageDescription({}, 'Swiss')).toBe('Swiss 앨범의 사진.');
   });
 });
 

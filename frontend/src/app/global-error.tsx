@@ -62,7 +62,7 @@ export default function GlobalError({
             사이트를 불러오지 못했습니다.
           </h1>
           <p style={{ margin: '1rem 0 0', fontSize: 14, lineHeight: 1.8, color: '#5A6458', wordBreak: 'keep-all' }}>
-            일시적인 오류입니다. 다시 시도해도 같은 화면이면 잠시 후 접속해주세요.
+            잠깐 문제가 생겼습니다. 다시 시도해도 안 되면 조금 뒤에 들어와 주세요.
           </p>
           <div style={{ marginTop: '2rem', display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button

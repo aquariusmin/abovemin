@@ -14,7 +14,7 @@ import { buildFallback } from '@/lib/build-phase';
 import { sectionTitle, shareCard } from '@/lib/share-card';
 
 const TITLE = 'Timeline';
-const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로 — 연도와 달로 나눠 봅니다.';
+const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로, 연도와 달별로 봅니다.';
 
 // 공유 카드가 사이트 기본값을 달고 나가지 않게(`/archive`의 metadata 주석).
 export const metadata: Metadata = {
@@ -56,9 +56,9 @@ export default async function TimelinePage() {
             </h1>
             {photos.length > 0 && (
               <p className="max-w-[60ch] text-[15px] md:text-base leading-relaxed text-slate">
-                {photos.length}장을 촬영일 기준으로 연도와 달로 나눴습니다.
+                {photos.length}장을 찍은 날짜에 따라 연도와 달로 나눴습니다.
                 {dated < photos.length && (
-                  <> 촬영일이 기록되지 않은 {photos.length - dated}장은 그해의 <span className="whitespace-nowrap">&lsquo;날짜 미상&rsquo;에</span> 모았습니다.</>
+                  <> 날짜가 없는 {photos.length - dated}장은 그해의 <span className="whitespace-nowrap">&lsquo;날짜 미상&rsquo;에</span> 모았습니다.</>
                 )}
               </p>
             )}

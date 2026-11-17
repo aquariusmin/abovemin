@@ -134,7 +134,7 @@ export default function CheckoutPage() {
           detail ??
             (res.status === 429
               ? '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.'
-              : '주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+              : '주문을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'),
         );
         setSubmitting(false);
         return;
@@ -173,9 +173,9 @@ export default function CheckoutPage() {
           <span aria-hidden>✓</span>
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
-        <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문이 완료되었습니다.</h1>
+        <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문을 받았습니다.</h1>
         <p className="text-[15px] text-ink-body mb-8 break-keep">
-          확인 이메일을 <span className="text-accent font-medium">{placed.email}</span>으로 보내드릴게요.
+          <span className="text-accent font-medium">{placed.email}</span>으로 확인 메일을 보냈습니다.
         </p>
 
         {/* 메일이 오지 않아도 이 화면만으로 입금할 수 있어야 한다: 번호, 금액, 계좌. */}
@@ -195,18 +195,18 @@ export default function CheckoutPage() {
             {placed.bankInfo ? (
               <dd className="mt-1 text-[15px] font-semibold text-ink">{placed.bankInfo}</dd>
             ) : (
-              <dd className="mt-1 text-sm text-ink-body">확인 이메일에 적어 보내드립니다.</dd>
+              <dd className="mt-1 text-sm text-ink-body">확인 메일에 적어 보냅니다.</dd>
             )}
           </div>
         </dl>
         {priceChanged && (
           <p className="mt-3 max-w-md text-xs text-brick">
-            장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해주세요.
+            장바구니에 담은 뒤 가격이 바뀌었습니다. 위 금액(₩&nbsp;{placed.total.toLocaleString()})으로 입금해 주세요.
           </p>
         )}
         <p className="mt-6 mb-10 max-w-sm text-[13px] text-slate leading-relaxed">
           메일이 오지 않거나 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
-          <a href={`mailto:${CONTACT_EMAIL}`} className="link-leaf">{CONTACT_EMAIL}</a>으로 알려주세요.
+          <a href={`mailto:${CONTACT_EMAIL}`} className="link-leaf">{CONTACT_EMAIL}</a>으로 알려 주세요.
         </p>
         {/* 이 화면을 스스로 떠날 때 요약을 지운다. 지우지 않으면 빈 장바구니로
             체크아웃 주소에 다시 올 때마다 지난 주문이 뜬다. */}
@@ -231,7 +231,7 @@ export default function CheckoutPage() {
         <header className="mb-10 border-b border-hairline pb-6">
           <BackLink href="/cart">장바구니로</BackLink>
           <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
-          <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해주세요.</h1>
+          <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해 주세요.</h1>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
@@ -363,7 +363,7 @@ export default function CheckoutPage() {
                 버튼을 누른 뒤에야 보이는 자리라, 버튼 바로 위에 한 줄로 먼저 알린다. */}
             <div className="space-y-3">
               <p className="text-xs text-slate leading-relaxed md:hidden">
-                결제는 계좌이체입니다. 주문 후 입금 계좌를 안내드립니다.
+                결제는 계좌이체로만 받습니다. 주문하면 입금 계좌를 알려 드립니다.
               </p>
               <button
                 type="submit"
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
               </div>
               <p className="text-xs text-slate leading-relaxed">
                 * 현재는 계좌이체로 주문을 받고 있습니다.<br />
-                주문 완료 후 이메일로 입금 안내를 드립니다.
+                주문하면 입금 안내를 메일로 보냅니다.
               </p>
             </div>
           </div>

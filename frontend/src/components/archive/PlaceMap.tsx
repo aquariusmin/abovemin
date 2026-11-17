@@ -285,7 +285,7 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
       </div>
 
       <p className="text-[12px] text-muted-foreground">
-        점의 넓이는 사진 수에 비례합니다. 위치는 도시 단위의 대략입니다(약 11km). 겹친 점은 눌러서 펼치고, 장소를 누르면 그곳의 사진만 봅니다.
+        점이 클수록 사진이 많습니다. 위치는 도시 단위로만 표시합니다. 겹친 점을 누르면 펼쳐지고, 장소를 누르면 그곳 사진만 남습니다.
       </p>
     </div>
   );

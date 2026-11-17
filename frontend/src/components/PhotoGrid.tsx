@@ -148,7 +148,7 @@ export default function PhotoGrid({
       <div className="max-w-[1400px] mx-auto border border-hairline rounded-lg py-20 md:py-28 px-6 text-center">
         <p className="eyebrow text-muted-foreground">No pieces yet</p>
         <p className="mt-3 text-base text-slate break-keep">
-          이 컬렉션에는 아직 공개된 사진이 없습니다.
+          이 앨범에는 아직 공개된 사진이 없습니다.
         </p>
       </div>
     );

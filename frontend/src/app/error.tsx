@@ -29,7 +29,7 @@ export default function Error({
           페이지를 불러오지 못했습니다.
         </h1>
         <p className="text-sm text-slate break-keep">
-          연결이 끊겼거나 일시적인 오류입니다. 다시 시도해도 같은 화면이면 잠시 후 접속해주세요.
+          연결이 끊겼거나 잠깐 문제가 생겼습니다. 다시 시도해도 안 되면 조금 뒤에 들어와 주세요.
         </p>
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
           <button onClick={reset} className="btn-primary">다시 시도</button>

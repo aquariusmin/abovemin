@@ -65,7 +65,7 @@ export default function CartPage() {
     pendingFocus.current = next ? next.key : HEADING;
     const gone = cascadedAddons(items, key);
     setCascadeNotice(
-      gone.length ? `${name}의 추가 상품(${gone.map(item => item.addon_label).join(', ')})도 함께 뺐어요.` : null,
+      gone.length ? `${name}의 추가 상품(${gone.map(item => item.addon_label).join(', ')})도 함께 뺐습니다.` : null,
     );
     removeItem(key);
   };
@@ -79,7 +79,7 @@ export default function CartPage() {
       <p className="eyebrow text-muted-foreground mb-4">Cart</p>
       {/* 빈 장바구니에도 제목은 있어야 한다. 담긴 게 있을 때의 "Ready to
           collect?"와 같은 자리다 (axe: page-has-heading-one). */}
-      <h1 ref={headingRef} tabIndex={-1} className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">Your cart is empty.</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-8">장바구니가 비어 있습니다.</h1>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
         아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
       </p>

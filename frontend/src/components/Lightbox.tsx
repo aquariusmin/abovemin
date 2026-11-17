@@ -511,7 +511,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
           href={inquiryHref}
           className="pointer-events-auto mt-2.5 inline-block text-[13px] text-cream/80 underline decoration-cream/35 underline-offset-4 transition-colors hover:text-cream hover:decoration-moss"
         >
-          이 사진으로 프린트 문의
+          이 사진 프린트 문의
         </a>
       </div>
 

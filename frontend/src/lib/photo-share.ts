@@ -87,7 +87,7 @@ export function photoImageUrl(src: string): string {
 }
 
 /**
- * 검색 결과와 링크 미리보기의 한 줄: "여수 · 2018.09.08 · Canon EOS 200D — Korea 컬렉션의 사진."
+ * 검색 결과와 링크 미리보기의 한 줄: "여수 · 2018.09.08 · Canon EOS 200D — Korea 앨범의 사진."
  * 화면용 구분자(`joinCaption`)의 줄바꿈 없는 공백은 메타 태그에서 뜻이 없어 보통 공백을 쓴다.
  */
 export function photoPageDescription(
@@ -100,7 +100,7 @@ export function photoPageDescription(
     takenDate(photo.taken_at) ?? caption.year,
     displayCamera(photo.camera),
   ].filter((v): v is string => Boolean(v));
-  const tail = `${albumTitle} 컬렉션의 사진.`;
+  const tail = `${albumTitle} 앨범의 사진.`;
   return parts.length > 0 ? `${parts.join(' · ')} — ${tail}` : tail;
 }
 
