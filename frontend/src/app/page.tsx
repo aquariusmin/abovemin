@@ -96,7 +96,7 @@ export default async function Home() {
   const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
   const heroSubtitle =
     settings['hero_subtitle'] ||
-    '숲의 색, 보도블록 틈에 자란 풀. 지나가다 눈에 들어온 초록을 찍어 모읍니다.';
+    '여행지에서, 사는 동네에서 찍은 사진을 모아 둡니다.';
 
   const titleHead = heroTitle.split(' ').slice(0, -1).join(' ');
   const titleTail = heroTitle.split(' ').slice(-1).join(' ');
