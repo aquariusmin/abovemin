@@ -130,7 +130,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
                 /* 첫 사진이 이 페이지의 LCP다. 다른 장으로 넘긴 뒤에는
                    preload할 이유가 없다. */
                 preload={index === 0}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
+                fetchPriority={index === 0 ? 'high' : undefined}
               />
             </div>
           ) : (
@@ -143,7 +143,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
               sizes={mainSizes(null)}
               className="h-auto w-auto max-w-full max-h-[78svh] rounded-lg border border-border-light bg-stone"
               preload={index === 0}
-              fetchPriority={index === 0 ? 'high' : 'auto'}
+              fetchPriority={index === 0 ? 'high' : undefined}
             />
           )}
         </div>

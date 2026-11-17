@@ -236,7 +236,8 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
 
-          {/* Order form */}
+          {/* Order form. `noValidate`는 검증과 문구를 우리가 하기 위해서고, 필수 칸의
+              `required`는 그와 별개로 브라우저·자동완성·보조기기에 "필수"를 알린다. */}
           <form onSubmit={handleSubmit} noValidate className="md:col-span-7 space-y-6">
             <div>
               <label htmlFor="name" className={labelClass}>이름 *</label>
@@ -247,7 +248,7 @@ export default function CheckoutPage() {
                 onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(er => ({ ...er, name: undefined })); }}
                 placeholder="홍길동"
                 autoComplete="name"
-                aria-required="true"
+                required
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? 'name-error' : undefined}
               />
@@ -264,7 +265,7 @@ export default function CheckoutPage() {
                 onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: undefined })); }}
                 placeholder="hello@phorage.com"
                 autoComplete="email"
-                aria-required="true"
+                required
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? 'email-error' : undefined}
               />
@@ -301,14 +302,18 @@ export default function CheckoutPage() {
 
             <div>
               <label htmlFor="address" className={labelClass}>배송 주소 *</label>
-              <input
+              {/* 한 줄 입력이 아니라 textarea: `street-address`는 여러 줄 값을 뜻하는
+                  자동완성 토큰이고, "도로명 + 동·호수"는 폰의 한 줄 칸에서 앞이 밀려
+                  나가 확인이 안 된다. 줄바꿈은 메일·관리 화면에서 공백으로 읽힌다. */}
+              <textarea
                 id="address"
-                className={inputClass}
+                className={`${inputClass} resize-none`}
+                rows={2}
                 value={form.address}
                 onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setErrors(er => ({ ...er, address: undefined })); }}
                 placeholder="서울시 마포구 ..."
                 autoComplete="street-address"
-                aria-required="true"
+                required
                 aria-invalid={!!errors.address}
                 aria-describedby={errors.address ? 'address-error' : undefined}
               />
@@ -321,6 +326,7 @@ export default function CheckoutPage() {
                 id="note"
                 className={`${inputClass} resize-none`}
                 rows={3}
+                autoComplete="off"
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                 placeholder="문 앞에 놓아주세요"

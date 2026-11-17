@@ -344,7 +344,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
                 className={INPUT_CLASS}
                 placeholder="서울"
                 onBlur={e => applyToAll('location', e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyToAll('location', e.currentTarget.value); } }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); applyToAll('location', e.currentTarget.value); } }}
               />
             </div>
             <div>
@@ -355,7 +355,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
                 className={INPUT_CLASS}
                 placeholder="2025"
                 onBlur={e => applyToAll('year', e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyToAll('year', e.currentTarget.value); } }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); applyToAll('year', e.currentTarget.value); } }}
               />
             </div>
           </div>

@@ -871,6 +871,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 이 사이트는 라이트 테마 하나다. 루트에 밝히면 폼 컨트롤·스크롤바 같은 브라우저
+   UI가 OS 다크 모드에서도 같은 밝은 판으로 그려지고, 크롬의 자동 다크 모드도
+   사진 페이지의 색을 바꾸지 않는다(`only`). viewport 메타(`layout.tsx`)와 짝이다. */
+:root {
+  color-scheme: only light;
+}
+
+/* 모달 <dialog>(라이트박스, 관리 화면 확인 창) 아래의 페이지가 스크롤되지 않게.
+   `body { overflow: hidden }`으로 잠그지 않는다 — 루트 스크롤바가 사라지며 데스크톱
+   레이아웃이 옆으로 밀린다. `::backdrop`은 기본값이 `overflow: visible`이라
+   스크롤 컨테이너가 아니어서, `overflow: hidden`을 줘야 `overscroll-behavior`가 먹는다.
+   넘치지 않는 컨테이너에서 이것을 따르지 않는 브라우저(Safari)를 위한 보완은
+   `Lightbox.tsx`의 휠 처리와 `touch-action`에 있다. */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
 /* 홈 히어로 문구의 등장. framer-motion 대신 CSS인 이유는 HomeContent의 주석:
    서버 HTML이 그대로 보여야 한다(LCP). 그래서 불투명도는 움직이지 않고 위치만
    옮긴다 — 첫 페인트부터 글자가 읽힌다. 움직임 줄이기에서는 아래 규칙이

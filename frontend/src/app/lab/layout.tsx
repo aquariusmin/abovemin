@@ -18,7 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/lab' },
   // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
   ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/lab' }),
-  other: { 'color-scheme': 'light' },
 };
 
 export default function LabLayout({ children }: { children: React.ReactNode }) {

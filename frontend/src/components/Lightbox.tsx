@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import Image, { getImageProps } from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cloudinary } from '@/lib/cloudinary';
@@ -12,6 +12,8 @@ import { CONTACT_EMAIL, SITE_URL } from '@/lib/site';
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Shared control affordance — high-contrast, ≥44px tap target, focus-safe.
+// (`z-20` stays: it orders the controls above the caption scrim *inside* the
+// dialog. The dialog itself needs no z-index — it is in the top layer.)
 // The photo now runs edge to edge behind these, so each control carries its
 // own dark disc: over a blown-out sky a bare white glyph disappears entirely.
 const CONTROL =
@@ -81,8 +83,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   const caption = photoCaption(photo);
   const label = photoLabel(photo);
   const exif = exifParts(photo);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const reduce = useReducedMotion();
 
   // Aspect ratio per photo id, learned on load — see the sizing note on the
@@ -186,41 +187,58 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     }
   }, [loadedId, photo.id, nextPhoto, prevPhoto, ratios]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') { onClose(); return; }
-    if (e.key === 'ArrowLeft') { onPrev(); return; }
-    if (e.key === 'ArrowRight') { onNext(); return; }
-    // Trap Tab focus inside the dialog so keyboard users can't escape it.
-    if (e.key === 'Tab' && dialogRef.current) {
-      const focusable = dialogRef.current.querySelectorAll<HTMLElement>('button, a[href]');
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, [onClose, onPrev, onNext]);
-
-  // Mount-only: lock scroll, capture/restore focus. Must NOT depend on
-  // handleKeyDown, or focus would be yanked back to Close on every navigation.
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
-    // Move focus into the dialog on open.
-    closeRef.current?.focus();
+  // ── 네이티브 모달 ────────────────────────────────────────────────────────
+  // `<dialog>` + `showModal()`이 예전에 손으로 만들던 것을 맡는다: 뒤 페이지를
+  // `inert`로(스크린리더의 가상 커서도 그리드로 새지 않는다), 포커스 가두기,
+  // 첫 컨트롤(닫기)로 포커스 옮기기, 닫을 때 연 타일로 포커스 돌려주기, top layer.
+  //
+  // 마운트에서 한 번 열고, 언마운트 직전에 닫는다. `useLayoutEffect`인 이유:
+  // 정리 함수가 노드가 문서에서 빠지기 **전에** 돌아야 `close()`가 포커스를
+  // 돌려준다. 그냥 떼어 내면 모달은 닫히지만 포커스는 body로 떨어진다.
+  // AnimatePresence의 퇴장 애니메이션(0.25초) 동안은 여전히 모달이다.
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
     return () => {
-      document.body.style.overflow = '';
-      // Restore focus to the element that opened the lightbox.
-      previouslyFocused?.focus?.();
+      if (dialog.open) dialog.close();
     };
   }, []);
 
-  // Keydown listener re-binds when handlers change, without stealing focus.
+  // Esc, 안드로이드 뒤로가기 제스처 같은 "닫기 요청"은 `cancel`로 온다. 브라우저가
+  // 바로 닫게 두지 않고 막은 뒤 `onClose`로 넘긴다: 닫기는 URL(`?p=`)이 정하고,
+  // 퇴장 애니메이션도 그래야 보인다. 다만 사용자 활성화 없이 거듭된 닫기 요청은
+  // 막을 수 없어서 곧장 `close`가 온다 — 그 경로도 `onClose`로 보내되, 한 번만.
+  const closing = useRef(false);
+  const requestClose = useCallback(() => {
+    if (closing.current) return;
+    closing.current = true;
+    onClose();
+  }, [onClose]);
+  const onCancel = useCallback((e: React.SyntheticEvent<HTMLDialogElement>) => {
+    e.preventDefault();
+    requestClose();
+  }, [requestClose]);
+
+  // 스크롤 잠금은 `globals.css`의 `dialog:modal`/`::backdrop` 규칙이 한다
+  // (`body { overflow: hidden }`은 데스크톱에서 스크롤바가 사라지며 레이아웃을
+  // 민다). 그 규칙은 넘치지 않는 컨테이너에서 Safari가 아직 따르지 않으므로,
+  // 휠만 여기서 막는다 — 라이트박스 안에는 스크롤할 것이 없다. 터치는
+  // 아래 `touch-none`이 막는다. React의 onWheel은 passive라 직접 붙인다.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const stop = (e: WheelEvent) => e.preventDefault();
+    dialog.addEventListener('wheel', stop, { passive: false });
+    return () => dialog.removeEventListener('wheel', stop);
+  }, []);
+
+  // 좌우 화살표로 넘기기. Esc와 Tab은 위의 네이티브 모달이 맡는다.
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') { onPrev(); return; }
+    if (e.key === 'ArrowRight') { onNext(); return; }
+  }, [onPrev, onNext]);
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -275,9 +293,9 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       if (cancelled) return;
       // A tap on the photo does nothing: dismissing the thing you are looking
       // at because you touched it is not a gesture anyone means.
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && !onPhoto) onClose();
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && !onPhoto) requestClose();
     },
-    [onClose, onNext, onPrev],
+    [requestClose, onNext, onPrev],
   );
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -328,20 +346,31 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   }, [finishPress]);
 
   return (
-    <motion.div
+    <motion.dialog
       ref={dialogRef}
       // `select-none` keeps a drag from turning into a text selection, which
       // is one of the ways the browser takes the pointer away mid-swipe.
       // Opaque on phones. Any translucency let the neighbouring masonry
       // cards ghost through the letterbox bands above and below a landscape
       // photo — on a 390×844 screen those bands are 40% of the view.
-      className="fixed inset-0 z-[100] bg-forest-black md:bg-forest-black/95 flex items-center justify-center touch-pan-y select-none"
+      //
+      // The dialog is the whole screen, so the UA box (margin, padding,
+      // border, max sizes) is reset and `::backdrop` is transparent — the
+      // dialog's own background is the backdrop the design has always had.
+      // `open:flex`, not `flex`: an unconditional `display` would override the
+      // closed dialog's `display: none`.
+      //
+      // `touch-none` rather than `touch-pan-y`: nothing in here scrolls, and
+      // a vertical drag the browser was allowed to pan chained to the page
+      // underneath now that `body` is no longer locked. It also means the
+      // browser never takes the pointer away mid-swipe to pan.
+      className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden border-0 p-0 bg-forest-black md:bg-forest-black/95 backdrop:bg-transparent open:flex items-center justify-center touch-none select-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
-      role="dialog"
-      aria-modal="true"
+      onCancel={onCancel}
+      onClose={requestClose}
       aria-label={label}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -349,9 +378,10 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       transition={{ duration: 0.25, ease: EASE }}
     >
       {/* Close button */}
+      {/* First in the dialog, so `showModal()` puts focus here on open. */}
       <button
-        ref={closeRef}
-        onClick={onClose}
+        type="button"
+        onClick={requestClose}
         className={`absolute top-3 right-3 md:top-5 md:right-5 ${CONTROL}`}
         aria-label="닫기"
       >
@@ -493,6 +523,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       >
         &rsaquo;
       </button>
-    </motion.div>
+    </motion.dialog>
   );
 }

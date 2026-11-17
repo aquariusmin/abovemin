@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import {
   Fraunces,
   IBM_Plex_Sans,
@@ -93,6 +93,13 @@ const mono = IBM_Plex_Mono({
   display: 'swap',
   preload: false,
 });
+
+// 라이트 테마 하나뿐인 사이트라는 것을 HTML이 그려지기 전에 알린다(`globals.css`의
+// `:root { color-scheme }`과 짝). `only`는 크롬 자동 다크 모드가 사진 페이지를
+// 어둡게 바꾸지 못하게 한다.
+export const viewport: Viewport = {
+  colorScheme: 'only light',
+};
 
 export const metadata: Metadata = {
   title: {
