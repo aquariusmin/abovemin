@@ -73,7 +73,7 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
             // 비율만 쓴다. `auto`가 앞에 있어 표지가 오면 실제 비율이 이긴다.
             style={album.width && album.height ? { aspectRatio: `auto ${album.width} / ${album.height}` } : undefined}
             loading={index === 0 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : 'auto'}
+            fetchPriority={index === 0 ? 'high' : undefined}
           />
           {/* Forest-black scrim rather than neutral black — keeps the
               photography warm and ties the overlay to the palette.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FadeImage from './FadeImage';
 import { placeholderStyle } from './photo-placeholder';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -51,6 +51,9 @@ export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo
   // 목록은 이 사이트의 본문이라 HTML에 들어 있어야 한다. 라이트박스는 어차피
   // 클라이언트 전용 장치이므로, 쿼리 문자열도 클라이언트에서만 다룬다.
   const [openId, setOpenId] = useState<string | null>(null);
+  // 이 그리드가 연 라이트박스라서 히스토리에 한 칸을 쌓았는가. 공유받은 `?p=`
+  // 링크로 들어왔거나 앞으로 가기로 다시 열린 경우는 아니다.
+  const pushed = useRef(false);
 
   const lightboxIndex = useMemo(() => {
     if (openId === null) return null;
@@ -62,9 +65,13 @@ export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo
   // 뒤로/앞으로 가기를 따라간다.
   useEffect(() => {
     const read = () => setOpenId(new URLSearchParams(window.location.search).get('p'));
+    const onPop = () => {
+      pushed.current = false;
+      read();
+    };
     read();
-    window.addEventListener('popstate', read);
-    return () => window.removeEventListener('popstate', read);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   // 공유받은 링크로 바로 들어왔다면, 닫았을 때 그 사진이 화면에 있도록
@@ -90,8 +97,25 @@ export default function PhotoGrid({ photos, eagerFirst = true }: { photos: Photo
     setOpenId(id);
   }, []);
 
-  const open = useCallback((index: number) => setQuery(String(photos[index].id), 'push'), [photos, setQuery]);
-  const close = useCallback(() => setQuery(null, 'replace'), [setQuery]);
+  const open = useCallback((index: number) => {
+    setQuery(String(photos[index].id), 'push');
+    pushed.current = true;
+  }, [photos, setQuery]);
+  // 연 것이 우리라면 닫기는 그 한 칸을 **되돌린다**. 예전처럼 `replace`로 닫으면
+  // 히스토리에 같은 앨범 주소가 두 칸 남아, 다음 뒤로 가기는 아무 일도 하지
+  // 않는 헛걸음이 됐다. 라이트박스가 네이티브 `<dialog>`가 된 뒤로는 안드로이드의
+  // 뒤로가기 제스처도 브라우저가 dialog의 닫기 요청으로 먼저 가져가므로, 이것이
+  // 없으면 제스처마다 헛걸음이 하나씩 쌓인다. 되돌린 뒤의 상태는 popstate가 읽는다.
+  // 공유 링크로 들어온 경우에는 되돌릴 칸이 없으니(되돌리면 사이트를 떠난다)
+  // 주소에서 `?p=`만 지운다.
+  const close = useCallback(() => {
+    if (pushed.current) {
+      pushed.current = false;
+      window.history.back();
+      return;
+    }
+    setQuery(null, 'replace');
+  }, [setQuery]);
   const step = useCallback(
     (delta: number) => {
       if (lightboxIndex === null) return;
@@ -220,7 +244,7 @@ function PhotoTile({
           draggable={false}
           fadeIn={deferred}
           loading={eager ? 'eager' : 'lazy'}
-          fetchPriority={eager ? 'high' : 'auto'}
+          fetchPriority={eager ? 'high' : undefined}
         />
       </div>
       {hasCaption && (

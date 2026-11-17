@@ -247,7 +247,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                   style={item.aspect ? { aspectRatio: `auto ${item.aspect}` } : undefined}
                   draggable={false}
                   loading={i === 0 ? 'eager' : 'lazy'}
-                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                  fetchPriority={i === 0 ? 'high' : undefined}
                 />
               </div>
 
