@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
   books, dayTicks, fmtDateKst, fmtDateTimeKst, fmtDayKst, fmtPct,
-  lastCycle, parseBotName, parseEquityCurve, staleness, type FleetBot,
+  lastCycle, parseBotName, parseEquityCurve, sortBots, staleness, type FleetBot,
 } from '@/lib/quant';
 
 afterEach(() => vi.useRealTimers());
@@ -152,5 +152,35 @@ describe('fmtPct()', () => {
     expect(fmtPct(24.375)).toBe('+24.38%');
     expect(fmtPct(-3)).toBe('-3.00%');
     expect(fmtPct(null)).toBe('—');
+  });
+});
+
+describe('sortBots()', () => {
+  const bot = (id: string, day: number | null, equity = 100): FleetBot => ({
+    id, bot_name: `${id} / s`, strategy: 's', market: 'stock', equity,
+    pnl_pct: 0, day_pnl_pct: day, position_pct: null, holdings_count: null, holdings: null,
+    fills_count: null, last_fill: null, cash: null, currency: 'USD', mark: null,
+    equity_curve: null, updated_at: '2026-09-12T00:00:00Z',
+  });
+  const ids = (bs: FleetBot[]) => bs.map(b => b.id);
+
+  it('숫자 열은 방향대로 정렬한다', () => {
+    const bs = [bot('a', 1, 300), bot('b', 2, 100), bot('c', 3, 200)];
+    expect(ids(sortBots(bs, 'equity', 'desc'))).toEqual(['a', 'c', 'b']);
+    expect(ids(sortBots(bs, 'equity', 'asc'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('값이 없는 행은 어느 방향이든 맨 뒤에 둔다', () => {
+    // null을 0이나 최저값으로 읽으면 기준선 없는 봇이 "오늘 최악"처럼 보인다.
+    const bs = [bot('a', null), bot('b', -5), bot('c', 4)];
+    expect(ids(sortBots(bs, 'day_pnl_pct', 'desc'))).toEqual(['c', 'b', 'a']);
+    expect(ids(sortBots(bs, 'day_pnl_pct', 'asc'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('문자열 열은 사전순으로 정렬하고 원본을 건드리지 않는다', () => {
+    const bs = [bot('b', 0), bot('a', 0), bot('c', 0)];
+    expect(ids(sortBots(bs, 'bot_name', 'asc'))).toEqual(['a', 'b', 'c']);
+    expect(ids(sortBots(bs, 'bot_name', 'desc'))).toEqual(['c', 'b', 'a']);
+    expect(ids(bs)).toEqual(['b', 'a', 'c']);
   });
 });
