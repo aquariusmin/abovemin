@@ -142,7 +142,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <ThemeShell>
         <a href="#main-content" className="skip-link">본문 바로가기</a>
         <Nav />
-        <div id="main-content" className="flex-grow pt-[72px] md:pt-[88px]">
+        <div id="main-content" className="flex-grow bg-canvas pt-[72px] md:pt-[88px]">
           <MotionProvider>{children}</MotionProvider>
         </div>
         <Footer hasNotes={hasNotes} />

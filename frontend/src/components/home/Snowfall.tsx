@@ -6,9 +6,14 @@ import { addSnow, createPile, heightAt, isEmpty, seedPile, shakeOff, type SnowPi
 /**
  * 홈 화면의 눈. 겨울 장식 기간에만 그려진다(`lib/season.ts`).
  *
- * 내리는 눈과 쌓인 눈을 한 캔버스에 그린다. 눈송이가 `.snow-cap` 상자(사진 타일,
- * 짙은 띠의 버튼)의 윗면에 닿으면 사라지지 않고 그 자리에 쌓인다 — 계산은
- * `lib/snow-pile.ts`. 쌓인 눈은 상자를 따라 스크롤된다(매 프레임 상자 위치를 읽는다).
+ * 내리는 눈은 화면에 고정된 캔버스에, 쌓인 눈은 **상자마다 그 안에 둔 작은
+ * 캔버스**에 그린다. 눈송이가 `.snow-cap` 상자(사진 타일, 짙은 띠의 버튼)의 윗면에
+ * 닿으면 사라지지 않고 그 자리에 쌓인다 — 계산은 `lib/snow-pile.ts`.
+ *
+ * 쌓인 눈을 고정 캔버스에 그리던 때는 스크롤할 때마다 상자 위치를 읽어 다시
+ * 그렸는데, 브라우저가 스크롤을 먼저 그리고 캔버스는 한 박자 늦게 따라와(특히
+ * iOS의 관성 스크롤) 눈이 사진 위에서 미끄러져 보였다. 상자 안의 캔버스는 상자와
+ * 함께 스크롤되므로 늦을 것이 없다. 다시 그리는 것도 눈이 쌓이거나 털릴 때뿐이다.
  *
  * 털어 내기:
  *  - 마우스를 사진 위에 올리면 그 상자의 눈이 털려 떨어진다. 사진을 볼 때 눈이
@@ -40,6 +45,9 @@ interface Target {
   el: Element;
   inset: number;
   pile: SnowPile;
+  /** 상자 안에 넣은, 이 더미만 그리는 캔버스. */
+  canvas: HTMLCanvasElement;
+  dirty: boolean;
 }
 
 const MAX_FLAKES = 70;
@@ -50,6 +58,8 @@ const SHAKE_SCROLL_SPEED = 2.5;
 const SHAKE_COOLDOWN = 600;
 /** 쌓인 눈이 상자 윗변 아래로 내려오는 정도 — 얹혀 있는 것처럼 보이게. */
 const OVERLAP = 2;
+/** 더미 캔버스 위쪽 여유 — 윤곽선이 잘리지 않게. */
+const HEADROOM = 2;
 
 function makeFlake(width: number, height: number, anywhere: boolean): Flake {
   const y = anywhere ? Math.random() * height : -6;
@@ -99,23 +109,53 @@ export default function Snowfall() {
     let frame = 0;
     let running = true;
 
+    function pileCanvas(el: Element, inset: number, pile: SnowPile): HTMLCanvasElement {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const h = pile.max + HEADROOM + OVERLAP;
+      const c = document.createElement('canvas');
+      c.setAttribute('aria-hidden', 'true');
+      c.className = 'snow-pile';
+      c.width = Math.max(1, Math.round(pile.width * dpr));
+      c.height = Math.round(h * dpr);
+      Object.assign(c.style, {
+        position: 'absolute',
+        left: `${inset}px`,
+        top: `${-(pile.max + HEADROOM)}px`,
+        width: `${pile.width}px`,
+        height: `${h}px`,
+        pointerEvents: 'none',
+        zIndex: '2',
+      });
+      c.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      el.appendChild(c);
+      return c;
+    }
+
     function buildTargets() {
       const previous = new Map(targets.map(t => [t.el, t]));
-      targets = Array.from(host?.querySelectorAll('.snow-cap') ?? []).map(el => {
+      const next = Array.from(host?.querySelectorAll('.snow-cap') ?? []).map(el => {
         const inset = isPill(el) ? 14 : 6;
         const pileWidth = Math.max(0, el.getBoundingClientRect().width - inset * 2);
         const kept = previous.get(el);
-        if (kept && Math.abs(kept.pile.width - pileWidth) < 1) return kept;
+        if (kept && Math.abs(kept.pile.width - pileWidth) < 1) {
+          previous.delete(el);
+          return kept;
+        }
         const pile = createPile(pileWidth, { bucket: 3, max: isPill(el) ? 7 : 10 });
         seedPile(pile, isPill(el) ? 2.5 : 3.5);
-        return { el, inset, pile };
+        return { el, inset, pile, canvas: pileCanvas(el, inset, pile), dirty: true };
       });
+      // 폭이 바뀌어 새로 만든 상자의 옛 캔버스는 치운다.
+      for (const stale of previous.values()) stale.canvas.remove();
+      targets = next;
     }
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = window.innerWidth;
-      height = window.innerHeight;
+      // 아래 가장자리에서 4px 띄운다 — iOS Safari 26이 화면 아래에 붙은 고정 요소를
+      // 툴바 색으로 읽으므로, 투명한 이 캔버스가 그 대상이 되지 않게.
+      height = Math.max(0, window.innerHeight - 4);
       canvas!.width = Math.round(width * dpr);
       canvas!.height = Math.round(height * dpr);
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -126,6 +166,7 @@ export default function Snowfall() {
     }
 
     function shake(target: Target, rect: DOMRect) {
+      target.dirty = true;
       for (const bit of shakeOff(target.pile)) {
         if (loose.length >= MAX_LOOSE) break;
         const pieces = bit.depth > 6 ? 2 : 1;
@@ -156,47 +197,51 @@ export default function Snowfall() {
         const surface = rect.top - heightAt(targets[t].pile, local);
         if (flake.prevY <= surface && flake.y >= surface) {
           addSnow(targets[t].pile, local, flake.r * 1.1);
+          targets[t].dirty = true;
           return true;
         }
       }
       return false;
     }
 
-    function drawPile(target: Target, rect: DOMRect) {
-      const { pile, inset } = target;
-      if (isEmpty(pile) || rect.width === 0 || rect.bottom < 0 || rect.top - pile.max > height) return;
-      const x0 = rect.left + inset;
-      const base = rect.top + OVERLAP;
+    /** 상자 안의 캔버스에, 상자 기준 좌표로 더미를 다시 그린다. */
+    function drawPile(target: Target) {
+      const { pile, canvas: c } = target;
+      target.dirty = false;
+      const pctx = c.getContext('2d');
+      if (!pctx) return;
+      const top = pile.max + HEADROOM; // 상자 윗변의 y
+      pctx.clearRect(0, 0, pile.width, top + OVERLAP);
+      if (isEmpty(pile)) return;
       const n = pile.heights.length;
       // 칸 가운데를 잇되 이웃 칸과의 중점으로 이어 부드럽게.
       const points: Array<[number, number]> = [];
-      for (let i = 0; i < n; i++) points.push([x0 + (i + 0.5) * pile.bucket, rect.top - pile.heights[i]]);
+      for (let i = 0; i < n; i++) points.push([(i + 0.5) * pile.bucket, top - pile.heights[i]]);
+      const contour = () => {
+        pctx.lineTo(points[0][0], points[0][1]);
+        for (let i = 1; i < n; i++) {
+          const [px, py] = points[i - 1];
+          const [cx, cy] = points[i];
+          pctx.quadraticCurveTo(px, py, (px + cx) / 2, (py + cy) / 2);
+        }
+        pctx.lineTo(points[n - 1][0], points[n - 1][1]);
+      };
 
-      ctx!.beginPath();
-      ctx!.moveTo(x0, base);
-      ctx!.lineTo(points[0][0], points[0][1]);
-      for (let i = 1; i < n; i++) {
-        const [px, py] = points[i - 1];
-        const [cx, cy] = points[i];
-        ctx!.quadraticCurveTo(px, py, (px + cx) / 2, (py + cy) / 2);
-      }
-      ctx!.lineTo(points[n - 1][0], points[n - 1][1]);
-      ctx!.lineTo(x0 + pile.width, base);
-      ctx!.closePath();
-      ctx!.fillStyle = 'rgba(255, 255, 255, 0.97)';
-      ctx!.fill();
+      pctx.beginPath();
+      pctx.moveTo(0, top + OVERLAP);
+      contour();
+      pctx.lineTo(pile.width, top + OVERLAP);
+      pctx.closePath();
+      pctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+      pctx.fill();
 
       // 윗면 윤곽만 옅게 — 크림 바탕에서도 눈 더미의 모양이 보이게.
-      ctx!.beginPath();
-      ctx!.moveTo(points[0][0], points[0][1]);
-      for (let i = 1; i < n; i++) {
-        const [px, py] = points[i - 1];
-        const [cx, cy] = points[i];
-        ctx!.quadraticCurveTo(px, py, (px + cx) / 2, (py + cy) / 2);
-      }
-      ctx!.lineWidth = 0.8;
-      ctx!.strokeStyle = 'rgba(22, 35, 26, 0.18)';
-      ctx!.stroke();
+      pctx.beginPath();
+      pctx.moveTo(points[0][0], points[0][1]);
+      contour();
+      pctx.lineWidth = 0.8;
+      pctx.strokeStyle = 'rgba(22, 35, 26, 0.18)';
+      pctx.stroke();
     }
 
     function drawFlake(flake: Flake) {
@@ -214,7 +259,7 @@ export default function Snowfall() {
       const rects = targets.map(t => t.el.getBoundingClientRect());
       ctx!.clearRect(0, 0, width, height);
 
-      for (let t = 0; t < targets.length; t++) drawPile(targets[t], rects[t]);
+      for (const target of targets) if (target.dirty) drawPile(target);
 
       for (const flake of flakes) {
         flake.prevY = flake.y;
@@ -298,10 +343,12 @@ export default function Snowfall() {
       window.removeEventListener('scroll', onScroll);
       document.removeEventListener('pointerover', onPointerOver);
       document.removeEventListener('visibilitychange', onVisibility);
+      for (const target of targets) target.canvas.remove();
+      targets = [];
       host?.removeAttribute('data-snow-live');
     };
   }, [enabled]);
 
   if (!enabled) return null;
-  return <canvas ref={canvasRef} aria-hidden className="pointer-events-none fixed inset-0 z-40 h-full w-full" />;
+  return <canvas ref={canvasRef} aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-40 h-[calc(100%-4px)] w-full" />;
 }

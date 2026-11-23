@@ -47,6 +47,12 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
     // the other way at the same time: the dimmed text (links at 70%, labels and
     // meta at 40%) is lifted, because "smaller" only reads as tidy if the type
     // that remains is easier to read, not fainter.
+    <>
+    {/* iOS Safari 26의 아래 툴바 색. 화면 아래 가장자리에 붙은 고정 요소의 배경을
+        읽으므로, 거의 보이지 않는 얇은 띠를 두고 그 색을 루트와 맞춘다(푸터가
+        보이면 푸터 색). iOS Safari에서만 그린다(`globals.css`의 `.ios-toolbar-tint`).
+        푸터 밖에 둔다 — 푸터의 `isolation`에 갇히지 않게. */}
+    <div aria-hidden className="ios-toolbar-tint" />
     <footer data-site-footer className="band-navy texture-grain">
       {/* Canopy gradient hairline capping the band */}
       <div aria-hidden className="h-[2px] bg-gradient-to-r from-forest via-fern to-moss" />
@@ -117,5 +123,6 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
         </div>
       </div>
     </footer>
+    </>
   );
 }

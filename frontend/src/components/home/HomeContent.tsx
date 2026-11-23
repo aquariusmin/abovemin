@@ -10,7 +10,6 @@ import { placeholderStyle, storedRatioStyle } from '@/components/photo-placehold
 import Reveal from '@/components/motion/Reveal';
 import { balanceColumns, photoRatio } from '@/lib/layout-photos';
 import { displayFace } from '@/lib/typography';
-import { Baubles, Holly, Lights } from './WinterDecor';
 import Snowfall from './Snowfall';
 
 // Minimal shape of the fields this view actually renders.
@@ -128,7 +127,6 @@ export default function HomeContent({
 
   return (
     <main className="relative bg-canvas text-ink-body" data-winter={winter || undefined}>
-      {winter && <Lights />}
       {winter && <Snowfall />}
 
       {/* ── Hero: one photograph, sized by that photograph ─────────────────
@@ -146,8 +144,7 @@ export default function HomeContent({
       {/* 아래 여백은 짧게. 다음 장이 cream 띠로 바뀌므로 간격이 아니라
           면의 전환이 구분을 맡는다 — 예전에는 빈 canvas가 데스크톱에서
           ~180px 이어졌다. */}
-      <section className="relative px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
-        {winter && <Baubles />}
+      <section className="px-5 sm:px-6 md:px-10 pt-6 md:pt-10 pb-12 md:pb-16">
         {/* 히어로는 framer-motion의 `initial="hidden"`을 쓰지 않는다. 그러면
             서버 HTML이 사진과 <h1>을 opacity 0으로 내보내고, JS가 받아져
             하이드레이션이 끝날 때까지 첫 화면이 비어 있다 — 이 사진이 사이트
@@ -272,7 +269,7 @@ export default function HomeContent({
               <div className="space-y-3">
                 <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
                 <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
-                  최근 올라온 사진{winter && <Holly className="ml-2" />}
+                  최근 올라온 사진
                 </h2>
               </div>
               <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
@@ -358,7 +355,7 @@ export default function HomeContent({
             <Reveal {...RISE_BLOCK} className={`mb-8 md:mb-10 space-y-3 ${memoryRow ? 'lg:mb-10' : ''}`}>
               <p className="eyebrow eyebrow-marked text-primary">On this day</p>
               <h2 id="on-this-day-title" className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
-                몇 년 전 오늘{winter && <Holly className="ml-2" />}
+                몇 년 전 오늘
               </h2>
               {!onThisDay.some(photo => photo.exact) && (
                 <p className="text-[15px] text-slate">딱 오늘 찍은 사진은 없어서, 이맘때 찍은 사진을 골랐습니다.</p>
@@ -432,7 +429,7 @@ export default function HomeContent({
             <div className="space-y-3">
               <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
               <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink break-keep">
-                새로 나온 소품{winter && <Holly className="ml-2" />}
+                새로 나온 소품
               </h2>
             </div>
             <Link href="/shop" className="btn-outline">소품 전체 보기</Link>
@@ -524,8 +521,7 @@ export default function HomeContent({
       {/* ── 닫는 띠 ──────────────────────────────────────────────────────────
            페이지마다 forest 띠는 하나. 가장 앞에 내세울 행동은 아카이브이고,
            소품은 살 수 있는 것이 있을 때만 두 번째로 붙는다. */}
-      <section className="relative band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
-        {winter && <Lights dark />}
+      <section className="band-dark texture-grain px-5 sm:px-6 md:px-10 py-16 md:py-24">
         <Reveal {...RISE_BLOCK} className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
           <div className="space-y-4 max-w-2xl">
             <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
