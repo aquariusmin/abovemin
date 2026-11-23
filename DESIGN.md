@@ -73,7 +73,7 @@ Directional colour in editorial contexts uses `trend.up` = moss and `trend.down`
 ### Contrast Notes
 
 - Moss (`#a7c957`) never carries text on a light surface — it is a highlight, an underlay, or dark-surface text only.
-- `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 11px eyebrows stay legible. On cream (`--stone`) it drops to 4.20:1 — small text on a cream panel uses `text-slate` (5.27:1) instead.
+- `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 12px eyebrows stay legible. On cream (`--stone`) it drops to 4.20:1 — small text on a cream panel uses `text-slate` (5.27:1) instead.
 - The fern focus ring is 2.74:1 on cream. A cream panel that holds controls uses `.surface-cream`, and a full-width `.band-cream` does the same: both re-point `--ring` to forest inside them.
 - Field edges (`.field-input`, selects) use `--field-edge`, not `--input`: 3.14:1 on canvas, 3.28:1 on white, so an empty field still reads as a field (WCAG 1.4.11). `--input` stays the soft decorative line.
 - Forest and brick both clear 5:1 on canvas and are safe for body-size links.
@@ -82,7 +82,8 @@ Directional colour in editorial contexts uses `trend.up` = moss and `trend.down`
 
 ### Font Family
 
-- **Display**: `Fraunces` — an old-style serif with a little optical wonk. **Latin only.**
+- **Display**: `Fraunces` — an old-style serif with a little optical wonk. **Latin only**, and therefore used only for headings that are Latin only (the wordmark, the hero line, album names like "Japan", years).
+- **Display, Korean**: a heading that holds any Hangul is set entirely in IBM Plex (`.font-display-ko`) — Latin, digits and punctuation included. Under Fraunces such a heading set "5개의 앨범, 299장의 사진" with serif digits beside sans Hangul: two faces meeting mid-line. `displayFace(text)` (`lib/typography.ts`) picks the class for text that comes from the database; fixed Korean copy writes `font-display-ko` directly.
 - **Body/UI**: `IBM Plex Sans`, with `IBM Plex Sans KR` resolving every Hangul glyph.
 - **Technical labels**: `IBM Plex Mono`.
 - **Japanese** (kanji/kana in album captions): system faces only — Hiragino Sans / Hiragino Kaku Gothic ProN / Yu Gothic / Noto Sans JP / Noto Sans CJK JP, listed as `--font-japanese` after the Korean face and emoji in the body and display stacks; no webfont is downloaded.
@@ -103,19 +104,24 @@ Mono carries 600 even though the weight budget is otherwise tight. Measured cost
 
 | Role | Font | Size | Weight | Line Height | Tracking |
 |---|---|---:|---:|---:|---:|
-| Hero Display | Display | `clamp(1.9rem, 7cqw, 4.25rem)` | 500 | 1.05 | tight |
-| Section Display | Display | 44–48px | 500 | 1.10 | tight |
-| Section Heading | Display | 32–36px | 500 | 1.15 | tight |
-| Card Heading | Display | 20–24px | 500 | 1.25 | tight |
+| Hero Display (home only) | Display | `clamp(1.9rem, 7cqw, 4.25rem)` | 500 | 1.05 | tight |
+| Page Title (`h1` elsewhere) | Display / Display KR | 30 → 36 → 48px (`text-3xl sm:text-4xl md:text-5xl`) | 500 | 1.10 | tight / -0.02em |
+| Product / Photo Title | Display / Display KR | 30 → 36px (`text-3xl md:text-4xl`) | 500 | 1.15 | tight |
+| Section Heading | Display / Display KR | 30 → 36px | 500 | 1.15 | tight |
+| Card Heading | Display / Display KR | 20–24px | 500 | 1.25 | tight |
 | Body Large | Body | 17–18px | 400 | 1.65 | 0 |
 | Body | Body | 15–16px | 400 | 1.6 | 0 |
+| Price | Body, tabular | 15px on cards, 18px on the product page | 500 | — | 0 |
 | Button | Body | 14px | 500 | 1 | -0.01em |
-| Caption | Body | 13px | 400 | 1.5 | 0 |
-| Eyebrow (`.eyebrow`) | Mono | 11px | 500 | 1.4 | 0.24em, uppercase |
+| Caption (photo title under a tile, footer) | Body | 14px | 400–500 | 1.5 | 0 |
+| Korean label (`.label-ko`) | Body | 13px | 500 | 1.5 | 0.02em |
+| Eyebrow (`.eyebrow`) | Mono | 12px | 500 | 1.4 | 0.16em, uppercase |
+
+Nothing public sits under 12px. Photo meta captions ("서울 · 2026", "NEWYORK · 2025") are always `.label-ko`, whatever the language, so neighbouring tiles read the same. An `.eyebrow` whose text may be Korean (a product category, a note tag) takes `labelFace(text)`.
 
 ### Principles
 
-- One oversized headline per page; everything after it settles into 15–18px copy.
+- One oversized headline on the home page; every other page opens with a 48px title, and everything after it settles into 15–18px copy.
 - Uppercase mono eyebrows open sections. Use `.eyebrow-marked` to prefix one with a forest→lime tick.
 - Avoid heavy bold — and note it is not merely a preference: 700 is not loaded (see § Font Family). Size, surface contrast, and spacing carry the hierarchy.
 
@@ -225,7 +231,7 @@ Unfilled lowest-emphasis action; clay pill for destructive confirmations.
 
 ### **`.eyebrow`** / **`.eyebrow-marked`**
 
-Uppercase mono section marker at 11px / 0.24em. The `-marked` variant prefixes a 20px forest→lime gradient tick.
+Uppercase mono section marker at 12px / 0.16em. Korean text takes `.label-ko` instead. The `-marked` variant prefixes a 20px forest→lime gradient tick.
 
 ### **`.rule`** / **`.rule-accent`**
 

@@ -188,7 +188,7 @@ export default function CheckoutPage() {
           <span aria-hidden>✓</span>
         </motion.div>
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
-        <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문을 받았습니다.</h1>
+        <h1 className="font-display-ko text-3xl md:text-4xl font-medium text-ink mb-4">주문을 받았습니다.</h1>
         <p className="text-[15px] text-ink-body mb-8 break-keep">
           아래 계좌로 입금해 주세요. 확인되면 적어 주신 연락처로 알려 드립니다.
         </p>
@@ -250,7 +250,7 @@ export default function CheckoutPage() {
             <BackLink href="/cart">장바구니로</BackLink>
           )}
           <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
-          <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해 주세요.</h1>
+          <h1 className="font-display-ko text-3xl md:text-4xl font-medium leading-[1.1] text-ink">주문 정보를 입력해 주세요.</h1>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">

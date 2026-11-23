@@ -9,6 +9,7 @@ import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
 import { balanceColumns, photoRatio } from '@/lib/layout-photos';
+import { displayFace } from '@/lib/typography';
 
 // Minimal shape of the fields this view actually renders.
 interface FeaturedProduct {
@@ -212,7 +213,7 @@ export default function HomeContent({
                 admin-configurable, so a forced break turns any longer title
                 (or a Korean one) into a three-line rag. `text-balance` lets
                 the browser even out the lines instead. */}
-            <h1 className={`font-serif font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
+            <h1 className={`${displayFace(`${titleHead} ${titleTail}`)} font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
               {titleHead ? <>{titleHead} </> : null}
               {/* Lime underlay behind the last word — the one graphic flourish
                   the hero gets, sized off the cap height. The word itself
@@ -262,7 +263,7 @@ export default function HomeContent({
             <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
               <div className="space-y-3">
                 <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
-                <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
                   최근 올라온 사진
                 </h2>
               </div>
@@ -307,7 +308,7 @@ export default function HomeContent({
                                 />
                               </div>
                               {meta && (
-                                <p className="mt-2 eyebrow text-slate group-hover:text-primary transition-colors">
+                                <p className="mt-2 label-ko text-slate group-hover:text-primary transition-colors">
                                   {meta}
                                 </p>
                               )}
@@ -348,7 +349,7 @@ export default function HomeContent({
           >
             <Reveal {...RISE_BLOCK} className={`mb-8 md:mb-10 space-y-3 ${memoryRow ? 'lg:mb-10' : ''}`}>
               <p className="eyebrow eyebrow-marked text-primary">On this day</p>
-              <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+              <h2 id="on-this-day-title" className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
                 몇 년 전 오늘
               </h2>
               {!onThisDay.some(photo => photo.exact) && (
@@ -397,10 +398,10 @@ export default function HomeContent({
                           loading="lazy"
                         />
                       </div>
-                      <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
+                      <p className="mt-2 text-sm font-medium text-ink-body group-hover:text-primary transition-colors">
                         {when}
                       </p>
-                      {place && <p className="eyebrow text-slate">{place}</p>}
+                      {place && <p className="label-ko text-slate">{place}</p>}
                     </Link>
                   </Reveal>
                   </li>
@@ -422,7 +423,7 @@ export default function HomeContent({
           <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
             <div className="space-y-3">
               <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
-              <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
+              <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink break-keep">
                 새로 나온 소품
               </h2>
             </div>
@@ -459,11 +460,11 @@ export default function HomeContent({
                 )}
               </div>
               <div className="max-w-md">
-                <p className="eyebrow text-muted-foreground">새 소품</p>
-                <p className="mt-4 font-serif text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors">
+                <p className="label-ko text-muted-foreground">새 소품</p>
+                <p className={`mt-4 ${displayFace(featured[0].name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors`}>
                   {featured[0].name}
                 </p>
-                <p className="mt-4 text-lg font-mono tabular-nums text-primary">{formatPrice(featured[0].price)}</p>
+                <p className="mt-4 text-lg font-medium tabular-nums text-ink-body">{formatPrice(featured[0].price)}</p>
                 <span className="mt-8 inline-block link-underline text-sm text-ink">자세히 보기 →</span>
               </div>
             </Reveal>
@@ -519,7 +520,7 @@ export default function HomeContent({
         <Reveal {...RISE_BLOCK} className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
           <div className="space-y-4 max-w-2xl">
             <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
-            <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
+            <h2 className="font-display-ko text-3xl md:text-4xl font-medium leading-[1.15] text-cream">
               {photoCount > 0
                 ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
                 : '아직 올린 사진이 없습니다.'}

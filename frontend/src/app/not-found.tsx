@@ -21,7 +21,7 @@ export default function NotFound() {
     <div className="min-h-screen flex items-center justify-center px-8 bg-canvas">
       <div className="text-center space-y-7">
         <p className="eyebrow text-accent">404</p>
-        <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink break-keep">
+        <h1 className="font-display-ko text-3xl md:text-4xl font-medium text-ink break-keep">
           페이지를 찾을 수 없습니다.
         </h1>
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">

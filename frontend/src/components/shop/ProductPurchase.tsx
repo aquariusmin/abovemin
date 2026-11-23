@@ -124,7 +124,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
                 <label
                   key={option.id}
                   className={[
-                    'relative inline-flex items-baseline gap-2 rounded-[var(--radius-pill)] border px-4 py-2.5 text-[13px] font-medium transition-[background-color,border-color,color,transform] duration-200',
+                    'relative inline-flex items-baseline gap-2 rounded-[var(--radius-pill)] border px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200',
                     'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring',
                     disabled
                       ? 'cursor-not-allowed border-border bg-muted text-muted-foreground'
@@ -144,7 +144,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
                   {/* 품절 옵션은 가격 대신 상태를 적는다 — 흐린 가격만으로는 왜
                       못 고르는지 알 수 없다. 재고는 있는데 가격이 0원이면
                       `formatPrice`가 "가격 미정"을 적는다. */}
-                  <span className={`text-[12px] tabular-nums ${disabled ? '' : 'opacity-75'}`}>
+                  <span className={`text-[13px] tabular-nums ${disabled ? '' : 'opacity-75'}`}>
                     {option.in_stock ? formatPrice(option.price) : SOLD_OUT_LABEL}
                   </span>
                 </label>

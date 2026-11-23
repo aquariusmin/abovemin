@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Reveal from '@/components/motion/Reveal';
 import { sectionTitle, shareCard } from '@/lib/share-card';
+import { displayFace } from '@/lib/typography';
 
 const TITLE = 'About';
 const DESCRIPTION = 'Sangmin Lee — 사진, 데이터, 경제와 비즈니스를 연결하는 phorage studio.';
@@ -33,7 +34,7 @@ export default function About() {
         {/* Hero */}
         <Reveal as="header" className="space-y-6" y={16}>
           <p className="eyebrow eyebrow-marked text-primary">About</p>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink break-keep">
+          <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink break-keep">
             빛을 수집하고,<br />
             세상을{' '}
             <span className="relative inline-block">
@@ -72,7 +73,7 @@ export default function About() {
                   href={item.href}
                   className="card-hair group h-full p-6 md:p-7 flex flex-col gap-3 hover:-translate-y-0.5"
                 >
-                  <h3 className={`font-serif text-xl font-medium text-ink group-hover:text-accent transition-colors ${item.italic ? 'italic' : ''}`}>
+                  <h3 className={`${displayFace(item.title)} text-xl font-medium text-ink group-hover:text-accent transition-colors ${item.italic ? 'italic' : ''}`}>
                     {item.title}
                   </h3>
                   <p className="text-sm text-slate leading-relaxed break-keep flex-1">{item.desc}</p>

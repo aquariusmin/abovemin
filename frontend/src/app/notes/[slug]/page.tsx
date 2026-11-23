@@ -5,6 +5,7 @@ import { getNoteBySlug, getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import { buildFallback } from '@/lib/build-phase';
 import { shareCard } from '@/lib/share-card';
+import { displayFace, labelFace } from '@/lib/typography';
 
 export const revalidate = 3600;
 
@@ -61,10 +62,10 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
                 1.8:1로, 대비 기준에 한참 못 미친다. moss는 푸터의 포레스트
                 밴드나 라이트박스 스크림처럼 어두운 면에서만 쓴다. */}
             {note.tags?.map(tag => (
-              <span key={tag} className="eyebrow text-primary">{tag}</span>
+              <span key={tag} className={`${labelFace(tag)} text-primary`}>{tag}</span>
             ))}
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] text-ink break-keep">
+          <h1 className={`${displayFace(note.title)} text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] text-ink break-keep`}>
             {note.title}
           </h1>
           <p className="break-keep text-[15px] leading-relaxed text-slate">{note.summary}</p>
@@ -81,7 +82,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
         {/* 해석 범위. 케이스 스터디와 같은 자리, 같은 무게로 둔다 — 이 글들이
             존재하는 이유가 여기이므로 본문 아래 각주가 아니라 본문의 끝이다. */}
         <aside className="border-l-4 border-accent bg-surface px-6 py-6 md:px-8 md:py-7">
-          <p className="eyebrow text-muted-foreground mb-2.5">해석 범위</p>
+          <p className="label-ko text-muted-foreground mb-2.5">해석 범위</p>
           <p className="break-keep text-sm leading-relaxed text-ink-body">{note.boundary}</p>
         </aside>
 
@@ -96,7 +97,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
 
         {others.length > 0 && (
           <nav className="mt-14 border-t border-hairline pt-8 space-y-3" aria-label="다른 글">
-            <p className="eyebrow text-muted-foreground">다른 글</p>
+            <p className="label-ko text-muted-foreground">다른 글</p>
             <ul className="space-y-2">
               {others.map(other => (
                 <li key={other.slug}>

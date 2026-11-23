@@ -8,6 +8,7 @@ import BackLink from '@/components/BackLink';
 import { albumFacts } from '@/lib/layout-photos';
 import { cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
+import { displayFace } from '@/lib/typography';
 
 /**
  * 공개할 앨범 = 사진이 한 장이라도 있는 앨범.
@@ -120,7 +121,7 @@ export default async function CollectionPage({
           <BackLink href="/archive">아카이브</BackLink>
           <div className="space-y-4">
             <p className="eyebrow eyebrow-marked text-primary">{photos.length} pieces</p>
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
+            <h1 className={`${displayFace(album.title)} text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] text-ink`}>
               {album.title}
             </h1>
             {factLine.length > 0 && (
@@ -129,7 +130,7 @@ export default async function CollectionPage({
                   <span key={part}>
                     {/* `·`는 앞 낱말에 붙인다(DESIGN.md § Line Breaking). */}
                     {i > 0 && <>&nbsp;·{' '}</>}
-                    {i === 0 ? <span className="font-mono tabular-nums">{part}</span> : part}
+                    {i === 0 ? <span className="tabular-nums">{part}</span> : part}
                   </span>
                 ))}
               </p>
@@ -162,7 +163,7 @@ export default async function CollectionPage({
               className="group card-hair px-5 py-4 md:px-6 md:py-5 min-w-0"
             >
               <span className="label-ko text-muted-foreground">&larr; 이전 앨범</span>
-              <span className="mt-1 block font-serif text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate">
+              <span className={`mt-1 block ${displayFace(prevAlbum.title)} text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate`}>
                 {prevAlbum.title}
               </span>
             </Link>
@@ -173,7 +174,7 @@ export default async function CollectionPage({
               className="group card-hair px-5 py-4 md:px-6 md:py-5 min-w-0 text-right col-start-2"
             >
               <span className="label-ko text-muted-foreground">다음 앨범 &rarr;</span>
-              <span className="mt-1 block font-serif text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate">
+              <span className={`mt-1 block ${displayFace(nextAlbum.title)} text-lg md:text-2xl font-medium tracking-tight text-ink group-hover:text-primary transition-colors truncate`}>
                 {nextAlbum.title}
               </span>
             </Link>

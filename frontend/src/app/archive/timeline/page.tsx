@@ -51,7 +51,7 @@ export default async function TimelinePage() {
           <BackLink href="/archive">아카이브</BackLink>
           <div className="space-y-4">
             <p className="eyebrow eyebrow-marked text-primary">Timeline</p>
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
+            <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink">
               찍은 날짜순으로
             </h1>
             {photos.length > 0 && (
@@ -93,7 +93,7 @@ export default async function TimelinePage() {
               className="scroll-mt-[140px] md:scroll-mt-[156px] pt-12 md:pt-16"
             >
               <div className="flex items-baseline gap-3 border-b border-hairline pb-3">
-                <h2 id={`${year.anchor}-title`} className="font-serif text-4xl md:text-5xl font-medium tracking-tight tabular-nums text-ink">
+                <h2 id={`${year.anchor}-title`} className="font-serif text-3xl md:text-4xl font-medium tracking-tight tabular-nums text-ink">
                   {year.label}
                 </h2>
                 <p className="text-sm text-slate tabular-nums">{year.count}장</p>

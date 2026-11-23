@@ -5,6 +5,7 @@ import { getPublishedNotes } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import { buildFallback } from '@/lib/build-phase';
 import { sectionTitle, shareCard } from '@/lib/share-card';
+import { displayFace, labelFace } from '@/lib/typography';
 
 const TITLE = 'Notes';
 const DESCRIPTION = '공개 데이터를 짧게 들여다본 기록. 데이터로 말할 수 있는 데까지만 씁니다.';
@@ -35,7 +36,7 @@ export default async function NotesPage() {
       <Reveal className="max-w-[900px] mx-auto mb-12 md:mb-16" y={16}>
         <header className="space-y-6">
           <p className="eyebrow eyebrow-marked text-primary">Notes</p>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink max-w-[18ch]">
+          <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink max-w-[18ch]">
             말할 수 있는 만큼만.
           </h1>
           <p className="max-w-2xl break-keep text-[15px] leading-relaxed text-slate">
@@ -58,10 +59,10 @@ export default async function NotesPage() {
                     1.8:1로, 대비 기준에 한참 못 미친다. moss는 푸터의 포레스트
                     밴드나 라이트박스 스크림처럼 어두운 면에서만 쓴다. */}
                 {note.tags?.map(tag => (
-                  <span key={tag} className="eyebrow text-primary">{tag}</span>
+                  <span key={tag} className={`${labelFace(tag)} text-primary`}>{tag}</span>
                 ))}
               </div>
-              <h2 className="font-serif text-xl md:text-2xl font-medium tracking-tight text-ink break-keep transition-colors group-hover:text-accent">
+              <h2 className={`${displayFace(note.title)} text-xl md:text-2xl font-medium tracking-tight text-ink break-keep transition-colors group-hover:text-accent`}>
                 {note.title}
               </h2>
               <p className="break-keep text-sm leading-relaxed text-slate">{note.summary}</p>
