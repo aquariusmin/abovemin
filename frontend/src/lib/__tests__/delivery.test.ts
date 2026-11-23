@@ -14,7 +14,6 @@ describe('delivery', () => {
     expect(noteWithPickupTag('주말 오후')).toBe('[대면 전달] 주말 오후');
     expect(deliveryMethodFromRow({ note: noteWithPickupTag('주말') })).toBe('pickup');
     expect(deliveryMethodFromRow({ note: '문 앞' })).toBe('parcel');
-    // 컬럼 값이 있으면 그것이 이긴다.
     expect(deliveryMethodFromRow({ delivery_method: 'parcel', note: '[대면 전달] x' })).toBe('parcel');
   });
 });

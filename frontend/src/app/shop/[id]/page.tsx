@@ -14,20 +14,7 @@ import { displayFace, labelFace } from '@/lib/typography';
 
 export const revalidate = 60;
 
-/**
- * 빌드 시점에 미리 구울 상품 목록.
- *
- * 조회가 실패하면 빈 배열을 준다. 이게 없으면 배포 순간 Supabase가 잠깐
- * 흔들리기만 해도 **빌드 전체가 죽는다** — 실제로 `Failed to collect page data`로
- * 확인했다. 사이트의 다른 모든 부분은 데이터가 없는 경우를 이미 처리하고
- * 있는데(빈 상태·에러 상태, `sitemap.ts`의 `.catch(() => [])`) 여기만
- * 예외였다.
- *
- * 빈 배열이어도 라우트가 사라지지는 않는다. `dynamicParams`가 기본으로 켜져
- * 있어 첫 요청 때 서버에서 그려지고, 그 뒤로는 평소의 ISR을 탄다. 미리 굽지
- * 못하는 것이 배포에 실패하는 것보다 낫다.
- */
-// 초안은 `getProducts`가 이미 뺐다 — 미리 굽지 않고, 요청이 와도 404다.
+// 조회 실패는 빈 배열 — 배포 순간 Supabase가 흔들려도 빌드가 죽지 않게(dynamicParams가 받친다).
 export async function generateStaticParams() {
   const products = await getProducts().catch(() => []);
   return products.map(p => ({ id: String(p.id) }));
@@ -41,10 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const description = product.description || `${product.name} — phorage shop`;
   const path = `/shop/${id}`;
-  // 사진·앨범 페이지와 같은 카드: 자르지 않은 1200×630 JPG(`cloudinaryOgImage`의
-  // 주석). 저장된 주소를 그대로 실으면 원본 크기가 가거나, `f_auto`가 크롤러가
-  // 못 읽는 포맷을 준다. Cloudinary가 아니면(자리표시자의 Unsplash) 크기를
-  // 모르므로 원본을 싣고, 이미지가 없으면 사이트 카드가 나간다(`shareCard`).
+  // 저장된 주소를 그대로 실으면 원본 크기나 크롤러가 못 읽는 f_auto 포맷이 간다 — 1200×630 JPG로.
   const stored = product.images?.[0]?.url ?? product.image_url;
   const og = stored ? cloudinaryOgImage(stored) : null;
   const images = og
@@ -57,8 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: product.name,
     description,
     alternates: { canonical: path },
-    // 일부만 적으면 루트의 `siteName`·`locale`이 사라지고 `twitter`는 사이트
-    // 기본 제목으로 남는다(`shareCard`).
+    // 일부만 적으면 루트의 siteName·locale이 사라진다(얕은 병합, `shareCard`).
     ...shareCard({ title: product.name, description, path, images }),
   };
 }
@@ -68,7 +51,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const numId = Number(id);
   if (!Number.isInteger(numId) || numId <= 0) notFound();
 
-  // 초안이면 null이 온다(`getProductById`) — 주소를 알아도 열리지 않는다.
   const product = await getProductById(numId);
   if (!product) notFound();
 
@@ -79,25 +61,10 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const range = priceRange(product);
   const images = parseImages(product.images, product.image_url);
 
-  // 사진마다 비율을 서버에서 읽는다(하루 캐시). 프레임을 사진 모양으로 만들고
-  // 이미지보다 먼저 자리를 잡기 위해서다. Cloudinary가 아닌 주소(자리표시자의
-  // Unsplash)는 null — 갤러리가 이미지 자신의 크기로 그린다.
   const aspects = await Promise.all(images.map(image => cloudinaryAspect(image.url)));
   const gallery = images.map((image, i) => ({ ...image, aspect: aspects[i] }));
 
-  // 함께 구매. 공개 목록에서 찾으므로 초안과 지워진 상품은
-  // 저절로 빠진다. 이 조회가 실패해도 상품 페이지는 떠야 한다: 구역만 뺀다.
-  //
-  // 여기 실리는 것은 **다른 상품의** 이름·가격·사진·상태다. 그 상품을 고치면
-  // 이 페이지도 다시 구워져야 하는데, 관리 API의 `revalidateShop`이
-  // `revalidatePath('/shop/[id]', 'page')`로 상세 페이지 **전부**를 무효화하므로
-  // 따로 할 일이 없다(`lib/admin/revalidate.ts`).
-  //
-  // 같은 목록으로 "지금 살 수 있는 상품이 이것 하나뿐인가"도 본다. 그렇다면
-  // 장바구니를 건너뛰고 바로 주문서로 보낸다(`ProductPurchase`의 `directOrder`).
-  // 목록을 못 읽으면 평소처럼 장바구니에 담는다 — 그쪽은 언제나 맞는 길이다.
-  // 다른 상품의 판매 상태가 바뀌어도 `revalidateShop`이 상세 페이지 전부를
-  // 다시 굽는다(위 주석).
+  // 다른 상품 변경은 revalidateShop이 상세 페이지 전부를 무효화한다. 조회 실패 시 구역만 뺀다.
   const relatedIds = product.related_ids ?? [];
   const catalog = await getProducts().catch(() => []);
   const directOrder =
@@ -116,13 +83,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     };
   });
 
-  // `offers` only when there is a price to offer. A product still waiting on
-  // one carries `price: 0`, and an Offer saying a thing costs ₩0 is a claim,
-  // not a placeholder — search engines render it as free. Omitting the node
-  // says "no offer yet", which is what is true.
-  //
-  // 옵션 상품은 옵션마다 Offer 하나. 가격이 정해진 옵션만 싣는다.
-  // 추가 상품은 싣지 않는다 — 혼자서는 살 수 없으니 이 상품의 Offer가 아니다.
+  // No Offer at price 0 — search engines would render it as free. Addons are not offers.
   const availability = (inStock: boolean) =>
     inStock && !soldOut ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
   const offers = options.length
@@ -150,31 +111,22 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   return (
     <main className="min-h-screen bg-canvas px-5 sm:px-6 md:px-10 py-12 md:py-20">
-      {/* `JSON.stringify` does not escape `<`, and the contents of a <script>
-          element are not HTML-parsed — the browser just scans for the closing
-          tag. A product name containing "</script>" would therefore end this
-          element early and let the rest of the field render as markup. Rewriting
-          every "<" as its JSON unicode escape parses back to exactly the same
-          object while removing the only sequence that can end the element. */}
+      {/* JSON.stringify doesn't escape `<` — rewrite it so "</script>" in a name can't end the element. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
-      {/* Back link */}
       <div className="max-w-6xl mx-auto mb-8 md:mb-12">
         <BackLink href="/shop">샵으로</BackLink>
       </div>
 
-      {/* Detail layout */}
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-start">
 
-        {/* Media — 프레임은 사진을 따른다(ProductGallery 주석). */}
         <Reveal className="md:col-span-7" y={16}>
           <ProductGallery images={gallery} name={product.name} />
         </Reveal>
 
-        {/* Info */}
         <Reveal className="md:col-span-5 space-y-6 md:space-y-8" delay={0.08} y={16}>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -184,8 +136,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                   <span aria-hidden className="h-3 w-px bg-hairline" />
                 </>
               )}
-              {/* Hangul은 eyebrow의 대문자·0.24em 자간을 받지 않는다 → label-ko.
-                  초안은 이 페이지에 오지 않으므로 상태는 둘뿐이다. */}
               <span className={`label-ko ${soldOut ? 'text-muted-foreground' : 'text-accent'}`}>
                 {soldOut ? SOLD_OUT_LABEL : '판매 중'}
               </span>
@@ -219,8 +169,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                   </p>
                 </div>
               )}
-              {/* 설명 속 "항목: 값" 줄(`splitProductDescription`). 사진 페이지의
-                  촬영 정보와 같은 꼴 — 한국어 label-ko 용어와 값. */}
               {specs.length > 0 && (
                 <div className="space-y-3">
                   <p className="eyebrow text-muted-foreground">Details</p>
@@ -237,9 +185,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             </>
           )}
 
-          {/* 주문 안내. PG 없이 계좌이체로 받으므로, 담기 전에 "그다음 무엇이
-              오는지"가 보여야 한다. 체크아웃에도 같은 말이 있지만 그곳은 이미
-              마음을 정한 사람의 자리다. 기간은 약속하지 않는다. */}
           {!soldOut && (
             <section aria-labelledby="order-steps" className="rounded-lg surface-cream p-5 md:p-6">
               <h2 id="order-steps" className="eyebrow text-slate">How to order</h2>

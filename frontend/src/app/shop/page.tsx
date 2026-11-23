@@ -15,25 +15,16 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/shop' },
-  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
   ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/shop' }),
 };
 
 export default async function Shop() {
-  // 조회 실패를 여기서 잡아 "불러오지 못했습니다"를 그리면, 그 화면이 ISR
-  // 캐시에 앉아 60초 동안 멀쩡한 목록 대신 나간다. 던지면 Next가 마지막으로
-  // 성공한 목록을 계속 내보내고 다음 요청에서 다시 시도한다. 빌드 중에는
-  // 내보낼 이전 페이지가 없으므로 그때만 오류 화면으로 굽는다(`buildFallback`).
+  // 조회 실패는 던진다 — 잡으면 오류 화면이 ISR 캐시에 앉는다. 빌드 중에만 오류 화면으로 굽는다.
   const loaded = await getProducts().catch(buildFallback(null));
   const loadError = loaded === null;
-  // `getProducts`는 초안을 이미 뺐다. 여기서는 카드가 그리는 값만 남긴다 —
-  // 옵션 배열·설명 전문을 클라이언트 컴포넌트의 props(= HTML 속 RSC
-  // 페이로드)로 실을 이유가 없다.
+  // 카드가 그리는 값만 클라이언트 props(RSC 페이로드)로 넘긴다.
   const list = loaded ?? [];
-  // 카드 사진의 비율을 서버에서 읽는다(하루 캐시) — 상세 페이지와 같은 방식.
-  // 목록은 열 기반 masonry라, 비율 없이 그리면 사진이 올 때마다 그 열의 아래
-  // 카드가 사진 높이만큼 밀려 내려간다. 못 읽으면 null — 카드는 예전처럼
-  // 사진이 온 뒤에 높이를 얻는다.
+  // 비율을 먼저 읽어 masonry 칸을 잡는다 — 없으면 사진이 올 때마다 아래 카드가 밀린다.
   const covers = list.map(product => product.images?.[0]?.url ?? product.image_url);
   const aspects = await Promise.all(covers.map(url => (url ? cloudinaryAspect(url) : null)));
   const products: CatalogItem[] = list.map((product, i) => {

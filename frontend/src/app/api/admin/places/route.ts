@@ -13,18 +13,10 @@ import {
   parseBody,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 장소 좌표 — `/archive` 지도가 점을 찍는 자리. 장소 **이름** 하나에 좌표
- * 하나이고, 소수점 한 자리(약 11km)다(`schemas.ts`의 `PlaceUpsert`).
- *
- * 사진 한 장 한 장의 GPS는 어디에도 저장하지 않는다. 채우기 작업이 사진 GPS의
- * 중앙값으로 여기에 한 줄을 넣고(`source: 'gps'`), 사람이 고치면 `manual`이
- * 된다. 채우기 작업은 이미 있는 행을 덮어쓰지 않는다.
- */
+// 사진별 GPS는 저장하지 않는다 — 장소 이름당 좌표 하나, 소수점 한 자리(약 11km).
 
 interface AdminPlaceRow {
   name: string;
-  /** 이 이름을 쓰는 사진 수(숨긴 사진 포함). 0이면 이름을 바꾼 뒤 남은 행이다. */
   count: number;
   lat: number | null;
   lng: number | null;
@@ -65,7 +57,6 @@ export async function GET() {
   return NextResponse.json({ places: list, migrationPending });
 }
 
-/** 좌표를 저장한다. 사람이 적은 값이므로 `source`는 `manual`이 된다. */
 export async function PUT(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -87,7 +78,6 @@ export async function PUT(request: Request) {
   return NextResponse.json({ ok: true, place: data ? placeFromRow(data) : { name, lat, lng } });
 }
 
-/** 좌표를 지운다. 그 장소는 지도에서 빠진다(사진은 그대로). */
 export async function DELETE(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;

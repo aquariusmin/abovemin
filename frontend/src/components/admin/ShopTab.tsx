@@ -47,17 +47,6 @@ import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, ICON_BTN_CLASS, INPUT_CLASS, INPUT_COM
 import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 샵 상품 관리. 저장하면 홈·샵 목록·상품 상세·sitemap이 다시 구워진다
- * (`lib/admin/revalidate.ts`).
- *
- * 이미지는 사진 업로드와 같은 방식으로 브라우저가 Cloudinary에 직접 올린다 —
- * 서명만 서버(`api/admin/products/sign`)에서 받고, 폴더는 `phorage/shop`으로
- * 고정이다. 첫 장이 커버이고, 서버가 `image_url`을 첫 장으로 맞춘다.
- *
- * 입력 ↔ 본문 변환은 `lib/admin/product-draft.ts`에 있다(테스트가 있다).
- */
-
 const STATUS_HELP: Record<ProductStatus, string> = {
   draft: '공개 화면 어디에도 보이지 않습니다. 상품 주소로 들어와도 404입니다.',
   available: '샵에 보이고 장바구니에 담깁니다.',
@@ -70,7 +59,6 @@ const STATUS_CHIP: Record<ProductStatus, string> = {
   sold_out: 'border-cream-deep bg-cream text-secondary-foreground',
 };
 
-/** 이미지 설명 선택지의 "직접 입력" 값. 기본 선택지와 겹치지 않는다. */
 const CUSTOM_LABEL = '__custom__';
 
 export default function ShopTab() {
@@ -83,15 +71,13 @@ export default function ShopTab() {
   const [addonsMigrationPending, setAddonsMigrationPending] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  /** 편집 중인 상품. `'new'`는 새 상품. */
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
-  /** 열린 편집기에 저장하지 않은 변경(또는 올리는 중인 이미지)이 있는가. */
   const [editorDirty, setEditorDirty] = useState(false);
   const { confirm, dialog } = useConfirm();
   useUnsavedGuard('product-editor', editorDirty);
 
-  /** 편집기를 닫거나 다른 상품으로 바꾼다. 쓰던 내용이 있으면 먼저 묻는다. */
+  /** 쓰던 내용이 있으면 먼저 묻는다. */
   async function openEditor(next: number | 'new' | null) {
     if (next === editing) return;
     if (editorDirty && !(await confirm(DISCARD_CONFIRM))) return;
@@ -124,12 +110,9 @@ export default function ShopTab() {
     };
   }, [reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError !== null && !products, () => setReloadKey(k => k + 1));
 
-  // 개요의 "고치기"(`?product=`)로 들어오면 그 상품의 편집을 연다. 다른 상품을
-  // 고치던 중이면 바꾸지 않고 알린다 — 렌더 중에는 물어볼 수 없고, 말없이 바꾸면
-  // 쓰던 내용이 사라진다.
+  // 다른 상품을 고치던 중이면 바꾸지 않고 알린다 — 렌더 중엔 물을 수 없고, 바꾸면 초안이 사라진다.
   const [seenProduct, setSeenProduct] = useState<string | null>(null);
   if (productParam && seenProduct !== productParam) {
     setSeenProduct(productParam);
@@ -221,8 +204,6 @@ export default function ShopTab() {
                     </span>
                     <span className="flex flex-wrap gap-1.5">
                       <span className={`chip ${CHIP_KO} ${STATUS_CHIP[status]}`}>{PRODUCT_STATUS_LABEL[status]}</span>
-                      {/* 저장된 상태와 방문자가 보는 상태가 다를 때(판매 중인데 옵션이
-                          전부 품절, 판매 중인데 가격 없음) 그 차이를 적는다. */}
                       {status === 'available' && shown !== 'available' && (
                         <span className={`chip ${CHIP_KO} border-brick-soft text-brick`}>
                           {shown === 'sold_out' ? '옵션 모두 품절' : '가격 확인'}
@@ -245,8 +226,6 @@ export default function ShopTab() {
   );
 }
 
-// ── 편집기 ───────────────────────────────────────────────────────────────────
-
 function ProductEditor({
   product,
   products,
@@ -258,7 +237,6 @@ function ProductEditor({
   onSaved,
 }: {
   product?: AdminProductRow;
-  /** 전체 상품 — 함께 구매에서 고를 대상. */
   products: AdminProductRow[];
   migrationPending: boolean;
   shopMigrationPending: boolean;
@@ -268,7 +246,6 @@ function ProductEditor({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
-  // 연 시점의 값. 저장하면 편집기가 닫히므로 기준이 바뀔 일은 없다.
   const [initial] = useState<ProductDraft>(() => (product ? draftFromProduct(product) : EMPTY_PRODUCT_DRAFT));
   const [draft, setDraft] = useState<ProductDraft>(initial);
   const [uploading, setUploading] = useState(0);
@@ -322,8 +299,7 @@ function ProductEditor({
 
     let body: Record<string, unknown> = { ...result.body };
     if (product) {
-      // 바뀐 필드만 보낸다. 기준은 지금 행을 같은 함수로 본문으로 만든 것 —
-      // 입력칸 문자열과 DB 숫자를 직접 비교하면 "35000" ≠ 35000으로 헛돈다.
+      // 바뀐 필드만 보낸다 — 기준도 같은 함수로 만든 본문이다("35000" ≠ 35000 방지).
       const before = payloadFromDraft(draftFromProduct(product), { includeSortOrder, selfId: product.id });
       if (before.ok) {
         body = changedFields(before.body, result.body);
@@ -383,7 +359,6 @@ function ProductEditor({
         <button type="button" onClick={onClose} className={`btn-ghost ${BTN_SM} text-slate`}>닫기</button>
       </div>
 
-      {/* ── 기본 정보 ── */}
       <div className="grid grid-cols-1 content-start gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor={`${id}-name`} className={LABEL_CLASS}>상품명</label>
@@ -466,9 +441,7 @@ function ProductEditor({
         </div>
       </div>
 
-      {/* ── 이미지 ── */}
-      {/* `legend`는 fieldset의 첫 자식이어야 그룹 이름이 된다 — div 안에 넣으면
-          평범한 글자가 된다. */}
+      {/* `legend`는 fieldset의 첫 자식이어야 그룹 이름이 된다. */}
       <fieldset className="space-y-3 border-t border-border pt-5">
         <legend className="label-ko float-left w-full text-ink">
           이미지 <span className="tabular-nums text-muted-foreground">{draft.images.length}/{maxImages}</span>
@@ -573,7 +546,6 @@ function ProductEditor({
         )}
       </fieldset>
 
-      {/* ── 옵션 ── */}
       <fieldset className="space-y-3 border-t border-border pt-5" disabled={shopMigrationPending}>
         <legend className="label-ko float-left w-full text-ink">
           옵션 <span className="tabular-nums text-muted-foreground">{draft.options.length}/{MAX_OPTIONS}</span>
@@ -600,7 +572,6 @@ function ProductEditor({
         <ChoiceRows idPrefix={`${id}-opt`} noun="옵션" placeholder="A3 · 매트지" items={draft.options} onChange={setOptions} />
       </fieldset>
 
-      {/* ── 추가 상품 ── */}
       <fieldset className="space-y-3 border-t border-border pt-5" disabled={addonsMigrationPending}>
         <legend className="label-ko float-left w-full text-ink">
           추가 상품 <span className="tabular-nums text-muted-foreground">{draft.addons.length}/{MAX_ADDONS}</span>
@@ -625,7 +596,6 @@ function ProductEditor({
         <ChoiceRows idPrefix={`${id}-add`} noun="추가 상품" placeholder="거치대" items={draft.addons} onChange={setAddons} />
       </fieldset>
 
-      {/* ── 함께 구매 ── */}
       <RelatedPicker
         products={products}
         selfId={product?.id}
@@ -652,12 +622,6 @@ function ProductEditor({
   );
 }
 
-// ── 옵션 · 추가 상품의 줄 ─────────────────────────────────────────────────────
-
-/**
- * 이름·가격·재고를 가진 줄의 목록. 옵션과 추가 상품이 같은 모양이라 같이 쓴다 —
- * `noun`이 버튼 이름과 읽어 주는 문장에 들어간다.
- */
 function ChoiceRows({
   idPrefix,
   noun,
@@ -728,15 +692,6 @@ function ChoiceRows({
   );
 }
 
-// ── 함께 구매 ────────────────────────────────────────────────────────────────
-
-/**
- * 이 상품 페이지에 같이 보여 줄 다른 상품을 고른다. 위 목록이 고른 것(순서가
- * 화면 순서), 아래가 고를 수 있는 나머지다.
- *
- * 초안도 고를 수 있다 — 공개 화면에는 판매를 시작한 뒤에 나타난다. 고른 뒤
- * 지워진 상품은 "지워진 상품"으로 남아 뺄 수 있다(공개 화면은 없는 id를 무시한다).
- */
 function RelatedPicker({
   products,
   selfId,
@@ -833,7 +788,7 @@ function RelatedPicker({
   );
 }
 
-/** 자르지 않는다 — 칸 안에서 사진 비율대로. 주소는 `cloudinary()`로만 만든다. */
+/** 자르지 않는다. 주소는 `cloudinary()`로만 만든다. */
 function ProductThumb({ url, small = false }: { url?: string | null; small?: boolean }) {
   return (
     <span className={`flex shrink-0 items-center justify-center ${small ? 'h-8 w-8' : 'h-12 w-12'}`}>

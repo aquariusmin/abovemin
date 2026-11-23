@@ -5,17 +5,14 @@ import { log } from './logger';
 import { getSupabaseAdmin } from './supabase-admin';
 import { isRevoked, recordRevocation, type RevocationDb } from './admin/session-revocation';
 
-// 관리자 세션. 토큰: `${nonce}:${issuedAt}:${expires}:${sig}`.
-// 로그아웃한 nonce는 이 인스턴스의 메모리와 Supabase(`session-revocation.ts`)에
-// 함께 남겨, 다른 인스턴스에서도 다시 쓰이지 않게 한다.
-
+// 관리자 세션 토큰: `${nonce}:${issuedAt}:${expires}:${sig}`. 로그아웃한 nonce는 메모리와 Supabase에 기록.
 const SECRET_RAW = process.env.ADMIN_SESSION_SECRET;
 const LEGACY_SECRET = process.env.ADMIN_PASSWORD;
 
 function getSecret(): string {
   if (SECRET_RAW && SECRET_RAW.length >= 16) return SECRET_RAW;
   if (LEGACY_SECRET) {
-    // 개발 편의. 프로덕션에서는 ADMIN_SESSION_SECRET 분리 필수.
+    // 개발 전용 폴백. 프로덕션은 ADMIN_SESSION_SECRET 필수.
     if (process.env.NODE_ENV === 'production') {
       throw new Error('ADMIN_SESSION_SECRET must be set in production (min 16 chars)');
     }
@@ -49,9 +46,7 @@ export function verifySession(token: string | undefined | null): boolean {
   if (Date.now() > expires) return false;
   if (revokedNonces.has(nonce)) return false;
 
-  // 시크릿이 없으면 `getSecret`이 throw한다. 그대로 두면 관리 API 전부와
-  // `/api/admin/auth`의 GET이 500이 된다 — 설정 누락을 "로그인 안 됨"으로 읽고,
-  // 원인은 로그에 남긴다. 서명할 수 없는 서버가 서명을 믿을 수는 없다.
+  // 시크릿 누락은 실패로 닫는다(fail closed): 서명할 수 없는 서버는 서명을 믿지 않는다.
   let secret: string;
   try {
     secret = getSecret();
@@ -68,12 +63,7 @@ export function verifySession(token: string | undefined | null): boolean {
   return timingSafeEqual(a, b);
 }
 
-/**
- * 관리자 비밀번호 비교. 두 값을 SHA-256으로 같은 길이(32바이트)로 만든 뒤
- * 비교한다 — 원문을 바로 `timingSafeEqual`에 넣으려면 길이가 같아야 해서, 예전
- * 코드는 길이가 다르면 먼저 돌아갔고 그 응답 시간 차이로 비밀번호 길이가
- * 드러났다.
- */
+// 해시로 길이를 맞춘 뒤 timing-safe 비교 — 길이 차로 비밀번호 길이가 새지 않게.
 export function passwordMatches(input: string, expected: string | undefined): boolean {
   if (!expected) return false;
   const a = createHash('sha256').update(input).digest();

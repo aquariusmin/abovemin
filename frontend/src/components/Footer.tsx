@@ -5,18 +5,8 @@ import { usePathname } from 'next/navigation';
 import { hidesSiteChrome } from '@/lib/chrome';
 import { CONTACT_EMAIL } from '@/lib/site';
 
-// About and Portfolio are deliberately absent here, as they are in `Nav`.
-// Neither page is gone: both stay live, indexed and in the sitemap. What
-// changes is that they are no longer in the chrome that follows a visitor
-// around — you arrive at them from a URL someone handed you.
-//
-// The home page's closing band does NOT link to them (it used to, by name,
-// and this comment outlived that). Between here and `Nav`, URL-only is the
-// whole truth.
-// Notes는 공개된 글이 한 편이라도 있을 때만 나타난다. `/notes`는 비어 있으면
-// `notFound()`를 부르므로, 조건 없이 링크하면 푸터에서 404로 가는 길이 생긴다.
-// 글은 DB에 있고 이 컴포넌트는 클라이언트라 직접 읽지 못한다 — 루트 레이아웃이
-// 서버에서 `hasPublishedNotes()`를 읽어 `hasNotes`로 넘긴다.
+// About and Portfolio are deliberately absent here, as in `Nav`: URL-only by design.
+// Notes는 공개된 글이 있을 때만 — `/notes`는 비어 있으면 404다.
 function navItems(hasNotes: boolean) {
   return [
     { href: '/archive', label: 'Archive' },
@@ -37,35 +27,15 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
   if (hidesSiteChrome(pathname)) return null;
 
   return (
-    // The page's deepest surface. Ending on forest-black lets the warm canvas
-    // above read as daylight and gives the wordmark one full-bleed moment.
-    //
-    // Sized as a footer, not as a final section. It used to run ~500px tall on
-    // desktop — a 6xl wordmark, 24 units of padding at each end, and 20 more
-    // before the meta rule — so every page ended by scrolling through a screen
-    // of chrome. The whole block is scaled down here, and the contrast moves
-    // the other way at the same time: the dimmed text (links at 70%, labels and
-    // meta at 40%) is lifted, because "smaller" only reads as tidy if the type
-    // that remains is easier to read, not fainter.
     <>
-    {/* iOS Safari 26의 아래 툴바 색. 화면 아래 가장자리에 붙은 고정 요소의 배경을
-        읽으므로, 거의 보이지 않는 얇은 띠를 두고 그 색을 루트와 맞춘다(푸터가
-        보이면 푸터 색). iOS Safari에서만 그린다(`globals.css`의 `.ios-toolbar-tint`).
-        푸터 밖에 둔다 — 푸터의 `isolation`에 갇히지 않게. */}
+    {/* iOS Safari 26 툴바 색용 얇은 띠(`.ios-toolbar-tint`). 푸터의 `isolation`에 갇히지 않게 푸터 밖에 둔다. */}
     <div aria-hidden className="ios-toolbar-tint" />
     <footer data-site-footer className="band-navy texture-grain">
-      {/* Canopy gradient hairline capping the band */}
       <div aria-hidden className="h-[2px] bg-gradient-to-r from-forest via-fern to-moss" />
 
       <div className="max-w-[1400px] mx-auto px-5 sm:px-6 md:px-10 py-10 md:py-12">
-        {/* Five tracks on mobile rather than two. Index needs almost no width
-            ("Archive", "Shop"), while Connect carries a 23-character email that
-            an even split forced to break mid-word — "…naver.co / m". A 2/3
-            split gives the long column the room and leaves the short one what
-            it needs. Desktop keeps its own 12-track grid. */}
         <div className="grid grid-cols-5 md:grid-cols-12 gap-y-8 gap-x-5 sm:gap-x-8 items-start">
 
-          {/* Brand — signature wordmark + studio line */}
           <div className="col-span-5 md:col-span-4 space-y-2.5">
             <p className="eyebrow text-moss">Collecting the winter light</p>
             <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-none text-cream">
@@ -78,7 +48,6 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
 
           <div className="hidden md:block md:col-span-1" />
 
-          {/* Index */}
           <nav className="col-span-2 md:col-span-3 space-y-3" aria-label="Footer">
             <h3 className="eyebrow text-cream/50">Index</h3>
             <ul className="space-y-2 text-sm">
@@ -95,7 +64,6 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
             </ul>
           </nav>
 
-          {/* Connect */}
           <div className="col-span-3 md:col-span-4 space-y-3">
             <h3 className="eyebrow text-cream/50">Connect</h3>
             <ul className="space-y-2 text-sm">
@@ -114,10 +82,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           </div>
         </div>
 
-        {/* Meta row — thin rule, mono microcopy */}
         <div className="mt-9 md:mt-10 pt-5 border-t border-cream/15 flex flex-col sm:flex-row justify-between gap-2 eyebrow text-cream/50">
-          {/* Rendered at request/build time rather than typed in, so the
-              footer does not quietly go stale on 1 January. */}
           <span>&copy; {new Date().getFullYear()} phorage studio</span>
           <span>Photography · Seoul</span>
         </div>

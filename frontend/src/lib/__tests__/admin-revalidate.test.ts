@@ -15,14 +15,6 @@ import {
   revalidateShop,
 } from '@/lib/admin/revalidate';
 
-/**
- * 이 파일이 지키는 것: 관리 화면의 변경이 **어느 공개 경로와 태그**를 다시 굽게
- * 하는가. 목록은 정확히 일치해야 한다 — 하나가 빠지면 지운 사진이 어딘가에 남고,
- * 하나가 늘면(특히 `'/'` + `'layout'`) 오타 하나에 사이트 전체의 캐시가 비워진다.
- *
- * `next/cache`는 흉내 낸다. 실제로 캐시가 비워지는지는 Next의 일이고, 여기서는
- * 무엇을 부르는지만 본다.
- */
 function recorded(run: () => void): unknown[][] {
   calls.length = 0;
   run();

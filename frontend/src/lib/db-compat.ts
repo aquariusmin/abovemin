@@ -1,18 +1,6 @@
 import { log } from './logger';
 
-/**
- * 스키마보다 코드가 먼저 배포됐을 때를 견디는 도구.
- *
- * `20260916000000_admin_studio.sql`이 `albums.published`, `photos.hidden` 같은
- * 컬럼을 더한다. 마이그레이션은 사람이 대시보드에서 적용하므로, 코드가 먼저
- * 나가는 순간이 생길 수 있다. 그때 공개 페이지가 "column does not exist"로
- * 통째로 500을 내면 안 된다 — 필터 없이 읽는 것이 사이트가 멈추는 것보다 낫다.
- *
- * 오류는 두 모양으로 온다.
- *  - `42703` (undefined_column): select·filter·order에 없는 컬럼을 쓴 경우.
- *    PostgREST가 Postgres 코드를 그대로 전달한다.
- *  - `PGRST204`: insert/update 본문에 스키마 캐시가 모르는 컬럼이 있는 경우.
- */
+// 마이그레이션보다 코드가 먼저 배포될 때를 견딘다. 42703=select·filter의 없는 컬럼, PGRST204=insert/update의 없는 컬럼.
 export interface PgErrorLike {
   code?: string | null;
   message?: string | null;
@@ -26,14 +14,7 @@ export function isMissingColumnError(error: unknown): boolean {
   return typeof message === 'string' && /column .+ does not exist/i.test(message);
 }
 
-/**
- * 테이블 자체가 없을 때. `20260916100000_archive_extras.sql`은 컬럼만이 아니라
- * 테이블(`places`, `notes`)을 새로 만든다.
- *
- *  - `42P01` (undefined_table): SQL 수준에서 테이블이 없다.
- *  - `PGRST205`: PostgREST 스키마 캐시에 테이블이 없다. REST로 읽으면 실제로는
- *    이쪽이 온다(2026-09-16, 프로덕션에서 `/rest/v1/places`로 확인).
- */
+// 42P01=SQL 수준 테이블 없음, PGRST205=스키마 캐시에 없음(REST는 실제로 이쪽). `archive_extras` 대기.
 export function isMissingTableError(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { code, message } = error as PgErrorLike;
@@ -42,19 +23,12 @@ export function isMissingTableError(error: unknown): boolean {
   return /relation .+ does not exist/i.test(message) || /could not find the table/i.test(message);
 }
 
-/**
- * 컬럼이든 테이블이든 "마이그레이션이 아직 안 됐다"는 뜻의 오류. 공개 조회가
- * "없음"으로 읽어도 되는 오류는 이것뿐이다 — 나머지는 진짜 장애다.
- */
+// 공개 조회가 "없음"으로 읽어도 되는 오류는 이것뿐이다 — 나머지는 진짜 장애다.
 export function isMissingSchemaError(error: unknown): boolean {
   return isMissingColumnError(error) || isMissingTableError(error);
 }
 
-/**
- * NOT NULL 제약 위반(`23502`). `orders.email`이 nullable이 되기 전
- * (`20261123000000_orders_email_optional.sql` 적용 전)에 이메일 없는 주문을
- * 넣으면 이 오류가 온다 — 주문 라우트는 빈 문자열로 다시 넣는다.
- */
+// `20261123000000_orders_email_optional.sql` 적용 전 이메일 없는 주문 — 주문 라우트가 빈 문자열로 재시도.
 export function isNotNullViolation(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { code, message } = error as PgErrorLike;
@@ -62,11 +36,7 @@ export function isNotNullViolation(error: unknown): boolean {
   return typeof message === 'string' && /violates not-null constraint/i.test(message);
 }
 
-/**
- * 유니크 제약 위반(`23505`). 오류로 볼 일이 아닐 때가 있다 — 같은 멱등 키로
- * 동시에 들어온 두 주문 중 늦은 쪽은 이 오류를 받고, 먼저 들어간 주문을 다시
- * 읽어 답하면 된다(`api/orders`).
- */
+// 같은 멱등 키의 동시 주문 중 늦은 쪽이 받는다 — 먼저 들어간 주문을 다시 읽어 답한다(`api/orders`).
 export function isUniqueViolation(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { code, message } = error as PgErrorLike;
@@ -74,13 +44,7 @@ export function isUniqueViolation(error: unknown): boolean {
   return typeof message === 'string' && /duplicate key value violates unique constraint/i.test(message);
 }
 
-/**
- * 새 컬럼을 쓰는 쿼리를 먼저 보내고, 그 컬럼이 없다는 오류일 때만 예전
- * 쿼리로 한 번 더 보낸다. 다른 오류(네트워크, 권한)는 그대로 돌려준다 —
- * 그걸 삼키고 필터 없는 결과를 내면 진짜 장애가 가려진다.
- *
- * `migrationPending`은 관리 화면이 "마이그레이션 적용 필요"를 띄우는 근거다.
- */
+// 컬럼 없음 오류일 때만 fallback. 다른 오류는 그대로 돌려준다(삼키면 진짜 장애가 가려진다).
 export async function withColumnFallback<R extends { error: unknown }>(
   label: string,
   primary: () => PromiseLike<R>,

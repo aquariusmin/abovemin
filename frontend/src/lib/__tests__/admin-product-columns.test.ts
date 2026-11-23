@@ -8,16 +8,8 @@ import {
   type WriteResult,
 } from '@/lib/admin/product-columns';
 
-/**
- * 이 파일이 지키는 것: 마이그레이션보다 코드가 먼저 배포됐을 때 관리 화면의
- * 저장이 **반쯤 되지 않는다.** 새 컬럼의 내용이 비어 있으면 빼고 저장하고,
- * 내용이 있으면 저장하지 않는다. 이 사다리는 실제 DB에서 돌려 볼 수 없어서
- * (스테이징이 없다) 가짜 DB로 잠근다.
- */
-
 const MISSING = { code: 'PGRST204', message: "Could not find the 'addons' column of 'products' in the schema cache" };
 
-/** `missing`에 든 컬럼이 행에 있으면 "컬럼 없음"으로 답하는 가짜 DB. */
 function fakeDb(missing: readonly string[]) {
   const attempts: Array<Record<string, unknown>> = [];
   const write = async (row: Record<string, unknown>): Promise<WriteResult<Record<string, unknown>>> => {

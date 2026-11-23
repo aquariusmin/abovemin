@@ -12,17 +12,7 @@ import {
   parseBody,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 고객에게 안내 메일을 다시 보낸다 — 주문 접수 확인(입금 안내) 또는 배송 안내.
- *
- * 본문은 주문 접수 때와 **같은 함수**로 만든다(`lib/order-email.ts`). 운영자
- * 알림은 다시 보내지 않는다 — 재발송의 목적은 고객이 못 받은 메일이다.
- *
- * 레이트 리밋이 두 겹인 이유: 버튼을 연타해 한 고객에게 메일 열 통이 가는 것은
- * 주문 하나 단위로 막고, 세션이 새어 누군가 모든 주문에 메일을 돌리는 것은
- * 전체 단위로 막는다. 발신 도메인 평판은 한 번 떨어지면 주문 메일까지 스팸함에
- * 들어간다.
- */
+// 레이트 리밋은 주문 단위(연타)와 전체 단위(세션 유출) 두 겹이다.
 const PER_ORDER = { limit: 3, windowMs: 10 * 60 * 1000 };
 const GLOBAL = { limit: 20, windowMs: 60 * 60 * 1000 };
 
@@ -47,7 +37,6 @@ export async function POST(request: Request) {
   const { data: order, error } = await db.value.from('orders').select('*').eq('id', id).maybeSingle();
   if (error) return dbErrorResponse('admin_orders_email_lookup', error);
   if (!order) return jsonError('주문을 찾을 수 없습니다.', 404);
-  // 체크아웃이 이메일을 받지 않게 된 뒤의 주문. 보낼 곳이 없다.
   const target = order as EmailOrder;
   if (!hasBuyerEmail(target)) {
     return jsonError('이메일이 없는 주문입니다. 연락처로 안내해 주세요.', 400);
@@ -75,9 +64,7 @@ export async function POST(request: Request) {
 
   log.info('admin_orders_email_resent', { id, kind });
 
-  // 입금 안내가 나갔다고 적는다 — 관리 화면의 "메일 미발송" 표시가 이걸로
-  // 지워진다. 배송 안내는 기록 대상이 아니다. 기록이 실패해도(컬럼이 아직
-  // 없는 경우 포함) 메일은 이미 나갔으므로 응답은 그대로 성공이다.
+  // 기록이 실패해도(컬럼 없음 포함) 메일은 이미 나갔으므로 응답은 성공이다.
   if (kind !== 'shipping') {
     const recorded = await recordEmailSent(db.value, id, { buyer_email_sent_at: new Date().toISOString() });
     if (recorded === 'failed') log.error('admin_orders_email_record', { id });

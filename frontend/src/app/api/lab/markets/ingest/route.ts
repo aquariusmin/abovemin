@@ -3,14 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { log } from '@/lib/logger';
 import { BUCKET, FILES, MAX_BODY_BYTES, objectPath, tokenMatches, uploadSchema } from '@/lib/markets/ingest';
 
-/**
- * Upload from the owner's PC (market-intelligence-dashboard `mi_cli.py publish`).
- *
- * Not an `api/admin/*` route: the caller is a cron job, not a browser session,
- * so there is no cookie and no Origin to check. It is guarded by a bearer token
- * (MI_PUBLISH_TOKEN, ≥32 chars, Vercel env) that can do exactly one thing —
- * replace the three files of the private `mi-dashboard` bucket.
- */
+// Not an admin route: cron caller, no cookie/Origin. Guarded by MI_PUBLISH_TOKEN bearer only.
 export async function POST(request: Request) {
   if (!tokenMatches(request.headers.get('authorization'), process.env.MI_PUBLISH_TOKEN)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

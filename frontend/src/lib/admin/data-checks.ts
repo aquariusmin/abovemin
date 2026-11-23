@@ -1,20 +1,6 @@
 import { publicIdFromUrl } from '@/lib/cloudinary';
 import { MIN_YEAR } from './limits';
 
-/**
- * 개요 탭의 "데이터 점검". 공개 화면에서 티가 나는 빈칸과 어긋남을 찾는다.
- *
- * 전부 순수 함수다 — 입력은 DB 행 배열, 출력은 "무엇이 어디에 몇 개". 서버가
- * 한 번 읽어 여기로 넘기고, 화면은 결과만 그린다. 규칙이 클라이언트에 있으면
- * 같은 판단이 두 곳에 생기고, 테스트할 수 있는 곳이 없어진다.
- */
-
-// ── 자리표시자 ────────────────────────────────────────────────────────────────
-
-/**
- * "아직 안 채웠다"는 뜻으로 들어간 값. 실제 데이터에 제목 `-` 28장, 장소 `-`/빈칸
- * 6장이 있다. 업로드 위젯은 파일명이 비면 `Untitled`를 넣는다.
- */
 const PLACEHOLDERS = new Set(['', '-', '—', '–', '_', '.', '?', 'untitled', 'n/a', 'none', '없음']);
 
 export function isPlaceholderText(value: string | null | undefined): boolean {
@@ -22,15 +8,7 @@ export function isPlaceholderText(value: string | null | undefined): boolean {
   return PLACEHOLDERS.has(value.trim().toLowerCase());
 }
 
-// ── 장소 표기 ─────────────────────────────────────────────────────────────────
-
-/**
- * 같은 곳의 다른 표기. 키는 `normalizeLocation`을 거친 값, 값은 묶음 이름.
- *
- * 전부 자동으로 알아낼 수 없다 — "서울"과 "Seoul"은 글자로는 아무 관계가 없다.
- * 실제로 겹친 적이 있는 것과 앨범(한국·일본·스위스·미국·호주)에서 나올 법한
- * 것만 둔다. 목록에 없으면 대소문자·공백 차이까지만 잡힌다.
- */
+// "서울"·"Seoul"처럼 글자로 알 수 없는 별칭만 둔다. 없으면 대소문자·공백 차이만 잡힌다.
 const LOCATION_ALIASES: Record<string, string> = {
   seoul: '서울',
   '서울': '서울',
@@ -80,12 +58,10 @@ const LOCATION_ALIASES: Record<string, string> = {
   '샌프란시스코': '샌프란시스코',
 };
 
-/** 비교용 정규화: 유니코드 합성형, 앞뒤 공백, 연속 공백, 대소문자. */
 export function normalizeLocation(value: string): string {
   return value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
 }
 
-/** 같은 곳이면 같은 키. 별칭이 있으면 별칭, 없으면 정규화한 값. */
 export function locationKey(value: string): string {
   const normalized = normalizeLocation(value);
   return LOCATION_ALIASES[normalized] ?? normalized;
@@ -98,11 +74,9 @@ export interface LocationCount {
 
 export interface LocationVariantGroup {
   key: string;
-  /** 많이 쓰인 순. 첫 번째가 바꿀 방향의 기본 제안이다. */
   variants: LocationCount[];
 }
 
-/** 원본 장소 값 목록 → 표기별 개수. */
 export function countLocations(values: Array<string | null | undefined>): LocationCount[] {
   const counts = new Map<string, number>();
   for (const value of values) {
@@ -114,7 +88,6 @@ export function countLocations(values: Array<string | null | undefined>): Locati
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ko'));
 }
 
-/** 같은 곳인데 표기가 둘 이상인 묶음. 자리표시자는 여기서 다루지 않는다. */
 export function findLocationVariants(counts: LocationCount[]): LocationVariantGroup[] {
   const groups = new Map<string, LocationCount[]>();
   for (const entry of counts) {
@@ -133,13 +106,11 @@ export function findLocationVariants(counts: LocationCount[]): LocationVariantGr
     .sort((a, b) => a.key.localeCompare(b.key, 'ko'));
 }
 
-// ── 전체 점검 ─────────────────────────────────────────────────────────────────
-
 export interface CheckAlbum {
   slug: string;
   title: string;
   cover: string | null;
-  /** 마이그레이션 전에는 없다 — 그때는 공개로 친다. */
+  // 마이그레이션 전에는 없다 — 그때는 공개로 친다.
   published?: boolean;
 }
 
@@ -149,8 +120,7 @@ export interface CheckPhoto {
   src: string;
   title: string | null;
   location: string | null;
-  // 아래는 마이그레이션이 더하는 컬럼이다. 적용 전에는 행에 키 자체가 없고,
-  // 그 점검은 아무것도 찾지 않는다(없는 값으로 "문제 있음"을 만들지 않는다).
+  // 마이그레이션이 더하는 컬럼: 적용 전에는 키가 없고, 그 점검은 아무것도 찾지 않는다.
   year?: number | null;
   width?: number | null;
   height?: number | null;
@@ -179,11 +149,9 @@ export interface CoverIssue {
   slug: string;
   title: string;
   problem: CoverProblem;
-  /** `duplicate`일 때 같은 커버를 쓰는 다른 앨범들. */
   sharedWith?: string[];
 }
 
-/** 사진 한 장 단위의 점검 항목. 화면은 앨범 제목과 사진 제목으로 어느 것인지 알린다. */
 export interface PhotoIssue {
   id: number;
   album_slug: string;
@@ -214,34 +182,19 @@ export interface DataCheckReport {
   locationInOriginal: PhotoIssue[];
 }
 
-// ── 사진 단위 규칙 ────────────────────────────────────────────────────────────
-// 개요의 점검과 아카이브 탭의 필터가 같은 함수를 쓴다.
-
-/**
- * `taken_at`의 **UTC** 연도. `taken_at`은 카메라 시계의 벽시계 시각을 UTC 자리에
- * 적은 값이라(`photo-metadata.ts`의 `parseTakenAt`), 로컬 시간대로 읽으면 12월
- * 31일 밤 사진이 이듬해가 된다.
- */
+// UTC 연도: taken_at은 카메라 벽시계 시각을 UTC 자리에 적은 값이다(parseTakenAt).
 export function takenYear(takenAt: string | null | undefined): number | null {
   if (!takenAt) return null;
   const time = Date.parse(takenAt);
   return Number.isNaN(time) ? null : new Date(time).getUTCFullYear();
 }
 
-/** 적힌 연도와 촬영일의 연도가 다르다. 둘 중 하나라도 없으면 비교하지 않는다. */
 export function isYearMismatch(photo: Pick<CheckPhoto, 'year' | 'taken_at'>): boolean {
   const taken = takenYear(photo.taken_at);
   return taken !== null && typeof photo.year === 'number' && photo.year !== taken;
 }
 
-/**
- * 긴 변이 이 값보다 짧으면 저해상도.
- *
- * 1200으로 두었더니 실제 데이터 294장 중 224장이 걸렸다. 초기 원본 대부분이
- * 886×886, 724×1086 정도로 줄어서 올라왔기 때문이다 — 전부 다시 올리기 전에는
- * 고칠 수 없는 목록이라 "고칠 곳"이 경고로서 의미를 잃는다. 800이면 SNS·메신저를
- * 거쳐 저장된 것으로 보이는 310~725px 사진만 남는다.
- */
+// 800: 초기 원본 대부분이 886px 안팎이라, 더 높이면 경고가 의미를 잃는다.
 export const LOW_RES_LONG_SIDE = 800;
 
 export function isLowResolution(photo: Pick<CheckPhoto, 'width' | 'height'>): boolean {
@@ -250,21 +203,15 @@ export function isLowResolution(photo: Pick<CheckPhoto, 'width' | 'height'>): bo
   return Math.max(width, height) < LOW_RES_LONG_SIDE;
 }
 
-/** 촬영 정보 채우기가 **이미 확인했는데** 카메라도 촬영일도 없다. 확인 전인 사진은 아니다. */
 export function isMissingExif(photo: Pick<CheckPhoto, 'exif_checked_at' | 'camera' | 'taken_at'>): boolean {
   return Boolean(photo.exif_checked_at) && !photo.camera && !photo.taken_at;
 }
 
-/** 원본에 위치 정보가 남았다고 채우기가 표시한 사진. null(아직 모름)은 아니다. */
 export function hasLocationInOriginal(photo: Pick<CheckPhoto, 'gps_in_original'>): boolean {
   return photo.gps_in_original === true;
 }
 
-/**
- * "촬영일 기준으로 연도 맞추기"가 실제로 쓸 값. 어긋난 사진만, 바꿀 연도별로
- * 묶는다 — 같은 연도로 가는 사진은 update 한 번이다. 연도 규칙(`MIN_YEAR` ~
- * 내년) 밖의 촬영일은 카메라 시계가 틀린 것이라 건너뛴다.
- */
+// 연도 규칙(MIN_YEAR ~ 내년) 밖의 촬영일은 카메라 시계가 틀린 것이라 건너뛴다.
 export function planYearSync(
   photos: ReadonlyArray<Pick<CheckPhoto, 'id' | 'year' | 'taken_at'>>,
   now: Date = new Date(),
@@ -290,14 +237,13 @@ function perAlbum(
     if (predicate(photo)) counts.set(photo.album_slug, (counts.get(photo.album_slug) ?? 0) + 1);
   }
   const titles = new Map(albums.map(album => [album.slug, album.title]));
-  // 앨범 순서(입력 순서)를 따른다 — 관리 화면의 앨범 목록과 같은 순서로 읽힌다.
   const order = new Map(albums.map((album, i) => [album.slug, i]));
   return [...counts.entries()]
     .map(([slug, count]) => ({ slug, title: titles.get(slug) ?? slug, count }))
     .sort((a, b) => (order.get(a.slug) ?? 1e9) - (order.get(b.slug) ?? 1e9));
 }
 
-/** URL을 public_id로 비교한다. 같은 파일이라도 변환이 붙으면 URL이 달라서다. */
+// public_id로 비교한다: 변환이 붙으면 같은 파일도 URL이 다르다.
 function assetKey(url: string | null | undefined): string | null {
   if (!url) return null;
   return publicIdFromUrl(url) ?? url;
@@ -321,7 +267,7 @@ export function runDataChecks(input: {
     ownAssets.set(photo.album_slug, set);
   }
 
-  // 커버 중복은 공개 앨범끼리만 센다 — 비공개 앨범은 어차피 목록에 안 나온다.
+  // 커버 중복은 공개 앨범끼리만 센다.
   const published = albums.filter(album => album.published !== false);
   const coverUsers = new Map<string, string[]>();
   for (const album of published) {
@@ -339,9 +285,7 @@ export function runDataChecks(input: {
     }
     const others = (coverUsers.get(key) ?? []).filter(slug => slug !== album.slug);
     const own = ownAssets.get(album.slug)?.has(key) ?? false;
-    // 빌려 쓴 쪽만 표시한다. `cal`이 `aus`의 커버를 쓰면 고칠 곳은 `cal`이지
-    // 자기 사진을 커버로 둔 `aus`가 아니다. 둘 다 자기 사진이라고 주장하는
-    // 경우(같은 파일이 두 앨범에 올라간 경우)에만 양쪽을 다 표시한다.
+    // 빌려 쓴 쪽만 표시한다. 둘 다 자기 사진이라 주장할 때만 양쪽을 표시한다.
     if (!own) {
       coverIssues.push(
         others.length > 0
@@ -353,7 +297,6 @@ export function runDataChecks(input: {
     }
   }
 
-  // 사진 단위 목록은 앨범 순서, 앨범 안에서는 id 순.
   const albumTitle = new Map(albums.map(album => [album.slug, album.title]));
   const albumOrder = new Map(albums.map((album, i) => [album.slug, i]));
   const photoIssues = (predicate: (photo: CheckPhoto) => boolean) =>
@@ -375,8 +318,7 @@ export function runDataChecks(input: {
       .map(({ slug, title }) => ({ slug, title })),
     coverIssues,
     locationVariants: findLocationVariants(countLocations(photos.map(photo => photo.location))),
-    // 0원은 "무료"가 아니라 "가격 미정"이다(`lib/price.ts`). 그 상태로 판매 중이면
-    // 장바구니에 0원 상품이 담긴다.
+    // 0원은 "가격 미정"이다(lib/price.ts). 판매 중이면 장바구니에 0원 상품이 담긴다.
     unpricedProducts: products
       .filter(product => product.in_stock && product.price <= 0)
       .map(({ id, name }) => ({ id, name })),
@@ -395,7 +337,6 @@ export function runDataChecks(input: {
   };
 }
 
-/** 긴 id 목록을 요청 상한(`MAX_BULK` 등)에 맞춰 나눈다. */
 export function chunkIds(ids: readonly number[], size: number): number[][] {
   if (size <= 0) throw new Error('chunk size must be positive');
   const chunks: number[][] = [];

@@ -28,23 +28,8 @@ import {
   PANEL_CLASS,
 } from './adminStyles';
 
-/**
- * 이미 올라간 사진의 관리 — 정보 수정, 순서, 숨김, 그리고 여러 장을 한 번에.
- *
- * 정보 수정은 행 단위로 저장한다(바뀐 필드만 전송). 순서는 화면에서 여러 번
- * 옮긴 뒤 한 번에 저장한다 — 한 칸 옮길 때마다 요청을 보내면 되돌리기가
- * 어려워지고, 서버는 어차피 전체 순서를 받아야 한다(`api/admin/photos/order`).
- *
- * 일괄 작업은 체크박스로 고른다. shift-클릭은 마지막으로 누른 칸부터 범위를
- * 고른다 — 112장짜리 앨범에서 "앞의 40장을 다른 앨범으로"가 두 번의 클릭이다.
- */
-
 export type PhotoFilter = 'all' | 'untitled' | 'nolocation' | 'hidden' | 'yearmismatch' | 'lowres' | 'noexif' | 'gps';
 
-/**
- * 개요의 데이터 점검에서 넘어오는 필터. 해당하는 사진이 없는 앨범에서는 칩을
- * 숨긴다 — 늘 보이면 필터 줄이 여덟 칸이 되고, 대부분 0이다.
- */
 const CHECK_FILTERS: ReadonlySet<PhotoFilter> = new Set(['yearmismatch', 'lowres', 'noexif', 'gps']);
 
 interface PhotoRow {
@@ -76,9 +61,7 @@ interface Props {
   albums: AlbumOption[];
   filter: PhotoFilter;
   onFilterChange: (filter: PhotoFilter) => void;
-  /** 값이 바뀌면 목록을 다시 불러온다 — 업로드 저장 직후 새 사진을 보여주기 위함. */
   refreshToken: number;
-  /** 이동·삭제처럼 앨범별 장수가 바뀌는 작업 뒤에 부른다. */
   onChanged: () => void;
 }
 
@@ -113,7 +96,6 @@ function matches(photo: PhotoRow, filter: PhotoFilter): boolean {
   return true;
 }
 
-/** 점검 필터로 볼 때 행에 붙이는 근거 한 줄. 무엇이 어긋났는지 보여야 고칠 수 있다. */
 function checkNote(photo: PhotoRow, filter: PhotoFilter): string | null {
   if (filter === 'yearmismatch' && isYearMismatch(photo)) return `촬영일 ${takenYear(photo.taken_at)}년`;
   if (filter === 'lowres' && isLowResolution(photo)) return `${photo.width}×${photo.height}px`;
@@ -123,10 +105,9 @@ function checkNote(photo: PhotoRow, filter: PhotoFilter): string | null {
 
 export default function PhotoManager({ albumSlug, albums, filter, onFilterChange, refreshToken, onChanged }: Props) {
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
-  /** 화면에 보이는 순서. 저장 전까지는 서버 순서와 다를 수 있다. */
   const [order, setOrder] = useState<number[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
-  /** 마지막으로 읽은 앨범. 다른 앨범을 읽었을 때만 선택을 비운다. 렌더에 쓰지 않으므로 ref. */
+  /** 다른 앨범을 읽었을 때만 선택을 비운다. 렌더에 쓰지 않으므로 ref. */
   const loadedSlug = useRef('');
   const [migrationPending, setMigrationPending] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -138,7 +119,7 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
   const [dragId, setDragId] = useState<number | null>(null);
   const [overId, setOverId] = useState<number | null>(null);
 
-  /** 진행 중인 작업. 한 번에 하나만 — 순서 저장 중에 일괄 이동이 끼면 서로의 전제가 깨진다. */
+  /** 한 번에 하나만 — 순서 저장 중에 일괄 이동이 끼면 서로의 전제가 깨진다. */
   const [busy, setBusy] = useState<string | null>(null);
   const [listMessage, setListMessage] = useState<Message | null>(null);
   const [rowMessage, setRowMessage] = useState<(Message & { id: number }) | null>(null);
@@ -161,9 +142,7 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
       setPhotos(rows);
       setOrder(rows.map(row => row.id));
       setMigrationPending(data.migrationPending);
-      // Unsaved edits survive a reload — 순서 저장·업로드 저장도 이 목록을 다시
-      // 읽는데, 그때 반쯤 적어 둔 캡션이 조용히 사라지면 안 된다. 서버 값과 같아진
-      // 초안은 더 이상 편집이 아니므로 버린다.
+      // 다시 읽어도 저장 안 한 캡션 초안은 남긴다. 서버 값과 같아진 초안만 버린다.
       setDrafts(prev =>
         Object.fromEntries(
           rows.map(row => {
@@ -172,7 +151,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
           }),
         ),
       );
-      // 다른 앨범으로 바뀌었으면 선택을 비운다. 같은 앨범이면 남아 있는 것만 유지.
       const ids = new Set(rows.map(row => row.id));
       const sameAlbum = loadedSlug.current === albumSlug;
       setSelected(prev => (sameAlbum ? new Set([...prev].filter(id => ids.has(id))) : new Set()));
@@ -189,7 +167,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 데이터를 불러오는 effect다
     void load();
   }, [load, refreshToken]);
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError, () => void load());
 
   const byId = useMemo(() => new Map(photos.map(photo => [photo.id, photo])), [photos]);
@@ -210,11 +187,8 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
   ) as Record<PhotoFilter, number>;
   const selectedInOrder = order.filter(id => selected.has(id));
   const allVisibleSelected = visible.length > 0 && visible.every(id => selected.has(id));
-  // 필터로 일부만 보일 때 끌어 옮기면 "보이지 않는 사진 사이의 어디"인지가
-  // 모호해진다. 순서 변경은 전체 보기에서만 한다.
+  // 순서 변경은 전체 보기에서만 — 필터 중엔 숨은 사진 사이 어디로 옮기는지 모호하다.
   const canReorder = filter === 'all' && busy === null;
-
-  // ── 선택 ────────────────────────────────────────────────────────────────────
 
   function toggle(id: number, shiftKey: boolean) {
     const willSelect = !selected.has(id);
@@ -240,8 +214,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
       return next;
     });
   }
-
-  // ── 행 편집 ─────────────────────────────────────────────────────────────────
 
   function updateDraft(id: number, patch: Partial<Draft>) {
     setDrafts(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -293,9 +265,7 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
     }
   }
 
-  // ── 순서 ────────────────────────────────────────────────────────────────────
-  // 드래그 앤 드롭과 위/아래 버튼을 둘 다 둔다. HTML5 드래그는 터치와 키보드에서
-  // 동작하지 않고, 이 화면은 폰에서도 쓴다.
+  // 드래그와 위/아래 버튼을 둘 다 둔다 — HTML5 드래그는 터치·키보드에서 안 된다.
 
   function move(id: number, direction: -1 | 1) {
     setOrder(prev => moveById(prev, id, direction));
@@ -316,7 +286,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
     setListMessage(null);
     try {
       await adminFetch('/api/admin/photos/order', 'POST', { album_slug: albumSlug, ids: order });
-      // 서버가 매긴 sort_order를 그대로 받아 오려면 다시 읽는 편이 확실하다.
       await load();
       setListMessage({ tone: 'ok', text: '순서를 저장했습니다.' });
     } catch (error) {
@@ -325,8 +294,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
       setBusy(null);
     }
   }
-
-  // ── 일괄 작업 ───────────────────────────────────────────────────────────────
 
   async function runBulk(body: Record<string, unknown>, success: (updated: number) => string, changesAlbums = false) {
     if (orderDirty) {
@@ -562,8 +529,7 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
                     type="checkbox"
                     className={CHECKBOX_CLASS}
                     checked={selected.has(id)}
-                    // onChange는 shift 여부를 모른다. 클릭 이벤트에서 판단하고,
-                    // 체크 상태는 `selected`가 결정한다.
+                    // onChange는 shift 여부를 모른다 — 클릭에서 판단하고 체크 상태는 `selected`가 정한다.
                     onChange={() => undefined}
                     onClick={e => toggle(id, e.shiftKey)}
                     aria-label={`${label} 선택`}
@@ -664,8 +630,6 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
         </ul>
       )}
 
-      {/* ── 일괄 작업 바 ── 선택이 있을 때만. 목록이 길어도 손 닿는 곳에 있도록
-          화면 아래에 붙는다. */}
       {selectedInOrder.length > 0 && (
         <div className="sticky bottom-4 z-20 rounded-lg border border-forest/30 bg-card/95 p-3 shadow-lg backdrop-blur md:p-4">
           <div className="flex flex-wrap items-center gap-2">

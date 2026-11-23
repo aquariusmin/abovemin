@@ -4,15 +4,6 @@ import { buildFallback } from '@/lib/build-phase';
 
 const BASE = SITE_URL;
 
-/**
- * Notes의 RSS.
- *
- * 사이트에서 유일하게 **이어지는** 것이라 피드가 의미를 갖는다. 아카이브와
- * 포트폴리오는 찾아와서 보는 것이고, 글은 쌓이는 것이다.
- *
- * 라이브러리를 쓰지 않은 이유: 글 다섯 편에 의존성 하나를 더하는 것보다
- * 20줄을 적는 편이 낫다. XML은 이스케이프만 정확하면 된다.
- */
 function escapeXml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -22,15 +13,12 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;');
 }
 
-// 정적으로 굽고, 글을 저장할 때 `revalidateNotes()`가 무효화한다. GET 핸들러는
-// 기본이 동적이라(요청마다 DB 왕복) 명시한다.
+// GET 핸들러는 기본이 동적이라 정적임을 명시한다. revalidateNotes()가 무효화한다.
 export const dynamic = 'force-static';
 export const revalidate = 3600;
 
 export async function GET() {
-  // 조회 실패를 빈 피드로 바꾸면 그 빈 피드가 한 시간 동안 캐시에 앉고, 구독
-  // 리더는 글이 모두 사라진 것으로 읽는다. 실행 중에는 던져서 마지막으로 성공한
-  // 피드가 계속 나가게 하고, 빌드 중에만 비워 둔다 — `notes/page.tsx`와 같은 규칙.
+  // 실행 중에는 던져 마지막 성공 피드를 유지한다 — 빈 피드가 캐시되면 리더가 글이 사라졌다고 읽는다.
   const notes = await getPublishedNotes().catch(buildFallback([]));
   const updated = notes[0]?.date;
 

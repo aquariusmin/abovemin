@@ -14,11 +14,6 @@ import { ProductCreate, ProductUpdate } from '@/lib/admin/schemas';
 import { isDraftDirty } from '@/lib/admin/dirty';
 import { OPTION_ID_RE } from '@/lib/product';
 
-/**
- * 이 파일이 지키는 것: 편집기가 만드는 본문을 서버 스키마가 받아들이고, 저장할
- * 때는 바뀐 필드만 나간다. 편집기와 스키마가 따로 움직이면 "저장"이 400이 된다.
- */
-
 const IMG = 'https://res.cloudinary.com/dmljaqqzc/image/upload/v1/phorage/shop/';
 
 const row: AdminProductRow = {
@@ -114,7 +109,6 @@ describe('payloadFromDraft()', () => {
     expect(fail(filled({ images: [] }))).toContain('이미지');
     expect(fail(filled({ options: [{ id: 'a3', label: '', price: '1000', in_stock: true }] }))).toContain('이름');
     expect(fail(filled({ options: [{ id: 'a3', label: 'A3', price: '-1', in_stock: true }] }))).toContain('A3');
-    // 판매 중인데 팔 가격이 없다.
     expect(fail(filled({ status: 'available', price: '0' }))).toContain('판매 중');
     expect(fail(filled({ status: 'available', price: '0', options: [{ id: 'a3', label: 'A3', price: '1000', in_stock: false }] }))).toContain(
       '판매 중',
@@ -146,10 +140,6 @@ describe('newOptionId()', () => {
   });
 });
 
-/**
- * 추가 상품과 함께 구매. 편집기 입력 → 본문 → 서버 스키마가 끝까지 맞아야 하고,
- * 저장하지 않은 변경으로도 잡혀야 한다.
- */
 describe('추가 상품 · 함께 구매', () => {
   const stand = { id: 'add-stand', label: '거치대', price: '3000', in_stock: true };
   const withExtras: AdminProductRow = {
@@ -183,10 +173,9 @@ describe('추가 상품 · 함께 구매', () => {
   });
 
   it('추가 상품은 상품 가격과 판매 가능 판정에 끼지 않는다', () => {
-    // 옵션이 없으면 가격 칸의 값이 그대로다 — 가장 싼 추가 상품 값으로 바뀌지 않는다.
+    // 옵션이 없으면 가격 칸 값 그대로 — 가장 싼 추가 상품 값으로 바뀌지 않는다.
     const result = payloadFromDraft(filled({ status: 'available', price: '18000', addons: [stand] }), { includeSortOrder: false });
     expect(result.ok && result.body.price).toBe(18000);
-    // 추가 상품만 있고 본 상품 가격이 0이면 판매 중이 될 수 없다.
     const noPrice = payloadFromDraft(filled({ status: 'available', price: '0', addons: [stand] }), { includeSortOrder: false });
     expect(!noPrice.ok && noPrice.error).toContain('판매 중');
   });
@@ -203,7 +192,6 @@ describe('추가 상품 · 함께 구매', () => {
     const eleven = Array.from({ length: 11 }, (_, i) => ({ ...stand, id: `add-${i}` }));
     expect(fail(filled({ addons: eleven }))).toBe('추가 상품은 10개까지 둘 수 있습니다.');
     expect(fail(filled({ addons: eleven.slice(0, 10) }))).toBeNull();
-    // 옵션의 문제는 여전히 "옵션"이라고 말한다.
     expect(fail(filled({ options: [{ id: 'a3', label: '', price: '1000', in_stock: true }] }))).toBe('1번째 옵션의 이름을 적어 주세요.');
   });
 
@@ -217,7 +205,6 @@ describe('추가 상품 · 함께 구매', () => {
     expect(fail([1, 2, 1])).toContain('두 번');
     expect(fail([1, 7], 7)).toContain('자신');
     expect(fail([1, 7], 8)).toBeNull();
-    // 새 상품에는 아직 id가 없다.
     expect(fail([1, 7])).toBeNull();
   });
 
@@ -272,7 +259,6 @@ describe('relatedCandidates()', () => {
     expect(relatedCandidates(products, [3], 1).map(p => p.id)).toEqual([2, 4]);
     expect(relatedCandidates(products, [], undefined).map(p => p.id)).toEqual([1, 2, 3, 4]);
     expect(relatedCandidates(products, [1, 2, 3, 4], undefined)).toEqual([]);
-    // 지워진 상품의 id가 고른 목록에 남아 있어도 문제없다.
     expect(relatedCandidates(products, [99], 2).map(p => p.id)).toEqual([1, 3, 4]);
   });
 });

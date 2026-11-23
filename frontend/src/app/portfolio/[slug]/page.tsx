@@ -8,8 +8,6 @@ const portfolio = getPortfolio("ko");
 
 export const dynamicParams = false;
 
-// The curated list is a re-ordering and re-numbering of the same nine
-// projects, not a subset, so every slug in the data file resolves.
 export function generateStaticParams() {
   return portfolio.slugs.map((slug) => ({ slug }));
 }
@@ -29,8 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         "x-default": `/portfolio/${slug}`,
       },
     },
-    // The card carries this case study's own title and summary instead of the
-    // site default (`shareCard`).
     ...shareCard({
       title: project.title,
       description: project.summary,
@@ -42,8 +38,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  // Curated ordering so case numbers and prev/next match the cards the reader
-  // just clicked; `route="normal"` so the links stay on /portfolio.
   const project = portfolio.getProject(slug);
   if (!project) notFound();
   return (

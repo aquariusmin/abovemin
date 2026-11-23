@@ -1,4 +1,3 @@
-// 최소 로깅 유틸. 프로덕션에서 Sentry/Vercel observability로 대체 가능.
 type Level = 'info' | 'warn' | 'error';
 
 function emit(level: Level, msg: string, meta?: unknown) {

@@ -6,16 +6,7 @@ import type { LocationCount, LocationVariantGroup } from '@/lib/admin/data-check
 import { SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 
-/**
- * 장소 이름 바꾸기 — 앨범을 가로질러 한 표기를 통째로 바꾼다.
- *
- * 아카이브의 장소 필터는 문자열이 같아야 한 곳으로 묶는다. "서울" 58장과
- * "Seoul" 1장은 공개 화면에서 두 개의 장소 칩이 된다. 사진을 한 장씩 찾아
- * 고치는 대신 여기서 한 번에 바꾼다.
- *
- * 바꾸기 전에 반드시 서버에 몇 장인지 물어본다(dry run). 목록의 숫자는 화면을
- * 연 시점의 것이라, 그 사이 다른 탭에서 고친 것이 반영되지 않았을 수 있다.
- */
+/** 바꾸기 전에 반드시 서버에 몇 장인지 묻는다(dry run) — 화면의 숫자는 오래됐을 수 있다. */
 
 interface Props {
   initialFrom: string;

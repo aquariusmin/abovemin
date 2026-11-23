@@ -13,10 +13,7 @@ export const metadata: Metadata = {
     canonical: "/en/portfolio",
     languages: { ko: "/portfolio", en: "/en/portfolio", "x-default": "/portfolio" },
   },
-  // Same reason as `/portfolio`; `en_US` because the root's `ko_KR` would
-  // otherwise label an English page as Korean. The image is the portfolio card:
-  // `app/portfolio/opengraph-image` does not reach `/en/...`, so this page was
-  // previewing with the photo studio's card.
+  // Own openGraph block: `en_US` locale, and the root's portfolio opengraph-image doesn't reach /en.
   ...shareCard({
     title: sectionTitle(TITLE),
     description: DESCRIPTION,
@@ -26,8 +23,6 @@ export const metadata: Metadata = {
   }),
 };
 
-// Same curated reading as `/portfolio` — three featured projects, the rest in
-// Explore — so the two halves of the hreflang pair show the same page.
 export default function EnglishPortfolioPage() {
   return <PortfolioOverview locale="en" route="normal" />;
 }

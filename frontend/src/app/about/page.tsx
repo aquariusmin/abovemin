@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/about' },
-  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
   ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/about' }),
 };
 
@@ -31,7 +30,6 @@ export default function About() {
     <main className="min-h-screen bg-canvas text-ink-body px-5 sm:px-6 md:px-10 py-14 md:py-24">
       <div className="max-w-3xl mx-auto space-y-16 md:space-y-24">
 
-        {/* Hero */}
         <Reveal as="header" className="space-y-6" y={16}>
           <p className="eyebrow eyebrow-marked text-primary">About</p>
           <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink break-keep">
@@ -46,7 +44,6 @@ export default function About() {
           <div className="rule-accent w-24" />
         </Reveal>
 
-        {/* Story */}
         <Reveal as="section" className="space-y-6 text-base md:text-[17px] text-slate leading-relaxed break-keep">
           <p>
             <strong className="font-serif text-lg text-ink font-medium">phorage</strong>는 photography와 forage의
@@ -63,7 +60,6 @@ export default function About() {
           </p>
         </Reveal>
 
-        {/* What I do */}
         <section className="space-y-8">
           <Reveal as="header"><h2 className="eyebrow text-muted-foreground">What I do</h2></Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
@@ -86,7 +82,6 @@ export default function About() {
           </div>
         </section>
 
-        {/* Contact */}
         <Reveal as="section" className="space-y-6 border-t border-hairline pt-10 md:pt-12">
           <h2 className="eyebrow text-muted-foreground">Connect</h2>
           <div className="text-base text-ink-body space-y-3">

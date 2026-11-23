@@ -23,7 +23,6 @@ const COLUMNS: Column[] = [
   { label: "last cycle", align: "right", sort: "updated_at" },
 ];
 
-/** Green for a gain, red for a loss; nothing at all for "no number". */
 function pnlTone(n: number | null | undefined): string | undefined {
   if (n === null || n === undefined) return undefined;
   return n >= 0 ? "text-[var(--lab-good)]" : "text-[var(--lab-critical)]";
@@ -86,9 +85,6 @@ function FleetRow({ bot: b, color, now }: { bot: FleetBot; color: string | undef
   return (
     <tr className="row-hover border-b border-[var(--lab-border)] transition-colors last:border-0">
       <td className="relative py-2 pl-4 pr-3">
-        {/* Leading stripe carries series identity, tying the row to its line
-            above. Condition is the STATE pill, in words — two colour marks per
-            row was just noise. */}
         <span
           className="absolute inset-y-0 left-0 w-[3px]"
           style={{ background: color ?? "var(--lab-border-strong)" }}
@@ -98,7 +94,6 @@ function FleetRow({ bot: b, color, now }: { bot: FleetBot; color: string | undef
           <span className="lab-mono shrink-0 font-medium text-[var(--lab-ink-1)] transition-colors group-hover:text-[var(--lab-accent)]">
             {bot.tag}
           </span>
-          {/* A legacy bot name can be a whole parameter dump. */}
           <span className="lab-mono min-w-0 truncate text-[11px] text-[var(--lab-ink-3)]" title={bot.strategy}>
             {bot.strategy}
           </span>
@@ -118,8 +113,7 @@ function FleetRow({ bot: b, color, now }: { bot: FleetBot; color: string | undef
       </td>
       <Td right mono>{fmtAmount(b.equity, b.currency, 2)}</Td>
       <Td right mono className={pnlTone(b.pnl_pct ?? 0)}>{fmtPct(b.pnl_pct)}</Td>
-      {/* Since the bot's last cycle. Uncoloured when null so a missing
-          baseline never reads as a flat day. */}
+      {/* Uncoloured when null so a missing baseline never reads as a flat day. */}
       <Td
         right
         mono
@@ -142,14 +136,7 @@ function FleetRow({ bot: b, color, now }: { bot: FleetBot; color: string | undef
   );
 }
 
-/**
- * A column header, sortable ones as a real <button>.
- *
- * It used to be an onClick on the <th> itself, which no keyboard could reach
- * and no screen reader announced as actionable. `aria-sort` on the cell is the
- * other half: the arrow glyph is visual-only, so without it the current sort
- * is invisible to anyone not looking at the arrow.
- */
+/** Sortable headers are real <button>s; `aria-sort` carries what the arrow shows only visually. */
 function Th({
   children, onClick, active, dir, align = "left",
 }: {
@@ -195,7 +182,6 @@ function Td({
   mono?: boolean;
   muted?: boolean;
   className?: string;
-  /** Hover text — used to explain a cell that renders "—" on purpose. */
   title?: string;
 }) {
   return (

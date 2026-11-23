@@ -19,18 +19,14 @@ export default function Nav() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Close on route change — covers in-page links and browser back/forward,
-  // which a click handler on the links alone would miss. Adjusted during render
-  // rather than in an effect, so there is no extra render pass with a stale
-  // open menu (see React's "adjusting state when a prop changes").
+  // Close on route change, adjusted during render (not in an effect) so no pass renders a stale menu.
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
     setLastPath(pathname);
     setMenuOpen(false);
   }
 
-  // Escape closes and returns focus to the toggle; a pointer press outside the
-  // nav closes without stealing focus.
+  // Escape closes and returns focus to the toggle; a press outside closes without stealing focus.
   useEffect(() => {
     if (!menuOpen) return;
 
@@ -54,10 +50,6 @@ export default function Nav() {
   const cartCount = useCartStore(state => state.totalCount());
   const displayCount = mounted ? cartCount : 0;
 
-  // Lime marks the active route, everywhere.
-  // /lab is no longer a dark route, so the nav no longer inverts for it. One
-  // header treatment for every page is the point: the console has to read as
-  // part of this site, and a bar that changes colour under it says otherwise.
   const shell = 'bg-canvas/80 border-border/70';
   const logoColor = 'text-forest';
   const idleLink = 'text-muted-foreground';
@@ -66,18 +58,7 @@ export default function Nav() {
   const underline = 'bg-moss';
   const divider = 'bg-border';
 
-  // About and Portfolio are deliberately absent.
-  //
-  // Both pages are live, indexed and in the sitemap; they are simply not in
-  // the site's chrome. The bar is the shop-side path through the site (browse,
-  // collect, buy), and the portfolio is handed out by URL.
-  //
-  // To be precise about what that means today: NOTHING on the site links to
-  // either page except `/about`'s own body copy (which links to /portfolio)
-  // and the portfolio's closing CTA (which links to /about). They are not in
-  // this list, not in the footer's, and not in the home page's closing band.
-  // URL-only is the actual state, and it is the intended one — if that ever
-  // changes, the footer is the place to put them back.
+  // About and Portfolio are deliberately absent: both are URL-only by design.
   const navLinks = [
     { href: '/archive', label: 'Archive' },
     { href: '/shop', label: 'Shop' },
@@ -88,16 +69,10 @@ export default function Nav() {
 
   if (chromeless) return null;
 
-  // Nav labels scale with the viewport instead of sitting at a fixed 11px:
-  // cramped where the row is tightest (they only appear from `lg`) and
-  // undersized on a wide monitor.
-  // 11px at 1024 → 14px from ~1600 up; below `lg` the clamp floors at 11px, so
-  // the mobile bar is unchanged. Tracking is in `em`, so it follows along.
+  // 11px at 1024 → 14px from ~1600 up; floors at 11px below `lg`, so the mobile bar is unchanged.
   const fluidLabel = 'text-[clamp(0.6875rem,0.52vw+0.35rem,0.875rem)]';
 
-  // The badge hangs off the label, not off the link: the link's box is padded
-  // out to a 44px tap target on touch, and a corner of THAT would put the
-  // count nowhere near the word it counts.
+  // The badge hangs off the label, not the link: the link is padded out to a 44px tap target.
   const cartBadge = (className: string) => (
     <Link href="/cart" className={className} onClick={() => setMenuOpen(false)}>
       <span className="relative">
@@ -114,17 +89,10 @@ export default function Nav() {
   );
 
   return (
-    // Open, the bar and its dropdown become one opaque sheet with a hairline
-    // and `shadow-xs` under it. Translucent, the hero photo showed through the
-    // blur behind the menu rows and the links read as floating on the picture.
     <nav ref={navRef} className={`fixed top-0 left-0 w-full z-50 border-b transition-colors duration-500 ${menuOpen ? 'bg-canvas border-border shadow-xs' : `${shell} backdrop-blur-xl`}`}>
-      {/* 3-column flex: equal-width outer zones keep the wordmark optically
-          centered while reserving real space, so nothing can overlap. Desktop
-          nav appears at lg; below that we fall back to the hamburger. */}
       <div className="flex items-center gap-4 px-5 sm:px-6 md:px-10 py-2.5 md:py-5 lg:py-6 max-w-[1920px] mx-auto">
 
-        {/* Left: wordmark (mobile/tablet). Empty at `lg` on purpose — the zone
-            still reserves its width so the centre wordmark stays centred. */}
+        {/* Empty at `lg` on purpose — the zone still reserves its width so the centre wordmark stays centred. */}
         <div className="flex-1 min-w-0 flex items-center justify-start">
           <Link href="/" className="lg:hidden transition-opacity hover:opacity-70" onClick={() => setMenuOpen(false)}>
             <span className={`font-serif text-lg font-semibold tracking-tight ${logoColor} transition-colors`}>
@@ -133,21 +101,17 @@ export default function Nav() {
           </Link>
         </div>
 
-        {/* Center: wordmark (desktop) — a real flow item, not absolute */}
         <Link
           href="/"
           className="hidden lg:flex shrink-0 transition-opacity hover:opacity-70"
           onClick={() => setMenuOpen(false)}
         >
-          {/* Explicit leading: an arbitrary font-size carries no line-height of
-              its own, and the nav's height is what `pt-[88px]` in the layout is
-              compensating for. */}
+          {/* Explicit leading: the nav's height is what `pt-[88px]` in the layout compensates for. */}
           <span className={`font-serif text-[clamp(1.375rem,1vw+0.7rem,1.875rem)] leading-[1.15] font-semibold tracking-tight ${logoColor} transition-colors`}>
             phorage
           </span>
         </Link>
 
-        {/* Right: desktop nav + mobile controls */}
         <div className="flex-1 min-w-0 flex items-center justify-end">
           <div className="hidden lg:flex items-center gap-[clamp(1rem,1.9vw,2.5rem)] whitespace-nowrap">
             {navLinks.map(link => {
@@ -164,7 +128,6 @@ export default function Nav() {
                   {link.label}
                   <span
                     aria-hidden
-                    // 폭이 아니라 scaleX로 그린다 — 레이아웃을 다시 계산하지 않고 합성만 한다.
                     className={`pointer-events-none absolute -bottom-0.5 left-0 h-px w-full origin-left ${underline} transition-[transform,opacity] duration-300 ease-out ${
                       active ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
                     }`}
@@ -176,9 +139,7 @@ export default function Nav() {
             {cartBadge('')}
           </div>
 
-          {/* Touch controls are 44×44 (WCAG 2.5.5 / Apple HIG): the glyphs
-              stay the size they were, the hit area grows around them. The
-              negative margin keeps the toggle's lines on the page gutter. */}
+          {/* Touch controls are 44×44 (WCAG 2.5.5); the negative margin keeps the toggle on the page gutter. */}
           <div className="flex lg:hidden items-center gap-1">
             {cartBadge('inline-flex h-11 min-w-11 items-center justify-center px-2')}
             <button
@@ -197,10 +158,7 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Mobile / tablet dropdown. 바 아래에 겹쳐 내려오는 판이다 — 높이(max-height)를
-          애니메이션하면 매 프레임 레이아웃을 다시 계산하므로, 투명도와 이동만 움직인다.
-          `invisible`은 전환이 끝난 뒤에 적용되어 닫히는 모습이 보이고, `inert`가
-          닫힌 메뉴의 링크를 탭 순서에서 뺀다. */}
+      {/* Only opacity/transform animate; `inert` takes the closed menu's links out of the tab order. */}
       <div
         id="mobile-menu"
         inert={!menuOpen}

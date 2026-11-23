@@ -10,8 +10,6 @@ function Th({ children, right = false }: { children: React.ReactNode; right?: bo
   return <th scope="col" className={cx("lab-label whitespace-nowrap px-4 py-2 font-medium", right ? "text-right" : "text-left")}>{children}</th>;
 }
 
-/* ── News ─────────────────────────────────────────────────────────────────── */
-
 const SENT: Record<string, { text: string; tone: Tone }> = {
   positive: { text: "긍정", tone: "good" }, neutral: { text: "중립", tone: "neutral" }, negative: { text: "부정", tone: "critical" },
 };
@@ -89,8 +87,6 @@ export function DisclosuresTable({ news }: { news: News }) {
     </Frame>
   );
 }
-
-/* ── Models ───────────────────────────────────────────────────────────────── */
 
 const ECON: { key: "same_close" | "next_open" | "next_close"; label: string }[] = [
   { key: "same_close", label: "당일 종가 진입" },
@@ -229,8 +225,6 @@ function EconRow({ label, r }: { label: string; r?: EconomicsVariant }) {
     </tr>
   );
 }
-
-/* ── Status ───────────────────────────────────────────────────────────────── */
 
 export function JobsTable({ status }: { status: Status }) {
   const jobs = (status.jobs ?? []).slice(0, 30);

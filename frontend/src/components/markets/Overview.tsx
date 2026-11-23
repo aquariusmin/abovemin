@@ -7,14 +7,12 @@ import {
   MARKET_ORDER, classKo, fmtNum, fmtPct, liveRecord, regimeKo, regimeTone, riskTone, validationLabel,
 } from "@/lib/markets/view";
 
-/* ── Market strip ─────────────────────────────────────────────────────────── */
-
 function dayChange(m: MarketEntry): number | null {
   const r = m.rows ?? [];
   return r.length >= 2 ? (r[r.length - 1][1] / r[r.length - 2][1] - 1) * 100 : null;
 }
 
-/** Four cells, one per market; the selected one carries the forest edge. Links, not buttons: the market is in the URL. */
+/** Links, not buttons: the market is in the URL. */
 export function MarketStrip({ markets, active }: { markets: Core["markets"]; active: MarketKey }) {
   return (
     <Frame>
@@ -53,8 +51,6 @@ export function MarketStrip({ markets, active }: { markets: Core["markets"]; act
     </Frame>
   );
 }
-
-/* ── Price + regime ───────────────────────────────────────────────────────── */
 
 const RISK_KO: Record<string, string> = {
   realized_vol: "실현 변동성", drawdown: "고점 대비 낙폭", vix: "VIX", credit: "신용 스프레드", rates: "금리", krw: "원화",
@@ -175,8 +171,6 @@ function Factors({ title, items, tone }: { title: string; items?: string[]; tone
   );
 }
 
-/* ── Forecast ─────────────────────────────────────────────────────────────── */
-
 const PROB = [
   { key: "bearish_probability", label: "하락", fill: "bg-[var(--lab-critical)]" },
   { key: "neutral_probability", label: "횡보", fill: "bg-[var(--lab-border-strong)]" },
@@ -282,8 +276,6 @@ function RecentCalls({ history }: { history: NonNullable<Core["forecast"]>["hist
   );
 }
 
-/* ── Briefing + events + macro ────────────────────────────────────────────── */
-
 export function BriefingPanel({ briefing }: { briefing?: Briefing | null }) {
   const s = briefing?.sections ?? {};
   const ai = (briefing?.method ?? "").includes("llm");
@@ -331,11 +323,6 @@ export function BriefingPanel({ briefing }: { briefing?: Briefing | null }) {
   );
 }
 
-/**
- * The engine writes each change as a line and its explaining inputs as following
- * lines that start with "·". Headlines first; the inputs fold away so the
- * summary above stays the first thing read.
- */
 function OutlookChanges({ items }: { items: string[] }) {
   const heads = items.filter((t) => !t.trimStart().startsWith("·"));
   const details = items.length - heads.length;

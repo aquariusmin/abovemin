@@ -8,11 +8,6 @@ import {
   withColumnFallback,
 } from '@/lib/db-compat';
 
-/**
- * 이 파일이 지키는 것: 마이그레이션보다 코드가 먼저 배포돼도 공개 페이지가
- * 죽지 않는다. 그리고 **다른** 오류는 삼키지 않는다 — 네트워크 장애를 "컬럼이
- * 없나 보다"로 처리해 필터 없이 다시 읽으면 숨긴 사진이 새어 나간다.
- */
 describe('isMissingColumnError', () => {
   it('Postgres undefined_column(42703)을 알아본다', () => {
     expect(isMissingColumnError({ code: '42703', message: 'column albums.published does not exist' })).toBe(true);
@@ -123,7 +118,6 @@ describe('isUniqueViolation', () => {
   });
 
   it('다른 오류는 중복으로 보지 않는다', () => {
-    // 이걸 중복으로 읽으면 저장 실패를 "이미 있는 주문"으로 덮는다.
     expect(isUniqueViolation({ code: '42703', message: 'column "idempotency_key" does not exist' })).toBe(false);
     expect(isUniqueViolation({ code: '23503', message: 'violates foreign key constraint' })).toBe(false);
     expect(isUniqueViolation(null)).toBe(false);

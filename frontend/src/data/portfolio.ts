@@ -6,13 +6,6 @@ export type PortfolioProject = {
   period: string;
   role: string;
   sourceUrl?: string;
-  /**
-   * 결과물이 지금 돌아가고 있다면 그 주소.
-   *
-   * 저장소 링크와 다른 것을 보여 준다: 코드가 아니라 **운영 중인 물건**이다.
-   * 현재는 퀀트 플릿 하나뿐인데, 그 하나가 이 사이트에서 가장 증명력이 높은
-   * 산출물인데도 포트폴리오에서 거기로 가는 길이 없었다.
-   */
   liveUrl?: string;
   summary: string;
   question: string;

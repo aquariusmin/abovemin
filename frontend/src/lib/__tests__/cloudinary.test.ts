@@ -27,8 +27,7 @@ describe('cloudinary()', () => {
   });
 
   it('워터마크는 체이닝된 별도 변환으로 붙인다', () => {
-    // 한 변환에 묶으면 25MP 넘는 원본에서 Cloudinary가 400을 준다.
-    // 먼저 줄이고 그 다음 오버레이 — 순서가 요구사항이다.
+    // 한 변환에 묶으면 25MP 넘는 원본에서 400이 난다 — 먼저 줄이고 오버레이.
     const out = cloudinary(real, { width: 800, watermark: true });
     expect(out).toContain('w_800,dpr_auto/l_phorage:brand:signature/');
     expect(out.indexOf('w_800')).toBeLessThan(out.indexOf('l_phorage'));
@@ -44,7 +43,6 @@ describe('cloudinary()', () => {
       'o_60',
       'fl_layer_apply,g_south_east,x_0.025,y_0.03',
     ]);
-    // 고정 픽셀 글자 워터마크는 더 쓰지 않는다.
     expect(cloudinary(real, { watermark: true })).not.toContain('l_text');
   });
 
@@ -92,7 +90,6 @@ describe('cloudinaryPlaceholder()', () => {
     expect(cloudinaryPlaceholder(stored)).toBe(
       `https://res.cloudinary.com/${CLOUD}/image/upload/w_32,q_auto:low,e_blur:400,f_auto/phorage/archive/photo_17.jpg`,
     );
-    // 밑줄 든 폴더 이름은 변환이 아니다.
     const folder = `https://res.cloudinary.com/${CLOUD}/image/upload/v2/my_folder/a.jpg`;
     expect(cloudinaryPlaceholder(folder)).toContain(',e_blur:400,f_auto/v2/my_folder/a.jpg');
   });
@@ -106,7 +103,6 @@ describe('cloudinaryOgImage()', () => {
   const og = cloudinaryOgImage(real)!;
 
   it('자르지 않는다 — c_fill도 g_auto도 없다', () => {
-    // 세로 사진이 카드의 가운데 띠로 잘리면 "프레임이 사진에 맞춘다"가 깨진다.
     expect(og).not.toContain('c_fill');
     expect(og).not.toContain('c_crop');
     expect(og).not.toContain('g_auto');
@@ -150,7 +146,7 @@ describe('isRenderableImageUrl()', () => {
   it.each([
     [real, true],
     ['https://images.unsplash.com/photo-1', true],
-    ['http://res.cloudinary.com/x/image/upload/a.jpg', false], // http는 불가
+    ['http://res.cloudinary.com/x/image/upload/a.jpg', false],
     ['https://evil.example/image/upload/a.jpg', false],
     ['https://res.cloudinary.com/x/image/fetch/https://evil/a.jpg', false],
     ['javascript:alert(1)', false],
@@ -167,8 +163,7 @@ describe('isOwnCloudinaryUrl()', () => {
   });
 
   it('fetch형 딜리버리 URL을 막는다', () => {
-    // `/image/fetch/`는 남의 이미지를 우리 호스트로 프록시한다. 호스트만 보면
-    // 통과하므로 경로 앞부분을 고정해야 한다.
+    // `/image/fetch/`는 남의 이미지를 프록시하므로 경로 앞부분까지 고정한다.
     const proxied = `https://res.cloudinary.com/${CLOUD}/image/fetch/https://evil.example/upload/x.jpg`;
     expect(isOwnCloudinaryUrl(proxied, CLOUD)).toBe(false);
   });
@@ -176,7 +171,6 @@ describe('isOwnCloudinaryUrl()', () => {
 
 describe('signUploadParams()', () => {
   it('키를 사전순으로 이어 붙여 서명한다', () => {
-    // 순서가 다르면 Cloudinary가 서명을 거부하므로, 입력 순서와 무관해야 한다.
     const a = signUploadParams({ b: 2, a: 1, timestamp: 100 }, 'secret');
     const b = signUploadParams({ timestamp: 100, a: 1, b: 2 }, 'secret');
     expect(a).toBe(b);
@@ -195,26 +189,17 @@ describe('uploadFolder()', () => {
 });
 
 describe('publicIdFromUrl()', () => {
-  // "이 자산이 아직 쓰이는가"를 판정하는 열쇠라, 여기서 틀리면 살아 있는
-  // 사진이 고아로 분류된다 — 지우면 되돌릴 수 없는 종류의 실수다.
+  // 여기서 틀리면 살아 있는 사진이 고아로 분류돼 지워질 수 있다.
   it.each([
     [`https://res.cloudinary.com/${CLOUD}/image/upload/v1768121750/phorage/archive/korea/a.jpg`, 'phorage/archive/korea/a'],
-    // 변환이 붙어도 같은 id여야 한다. DB에는 변환이 박힌 URL도 있다.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/v1768121750/phorage/archive/korea/a.jpg`, 'phorage/archive/korea/a'],
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,c_limit,w_800/l_text:Arial_18_bold:phorage/v1/x/y.png`, 'x/y'],
-    // 지금의 워터마크 체인(네 조각). 레이어 이름 `phorage:brand:signature`를
-    // 사진의 id로 읽으면 안 된다 — 로더가 다시 쓴 주소, 공유 카드 주소도 마찬가지.
     [cloudinary(`https://res.cloudinary.com/${CLOUD}/image/upload/v1768121750/phorage/archive/korea/a.jpg`, { width: 800, watermark: true }), 'phorage/archive/korea/a'],
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,c_limit,w_640/${WATERMARK}/phorage/archive/photo_17.jpg`, 'phorage/archive/photo_17'],
     [cloudinaryOgImage(`https://res.cloudinary.com/${CLOUD}/image/upload/v1/phorage/shop/b.jpg`)!, 'phorage/shop/b'],
-    // 버전 없는 URL.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/phorage/archive/a.jpg`, 'phorage/archive/a'],
-    // 버전 없이 변환만 붙은 URL — 실제 앨범 커버의 형태다. 이 경우를 놓쳐서
-    // 쓰이는 커버가 "미사용 자산"으로 잡혔다.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/phorage/archive/photo_17.jpg`, 'phorage/archive/photo_17'],
-    // 밑줄이 들어간 폴더 이름을 변환으로 오해하면 안 된다.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/my_folder/a.jpg`, 'my_folder/a'],
-    // 공백 등이 인코딩된 이름.
     [`https://res.cloudinary.com/${CLOUD}/image/upload/v1/a%20b/c.jpg`, 'a b/c'],
     ['https://images.unsplash.com/photo-1', null],
     ['nonsense', null],
@@ -223,7 +208,6 @@ describe('publicIdFromUrl()', () => {
   });
 
   it('DB의 URL과 실제 자산이 같은 id로 만난다', () => {
-    // 이 왕복이 성립해야 고아 판정이 맞다.
     const stored = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/v1768121750/phorage/archive/japan/p17.jpg`;
     expect(publicIdFromUrl(cloudinary(stored, { width: 800 }))).toBe(publicIdFromUrl(stored));
   });

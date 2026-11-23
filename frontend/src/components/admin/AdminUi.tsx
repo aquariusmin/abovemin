@@ -4,11 +4,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ADMIN_STUDIO_MIGRATION } from '@/lib/admin/limits';
 import { EYEBROW_CLASS, MESSAGE_CLASS, SECTION_TITLE_CLASS, BTN_SM } from './adminStyles';
 
-/**
- * 관리 화면 곳곳에서 되풀이되는 작은 조각들: 섹션 머리, 상태 메시지,
- * "마이그레이션 적용 필요" 안내, 확인 대화상자.
- */
-
 export function SectionHeader({
   eyebrow,
   title,
@@ -37,10 +32,7 @@ export interface Message {
   text: string;
 }
 
-/**
- * 결과 한 줄. 메시지가 없어도 요소는 남겨 둔다 — `aria-live` 영역은 내용이
- * 바뀌기 **전부터** 문서에 있어야 스크린리더가 변화를 읽는다.
- */
+/** 메시지가 없어도 요소를 남긴다 — `aria-live` 영역은 바뀌기 전부터 있어야 읽힌다. */
 export function StatusLine({ message, className = '' }: { message: Message | null; className?: string }) {
   return (
     <p
@@ -53,10 +45,6 @@ export function StatusLine({ message, className = '' }: { message: Message | nul
   );
 }
 
-/**
- * 새 컬럼을 쓰는 기능이 아직 DB에 없을 때. 화면을 막지 않고, 무엇이 안 되는지와
- * 무엇을 하면 되는지를 적는다.
- */
 export function MigrationNotice({ feature, file = ADMIN_STUDIO_MIGRATION }: { feature?: string; file?: string }) {
   return (
     <div role="note" className="rounded-lg border border-brick-soft bg-brick/[0.05] px-4 py-3 text-sm text-ink-body">
@@ -78,8 +66,6 @@ export function EmptyLine({ children }: { children: ReactNode }) {
   return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p>;
 }
 
-// ── 확인 대화상자 ─────────────────────────────────────────────────────────────
-
 export interface ConfirmOptions {
   title: string;
   body?: ReactNode;
@@ -91,17 +77,7 @@ interface PendingConfirm extends ConfirmOptions {
   resolve: (confirmed: boolean) => void;
 }
 
-/**
- * `window.confirm` 대신 쓰는 모달. 되돌릴 수 없는 작업(삭제, 원본 파기)에서
- * 무엇이 몇 개·몇 MB 사라지는지를 **읽을 수 있게** 보여 주려면 줄글 한 줄로는
- * 모자라다.
- *
- * `<dialog>` + `showModal()`: 포커스 가두기, Esc 닫기, 배경 비활성화를
- * 브라우저가 해 준다. 기본 버튼은 "취소"에 둔다 — Enter 한 번에 지워지면 안 된다.
- *
- * 쓰는 법: `const { confirm, dialog } = useConfirm();` → `if (await confirm({...}))`,
- * 그리고 `{dialog}`를 렌더한다.
- */
+/** 기본 버튼은 "취소" — Enter 한 번에 되돌릴 수 없는 작업이 실행되면 안 된다. */
 export function useConfirm() {
   const [pending, setPending] = useState<PendingConfirm | null>(null);
 
@@ -129,9 +105,7 @@ function ConfirmDialog({ options, onSettle }: { options: ConfirmOptions; onSettl
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog || dialog.open) return;
-    // 대화상자를 연 버튼. 열린 `<dialog>`를 그냥 언마운트하면 브라우저가 포커스를
-    // 돌려주지 못해 <body>로 떨어진다 — 키보드 사용자는 페이지 맨 위에서 다시
-    // 찾아와야 한다. 닫을 때 직접 돌려준다(열었던 버튼이 사라졌으면 그대로 둔다).
+    // 열린 <dialog>를 언마운트하면 포커스가 <body>로 떨어진다 — 닫을 때 직접 돌려준다.
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
     cancelRef.current?.focus();

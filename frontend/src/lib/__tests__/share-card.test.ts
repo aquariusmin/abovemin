@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PORTFOLIO_CARD, SITE_CARD, sectionTitle, shareCard } from '@/lib/share-card';
 
-/**
- * 이 파일이 지키는 것: 경로가 `openGraph`를 적는 순간 루트 것이 통째로 사라지므로
- * (얕은 병합), 카드에 필요한 칸이 하나도 빠지지 않고 다시 적힌다.
- */
-
 describe('shareCard', () => {
   it('사이트 이름·언어·종류·주소를 다시 적고, twitter도 같은 제목과 설명을 갖는다', () => {
     expect(shareCard({ title: sectionTitle('Shop'), description: 'd', path: '/shop' })).toEqual({

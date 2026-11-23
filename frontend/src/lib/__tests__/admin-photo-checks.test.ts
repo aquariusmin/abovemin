@@ -13,12 +13,6 @@ import {
   type CheckPhoto,
 } from '@/lib/admin/data-checks';
 
-/**
- * 사진 단위 점검(연도·저해상도·촬영 정보·위치가 남은 원본)과 "촬영일 기준으로
- * 연도 맞추기"의 계획. 개요와 아카이브 탭의 필터가 같은 함수를 쓰므로, 여기서
- * 규칙이 고정되면 두 화면이 같은 사진을 가리킨다.
- */
-
 const src = (id: number) => `https://res.cloudinary.com/demo/image/upload/v1/phorage/archive/p${id}.jpg`;
 
 describe('takenYear', () => {

@@ -9,15 +9,6 @@ import {
 } from '@/lib/exif-strip';
 import { roundCoord } from '@/lib/admin/photo-metadata';
 
-/**
- * 이 파일이 지키는 것: 올라가는 원본에 GPS·위치가 남지 않고, 압축된 영상
- * 바이트는 하나도 바뀌지 않으며, 촬영 정보 채우기가 읽는 EXIF(제조사·모델·
- * 촬영일)는 그대로 남는다. 입력은 테스트 안에서 바이트 단위로 합성한다 —
- * 실제 사진을 저장소에 두면 그 사진의 위치가 저장소에 남는다.
- */
-
-// ── 합성 도구 ─────────────────────────────────────────────────────────────────
-
 const enc = (text: string) => Uint8Array.from(text, ch => ch.charCodeAt(0));
 
 function concat(...parts: Uint8Array[]): Uint8Array {
@@ -44,9 +35,7 @@ interface EntrySpec {
   tag: number;
   type: number;
   count: number;
-  /** 값 바이트(이미 바이트 순서에 맞춘). 포인터 항목이면 비운다. */
   data?: Uint8Array;
-  /** 하위 IFD 포인터(0x8769, 0x8825). */
   pointer?: 'exif' | 'gps';
 }
 
@@ -66,10 +55,6 @@ function writer(le: boolean) {
   return { u16, u32, rationals, asciiValue };
 }
 
-/**
- * IFD0 → (Exif IFD) → (GPS IFD) 순서로 늘어놓은 TIFF. 값이 4바이트를 넘으면
- * IFD 바로 뒤 데이터 영역에 둔다. 실제 카메라 파일과 같은 배치다.
- */
 function buildTiff(
   le: boolean,
   ifds: { ifd0: EntrySpec[]; exif?: EntrySpec[]; gps?: EntrySpec[] },
@@ -112,7 +97,7 @@ function buildTiff(
   return concat(...parts);
 }
 
-/** 서울시청 근처: 37°33'59.4"N 126°58'40.7"E → (37.6, 127.0). */
+// 서울시청 근처: 37°33'59.4"N 126°58'40.7"E → (37.6, 127.0).
 function cameraTiff(le: boolean, { gps = true, south = false } = {}): Uint8Array {
   const w = writer(le);
   const ifd0: EntrySpec[] = [
@@ -152,7 +137,6 @@ const COM = segment(0xfe, enc('made by a test'));
 const DQT = segment(0xdb, new Uint8Array(65).fill(3));
 const SOF0 = segment(0xc0, Uint8Array.from([8, 0, 16, 0, 16, 1, 1, 0x11, 0]));
 
-/** SOS 헤더 + 엔트로피 데이터(바이트 스터핑과 RST 포함) + EOI. */
 const SCAN = concat(
   segment(0xda, Uint8Array.from([1, 1, 0, 0, 63, 0])),
   Uint8Array.from([0x12, 0xff, 0x00, 0x34, 0xff, 0xd0, 0x56, 0x78, 0xff, 0x00, 0x9a]),
@@ -163,7 +147,6 @@ function jpeg(...segments: Uint8Array[]): Uint8Array {
   return concat(Uint8Array.from([0xff, 0xd8]), ...segments, DQT, SOF0, SCAN);
 }
 
-/** 첫 SOS부터 첫 EOI까지 — 압축된 영상. */
 function scanBytes(bytes: Uint8Array): Uint8Array {
   const start = indexOf(bytes, Uint8Array.from([0xff, 0xda]));
   const header = (bytes[start + 2] << 8) | bytes[start + 3];
@@ -171,8 +154,6 @@ function scanBytes(bytes: Uint8Array): Uint8Array {
 }
 
 const SEOUL = { lat: 37.6, lng: 127 };
-
-// ── EXIF GPS ──────────────────────────────────────────────────────────────────
 
 describe.each([
   ['little-endian (II)', true],
@@ -185,11 +166,9 @@ describe.each([
     const result = stripJpegLocation(input);
     expect(result.coord).toEqual(SEOUL);
     expect(result.locationRemoved).toBe(true);
-    // 위도·경도 유리수 바이트가 파일 어디에도 남지 않는다.
     expect(contains(input, w.rationals([5940, 100]))).toBe(true);
     expect(contains(result.bytes, w.rationals([5940, 100]))).toBe(false);
     expect(contains(result.bytes, w.rationals([4070, 100]))).toBe(false);
-    // 다시 읽어도 GPS가 없다.
     expect(scanForLocation(result.bytes).hasLocation).toBe(false);
     expect(stripJpegLocation(result.bytes).coord).toBeNull();
   });
@@ -269,12 +248,10 @@ describe('stripJpegLocation — 세그먼트', () => {
       ],
       gps: [{ tag: 0x0001, type: 2, count: 2, data: enc('N\0') }],
     }, { brokenGpsPointer: true });
-    // 포인터가 파일 밖을 가리켜도 항목은 빼낼 수 있다 — 세그먼트는 남고 포인터만 사라진다.
     const result = stripJpegLocation(jpeg(exifSegment(broken)));
     expect(result.locationRemoved).toBe(true);
     expect(scanForLocation(result.bytes).hasLocation).toBe(false);
 
-    // IFD0 자체가 깨졌으면 GPS가 있는지도 모른다 — EXIF째 뺀다.
     const garbage = concat(enc('II'), Uint8Array.from([42, 0, 0xff, 0xff, 0, 0]), new Uint8Array(20));
     const dropped = stripJpegLocation(jpeg(APP0, exifSegment(garbage)));
     expect(dropped.droppedSegments).toBe(1);
@@ -296,10 +273,7 @@ describe('stripJpegLocation — 세그먼트', () => {
   });
 });
 
-// ── 첫 EOI 뒤: MPF 보조 이미지 ────────────────────────────────────────────────
-
 describe('stripJpegLocation — MPF 보조 이미지', () => {
-  /** MPF APP2: MP Entry 두 개(주 이미지 오프셋 0, 보조 이미지 오프셋 `second`). */
   function mpfSegment(second: number): Uint8Array {
     const w = writer(false);
     const entries = concat(
@@ -319,7 +293,6 @@ describe('stripJpegLocation — MPF 보조 이미지', () => {
   function build() {
     const secondary = jpeg(exifSegment(cameraTiff(true)), xmpSegment('<x:xmpmeta photoshop:City="Seoul"></x:xmpmeta>'));
     const xmp = xmpSegment('<x:xmpmeta exif:GPSLongitude="126"/>');
-    // 보조 이미지 위치는 MPF 헤더(TIFF 시작) 기준. 먼저 자리표시 값으로 한 번 만들어 길이를 잰다.
     const assemble = (offset: number) => {
       const mpf = mpfSegment(offset);
       const primary = jpeg(APP0, mpf, xmp);
@@ -385,8 +358,6 @@ describe('findPrimaryEoi', () => {
     expect(findPrimaryEoi(bytes, 0)).toBe(bytes.length);
   });
 });
-
-// ── JPEG이 아닌 파일 ──────────────────────────────────────────────────────────
 
 describe('scanForLocation / planUpload', () => {
   it('TIFF 파일의 GPS를 찾고 좌표와 촬영 연도를 읽는다', () => {

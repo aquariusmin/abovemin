@@ -11,11 +11,6 @@ import PlacesEditor from './PlacesEditor';
 import { BTN_SM, INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 설정 — 홈 히어로, 사진 데이터(촬영 정보·장소 좌표), 그리고 Cloudinary 정리.
- *
- * 촬영 정보 채우기가 장소 좌표를 새로 넣으면 아래 좌표 목록이 다시 읽는다.
- */
 export default function SettingsTab() {
   const [placesKey, setPlacesKey] = useState(0);
   return (
@@ -59,7 +54,6 @@ function HeroSettings() {
     };
   }, [reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(!loaded && message?.tone === 'error', () => setReloadKey(k => k + 1));
 
   async function openPicker() {
@@ -84,8 +78,7 @@ function HeroSettings() {
       });
       setMessage({ tone: 'ok', text: '저장했습니다. 홈에 바로 반영됩니다.' });
     } catch (e) {
-      // 히어로 주소는 서버가 호스트를 검증한다. "저장 실패"만 띄우면 무엇이
-      // 잘못됐는지 알 수 없으므로 서버가 준 이유를 그대로 보여준다.
+      // 서버가 준 이유를 그대로 보여준다 — "저장 실패"만으로는 무엇이 틀렸는지 모른다.
       setMessage({ tone: 'error', text: errorMessage(e, '저장에 실패했습니다.') });
     } finally {
       setSaving(false);
@@ -151,8 +144,7 @@ function HeroSettings() {
           <p className="label-ko mb-2 text-muted-foreground">
             미리보기 <span className="text-[12px]">— 홈에서도 이 비율 그대로 실립니다</span>
           </p>
-          {/* 고정 비율도 object-cover도 없다: 홈 히어로는 사진의 비율로 프레임을
-              만들므로, 16:6 띠로 자른 미리보기는 홈이 하지 않는 크롭을 보여 준다. */}
+          {/* 고정 비율·object-cover 없음 — 홈 히어로는 사진 비율 그대로라 크롭을 보여 주면 안 된다. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={cloudinary(heroImage, { width: 800 })} alt="히어로 미리보기" className="block h-auto w-full max-w-md rounded-lg bg-surface" />
         </div>

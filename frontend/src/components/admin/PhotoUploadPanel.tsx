@@ -8,33 +8,17 @@ import { StatusLine, type Message } from './AdminUi';
 import { useUnsavedGuard } from './UnsavedGuard';
 import { BTN_SM, CHIP_KO, INPUT_COMPACT, LABEL_CLASS, INPUT_CLASS } from './adminStyles';
 
-/**
- * 새 사진 업로드.
- *
- * 흐름은 두 단계다.
- *  1) 파일을 놓으면 먼저 브라우저에서 위치 정보를 지우고(`lib/admin/upload-privacy.ts`)
- *     **곧바로** Cloudinary로 올라간다 (서버를 거치지 않는다 —
- *     `lib/cloudinary-upload.ts` 참고). 업로드 응답의 EXIF로 촬영 연도가 미리
- *     채워지므로, 관리자가 타이핑을 시작할 때 이미 대부분 채워져 있다.
- *  2) 제목/장소/연도를 확인한 뒤 "저장"을 눌러야 `photos` 행이 생긴다.
- *     지우기 전에 읽어 둔 GPS는 소수점 한 자리로 반올림된 채 함께 보내져,
- *     장소 좌표(`places`)가 비어 있을 때만 그 근거가 된다.
- *
- * 저장하지 않고 화면을 떠나면 Cloudinary에는 파일이 남는다. 사이트에는 노출되지
- * 않고, 설정 탭의 "쓰이지 않는 원본"에서 찾아 지울 수 있다.
- */
+/** 위치 정보를 브라우저에서 지운 뒤 Cloudinary로 직접 올린다. "저장"을 눌러야 `photos` 행이 생긴다. */
 
 type RowStatus = 'uploading' | 'ready' | 'error';
 
 interface Row {
   key: string;
   fileName: string;
-  /** 업로드 중에도 썸네일을 보여주기 위한 로컬 object URL. */
   preview: string;
   status: RowStatus;
   error?: string;
   src?: string;
-  /** 위치 정보를 어떻게 처리했는가. 올리기 전 단계가 끝나야 생긴다. */
   privacy?: PrivacyStatus;
   /** 반올림된 좌표(약 11km). 정밀한 좌표는 이 컴포넌트에 들어오지 않는다. */
   coord?: RoundedCoord | null;
@@ -46,20 +30,15 @@ interface Row {
 interface Props {
   albumSlug: string;
   albumTitle: string;
-  /** 부모가 앨범 선택을 잠그기 위해 대기 중인 장수를 알아야 한다. */
   onPendingChange: (count: number) => void;
-  /** 저장이 끝나면 아래 목록이 새 사진을 다시 불러온다. */
   onSaved: () => void;
 }
 
-/** 동시 업로드 수. 원본 사진은 장당 수 MB라 무제한으로 열면 회선만 막힌다. */
+/** 원본은 장당 수 MB라 동시 업로드 수를 제한한다. */
 const CONCURRENCY = 3;
 const MAX_BATCH = 60;
 
-/**
- * Chrome·Windows는 HEIC에 MIME 타입을 붙이지 않는다(`file.type === ''`). 타입만
- * 보면 HEIC는 조용히 걸러져 "JPEG로 내보내 달라"는 안내조차 보이지 않는다.
- */
+/** Chrome·Windows는 HEIC에 MIME을 붙이지 않는다 — 타입만 보면 안내 없이 걸러진다. */
 function isImageFile(file: File): boolean {
   return file.type.startsWith('image/') || /\.(heic|heif|avif|tiff?)$/i.test(file.name);
 }
@@ -75,11 +54,7 @@ function titleFromFileName(name: string): string {
   return (base || 'Untitled').slice(0, 200);
 }
 
-/**
- * EXIF 촬영일에서 연도만 꺼낸다. Cloudinary는 `2017:08:12 10:22:33` 형식으로
- * 돌려준다. 촬영일이 없는 파일(스캔본, 스크린샷 등)은 올해로 채우고 관리자가
- * 고치도록 둔다 — `year`는 비워 둘 수 없는 값이다.
- */
+/** 촬영일이 없으면 올해로 채운다 — `year`는 비워 둘 수 없다. */
 function exifYear(metadata: unknown, fallback: number | null = null): string {
   const meta = (metadata ?? {}) as Record<string, unknown>;
   for (const key of ['DateTimeOriginal', 'DateTimeDigitized', 'DateTime', 'CreateDate']) {
@@ -113,7 +88,6 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
     setRows(prev => prev.map(row => (row.key === key ? { ...row, ...patch } : row)));
   }, []);
 
-  /** 목록에서 빠지는 행의 object URL을 되돌려준다 — 원본 사진은 장당 수 MB다. */
   const dropRows = useCallback((keep: (row: Row) => boolean) => {
     setRows(prev => {
       for (const row of prev) {
@@ -195,15 +169,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker));
   }, [albumSlug, rows.length, updateRow]);
 
-  /**
-   * 한 줄로 모든 행의 장소 또는 연도를 채운다.
-   *
-   * 예전에는 `onChange`에 걸려 있어서 키를 누를 때마다 전체 행을 덮어썼다.
-   * "Seoul"을 치면 S → Se → Seo … 가 차례로 모든 행에 적용되고, 그 과정에서
-   * 개별로 손봐 둔 값이 되돌릴 방법 없이 사라진다. 이제는 입력을 마쳤다는
-   * 신호(blur 또는 Enter)에만 적용한다 — 일괄 적용은 한 번의 의도이지 타이핑
-   * 도중의 연속 동작이 아니다.
-   */
+  /** blur·Enter에만 적용한다 — 키마다 적용하면 개별로 손본 값이 덮여 사라진다. */
   function applyToAll(field: 'location' | 'year', value: string) {
     const next = value.trim();
     if (!next) return;
@@ -253,14 +219,12 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
   }
 
   const uploading = rows.some(row => row.status === 'uploading');
-  // 올리는 중이거나, 올렸지만 아직 앨범에 저장하지 않은 사진. 이대로 떠나면 파일은
-  // Cloudinary에만 남고 아무도 가리키지 않는다. 실패한 행은 잃을 것이 없다.
+  // 저장 전에 떠나면 파일이 Cloudinary에만 남고 아무도 가리키지 않는다. 실패한 행은 제외.
   useUnsavedGuard('photo-upload', saving || rows.some(row => row.status !== 'error'));
   const readyCount = rows.filter(row => row.status === 'ready').length;
 
   return (
     <div className="space-y-4">
-      {/* 드롭 존 */}
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
@@ -311,9 +275,7 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
               <button
                 type="button"
                 onClick={() => { dropRows(() => false); setMessage(null); }}
-                // 업로드 중에도 막는다. 목록을 비워도 업로드는 취소되지 않아서,
-                // 파일은 계속 Cloudinary에 쌓이고 화면에는 그걸 가리키는 것이
-                // 남지 않는다.
+                // 업로드 중에도 막는다 — 비워도 업로드는 취소되지 않아 가리킬 것 없는 파일이 쌓인다.
                 disabled={saving || uploading}
                 className={`btn-ghost ${BTN_SM} text-slate`}
               >
@@ -330,9 +292,6 @@ export default function PhotoUploadPanel({ albumSlug, albumTitle, onPendingChang
             </div>
           </div>
 
-          {/* 한 번에 올리는 사진은 대개 장소와 연도가 같다 — 한 줄로 전체에 적용한다.
-              적용 시점이 타이핑 도중에서 Enter/blur로 바뀌었으므로(→ `applyToAll`),
-              언제 반영되는지 화면에도 적어 둔다. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <p className="-mb-1 text-[12px] text-muted-foreground sm:col-span-2">
               입력한 뒤 Enter를 누르거나 칸 밖을 클릭하면 아래 전체에 적용됩니다.

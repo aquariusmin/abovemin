@@ -1,11 +1,4 @@
-/**
- * 편집기의 "저장하지 않은 변경이 있는가". 닫기·다른 항목 열기·페이지 떠나기
- * 앞에서 물어볼지 정한다.
- *
- * 입력 상태는 문자열·불리언·숫자와 그 배열·객체뿐이다(상품의 이미지·옵션 목록).
- * 그래서 구조 비교로 충분하다 — 순서가 바뀐 배열은 **바뀐 것**이다(이미지 순서는
- * 커버를 정한다). 객체의 키 순서는 따지지 않는다.
- */
+// 순서가 바뀐 배열은 바뀐 것이다(이미지 순서가 커버를 정한다).
 
 export function sameValue(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
@@ -21,10 +14,6 @@ export function sameValue(a: unknown, b: unknown): boolean {
   return keys.every(key => Object.hasOwn(bRecord, key) && sameValue(aRecord[key], bRecord[key]));
 }
 
-/**
- * 지금 입력이 기준(연 시점, 또는 마지막으로 저장한 값)과 다른가.
- * `ignore`는 내용이 아닌 화면 상태 필드(예: 노트의 `slugTouched`).
- */
 export function isDraftDirty<T extends object>(current: T, baseline: T, ignore: readonly (keyof T)[] = []): boolean {
   const skip = new Set<PropertyKey>(ignore);
   const keys = new Set([...Object.keys(current), ...Object.keys(baseline)]);

@@ -9,22 +9,11 @@ interface AlbumCard {
   cover: string;
   title: string;
   photo_count: number;
-  /** 표지 사진의 저장된 크기. 비율로만 쓴다 — 표지가 오기 전에 칸을 잡는다. */
   width?: number | null;
   height?: number | null;
 }
 
-/**
- * Masonry album grid with a per-item scroll reveal. Each tile is a `Reveal`
- * rendered as the link itself, so the <a> still matches the parent's `[&>a]`
- * column-spacing selector and the existing hover treatment (image zoom +
- * gradient) is preserved verbatim.
- *
- * A server component: the only client work on this grid is the reveal, and
- * `Reveal` is that island. It used to be a client component for framer's
- * `useReducedMotion` + `useInView`, which hydrated every tile's markup and
- * loaded the animation runtime for a fade-and-rise.
- */
+/** Each tile is a `Reveal` rendered as the <a> itself, so the parent's `[&>a]` selector still matches. */
 export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 md:gap-6 max-w-[1400px] mx-auto [&>a]:mb-5 md:[&>a]:mb-6">
@@ -35,12 +24,7 @@ export default function ArchiveGrid({ albums }: { albums: AlbumCard[] }) {
   );
 }
 
-/**
- * 카드 한 장. 등장 애니메이션은 마운트 때 뷰포트 아래에 있던 카드에만 걸린다
- * — 열 기반 masonry에서 "첫 화면"을 인덱스로 셀 수 없는 이유는
- * `useBelowFoldReveal`의 주석. 값(0.6초, 24px, 15% 보이면 시작)은 framer로
- * 돌던 때와 같다.
- */
+/** 등장 애니메이션은 마운트 때 뷰포트 아래에 있던 카드에만 걸린다 — 서버 HTML에서는 모두 보인다. */
 function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
   return (
     <Reveal
@@ -53,22 +37,13 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
     >
       {album.cover && (
         <div className="relative overflow-hidden rounded-lg" style={placeholderStyle(album.cover)}>
-          {/* Next 16 deprecates `priority` in favour of `preload`, but a
-              preload link is the wrong migration for a masonry grid: the
-              column count changes with the viewport, so which tile is the
-              LCP element is not knowable from the markup — the docs name
-              this case explicitly and point at these two props instead.
-              Same treatment the Lightbox already uses. */}
+          {/* Not `preload`: the LCP tile depends on the column count, so `loading`/`fetchPriority` instead. */}
           <Image
             src={cloudinary(album.cover, { width: 800 })}
             alt={album.title}
             width={0}
             height={0}
-            // 칸의 실제 폭(`PhotoGrid`와 같은 계산, 열 사이만 20px → md부터 24px).
-            //   1480px~      (1400 − 2×24) ÷ 3 = 450.7px
-            //   1024~1479px  (100vw − 80 − 48) ÷ 3 → 31vw 이하
-            //   640~1023px   (100vw − 48 − 20) ÷ 2, md부터 (100vw − 80 − 24) ÷ 2 → 46vw 이하
-            //   ~639px       100vw − 40px
+            // `sizes`는 칸의 실제 폭(`PhotoGrid`와 같은 계산, 열 간격 20px → md부터 24px).
             sizes="(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)"
             className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-105"
             // 비율만 쓴다. `auto`가 앞에 있어 표지가 오면 실제 비율이 이긴다.
@@ -76,17 +51,6 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
             loading={index === 0 ? 'eager' : 'lazy'}
             fetchPriority={index === 0 ? 'high' : undefined}
           />
-          {/* Forest-black scrim rather than neutral black — keeps the
-              photography warm and ties the overlay to the palette.
-
-              A band under the caption, not a wash over the whole cover. It
-              used to run the full height (`/85 → /45 → 0`), which kept the
-              eyebrow legible over the Japan cover's white sky but dimmed every
-              cover by half: the USA cover read as a black card with a spire on
-              it. The band is a fixed height measured from the caption, so the
-              eyebrow — the top line of the caption block — still always sits
-              on the dark part, whatever the cover's ratio; everything above it
-              is the photograph at its own exposure. */}
           <div
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-52 md:h-56 bg-gradient-to-t from-forest-black/85 via-forest-black/60 via-50% to-transparent transition-opacity duration-500 group-hover:opacity-90"

@@ -3,12 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
 
-/**
- * 사진 페이지의 "링크 복사". 라이트박스의 같은 버튼과 문구·동작을 맞춘다.
- *
- * 경로만 받고 origin은 누르는 순간 붙인다 — 서버가 아는 정식 주소를 굽으면
- * 미리보기 배포에서 복사한 링크가 프로덕션을 가리킨다.
- */
+/** origin은 누르는 순간 붙인다 — 서버 주소를 구우면 미리보기 배포에서 복사한 링크가 프로덕션을 가리킨다. */
 export default function CopyLinkButton({ path }: { path: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

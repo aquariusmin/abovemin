@@ -85,7 +85,6 @@ export default function PortfolioCaseStudy({
   project: PortfolioProject;
   projects: PortfolioProject[];
   locale: PortfolioLocale;
-  /** URL family for back / prev / next / print / alternate-locale links. */
   route: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";
@@ -104,10 +103,7 @@ export default function PortfolioCaseStudy({
             &larr; {copy.back}
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-            {/* Contact and print, grouped. The fragment is what is left of a
-                removed `mode` condition; it is kept because flattening it
-                changes the nesting of the serialized RSC payload (the DOM
-                would be the same). */}
+            {/* The fragment stays: flattening it changes the nesting of the serialized RSC payload. */}
             <>
               <a href="mailto:aquariusmin01@naver.com" className="text-[11px] font-semibold text-slate transition-colors hover:text-accent">
                 Email
@@ -134,8 +130,6 @@ export default function PortfolioCaseStudy({
             <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">{project.title}</h1>
             <p className="max-w-3xl break-keep text-base leading-relaxed text-slate md:text-lg">{project.summary}</p>
           </div>
-          {/* 칸 수가 2~4개로 달라진다. 고정 트랙을 쓰면 라이브 링크가 붙는
-              순간 마지막 칸이 넘치므로, 3개를 넘어가면 균등 분할로 바꾼다. */}
           <div
             className={`grid gap-4 border-y border-hairline py-5 text-sm text-slate ${
               project.sourceUrl && project.liveUrl
@@ -155,10 +149,6 @@ export default function PortfolioCaseStudy({
                 </a>
               </p>
             )}
-            {/* 돌아가고 있는 것은 코드보다 강한 증거다. 이 링크가 없어서,
-                포트폴리오만 받은 사람은 실자금 계좌가 붙은 운영 콘솔이
-                존재한다는 사실 자체를 알 수 없었다. 같은 사이트 안이므로
-                새 탭으로 열지 않는다. */}
             {project.liveUrl && (
               <p className="break-keep">
                 <span className="font-semibold text-ink">{copy.live}</span> ·{" "}

@@ -3,7 +3,7 @@ import { cleanCaptionField, joinCaption, photoCaption, photoLabel } from '@/lib/
 
 describe('cleanCaptionField()', () => {
   it('대시와 공백뿐인 값을 "없음"으로 본다', () => {
-    // DB에 제목 28장이 "-"로 들어 있다. 화면에 한 글자짜리 제목이 찍혔다.
+    // DB에 제목 28장이 "-"로 들어 있다.
     for (const v of ['-', '—', '–', '', '   ', ' - ', null, undefined]) {
       expect(cleanCaptionField(v)).toBeNull();
     }

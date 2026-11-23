@@ -14,12 +14,7 @@ const AVERAGES = [
 
 type Point = { date: string; close: number; provisional: boolean } & Partial<Record<(typeof AVERAGES)[number]["key"], number | null>>;
 
-/**
- * Close with trailing 20/60/200-day averages. Averages are computed on the
- * whole series and only then cut to the visible range, so a short range does
- * not open with an empty stretch. A provisional close (Toss, before KRX
- * publishes) is marked in the tooltip rather than passed off as official.
- */
+/** Averages are computed on the whole series, then cut to the visible range (no empty opening stretch). */
 export function PriceChart({
   rows,
   provisional,

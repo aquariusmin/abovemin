@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { selectAll } from '@/lib/select-all';
 
-/** `total`행짜리 테이블. 서버 상한(`cap`)이 있으면 한 번에 그만큼만 돌려준다. */
 function table(total: number, cap = Infinity) {
   const calls: Array<[number, number]> = [];
   const fetchPage = async (from: number, to: number) => {

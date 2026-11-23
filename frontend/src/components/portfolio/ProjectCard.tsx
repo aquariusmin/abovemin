@@ -3,10 +3,7 @@ import type { PortfolioProject } from "@/data/portfolio";
 import { portfolioCardChips } from "@/data/portfolioEvidence";
 import { getPortfolioBasePath, type PortfolioLocale } from "@/data/portfolioRouting";
 
-// One card, two typographic treatments. English labels use `.eyebrow` and
-// `.chip` — mono, uppercase, wide tracking. That treatment scatters Hangul, so
-// the Korean card spells its small labels out in sans with a tighter tracking
-// instead. The difference is deliberate; keep it keyed to the locale.
+// Korean labels skip `.eyebrow`/`.chip` (mono caps scatter Hangul) — keep it keyed to the locale.
 const styles = {
   en: {
     link: "group flex h-full flex-col justify-between card-hair p-6 md:p-8 hover:-translate-y-1",

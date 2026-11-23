@@ -13,7 +13,6 @@ export default async function EnglishPortfolioPrintPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  // Curated ordering, as on /en/portfolio itself — see the Korean print page.
   return (
     <PortfolioPrintContent
       locale="en"

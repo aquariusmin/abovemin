@@ -14,21 +14,15 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/notes', types: { 'application/rss+xml': '/notes/rss.xml' } },
-  // 적지 않으면 공유 카드가 사이트 기본 제목과 설명을 달고 나간다(`shareCard`).
   ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/notes' }),
 };
 
-// 관리 화면에서 글을 저장하면 `revalidateNotes()`가 이 경로를 무효화한다.
-// 한 시간은 그 신호를 놓쳤을 때의 안전망.
+// revalidateNotes()가 무효화한다. 한 시간은 그 신호를 놓쳤을 때의 안전망.
 export const revalidate = 3600;
 
 export default async function NotesPage() {
-  // 조회 실패는 빌드 중에만 "글 없음"으로 읽는다 — DB가 흔들려 배포 전체가
-  // 죽는 것보다 낫다. 실행 중에는 던진다: 여기서 삼키면 아래의 404가 한 시간
-  // 동안 캐시에 앉는다(`buildFallback`).
+  // 빌드 중에만 실패를 "글 없음"으로 — 실행 중엔 던진다. 삼키면 404가 한 시간 캐시에 앉는다.
   const notes = await getPublishedNotes().catch(buildFallback([]));
-  // 글이 없으면 이 경로는 존재하지 않는다. 빈 목록 페이지를 색인시키고
-  // 푸터에서 링크하는 것보다, 첫 글이 올라올 때까지 없는 편이 낫다.
   if (notes.length === 0) notFound();
 
   return (
@@ -55,9 +49,7 @@ export default async function NotesPage() {
                 <time dateTime={note.date} className="eyebrow text-muted-foreground">
                   {note.date.replaceAll('-', '.')}
                 </time>
-                {/* 밝은 캔버스에서는 `text-moss`를 쓰지 않는다 — 라임 계열이라 여기서는
-                    1.8:1로, 대비 기준에 한참 못 미친다. moss는 푸터의 포레스트
-                    밴드나 라이트박스 스크림처럼 어두운 면에서만 쓴다. */}
+                {/* 밝은 캔버스에서는 `text-moss`를 쓰지 않는다 — 대비가 1.8:1이다. */}
                 {note.tags?.map(tag => (
                   <span key={tag} className={`${labelFace(tag)} text-primary`}>{tag}</span>
                 ))}

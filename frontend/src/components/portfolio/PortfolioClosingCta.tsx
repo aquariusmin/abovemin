@@ -12,8 +12,6 @@ export default function PortfolioClosingCta({
   const isKorean = locale === "ko";
 
   return (
-    // Cream card rather than a rule-bounded row: the closing ask gets the one
-    // tonal shift in an otherwise white case-study page.
     <section className="card-cream my-12 grid gap-8 px-6 py-10 md:my-16 md:grid-cols-12 md:items-center md:px-12 md:py-14">
       <div className="space-y-4 md:col-span-7">
         <p className={`text-[11px] font-semibold text-forest ${isKorean ? "tracking-[0.14em]" : "font-mono uppercase tracking-[0.2em]"}`}>

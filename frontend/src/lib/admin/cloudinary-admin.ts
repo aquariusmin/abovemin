@@ -5,15 +5,9 @@ import { log } from '@/lib/logger';
 import { selectAll } from '@/lib/select-all';
 import { MANAGED_PREFIXES, collectReferencedPublicIds } from './orphans';
 
-/**
- * Cloudinary Admin API 호출과 "무엇이 쓰이고 있나" 조회. **서버 전용.**
- *
- * 스캔(GET)과 삭제(DELETE)가 같은 두 함수를 쓴다. 삭제 쪽이 참조 목록을 따로
- * 만들면, 스캔에 새 테이블을 더했을 때 삭제만 그걸 모르는 상태가 생긴다 —
- * 그 차이는 곧 "쓰이는 파일을 지웠다"이다.
- */
+// 서버 전용. 스캔과 삭제가 같은 참조 조회를 써야 쓰이는 파일을 지우지 않는다.
 
-/** 폴더 하나당 한 번에 훑을 자산 수. Admin API는 호출 수에 쿼터가 있다. */
+// Admin API는 호출 수에 쿼터가 있다.
 export const MAX_ASSETS_PER_PREFIX = 500;
 
 export interface CloudinaryResource {
@@ -24,31 +18,17 @@ export interface CloudinaryResource {
 }
 
 function authHeader(config: CloudinaryConfig): string {
-  // Admin API는 Basic 인증(api_key:api_secret)을 쓴다.
   return `Basic ${Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')}`;
 }
 
-/**
- * Cloudinary URL이 들어 있는 **모든** 곳을 모은다.
- *
- * 처음에는 `photos.src`만 봤는데, 그 목록으로는 앨범 커버가 고아로 잡혔다
- * (`phorage/archive/photo_17` — /archive/japan의 커버이자 OG 이미지). 이
- * 목록을 믿고 지웠으면 앨범 표지가 통째로 사라졌을 것이다.
- *
- * 숨긴 사진(`hidden`)도 참조로 친다 — 숨김은 되돌릴 수 있는 상태이고, 되돌렸을
- * 때 파일이 없으면 안 된다. 테이블이 늘어나면 여기도 늘어나야 한다.
- *
- * 모든 조회는 `selectAll`로 끝까지 읽는다. 행 수 상한에 걸려 잘린 목록은 오류
- * 없이 오고, 잘려 나간 사진의 원본은 "참조 없음"으로 보여 삭제 대상이 된다.
- */
+// URL이 있는 모든 곳(숨긴 사진 포함)을 selectAll로 끝까지 읽는다. 빠진 원본은 삭제 대상이 된다.
 export async function loadReferencedPublicIds(
   db: SupabaseClient,
 ): Promise<{ ok: true; ids: Set<string> } | { ok: false; error: unknown }> {
   const [photos, albums, products, settings] = await Promise.all([
     selectAll<{ src: unknown }>((from, to) => db.from('photos').select('src').order('id').range(from, to)),
     selectAll<{ cover: unknown }>((from, to) => db.from('albums').select('cover').order('slug').range(from, to)),
-    // `*`: `images`(20260917020000_shop_ready)는 마이그레이션 전 DB에 없다. 이름으로
-    // 고르면 스캔 자체가 실패한다.
+    // `*`: `images` 컬럼은 마이그레이션 전 DB에 없어 이름으로 고르면 스캔이 실패한다.
     selectAll<{ image_url?: unknown; images?: unknown }>((from, to) =>
       db.from('products').select('*').order('id').range(from, to),
     ),
@@ -61,8 +41,7 @@ export async function loadReferencedPublicIds(
     ...(photos.data ?? []).map(row => row.src),
     ...(albums.data ?? []).map(row => row.cover),
     ...(products.data ?? []).map(row => row.image_url),
-    // 상품 갤러리의 나머지 장. 커버(`image_url`)만 보면 두 번째 장부터가 전부
-    // "쓰이지 않는 원본"으로 잡혀 지워진다.
+    // 커버만 보면 갤러리 두 번째 장부터 고아로 잡혀 지워진다.
     ...(products.data ?? []).flatMap(row =>
       Array.isArray(row.images) ? row.images.map((image: { url?: unknown }) => image?.url) : [],
     ),
@@ -95,12 +74,7 @@ export async function listManagedResources(
   };
 }
 
-/**
- * 지정한 public_id만 지운다. 호출 전에 반드시 `partitionDeletable`을 거친다.
- *
- * `invalidate=true`: CDN 캐시도 비운다. 그러지 않으면 지운 파일이 캐시가 끝날
- * 때까지 URL로 계속 열리고, "지웠는데 아직 보인다"가 된다.
- */
+// 호출 전에 반드시 `partitionDeletable`을 거친다. invalidate=true로 CDN 캐시도 비운다.
 export async function deleteResources(
   config: CloudinaryConfig,
   publicIds: string[],

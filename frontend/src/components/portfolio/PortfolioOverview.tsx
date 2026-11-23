@@ -17,8 +17,6 @@ export default function PortfolioOverview({
   route,
 }: {
   locale: PortfolioLocale;
-  /** Which URL family the cards and links point into — the page itself is the
-   *  same on both. See `portfolioRouting.ts`. */
   route: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";

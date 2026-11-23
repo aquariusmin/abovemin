@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS, availableRegions, buildMapPlaces, clusterDots, dotRadius, inRegion, placeFromRow } from '@/lib/places';
 
-/**
- * 이 파일이 지키는 것: 지도에 나가는 좌표는 소수점 한 자리를 넘지 않고,
- * 필터와 같은 이름 규칙으로 사진 수를 센다.
- */
-
 describe('placeFromRow', () => {
   it('숫자든 문자열이든 소수점 한 자리 좌표로', () => {
     expect(placeFromRow({ name: '서울', lat: 37.5, lng: '127.0' })).toEqual({ name: '서울', lat: 37.5, lng: 127 });

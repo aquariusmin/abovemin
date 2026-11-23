@@ -1,8 +1,3 @@
-// node --test scripts/backup/lib.test.mjs
-//
-// frontend의 vitest와 따로 둔다: 이 스크립트는 의존성 없이 Actions에서
-// `node`만으로 돌아야 하고, 테스트도 같은 조건에서 돌아야 의미가 있다.
-
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {

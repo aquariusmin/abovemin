@@ -4,12 +4,6 @@ import { koreanPortfolioProjects } from '@/data/portfolio.ko';
 import { getPortfolio } from '@/data/portfolioAccess';
 import { archivePortfolioSlugs, featuredPortfolioSlugs } from '@/data/portfolioCuration';
 
-/**
- * 이 파일이 지키는 것: 두 언어가 같은 프로젝트를 같은 순서·같은 번호로 보여 준다.
- * 한쪽 데이터 파일에만 프로젝트를 넣거나 큐레이션 목록에서 슬러그를 빠뜨리면
- * 사례 페이지가 조용히 404가 되므로(`dynamicParams = false`) 여기서 먼저 깨진다.
- */
-
 const locales = ['ko', 'en'] as const;
 const sources = { ko: koreanPortfolioProjects, en: portfolioProjects };
 

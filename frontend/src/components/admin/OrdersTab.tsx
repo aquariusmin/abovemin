@@ -35,18 +35,7 @@ import {
   ORDER_STATUS_CHIP,
 } from './adminStyles';
 
-/**
- * 주문 관리. 운영자가 하는 일의 순서대로 보인다: 입금을 맞춰 보고(입금 대기),
- * 준비해서 보내거나 전하고(준비 중 → 배송 중), 끝난다(완료).
- *
- * 수령 방법마다 흐름이 다르다(`lib/admin/order-flow.ts`).
- *   택배      입금 확인 → 배송 시작(송장) → 배송 완료
- *   대면 전달  입금 확인 → 전달 완료
- *
- * 체크아웃은 이메일을 받지 않는다. 손님에게 알리는 일은 운영자가 문자로 한다 —
- * 카드마다 지금 단계에 맞는 문구를 만들어 두고(복사 / 문자 앱으로 열기), 전화를
- * 바로 걸 수 있게 한다. 이메일이 있는 옛 주문에만 메일 재발송이 남는다.
- */
+/** 체크아웃은 이메일을 받지 않는다 — 손님 안내는 운영자가 문자로 한다. 메일은 이메일 있는 옛 주문만. */
 
 type OrderItem = OrderItemRecord;
 
@@ -54,12 +43,12 @@ interface Order {
   id: number;
   created_at: string;
   name: string;
-  /** 체크아웃이 이메일을 받지 않게 된 뒤의 주문은 null(또는 ''). 메일 기능이 꺼진다. */
+  /** 이메일을 받지 않게 된 뒤의 주문은 null(또는 ''). */
   email: string | null;
   phone: string | null;
   zipcode: string | null;
   address: string;
-  /** `20261123010000_orders_delivery_method` 이후 컬럼. 없으면 택배(메모의 표시로 대면 전달을 아는 경우 제외). */
+  /** `20261123010000_orders_delivery_method` 이후 컬럼. 없으면 택배(메모로 대면 전달을 아는 경우 제외). */
   delivery_method?: string | null;
   note: string | null;
   items: OrderItem[];
@@ -73,7 +62,6 @@ interface Order {
   owner_email_sent_at?: string | null;
 }
 
-/** 자주 쓰는 택배사. 자유 입력이지만 표기가 흩어지지 않게 제안한다. */
 const CARRIERS = ['CJ대한통운', '우체국택배', '한진택배', '롯데택배', '로젠택배', '경동택배'];
 
 type DeliveryFilter = 'all' | DeliveryMethod;
@@ -102,7 +90,6 @@ export default function OrdersTab() {
   const [query, setQuery] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // 개요 탭의 링크로 들어오면(`?status=…`) 그 단계로 맞춘다.
   const [seenStatus, setSeenStatus] = useState(statusParam);
   if (seenStatus !== statusParam) {
     setSeenStatus(statusParam);
@@ -134,7 +121,6 @@ export default function OrdersTab() {
     };
   }, [reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError !== null && !orders, () => setReloadKey(k => k + 1));
 
   if (loadError && !orders) {
@@ -264,9 +250,6 @@ export default function OrdersTab() {
   );
 }
 
-// ── 주문 한 건 ───────────────────────────────────────────────────────────────
-
-/** 단계별로 "무엇을 확인하고 누르는지" 한 줄. */
 function stepHint(order: Order, delivery: DeliveryMethod): string | null {
   switch (order.status) {
     case 'pending':
@@ -293,7 +276,6 @@ function OrderCard({
   bankInfo: string | null;
   expanded: boolean;
   migrationPending: boolean;
-  /** 입금 안내 메일이 나간 기록이 없다(`isBuyerEmailMissing`). 이메일 있는 옛 주문만. */
   emailMissing: boolean;
   onToggle: () => void;
   onUpdated: (order: Order) => void;
@@ -301,7 +283,6 @@ function OrderCard({
   const [carrier, setCarrier] = useState(order.tracking_carrier ?? '');
   const [tracking, setTracking] = useState(order.tracking_number ?? '');
   const [memo, setMemo] = useState(order.admin_memo ?? '');
-  /** `배송 시작`을 누를 때 배송 안내 메일을 같이 보낼지. 이메일 있는 옛 주문만. */
   const [notify, setNotify] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
@@ -349,8 +330,7 @@ function OrderCard({
     if (!next) return;
     const body: Record<string, unknown> = { status: next.status };
     if (next.status === 'shipped') {
-      // 배송 시작과 송장 저장을 한 번에 — 송장을 적고 저장을 잊은 채 누르면
-      // 손님에게 알릴 송장이 비어 있게 된다.
+      // 배송 시작과 송장 저장을 한 번에 — 저장을 잊으면 손님에게 알릴 송장이 비게 된다.
       Object.assign(body, trackingBody());
       body.notify = Boolean(order.email) && notify;
     }
@@ -384,8 +364,7 @@ function OrderCard({
     try {
       await adminFetch('/api/admin/orders/email', 'POST', { id: order.id, kind });
       setMessage({ tone: 'ok', text: `${order.email}로 메일을 보냈습니다.` });
-      // 서버도 같은 때에 시각을 적는다. 컬럼이 아직 없으면(필드 자체가 없음)
-      // 화면도 지어내지 않는다.
+      // 컬럼이 아직 없으면(필드 자체가 없음) 화면도 시각을 지어내지 않는다.
       if (kind === 'confirmation' && order.buyer_email_sent_at !== undefined) {
         onUpdated({ ...order, buyer_email_sent_at: new Date().toISOString() });
       }
@@ -446,7 +425,6 @@ function OrderCard({
 
       {expanded && (
         <div id={panelId} className="space-y-5 border-t border-border px-4 py-5 md:px-5">
-          {/* 손님과 상품 */}
           <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
             <dl className="space-y-2.5 text-ink-body">
               <Row label="연락처">
@@ -487,7 +465,6 @@ function OrderCard({
             </div>
           </div>
 
-          {/* 다음 할 일 */}
           {open && (
             <section aria-label="다음 할 일" className="space-y-3 rounded-md bg-muted/40 p-4">
               {showsTracking && (
@@ -547,7 +524,6 @@ function OrderCard({
                 </button>
               </div>
 
-              {/* 손님에게 보낼 문자. 이메일을 받지 않으므로 운영자가 보낸다. */}
               {sms && (
                 <div className="space-y-2 border-t border-border pt-3">
                   <p className="label-ko text-muted-foreground">손님에게 보낼 문자</p>
@@ -567,7 +543,6 @@ function OrderCard({
             </section>
           )}
 
-          {/* 관리자 메모 */}
           <div className="space-y-2">
             <label htmlFor={`order-${order.id}-memo`} className={LABEL_CLASS}>관리자 메모 (손님에게 보이지 않음)</label>
             <textarea
@@ -590,7 +565,6 @@ function OrderCard({
             </div>
           </div>
 
-          {/* 이메일이 있는 옛 주문만 메일을 다시 보낼 수 있다. */}
           {order.email && (
             <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
               <span className="label-ko mr-1 text-muted-foreground">안내 메일 다시 보내기</span>

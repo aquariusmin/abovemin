@@ -10,22 +10,13 @@ import { cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
 import { displayFace } from '@/lib/typography';
 
-/**
- * 공개할 앨범 = 사진이 한 장이라도 있는 앨범.
- *
- * 관리 화면에서 앨범을 먼저 만들고 사진을 나중에 올리는 순서가 자연스러워서,
- * 빈 앨범은 언제든 생긴다("2027 Calendar"). 그 앨범이 목록에 "0 pieces"와
- * 남의 표지를 달고 나오고 있었다. 필터는 `lib/supabase`가 아니라 보여 주는
- * 쪽에 둔다 — 관리 화면은 빈 앨범도 봐야 한다.
- */
+// 빈 앨범은 보여 주는 쪽에서 거른다 — 관리 화면은 빈 앨범도 봐야 한다.
 async function publicAlbums() {
   const albums = await getAlbumsWithCounts().catch(() => []);
   return albums.filter(a => a.photo_count > 0);
 }
 
-// 사진이 바뀌는 순간은 관리 화면이 알고 있고, 그때 `revalidateArchive()`가
-// 이 경로를 무효화한다. 그래서 방문마다 다시 읽을 이유가 없다 — 여기 숫자는
-// 그 신호를 놓쳤을 때를 위한 안전망이다.
+// revalidateArchive()가 무효화한다. 이 숫자는 그 신호를 놓쳤을 때의 안전망이다.
 export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -33,14 +24,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const result = await getAlbumWithPhotos(slug);
   if (!result || result.photos.length === 0) return { title: 'Collection Not Found' };
   const { album } = result;
-  // 관리 화면에서 쓴 소개가 있으면 그것이 검색 결과의 한 줄이 된다.
   const description =
     album.description?.trim() || `${album.title} — ${result.photos.length} pieces in this collection.`;
   const path = `/archive/${slug}`;
-  // 사진 페이지와 같은 카드: 자르지 않은 1200×630(`cloudinaryOgImage`의 주석).
-  // 커버를 그대로 실으면 4000px 원본이 가거나, 저장된 `f_auto`가 크롤러가 못
-  // 읽는 포맷을 준다. Cloudinary가 아니면 크기를 모르므로 원본을 싣는다.
-  // 커버가 없으면 사이트 카드가 나간다(`shareCard`의 기본값).
+  // 커버를 그대로 실으면 4000px 원본이나 크롤러가 못 읽는 f_auto 포맷이 간다 — 1200×630으로.
   const og = album.cover ? cloudinaryOgImage(album.cover) : null;
   const images = og
     ? [{ url: og, width: OG_WIDTH, height: OG_HEIGHT, alt: album.title }]
@@ -52,25 +39,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: album.title,
     description,
     alternates: { canonical: path },
-    // `openGraph`·`twitter`는 부모 것을 통째로 갈아 끼우므로(얕은 병합) 사이트
-    // 이름·언어·종류·이미지를 다시 적는다(`shareCard`).
+    // openGraph·twitter는 얕은 병합이라 사이트 이름·언어·종류·이미지를 다시 적는다.
     ...shareCard({ title: album.title, description, path, images }),
   };
 }
 
-/**
- * 빌드 시점에 미리 구울 앨범 목록.
- *
- * 조회가 실패하면 빈 배열을 준다. 이게 없으면 배포 순간 Supabase가 잠깐
- * 흔들리기만 해도 **빌드 전체가 죽는다** — 실제로 `Failed to collect page data`로
- * 확인했다. 사이트의 다른 모든 부분은 데이터가 없는 경우를 이미 처리하고
- * 있는데(빈 상태·에러 상태, `sitemap.ts`의 `.catch(() => [])`) 여기만
- * 예외였다.
- *
- * 빈 배열이어도 라우트가 사라지지는 않는다. `dynamicParams`가 기본으로 켜져
- * 있어 첫 요청 때 서버에서 그려지고, 그 뒤로는 평소의 ISR을 탄다. 미리 굽지
- * 못하는 것이 배포에 실패하는 것보다 낫다.
- */
+// 조회 실패는 빈 배열 — 배포 순간 Supabase가 흔들려도 빌드가 죽지 않게(dynamicParams가 받친다).
 export async function generateStaticParams() {
   const albums = await publicAlbums();
   return albums.map(a => ({ slug: a.slug }));
@@ -84,27 +58,20 @@ export default async function CollectionPage({
   const { slug } = await params;
   const [result, albums] = await Promise.all([
     getAlbumWithPhotos(slug),
-    // 앨범 목록은 이전/다음 링크에만 쓰인다. 그것 하나 때문에 페이지가
-    // 통째로 실패할 이유가 없다 (`publicAlbums`가 실패를 빈 배열로 바꾼다).
     publicAlbums(),
   ]);
 
-  // 사진이 없는 앨범은 공개된 컬렉션이 아니다. "아직 사진이 없습니다" 화면을
-  // 200으로 내보내면 검색엔진에게는 빈 페이지 하나가 색인할 문서가 된다.
+  // 사진 없는 앨범은 404 — 빈 페이지가 색인되지 않게.
   if (!result || result.photos.length === 0) notFound();
   const { album, photos } = result;
   const description = album.description?.trim() || null;
-  // 머리말 아래의 한 줄: 언제, 어디서. 설명이 없는 앨범(대부분)도 제목 다음에
-  // 무엇을 보게 될지 말해 준다. 사진에서 세므로 따로 입력할 것이 없다.
   const facts = albumFacts(photos);
   const factLine = [
     facts.years,
     facts.places.length > 0 ? `${facts.places.join(', ')}${facts.more > 0 ? ` 외 ${facts.more}곳` : ''}` : null,
   ].filter((v): v is string => Boolean(v));
 
-  // 빈 앨범을 건너뛴 순서 안에서 앞뒤를 고른다. 목록이 비었거나 이 앨범이
-  // 그 안에 없으면(조회 실패) 링크를 빼는 쪽이 맞다 — `albums[NaN]`은 터진다.
-  // 앨범이 하나뿐이면 앞뒤가 자기 자신이라 역시 뺀다.
+  // 목록에 이 앨범이 없으면(조회 실패) 링크를 뺀다 — albums[NaN]은 터진다.
   const currentIdx = albums.findIndex(a => a.slug === slug);
   const hasNeighbours = currentIdx >= 0 && albums.length > 1;
   const prevAlbum = hasNeighbours ? albums[(currentIdx - 1 + albums.length) % albums.length] : null;
@@ -113,9 +80,6 @@ export default async function CollectionPage({
   return (
     <main className="px-5 sm:px-6 md:px-10 py-14 md:py-24 min-h-screen bg-canvas text-ink-body">
 
-      {/* Header — /archive와 같은 틀(eyebrow-marked → 제목 → rule-accent).
-          예전에는 제목 옆 48px 대시와 그 아래 hairline이 따로 있어서, 폰에서
-          둘이 위아래로 쌓여 선이 두 번 그어진 것처럼 보였다. */}
       <Reveal className="max-w-[1400px] mx-auto mb-12 md:mb-16" y={16}>
         <header className="space-y-6">
           <BackLink href="/archive">아카이브</BackLink>
@@ -128,17 +92,13 @@ export default async function CollectionPage({
               <p className="text-[15px] text-slate">
                 {factLine.map((part, i) => (
                   <span key={part}>
-                    {/* `·`는 앞 낱말에 붙인다(DESIGN.md § Line Breaking). */}
                     {i > 0 && <>&nbsp;·{' '}</>}
                     {i === 0 ? <span className="tabular-nums">{part}</span> : part}
                   </span>
                 ))}
               </p>
             )}
-            {/* 앨범 소개(관리 화면의 "설명"). 없으면 줄 자체가 없다. 평문이다 —
-                관리자가 넣은 줄바꿈만 살리고(`pre-line`), 마크업은 해석하지 않는다.
-                줄 나눔은 body의 `keep-all`을 그대로 받는다. `max-w-[60ch]`: 제목 폭이
-                아니라 읽는 폭으로 자른다. */}
+            {/* 평문이다 — 줄바꿈만 살리고(pre-line) 마크업은 해석하지 않는다. */}
             {description && (
               <p className="max-w-[60ch] pt-1 text-base md:text-lg leading-relaxed text-slate whitespace-pre-line">
                 {description}
@@ -149,11 +109,8 @@ export default async function CollectionPage({
         </header>
       </Reveal>
 
-      {/* Photo grid + lightbox */}
       <PhotoGrid photos={photos} feature />
 
-      {/* 이전 / 다음 컬렉션. 한 앨범을 다 본 사람이 목록으로 되돌아가지 않고
-          다음 이야기로 넘어가게 한다. */}
       {(prevAlbum || nextAlbum) && (
         <Reveal className="max-w-[1400px] mx-auto mt-16 md:mt-24 pt-8 md:pt-10 border-t border-hairline" y={16}>
           <nav aria-label="다른 앨범" className="grid grid-cols-2 gap-4 md:gap-6">

@@ -15,17 +15,8 @@ import {
   pgCode,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 노트 — 목록(초안 포함), 쓰기, 고치기, 지우기.
- *
- * 공개 화면이 바뀌는 것은 **공개된** 글이 바뀔 때뿐이다. 초안만 고쳤으면 아무것도
- * 무효화하지 않는다. 공개된 글이 0편 ↔ 1편 이상으로 바뀌면 푸터 링크가 생기거나
- * 사라지므로 레이아웃까지 다시 굽는다(`revalidateNotes`).
- */
-
 const COLUMNS = 'id, slug, title, date, summary, tags, body, boundary, related_project, published, created_at, updated_at';
 
-/** 지금 공개된 글의 id. 변경 전후를 비교해 무엇을 다시 구울지 정한다. */
 async function publishedIds(db: SupabaseClient): Promise<{ ids: Set<number> } | { error: unknown }> {
   const { data, error } = await db.from('notes').select('id').eq('published', true);
   if (error) return { error };
@@ -40,7 +31,7 @@ function afterChange(before: Set<number>, after: Set<number>, touched: number): 
 }
 
 function slugTaken(error: unknown): NextResponse | null {
-  // 23505: unique_violation — 슬러그는 글 주소라 겹칠 수 없다.
+  // 23505: unique_violation — 슬러그는 겹칠 수 없다.
   return pgCode(error) === '23505' ? jsonError('이미 다른 글이 쓰는 슬러그입니다.', 409) : null;
 }
 

@@ -8,24 +8,14 @@ import { log } from '@/lib/logger';
 import { BUCKET, objectPath, type FileName } from './ingest';
 import type { Core, News, Performance } from './types';
 
-/**
- * Owner-only reads for /lab/markets. Every page calls `requireOwner()` itself —
- * a layout check alone is not enough, because a client-side navigation between
- * sibling pages fetches the new page without re-running the shared layout.
- * A visitor without the admin cookie gets the ordinary 404, so the route does
- * not even confirm that it exists.
- */
+// Every page calls requireOwner() itself: client navigation does not re-run the layout.
 export async function requireOwner(): Promise<void> {
   if (!(await isAdminRequest())) notFound();
 }
 
-/** `readAt` is when the bucket was read — the reference for "how old is this upload" (not render time, which must stay pure). */
 export type Loaded<T> = { data: T | null; error: string | null; readAt: number };
 
-/**
- * Development only: read the bundle from a local folder (`mi_cli.py publish --out DIR`) instead of the
- * production bucket, so the pages can be built and reviewed without uploading anything. Ignored in production.
- */
+// Development only: reads the bundle from a local folder. Ignored in production.
 async function readLocal<T>(dir: string, name: FileName, readAt: number): Promise<Loaded<T>> {
   try {
     return { data: JSON.parse(await readFile(path.join(dir, `${name}.json`), 'utf8')) as T, error: null, readAt };

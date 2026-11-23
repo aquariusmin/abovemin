@@ -19,12 +19,6 @@ import {
   type ProductOption,
 } from '@/lib/product';
 
-/**
- * 이 파일이 지키는 것: "보이는가 / 살 수 있는가"의 판정이 한 가지로만 읽힌다.
- * 목록·상세·sitemap·홈·주문 API가 모두 이 함수들을 부르므로, 여기서 틀리면
- * 초안이 새거나 품절 상품이 주문된다.
- */
-
 const option = (patch: Partial<ProductOption> = {}): ProductOption => ({
   id: 'a3',
   label: 'A3 · 매트지',
@@ -73,9 +67,7 @@ describe('publicState() / isListed() / isAvailable()', () => {
   it('옵션 상품은 살 수 있는 옵션이 하나라도 있어야 판매 중이다', () => {
     const base = { status: 'available', in_stock: true, price: 0 };
     expect(publicState({ ...base, options: [option(), option({ id: 'a2', in_stock: false })] })).toBe('available');
-    // 옵션 재고만 전부 껐다 → 품절로 보인다(상품 상태를 깜빡해도 담기가 살아 있지 않게).
     expect(publicState({ ...base, options: [option({ in_stock: false })] })).toBe('sold_out');
-    // 가격이 정해진 옵션이 하나도 없다 → 보여 줄 것이 없다.
     expect(publicState({ ...base, options: [option({ price: 0 })] })).toBe('draft');
   });
 
@@ -142,7 +134,6 @@ describe('priceRange() / optionsMinPrice()', () => {
   it('살 수 있는 옵션의 범위', () => {
     const options = [option({ price: 58000 }), option({ id: 'a4', price: 22000, in_stock: false }), option({ id: 'a3m', price: 38000 })];
     expect(priceRange({ price: 22000, options })).toEqual({ min: 38000, max: 58000 });
-    // 저장용 최저가는 재고와 무관하게 가격이 정해진 옵션 전체에서.
     expect(optionsMinPrice(options)).toBe(22000);
   });
 
@@ -159,7 +150,6 @@ describe('availabilityProblem() / syncedColumns()', () => {
     expect(availabilityProblem({ status: 'available', price: 1000, options: [] })).toBeNull();
     expect(availabilityProblem({ status: 'available', price: 0, options: [option({ in_stock: false })] })).not.toBeNull();
     expect(availabilityProblem({ status: 'available', price: 0, options: [option()] })).toBeNull();
-    // 초안·품절은 가격이 없어도 저장된다.
     expect(availabilityProblem({ status: 'draft', price: 0, options: [] })).toBeNull();
     expect(availabilityProblem({ status: 'sold_out', price: 0, options: [] })).toBeNull();
   });

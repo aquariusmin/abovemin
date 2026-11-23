@@ -16,11 +16,6 @@ import {
   type NewCartLine,
 } from '@/lib/cart-lines';
 
-/**
- * 이 파일이 지키는 것: 같은 상품의 다른 옵션은 다른 줄이고, 옵션 이전에 저장된
- * 장바구니도 살아남고, 주문 API로는 가격이 나가지 않는다.
- */
-
 const poster = (option: { id: string; label: string; price: number } | null): NewCartLine => ({
   id: 3,
   option_id: option?.id ?? null,
@@ -123,10 +118,6 @@ describe('migrateCartLines()', () => {
   });
 });
 
-/**
- * 추가 상품(달력의 거치대)은 제 수량을 가진 줄이지만 혼자서는 있을 수 없다:
- * 부모 줄 아래에 놓이고, 부모가 사라지면 같이 사라진다.
- */
 describe('추가 상품 줄', () => {
   const calendar: NewCartLine = { id: 9, option_id: null, option_label: null, name: '2027 Calendar', price: 18000, image_url: 'https://x/cal.jpg' };
   const stand: NewCartLine = { id: 9, option_id: null, option_label: null, addon_id: 'stand', addon_label: '거치대', name: '2027 Calendar', price: 3000, image_url: '' };
@@ -138,7 +129,6 @@ describe('추가 상품 줄', () => {
     expect(cartLineKey(9, 'stand')).toBe('9:stand');
     expect(cartLineKey(9, null, 'stand')).not.toBe(cartLineKey(9, 'stand'));
     expect(cartLineKey(9, null, 'stand')).not.toBe(cartLineKey(99, null, 'stand'));
-    // 추가 상품 줄은 옵션과 무관하다 — 옵션 id가 같이 와도 열쇠에 들어가지 않는다.
     expect(cartLineKey(9, 'a3', 'stand')).toBe('9+stand');
   });
 
@@ -167,7 +157,6 @@ describe('추가 상품 줄', () => {
   it('부모 줄 없이는 담기지 않는다', () => {
     expect(addLine([], stand)).toEqual([]);
     expect(addLines([], [{ line: stand, quantity: 3 }])).toEqual([]);
-    // 다른 상품의 줄은 부모가 아니다.
     expect(addLines(addLine([], poster(null)), [{ line: stand }]).map(line => line.key)).toEqual(['3']);
   });
 
@@ -177,7 +166,6 @@ describe('추가 상품 줄', () => {
     expect(hasParentLine(withAddon, 9)).toBe(true);
     expect(hasParentLine(withAddon, 3)).toBe(false);
     expect(hasParentLine(addLine([], poster(A3)), 3)).toBe(true);
-    // 추가 상품 줄만으로는 부모가 아니다(저장소가 손상된 경우를 가정한 모양).
     expect(hasParentLine([{ id: 9, addon_id: 'stand' }], 9)).toBe(false);
   });
 
@@ -190,12 +178,10 @@ describe('추가 상품 줄', () => {
       ['9+stand', 2],
       ['9+env', 1],
     ]);
-    // 옵션 상품: 어느 옵션이 담겨 있든 추가 상품은 옵션 없이 들어간다.
     expect(addLines(addLine([], poster(A2)), [{ line: posterStand }]).map(line => line.key)).toEqual(['3:a2', '3+stand']);
   });
 
   it('늦은 클릭: 부모가 그사이 사라졌으면 추가 상품만 담기는 아무것도 담지 않는다', () => {
-    // 상품 페이지가 "부모가 있다"고 믿고 추가 상품만 보냈지만 장바구니에는 부모가 없다.
     const others = addLine([], poster(A3));
     const after = addLines(others, [{ line: stand, quantity: 2 }, { line: envelope }]);
     expect(after).toEqual(others);
@@ -208,7 +194,6 @@ describe('추가 상품 줄', () => {
     lines = addLine(lines, poster(A3));
     lines = addLine(lines, envelope);
     expect(lines.map(line => line.key)).toEqual(['9', '9+stand', '9+env', '3:a3']);
-    // 같은 상품이 옵션별로 두 줄이면 마지막 줄 아래. 추가 상품은 특정 옵션의 것이 아니다.
     let posters = addLine(addLine([], poster(A3)), calendar);
     posters = addLine(posters, poster(A2));
     posters = addLine(posters, posterStand);
@@ -237,7 +222,6 @@ describe('추가 상품 줄', () => {
     lines = addLine(lines, poster(A3));
     expect(cascadedAddons(lines, '9').map(line => line.key)).toEqual(['9+stand', '9+env']);
     expect(removeLine(lines, '9').map(line => line.key)).toEqual(['3:a3']);
-    // 수량을 0으로 줄여 지워도 같다.
     expect(setLineQuantity(lines, '9', 0).map(line => line.key)).toEqual(['3:a3']);
   });
 

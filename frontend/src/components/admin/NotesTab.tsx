@@ -10,24 +10,13 @@ import { BTN_SM, CHECKBOX_CLASS, CHIP_KO, FILTER_CHIP_CLASS, INPUT_CLASS, LABEL_
 import { DISCARD_CONFIRM, useUnsavedGuard } from './UnsavedGuard';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 노트 — 짧은 글을 쓰고, 고치고, 공개한다.
- *
- * 공개된 글이 한 편도 없으면 `/notes`는 404이고 푸터·RSS·sitemap 어디에도 나오지
- * 않는다. 첫 글을 공개하는 순간 전부 같이 살아난다(`lib/notes.ts` 머리 주석).
- * 새 글은 초안으로 시작한다.
- *
- * 본문은 마크다운이 아니라 **빈 줄로 나눈 문단**이다. 오른쪽 미리보기는 공개
- * 화면과 같은 함수(`splitParagraphs`)로 나눈다 — 여기서 세 문단이면 저기서도
- * 세 문단이다.
- */
+/** 본문은 마크다운이 아니라 빈 줄로 나눈 문단 — 미리보기도 공개 화면과 같은 `splitParagraphs`를 쓴다. */
 
 type View = 'all' | 'published' | 'draft';
 
 interface Draft {
   id: number | null;
   slug: string;
-  /** 새 글에서 슬러그를 손으로 고쳤는가. 고치기 전까지는 제목을 따라간다. */
   slugTouched: boolean;
   title: string;
   date: string;
@@ -89,15 +78,11 @@ export default function NotesTab({ active }: { active: boolean }) {
   const [view, setView] = useState<View>('all');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
-  /** 열린 편집기에 저장하지 않은 변경이 있는가(편집기가 알려 준다). */
   const [editorDirty, setEditorDirty] = useState(false);
   const { confirm, dialog } = useConfirm();
   useUnsavedGuard('note-editor', editorDirty);
 
-  /**
-   * 편집기를 닫거나 다른 글로 바꾼다. 쓰던 내용이 있으면 먼저 묻는다 — 편집기는
-   * 글마다 새로 만들어지므로(`key`), 바꾸는 순간 입력이 사라진다.
-   */
+  /** 편집기는 글마다 새로 만들어지므로(`key`) 바꾸기 전에 쓰던 내용을 묻는다. */
   async function openDraft(next: Draft | null) {
     if (editorDirty && !(await confirm(DISCARD_CONFIRM))) return;
     setDraft(next);
@@ -123,7 +108,6 @@ export default function NotesTab({ active }: { active: boolean }) {
     };
   }, [active, reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError !== null && !notes, () => setReloadKey(k => k + 1));
 
   if (loadError && !notes) return <p role="alert" className="py-8 text-center text-sm text-brick">{loadError}</p>;
@@ -227,8 +211,6 @@ export default function NotesTab({ active }: { active: boolean }) {
   );
 }
 
-// ── 편집기 ────────────────────────────────────────────────────────────────────
-
 function NoteEditor({
   initial,
   onDirtyChange,
@@ -241,8 +223,7 @@ function NoteEditor({
   onSaved: (text: string, note: NoteRow | null) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(initial);
-  // "변경 없음"의 기준. 연 시점의 값이고, 저장에 성공하면 저장한 값이 된다 —
-  // 저장한 뒤에도 편집기는 열려 있다.
+  // "변경 없음"의 기준 — 저장에 성공하면 저장한 값이 된다(편집기는 열린 채로 남는다).
   const [baseline, setBaseline] = useState<Draft>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Message | null>(null);
@@ -453,8 +434,6 @@ function NoteEditor({
           </div>
         </form>
 
-        {/* 미리보기 — 공개 글 페이지(`app/notes/[slug]`)와 같은 구성과 글씨를 한
-            단계 작게. */}
         <div aria-label="미리보기" className="min-w-0 space-y-4 rounded-lg border border-border bg-canvas p-5 md:p-6 lg:sticky lg:top-24 lg:self-start">
           <p className="label-ko text-muted-foreground">미리보기</p>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

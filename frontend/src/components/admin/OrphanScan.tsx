@@ -6,17 +6,7 @@ import { MAX_ORPHAN_DELETE } from '@/lib/admin/limits';
 import { SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { BTN_SM, CHECKBOX_CLASS, PANEL_CLASS } from './adminStyles';
 
-/**
- * Cloudinary에 남아 있지만 사이트 어디에서도 쓰이지 않는 파일 — 찾고, 골라서 지운다.
- *
- * 사진을 내릴 때 원본을 바로 지우지 않는 것은 의도된 설계이고
- * (`api/admin/photos`의 DELETE 주석), 파기는 여기서 따로 한다. 지우는 순간
- * 서버가 참조를 **다시** 확인하므로, 스캔 뒤에 커버로 걸린 파일은 목록에
- * 있더라도 지워지지 않는다(`api/admin/orphans` DELETE).
- *
- * 자동으로 돌지 않는다. Cloudinary Admin API는 호출 쿼터가 있고, 이건 몇
- * 달에 한 번 들여다보는 종류의 화면이다.
- */
+/** 자동으로 돌지 않는다(Cloudinary Admin API 쿼터). 지울 때 서버가 참조를 다시 확인한다. */
 interface Orphan {
   publicId: string;
   url: string;
