@@ -16,7 +16,11 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   // between a light header and a light footer is a hole in the page, not a
   // mode. The console carries the site's own light theme now, so the body it
   // sits on is the same canvas every other route uses.
-  const bgColor = 'bg-canvas';
+  // 바탕색은 body가 아니라 본문 영역(`#main-content`, `layout.tsx`)과 루트(`html`,
+  // `globals.css`)가 칠한다. iOS Safari 26은 화면 아래 툴바 영역과 튕김 영역을
+  // 루트·body 배경에서 가져오는데, body가 크림색이면 짙은 푸터 아래가 늘 흰색으로
+  // 남았다. body를 비워 두면 그 자리는 루트 색 하나로 정해진다.
+  const bgColor = 'bg-transparent';
   const textColor = 'text-ink-body';
 
   // Document language follows the URL.

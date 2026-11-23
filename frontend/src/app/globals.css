@@ -48,7 +48,6 @@
   --cream-deep: #e8dcbb;    /* cream pressed / border-on-cream */
   --brick-soft: #e0a8a6;    /* brick chip borders */
   --brick-light: #d76668;   /* brick lifted for legibility on dark surfaces */
-  --bulb-gold: #e3b04b;     /* seasonal only: warm bulb in the winter lights (components/home/WinterDecor) */
 
   /* ── shadcn semantic roles ─────────────────────────────────────────────── */
   --radius: 1rem;
@@ -836,29 +835,6 @@ body {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 7C0 2 4 0 12 0H188C196 0 200 2 200 7C196 8 192 7 188 9C182 12 176 8 168 9C160 10 156 7 148 8C140 9 136 12 128 9C120 7 112 9 104 8C96 7 90 11 82 9C74 7 66 8 58 9C50 10 44 7 36 8C28 9 22 12 14 9C8 7 4 8 0 7Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
   filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--forest-black) 22%, transparent));
 }
-/* 전구 반짝임과 오너먼트 흔들림(`components/home/WinterDecor.tsx`). 전구마다
-   시작 시각을 엇갈려 줄 전체가 한꺼번에 깜박이지 않는다. "동작 줄이기"면
-   아래 reduced-motion 규칙이 애니메이션을 사실상 0으로 만든다. */
-.winter-bulb {
-  animation: winter-twinkle 2.4s ease-in-out infinite;
-}
-@keyframes winter-twinkle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
-/* 짙은 띠 위에서는 불빛이 번지게. */
-.winter-lights-dark .winter-bulb {
-  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 6px currentColor);
-}
-.winter-bauble {
-  transform-origin: 50% 0;
-  animation: winter-sway 5s ease-in-out infinite;
-}
-@keyframes winter-sway {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
-}
-
 /* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
    쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
 [data-winter]:not([data-snow-live]) .snow-cap-pill::before {
@@ -959,6 +935,31 @@ html {
 }
 html[data-footer-in-view] {
   background-color: var(--forest-black);
+}
+
+/* iOS Safari 26은 theme-color를 무시하고, 화면 아래 3px 안에 붙은 넓은 고정
+   요소의 배경색으로 아래 툴바를 칠한다. 그런 요소가 없으면 루트·body 배경으로
+   물러나는데 그 판단이 기기마다 흔들렸다. 그래서 화면 아래에 4px만 보이는 띠를
+   직접 두고 루트와 같은 색을 준다. `-webkit-touch-callout`은 iOS WebKit만 아는
+   속성이라 다른 브라우저에서는 그리지 않는다. */
+.ios-toolbar-tint {
+  display: none;
+}
+@supports (-webkit-touch-callout: none) {
+  .ios-toolbar-tint {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: -8px;
+    height: 12px;
+    z-index: 45;
+    pointer-events: none;
+    background-color: var(--background);
+  }
+  html[data-footer-in-view] .ios-toolbar-tint {
+    background-color: var(--forest-black);
+  }
 }
 
 /* 이 사이트는 라이트 테마 하나다. 루트에 밝히면 폼 컨트롤·스크롤바 같은 브라우저
