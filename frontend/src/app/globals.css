@@ -358,12 +358,16 @@ body {
 
 /* ── Typographic marks ─────────────────────────────────────────────────── */
 
-/* Uppercase mono technical label (eyebrow / category / system marker) */
+/* Uppercase mono technical label (eyebrow / category / system marker).
+   12px, 0.16em: 11px at 0.24em read as a row of spaced dots on a phone, and the
+   wide tracking was the first thing to fall apart when the label held Hangul.
+   A label whose text may be Korean takes `.label-ko` (`labelFace` in
+   `lib/typography.ts` picks for text that comes from the database). */
 .eyebrow {
   font-family: var(--font-mono-stack);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.4;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -374,10 +378,22 @@ body {
    face rather than mono. Use it wherever a micro-label renders Korean. */
 .label-ko {
   font-family: var(--font-body-stack);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   letter-spacing: 0.02em;
   font-weight: 500;
+}
+
+/* Display voice for a heading that holds Hangul. Fraunces is Latin-only, so
+   under `font-serif` a Korean heading sets its digits and Latin in the serif
+   and its Hangul in Plex Sans KR: two faces meeting mid-line. This sets the
+   whole heading in IBM Plex (Sans + Sans KR, one superfamily) — what the
+   portfolio already does. Weight and size stay with the markup. Chosen per
+   heading by `displayFace()` (`lib/typography.ts`) or written directly where
+   the text is fixed Korean copy. */
+.font-display-ko {
+  font-family: var(--font-body-stack);
+  letter-spacing: -0.02em;
 }
 
 /* Eyebrow with a lime tick in front — used to open a section */
@@ -561,9 +577,9 @@ body {
   background: var(--card);
   color: var(--slate);
   font-family: var(--font-mono-stack);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.2;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
   white-space: nowrap;
@@ -615,9 +631,9 @@ body {
   background: var(--forest-deep);
   color: var(--primary-foreground);
   padding: 0.25rem 0.75rem;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

@@ -10,6 +10,7 @@ import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/
 import { shareCard } from '@/lib/share-card';
 import { isOptionAvailable, parseImages, priceRange, publicState, relatedProducts, SOLD_OUT_LABEL } from '@/lib/product';
 import BackLink from '@/components/BackLink';
+import { displayFace, labelFace } from '@/lib/typography';
 
 export const revalidate = 60;
 
@@ -179,7 +180,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <div className="flex items-center gap-3">
               {product.category && (
                 <>
-                  <p className="eyebrow text-muted-foreground">{product.category}</p>
+                  <p className={`${labelFace(product.category)} text-muted-foreground`}>{product.category}</p>
                   <span aria-hidden className="h-3 w-px bg-hairline" />
                 </>
               )}
@@ -189,7 +190,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 {soldOut ? SOLD_OUT_LABEL : '판매 중'}
               </span>
             </div>
-            <h1 className="font-serif text-5xl sm:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
+            <h1 className={`${displayFace(product.name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink`}>
               {product.name}
             </h1>
             {product.edition && (

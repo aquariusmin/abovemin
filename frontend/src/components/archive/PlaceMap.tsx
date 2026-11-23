@@ -270,7 +270,7 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
                               className="flex w-full items-center justify-between gap-4 rounded-md px-2.5 py-1.5 text-left text-[13px] text-ink-body hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:bg-moss-wash aria-pressed:text-forest"
                             >
                               <span>{place.name}</span>
-                              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{place.count}</span>
+                              <span className="font-mono text-xs tabular-nums text-muted-foreground">{place.count}</span>
                             </button>
                           </li>
                         ))}
@@ -284,7 +284,7 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
         )}
       </div>
 
-      <p className="text-[12px] text-muted-foreground">
+      <p className="text-[13px] text-muted-foreground">
         점이 클수록 사진이 많습니다. 위치는 도시 단위로만 표시합니다. 겹친 점을 누르면 펼쳐지고, 장소를 누르면 그곳 사진만 남습니다.
       </p>
     </div>

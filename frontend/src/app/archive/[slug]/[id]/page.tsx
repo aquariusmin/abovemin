@@ -21,6 +21,7 @@ import CopyLinkButton from '@/components/archive/CopyLinkButton';
 import PhotoKeyNav from '@/components/archive/PhotoKeyNav';
 import { placeholderStyle } from '@/components/photo-placeholder';
 import { buildFallback } from '@/lib/build-phase';
+import { displayFace } from '@/lib/typography';
 
 /**
  * 사진 한 장의 페이지.
@@ -243,7 +244,7 @@ export default async function PhotoPage({ params }: { params: Params }) {
             <div className="grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_auto] @2xl:items-end">
               <div className="min-w-0 space-y-3">
                 <p className="eyebrow eyebrow-marked text-primary">{album.title}</p>
-                <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink">
+                <h1 className={`${displayFace(title)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink`}>
                   {title}
                 </h1>
               </div>

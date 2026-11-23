@@ -153,7 +153,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
         {(count > 1 || current.label) && (
           <figcaption className="flex items-baseline justify-center gap-3 text-[13px] text-muted-foreground" aria-live="polite">
             {count > 1 && (
-              <span className="font-mono text-[11px] tabular-nums tracking-[0.12em]">
+              <span className="font-mono text-xs tabular-nums tracking-[0.08em]">
                 {index + 1} / {count}
               </span>
             )}

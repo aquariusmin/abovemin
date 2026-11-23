@@ -92,7 +92,7 @@ export const LAB_TOOLTIP = {
 
 export const LAB_AXIS = {
   stroke: LAB_INK.muted,
-  fontSize: 10,
+  fontSize: 11,
   tickLine: false,
   axisLine: false,
 } as const;

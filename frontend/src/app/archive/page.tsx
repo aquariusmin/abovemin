@@ -71,7 +71,7 @@ export default async function Archive() {
       <Reveal className="max-w-[1400px] mx-auto mb-14 md:mb-20" y={16}>
         <header className="space-y-6">
           <p className="eyebrow eyebrow-marked text-primary">The Archive</p>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight leading-[1.05] text-ink max-w-[16ch]">
+          <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink max-w-[16ch]">
             다녀온 곳마다,<br className="hidden sm:block" /> 앨범 하나씩.
           </h1>
           <div className="rule-accent max-w-[1400px]" />
@@ -96,7 +96,7 @@ export default async function Archive() {
               <p className="eyebrow eyebrow-marked text-primary">Across the archive</p>
               {/* `scroll-mt`: 사진 페이지의 카메라 링크(`#archive-search`)로 왔을 때
                   제목이 고정 내비 뒤에 숨지 않게. */}
-              <h2 id="archive-search" className="scroll-mt-[96px] md:scroll-mt-[112px] font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+              <h2 id="archive-search" className="scroll-mt-[96px] md:scroll-mt-[112px] font-display-ko text-3xl md:text-4xl font-medium text-ink">
                 전체에서 찾기
               </h2>
               <p className="text-[15px] text-slate">

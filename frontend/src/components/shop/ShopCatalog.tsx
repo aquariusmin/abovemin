@@ -10,6 +10,7 @@ import { formatPriceRange } from '@/lib/price';
 import { SOLD_OUT_LABEL } from '@/lib/product';
 import { placeholderStyle } from '@/components/photo-placeholder';
 import { mayHaveAlpha } from '@/lib/cloudinary';
+import { labelFace } from '@/lib/typography';
 
 /**
  * 목록 카드가 그리는 것만. 상태·가격 범위는 서버(`shop/page.tsx`)가
@@ -127,7 +128,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
       {/* Page header */}
       <header className="max-w-[1400px] mx-auto mb-10 md:mb-16">
         <p className="eyebrow eyebrow-marked text-primary mb-4">Shop Collection</p>
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] text-ink max-w-3xl">
+        <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink max-w-3xl">
           사진으로 만든 작은 것들.
         </h1>
 
@@ -228,7 +229,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                     작업의 일부로 보이는 아카이브여서다(초안은 아예 오지 않는다).
                     Hangul은 대문자·자간 규칙을 받지 않는다. */}
                 {!available ? (
-                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-[11px]">
+                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-xs">
                     {SOLD_OUT_LABEL}
                   </span>
                 ) : item.tag ? (
@@ -268,18 +269,18 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               {/* Info */}
               <div className="mt-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="eyebrow text-muted-foreground mb-1.5">{item.category}</p>
+                  <p className={`${labelFace(item.category)} text-muted-foreground mb-1.5`}>{item.category}</p>
                   <h2 className="text-[15px] font-medium text-ink-body leading-snug group-hover:text-primary transition-colors">
                     <Link href={`/shop/${item.id}`} className="card-link outline-none">
                       {item.name}
                     </Link>
                   </h2>
                   {item.edition && (
-                    <p className="mt-1 text-[12px] text-muted-foreground">{item.edition}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">{item.edition}</p>
                   )}
                   {/* 품절이면 가격은 참고 정보다 — 초록 굵은 글씨로 "살 수 있다"는
                       인상을 주지 않는다. 600이 최대 무게다(DESIGN.md). */}
-                  <p className={`mt-1.5 text-sm tabular-nums ${available && item.priceMin > 0 ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
+                  <p className={`mt-1.5 text-[15px] tabular-nums ${available && item.priceMin > 0 ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}>
                     {formatPriceRange({ min: item.priceMin, max: item.priceMax })}
                   </p>
                 </div>

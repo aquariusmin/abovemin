@@ -65,7 +65,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
             <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-none text-cream">
               phorage
             </h2>
-            <p className="text-[13px] leading-relaxed text-cream/65 max-w-xs break-keep">
+            <p className="text-sm leading-relaxed text-cream/70 max-w-xs break-keep">
               사진을 찍고, 그 사진으로 작은 것들을 만듭니다.
             </p>
           </div>
@@ -75,7 +75,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           {/* Index */}
           <nav className="col-span-2 md:col-span-3 space-y-3" aria-label="Footer">
             <h3 className="eyebrow text-cream/50">Index</h3>
-            <ul className="space-y-2 text-[13px]">
+            <ul className="space-y-2 text-sm">
               {navItems(hasNotes).map(item => (
                 <li key={item.href}>
                   <Link
@@ -92,7 +92,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           {/* Connect */}
           <div className="col-span-3 md:col-span-4 space-y-3">
             <h3 className="eyebrow text-cream/50">Connect</h3>
-            <ul className="space-y-2 text-[13px]">
+            <ul className="space-y-2 text-sm">
               {CONNECT.map(item => (
                 <li key={item.href}>
                   <a
