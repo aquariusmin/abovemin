@@ -41,6 +41,28 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // iOS Safari는 주소창 뒤와 화면 끝에서 튕겨 보이는 자리를 문서 맨 바깥(루트)의
+  // 배경색으로 칠한다. 페이지 바탕은 `<body>`의 크림색이라, 짙은 숲색 푸터까지
+  // 내려가도 그 자리는 흰색에 가깝게 남았다. 푸터가 화면에 보이는 동안만 루트를
+  // 푸터 색으로 바꾼다(`globals.css`의 `html[data-footer-in-view]`) — 맨 위에서
+  // 끌어내릴 때는 계속 크림색이다. 푸터가 없는 경로(관리 화면 등)는 표시가 없다.
+  useEffect(() => {
+    const root = document.documentElement;
+    const footer = document.querySelector('footer[data-site-footer]');
+    if (!footer) {
+      root.removeAttribute('data-footer-in-view');
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      root.toggleAttribute('data-footer-in-view', entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => {
+      observer.disconnect();
+      root.removeAttribute('data-footer-in-view');
+    };
+  }, [pathname]);
+
   useEffect(() => {
     function blockContextMenu(e: MouseEvent) {
       const target = e.target as HTMLElement;
