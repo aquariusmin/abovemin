@@ -1,38 +1,12 @@
 import 'server-only';
 import { log } from './logger';
 
-/**
- * 선택적 공유 저장소. 설정돼 있으면 쓰고, 없으면 없는 대로 동작한다.
- *
- * 세션 무효화는 in-memory라, 서버리스에서는 로그아웃한 세션이 다른
- * 인스턴스에서 여전히 살아 있다. 이 모듈이 있으면 그걸 인스턴스 너머로 적는다.
- *
- * 레이트 리미터(`rateLimitShared`)도 여기를 먼저 보지만, 없으면 Supabase
- * Postgres(`public.rate_limit_hit`)로 센다 — 프로덕션에는 Upstash가 없으므로
- * 공유 레이트 리밋은 실제로 Postgres 경로다. `lib/rate-limit.ts` 참고.
- *
- * SDK를 넣지 않고 REST를 직접 부르는 이유: Upstash REST는 토큰 하나를 붙인
- * HTTPS 요청이고, 이 저장소는 레이트 리미터도 로거도 직접 쓴 곳이다.
- * 의존성 하나보다 30줄이 낫다.
- *
- * ── 켜는 법 ────────────────────────────────────────────────────────────────
- * Vercel Marketplace에서 Upstash Redis를 붙이면 아래 두 변수가 들어온다.
- *   UPSTASH_REDIS_REST_URL
- *   UPSTASH_REDIS_REST_TOKEN
- * 없으면 이 모듈의 모든 함수가 `null`을 돌려주고, 호출부는 다음 경로(레이트
- * 리밋은 Postgres, 세션 무효화는 in-memory)를 탄다. 즉 **설정하지 않아도 아무것도 깨지지 않는다.**
- */
+// 선택적 Upstash REST 저장소. 미설정·실패 시 모든 함수가 `null` — 호출부가 다음 경로(Postgres/in-memory)를 탄다.
 const URL_ = process.env.UPSTASH_REDIS_REST_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 export const kvEnabled = Boolean(URL_ && TOKEN);
 
-/**
- * 명령 하나를 보낸다. 실패는 `null`로 삼킨다.
- *
- * 저장소가 죽었다고 로그인과 주문까지 죽어서는 안 된다. 그 경우 호출부는
- * in-memory로 되돌아가는데, 공유되지 않는 제한은 없는 제한보다 낫다.
- */
 async function command<T>(args: (string | number)[]): Promise<T | null> {
   if (!URL_ || !TOKEN) return null;
   try {
@@ -60,12 +34,7 @@ async function command<T>(args: (string | number)[]): Promise<T | null> {
   }
 }
 
-/**
- * 카운터를 1 올리고 현재 값을 돌려준다. 처음 만들어질 때만 만료를 건다.
- *
- * INCR과 EXPIRE를 파이프라인 하나로 보내므로 왕복이 한 번이다. 매번 EXPIRE를
- * 다시 걸면 창이 계속 밀려 영구 차단이 되므로, `NX`로 없을 때만 건다.
- */
+// EXPIRE는 `NX`로 처음에만 건다 — 매번 걸면 창이 계속 밀려 영구 차단이 된다.
 export async function incrementWithTtl(
   key: string,
   ttlSeconds: number,
@@ -90,4 +59,3 @@ export async function incrementWithTtl(
     return null;
   }
 }
-

@@ -14,22 +14,9 @@ import {
   pgCode,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 앨범 관리 — 목록, 만들기, 고치기, 지우기.
- *
- * 모든 변경 뒤에 `revalidateArchive()`를 부른다. 앨범 제목·커버·순서·공개 여부는
- * 전부 /archive에 그대로 드러나는 값이다.
- */
-
 const FULL_COLUMNS = 'id, title, slug, cover, sort_order, published, description, created_at';
 const LEGACY_COLUMNS = 'id, title, slug, cover, sort_order';
 
-// ── 목록 ──────────────────────────────────────────────────────────────────────
-
-/**
- * 사진 수(공개/숨김)를 붙인 앨범 목록. 업로드 화면의 앨범 선택지도 이걸 쓴다.
- * 마이그레이션 전에는 새 컬럼 없이 읽고 `migrationPending`을 켠다.
- */
 export async function GET() {
   const denied = await guardRead();
   if (denied) return denied;
@@ -70,8 +57,6 @@ export async function GET() {
   });
 }
 
-// ── 만들기 ────────────────────────────────────────────────────────────────────
-
 export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -80,7 +65,6 @@ export async function POST(request: Request) {
   const db = adminDb('admin_albums');
   if (!db.ok) return db.response;
 
-  // 새 앨범은 목록 끝에 붙인다.
   const { data: last, error: lastError } = await db.value
     .from('albums')
     .select('sort_order')
@@ -94,14 +78,12 @@ export async function POST(request: Request) {
     slug: body.value.slug,
     sort_order: (last?.sort_order ?? 0) + 1,
   };
-  // 설명은 새 컬럼이다. 비어 있으면 아예 보내지 않아, 마이그레이션 전에도
-  // 앨범 만들기 자체는 된다.
+  // description은 새 컬럼이라 비어 있으면 보내지 않는다 — 마이그레이션 전에도 만들기가 된다.
   if (body.value.description) row.description = body.value.description;
 
   const { data, error } = await db.value.from('albums').insert(row).select('*').single();
   if (error) {
-    // 슬러그는 unique다. 먼저 조회하고 넣으면 그 사이에 겹칠 수 있으므로,
-    // 넣어 보고 제약 위반을 사람 말로 바꾼다.
+    // 조회 후 삽입은 경합이 생기므로, 넣어 보고 unique 위반을 사람 말로 바꾼다.
     if (pgCode(error) === '23505') return jsonError('이미 쓰고 있는 슬러그입니다.', 409);
     return dbErrorResponse('admin_albums_insert', error);
   }
@@ -109,8 +91,6 @@ export async function POST(request: Request) {
   revalidateArchive();
   return NextResponse.json({ ok: true, album: data });
 }
-
-// ── 고치기 ────────────────────────────────────────────────────────────────────
 
 export async function PATCH(request: Request) {
   const denied = await guardMutation(request);
@@ -137,8 +117,7 @@ export async function PATCH(request: Request) {
   if (published !== undefined) updates.published = published;
 
   if (cover_photo_id !== undefined) {
-    // 커버는 **그 앨범의** 사진이어야 한다. id만 받고 src는 서버가 찾는다 —
-    // 화면이 보낸 URL을 저장하면 외부 주소나 남의 앨범 사진이 커버가 된다.
+    // 커버는 id만 받고 src는 서버가 찾는다 — 외부 URL이나 남의 앨범 사진이 커버가 되지 않게.
     const { data: photo, error: photoError } = await db.value
       .from('photos')
       .select('src')
@@ -163,8 +142,7 @@ export async function PATCH(request: Request) {
   if (error) {
     const code = pgCode(error);
     if (code === '23505') return jsonError('이미 쓰고 있는 슬러그입니다.', 409);
-    // 마이그레이션 전 FK에는 `on update cascade`가 없어, 사진이 있는 앨범의
-    // 슬러그를 바꾸면 23503으로 막힌다.
+    // 마이그레이션 전 FK에는 on update cascade가 없어 슬러그 변경이 23503으로 막힌다.
     if (code === '23503') {
       return jsonError(
         '사진이 있는 앨범의 슬러그를 바꾸려면 마이그레이션(FK on update cascade)이 먼저 필요합니다.',
@@ -181,12 +159,6 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ ok: true, album: data });
 }
 
-// ── 지우기 ────────────────────────────────────────────────────────────────────
-
-/**
- * 사진이 **0장인** 앨범만 지운다. 화면도 막지만 서버가 다시 센다 — FK가
- * restrict라 DB도 막지만, 그 오류를 사람이 읽을 말로 먼저 돌려준다.
- */
 export async function DELETE(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;

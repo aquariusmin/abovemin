@@ -1,11 +1,4 @@
-/**
- * The phorage brand palette as literal values.
- *
- * `globals.css` is the source of truth for anything the browser paints via CSS.
- * This module exists for the places that cannot read a CSS custom property:
- * Recharts/SVG `fill` and `stroke` props, and the Satori-rendered OG image.
- * Keep these in sync with the `:root` palette block in `src/app/globals.css`.
- */
+// Keep in sync with the `:root` palette in `src/app/globals.css` (for SVG props and OG images).
 export const palette = {
   forest: '#386641',
   fern: '#6a994e',
@@ -25,7 +18,6 @@ export const palette = {
   background: '#fcfaf4',
 } as const;
 
-/** Categorical ramp for multi-series charts — mirrors `--chart-1` … `--chart-5`. */
 export const chartSeries = [
   palette.forest,
   palette.fern,
@@ -34,11 +26,6 @@ export const chartSeries = [
   '#8b7a4f',
 ] as const;
 
-/**
- * Directional colours for equity/PnL curves on the Lab's dark shell. Lime reads
- * as growth against forest-black; the clay red is lightened so it clears
- * contrast on the same surface.
- */
 export const trend = {
   up: palette.moss,
   down: '#d76668',

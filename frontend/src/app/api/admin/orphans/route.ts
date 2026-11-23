@@ -19,17 +19,7 @@ import {
   parseBody,
 } from '@/lib/admin/route-helpers';
 
-/**
- * Cloudinary에는 남아 있지만 사이트 어디에서도 쓰이지 않는 파일.
- *
- * 사진을 내려도 원본을 바로 지우지 않는 것은 의도된 설계다 — 사이트에서 내리는
- * 것과 원본을 파기하는 것은 되돌릴 수 있는 정도가 다르다. 그래서 파기는 이
- * 화면에서 **따로, 명시적으로** 한다: 스캔(GET)으로 목록을 보고, 고른 것만
- * 지운다(DELETE).
- *
- * 범위는 관리 화면이 올리는 폴더(`phorage/archive/`, `phorage/shop/`)뿐이다.
- * 그 밖의 자산은 코드가 직접 가리킬 수 있어 DB만 보고 판정할 수 없다.
- */
+// 원본 파기는 이 화면에서만 명시적으로 한다. 범위는 관리 화면이 올리는 폴더뿐이다.
 
 export async function GET() {
   const denied = await guardRead();
@@ -62,11 +52,8 @@ export async function GET() {
 
   return NextResponse.json({
     scanned: listing.resources.length,
-    // 폴더당 조회 상한을 넘었는지. 넘었다면 이 목록은 완전하지 않다.
     truncated: listing.truncated,
     limitPerFolder: MAX_ASSETS_PER_PREFIX,
-    // 훑은 자산 중 실제로 쓰이는 수. DB가 참조하는 총수(`referenced`)와는
-    // 다르다 — 참조 중 일부는 이 폴더들 밖의 자산을 가리킨다.
     matched: listing.resources.length - orphans.length,
     referenced: referenced.ids.size,
     orphans,
@@ -74,14 +61,7 @@ export async function GET() {
   });
 }
 
-/**
- * 고른 미사용 파일을 Cloudinary에서 **영구히** 지운다.
- *
- * 화면이 보낸 목록을 믿지 않는다. 스캔한 뒤 그 파일이 커버로 걸렸을 수도 있고,
- * 본문은 조작될 수 있다. 지우기 직전에 DB의 참조를 **다시** 읽고, 요청한
- * public_id 하나하나를 다시 판정해 통과한 것만 지운다. 거절한 것은 이유와 함께
- * 돌려준다.
- */
+// 화면이 보낸 목록을 믿지 않는다 — 지우기 직전 DB 참조를 다시 읽어 하나씩 재판정한다.
 export async function DELETE(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;

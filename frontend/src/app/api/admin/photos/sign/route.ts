@@ -10,12 +10,6 @@ import {
   parseBody,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 브라우저가 Cloudinary에 직접 업로드하기 위한 서명을 발급한다.
- *
- * 한 번 받은 서명은 같은 앨범에 올리는 여러 장에 재사용된다 — 서명이 파일이
- * 아니라 파라미터에만 걸리기 때문이다. 자세한 배경은 `lib/cloudinary-upload.ts`.
- */
 export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -37,8 +31,7 @@ export async function POST(request: Request) {
   if (!cloudinary.ok) return cloudinary.response;
   const config = cloudinary.value;
 
-  // `image_metadata`를 켜야 응답에 EXIF가 실린다. 촬영 연도를 자동으로 채우는
-  // 근거가 이것뿐이라 서명 대상 파라미터에 포함한다.
+  // image_metadata를 켜야 응답에 EXIF가 실린다(촬영 연도 자동 채우기의 근거).
   const params = {
     folder: uploadFolder(albumSlug),
     image_metadata: 'true',

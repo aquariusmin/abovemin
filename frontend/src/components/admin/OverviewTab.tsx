@@ -10,13 +10,7 @@ import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, typ
 import { BTN_SM, CHIP_KO, EYEBROW_CLASS, ORDER_STATUS_CHIP, ORDER_STATUS_LABEL, PANEL_CLASS } from './adminStyles';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 개요. 세 가지를 한 화면에: 지금 규모(숫자), 최근에 무엇이 들어왔나, 그리고
- * **공개 화면에서 티가 나는 빈칸** — 각 항목에서 고칠 자리로 바로 간다.
- *
- * 탭이 다시 보일 때마다 새로 읽는다. 다른 탭에서 제목을 고치고 돌아왔는데
- * 점검 목록이 그대로면, 고친 게 반영이 안 된 것처럼 보인다.
- */
+/** 탭이 다시 보일 때마다 새로 읽는다 — 다른 탭에서 고친 것이 점검 목록에 반영돼야 한다. */
 
 interface OverviewData {
   counts: {
@@ -42,7 +36,6 @@ interface OverviewData {
   privacyMigrationPending?: boolean;
 }
 
-/** 사진 단위 점검에서 처음에 펼쳐 보이는 장수. 나머지는 "더 보기". */
 const PHOTO_ISSUE_PREVIEW = 5;
 
 /** "위치 정보 다시 확인"이 한 요청에 보내는 장수 — Admin API를 장당 한 번 쓴다(`MetadataRecheck`). */
@@ -59,12 +52,9 @@ export default function OverviewTab({ active }: { active: boolean }) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 다시 점검 버튼은 이 값을 올린다. 불러오기는 effect 안에만 둔다 — 탭이
-  // 보일 때와 버튼을 눌렀을 때가 같은 경로를 타고, 늦게 온 응답이 새 응답을
-  // 덮지 않도록 취소 플래그를 건다.
+  // 불러오기는 effect 안에만 둔다 — 늦게 온 응답이 새 응답을 덮지 않게 취소 플래그를 건다.
   const [reloadKey, setReloadKey] = useState(0);
 
-  /** 점검 항목에서 바로 고치는 작업(연도 맞추기, 다시 확인). 한 번에 하나. */
   const [busy, setBusy] = useState<string | null>(null);
   const [fixMessage, setFixMessage] = useState<Message | null>(null);
 
@@ -128,7 +118,6 @@ export default function OverviewTab({ active }: { active: boolean }) {
     };
   }, [active, reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(error !== null && !data, () => setReloadKey(k => k + 1));
 
   if (!data) {
@@ -148,7 +137,6 @@ export default function OverviewTab({ active }: { active: boolean }) {
         <MigrationNotice feature="위치 정보가 남은 원본 점검" file={UPLOAD_PRIVACY_MIGRATION} />
       )}
 
-      {/* ── 숫자 ── */}
       <section className="space-y-4" aria-labelledby="overview-counts">
         <h2 id="overview-counts" className={EYEBROW_CLASS}>한눈에</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -172,7 +160,6 @@ export default function OverviewTab({ active }: { active: boolean }) {
         </div>
       </section>
 
-      {/* ── 데이터 점검 ── */}
       <section className={`${PANEL_CLASS} p-5 md:p-6 space-y-5`}>
         <SectionHeader
           eyebrow="데이터 점검"
@@ -301,7 +288,6 @@ export default function OverviewTab({ active }: { active: boolean }) {
         )}
       </section>
 
-      {/* ── 최근 사진 ── */}
       <section className="space-y-4" aria-labelledby="overview-recent">
         <div className="flex items-center justify-between gap-3">
           <h2 id="overview-recent" className={EYEBROW_CLASS}>최근 추가된 사진</h2>
@@ -354,11 +340,6 @@ function Stat({ label, value, note, onClick }: { label: string; value: number; n
   );
 }
 
-/**
- * 사진 한 장 단위로 나오는 점검 — 요약 한 줄과 사진 목록. 목록은 처음 몇 장만
- * 펼친다. 개요는 "무엇이 몇 개"를 보는 곳이고, 전부 훑는 일은 아카이브 탭의
- * 같은 이름 필터가 한다(각 항목의 "보기").
- */
 function PhotoIssueGroup<T extends PhotoIssue>({
   kind,
   summary,

@@ -3,31 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { addSnow, createPile, heightAt, isEmpty, seedPile, shakeOff, type SnowPile } from '@/lib/snow-pile';
 
-/**
- * 홈 화면의 눈. 겨울 장식 기간에만 그려진다(`lib/season.ts`).
- *
- * 내리는 눈은 화면에 고정된 캔버스에, 쌓인 눈은 **상자마다 그 안에 둔 작은
- * 캔버스**에 그린다. 눈송이가 `.snow-cap` 상자(사진 타일, 짙은 띠의 버튼)의 윗면에
- * 닿으면 사라지지 않고 그 자리에 쌓인다 — 계산은 `lib/snow-pile.ts`.
- *
- * 쌓인 눈을 고정 캔버스에 그리던 때는 스크롤할 때마다 상자 위치를 읽어 다시
- * 그렸는데, 브라우저가 스크롤을 먼저 그리고 캔버스는 한 박자 늦게 따라와(특히
- * iOS의 관성 스크롤) 눈이 사진 위에서 미끄러져 보였다. 상자 안의 캔버스는 상자와
- * 함께 스크롤되므로 늦을 것이 없다. 다시 그리는 것도 눈이 쌓이거나 털릴 때뿐이다.
- *
- * 털어 내기:
- *  - 마우스를 사진 위에 올리면 그 상자의 눈이 털려 떨어진다. 사진을 볼 때 눈이
- *    가리지 않게 하는 역할도 한다.
- *  - 폰에서는 빠르게 스크롤하면 화면에 보이는 상자들의 눈이 털린다.
- *
- * 사진이 주인공이라 조용하게: 눈송이는 작고(반지름 1~2.6px) 드물며(최대 70개),
- * 쌓인 눈은 10px(알약 버튼 7px)을 넘지 않는다. 캔버스는 클릭을 막지 않고
- * 내비게이션(z-50) 아래에 있다. 크림 바탕에서도 보이게 눈에 옅은 숲색 테두리.
- *
- * "동작 줄이기"면 그리지 않는다 — 그때는 CSS가 상자 위에 고정된 눈 그림을
- * 얹는다(`globals.css`의 `.snow-cap`). 캔버스가 돌기 시작하면 `<main>`에
- * `data-snow-live`를 붙여 그 그림을 끈다. 탭이 가려지면 멈춘다.
- */
+/** 겨울 장식 기간에만 그린다. 동작 줄이기면 그리지 않고 CSS `.snow-cap`이 대신한다(`data-snow-live`가 끈다). */
 
 interface Flake {
   x: number;
@@ -45,7 +21,7 @@ interface Target {
   el: Element;
   inset: number;
   pile: SnowPile;
-  /** 상자 안에 넣은, 이 더미만 그리는 캔버스. */
+  /** 상자 안에 둔 캔버스 — 고정 캔버스에 그리면 iOS 관성 스크롤에서 눈이 미끄러져 보였다. */
   canvas: HTMLCanvasElement;
   dirty: boolean;
 }
@@ -145,7 +121,6 @@ export default function Snowfall() {
         seedPile(pile, isPill(el) ? 2.5 : 3.5);
         return { el, inset, pile, canvas: pileCanvas(el, inset, pile), dirty: true };
       });
-      // 폭이 바뀌어 새로 만든 상자의 옛 캔버스는 치운다.
       for (const stale of previous.values()) stale.canvas.remove();
       targets = next;
     }
@@ -153,8 +128,7 @@ export default function Snowfall() {
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = window.innerWidth;
-      // 아래 가장자리에서 4px 띄운다 — iOS Safari 26이 화면 아래에 붙은 고정 요소를
-      // 툴바 색으로 읽으므로, 투명한 이 캔버스가 그 대상이 되지 않게.
+      // 아래 가장자리에서 4px 띄운다 — iOS Safari 26이 화면 아래 고정 요소를 툴바 색으로 읽는다.
       height = Math.max(0, window.innerHeight - 4);
       canvas!.width = Math.round(width * dpr);
       canvas!.height = Math.round(height * dpr);
@@ -187,7 +161,6 @@ export default function Snowfall() {
       }
     }
 
-    /** 눈송이가 이번 프레임에 어느 상자의 눈 위에 닿았으면 쌓고 true. */
     function land(flake: Flake, rects: DOMRect[]): boolean {
       for (let t = 0; t < targets.length; t++) {
         const rect = rects[t];
@@ -204,17 +177,15 @@ export default function Snowfall() {
       return false;
     }
 
-    /** 상자 안의 캔버스에, 상자 기준 좌표로 더미를 다시 그린다. */
     function drawPile(target: Target) {
       const { pile, canvas: c } = target;
       target.dirty = false;
       const pctx = c.getContext('2d');
       if (!pctx) return;
-      const top = pile.max + HEADROOM; // 상자 윗변의 y
+      const top = pile.max + HEADROOM;
       pctx.clearRect(0, 0, pile.width, top + OVERLAP);
       if (isEmpty(pile)) return;
       const n = pile.heights.length;
-      // 칸 가운데를 잇되 이웃 칸과의 중점으로 이어 부드럽게.
       const points: Array<[number, number]> = [];
       for (let i = 0; i < n; i++) points.push([(i + 0.5) * pile.bucket, top - pile.heights[i]]);
       const contour = () => {
@@ -235,7 +206,6 @@ export default function Snowfall() {
       pctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
       pctx.fill();
 
-      // 윗면 윤곽만 옅게 — 크림 바탕에서도 눈 더미의 모양이 보이게.
       pctx.beginPath();
       pctx.moveTo(points[0][0], points[0][1]);
       contour();
@@ -274,8 +244,6 @@ export default function Snowfall() {
         drawFlake(flake);
       }
 
-      // 털려 나온 눈: 더 빨리, 옆으로 조금 튀며 떨어지고 화면을 벗어나면 끝.
-      // 아래쪽 상자에 다시 닿으면 거기 쌓인다.
       loose = loose.filter(flake => {
         flake.prevY = flake.y;
         flake.y += flake.speed;
@@ -291,8 +259,7 @@ export default function Snowfall() {
       frame = requestAnimationFrame(draw);
     }
 
-    // 사진 위에 마우스를 올리면 그 상자의 눈을 턴다. 손가락 터치는 탭이 곧 링크
-    // 이동이라 여기서 다루지 않는다(폰은 빠른 스크롤로 턴다).
+    // 손가락 터치는 탭이 곧 링크 이동이라 다루지 않는다(폰은 빠른 스크롤로 턴다).
     let hovered: Element | null = null;
     function onPointerOver(event: PointerEvent) {
       if (event.pointerType !== 'mouse') return;

@@ -12,11 +12,7 @@ import { displayFace } from '@/lib/typography';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// Shared control affordance — high-contrast, ≥44px tap target, focus-safe.
-// (`z-20` stays: it orders the controls above the caption scrim *inside* the
-// dialog. The dialog itself needs no z-index — it is in the top layer.)
-// The photo now runs edge to edge behind these, so each control carries its
-// own dark disc: over a blown-out sky a bare white glyph disappears entirely.
+// Each control carries its own dark disc: a bare white glyph vanishes over a bright sky.
 const CONTROL =
   'flex h-11 w-11 items-center justify-center rounded-full text-white/80 ' +
   'bg-forest-black/45 backdrop-blur-sm hover:text-white hover:bg-forest-black/70 ' +
@@ -29,7 +25,6 @@ interface Photo {
   location: string;
   year: number;
   album_slug?: string;
-  /** 촬영 정보 채우기 이후에만 있다(`lib/supabase`의 `Photo`). */
   width?: number | null;
   height?: number | null;
   taken_at?: string | null;
@@ -48,29 +43,11 @@ interface LightboxProps {
   onNext: () => void;
 }
 
-/** 라이트박스가 한 장에 대해 요청하는 주소. 이웃 사진을 미리 받을 때도 이것을 쓴다. */
 function lightboxSrc(photo: Photo): string {
   return cloudinary(photo.src, { watermark: true, width: 2400 });
 }
 
-/**
- * 라이트박스 프레임의 폭을 `sizes`로 옮긴 것.
- *
- * 프레임은 `min(100vw, 100dvh × 비율)`이다. `100vw`라고만 적으면 1440×900
- * 화면의 세로 사진(프레임 600px)이 1440px짜리 후보를, 레티나에서는 2400px
- * 상한까지 받는다. 화면이 사진보다 넓적하면 높이가 폭을 정하므로
- * (`min-aspect-ratio`) 그때만 `비율 × 100vh`를 말한다.
- *
- * - `dvh`가 아니라 `vh`: 폰에서 `vh`(주소창이 접힌 높이)는 `dvh`보다 크거나
- *   같다. 모자라게 고르는 쪽이 아니라 넉넉한 쪽으로 틀린다. 올림도 같은 이유.
- * - **저장된** 크기에서만 계산한다. 이 사진이 방금 로드되며 알게 된 비율로
- *   `sizes`를 좁히면 이미 받은 사진을 더 작은 후보로 한 번 더 받게 되고,
- *   미리 받아 둔 이웃의 주소와도 어긋난다. 저장값이 없으면 예전대로 `100vw`.
- * - 예외 하나: 읽은 비율이 저장값보다 **넓으면** 그쪽을 쓴다. 저장값이 회전 전
- *   크기처럼 어긋난 사진에서 프레임보다 좁은 후보를 고르지 않게.
- * - 프레임 크기는 여전히 `style`의 폭이 정한다 — `sizes`는 어느 후보를 받을지만
- *   정한다(원본이 1500px 안팎이라 사진에서 프레임을 재지 않는다는 그 규칙).
- */
+/** 프레임 폭 `min(100vw, 100vh × 비율)`에서 나온 `sizes`. 저장된 크기로만 계산해 미리 받은 이웃과 맞춘다. */
 function lightboxSizes(photo: Photo, learnedRatio?: number): string {
   if (!photo.width || !photo.height) return '100vw';
   const stored = photo.width / photo.height;
@@ -87,16 +64,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   const dialogRef = useRef<HTMLDialogElement>(null);
   const reduce = useReducedMotion();
 
-  // Aspect ratio per photo id, learned on load — see the sizing note on the
-  // <Image> below for why the frame cannot be measured from the picture.
-  // Keyed rather than held as one value because a single <img> element is
-  // reused across the whole album: on Next/Prev the old ratio would otherwise
-  // still be sizing the frame while the new photo decoded, showing one visible
-  // frame at the wrong shape. Keeping the map also makes stepping back to a
-  // photo already seen size correctly on the first paint.
-  // ── 링크 복사 ────────────────────────────────────────────────────────────
-  // `?p=`가 생긴 이유가 "이 사진 한 장을 보여 주기"인데, 폰에서는 주소창을
-  // 여는 것부터가 라이트박스를 가리는 일이었다. 버튼 하나로 링크를 넘긴다.
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -104,10 +71,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   }, []);
 
   const copyLink = useCallback(async () => {
-    // 앨범을 아는 사진이면 그 사진의 페이지(`/archive/[slug]/[id]`) 주소를
-    // 건넨다. 받은 사람의 링크 미리보기에 앨범 표지가 아니라 이 사진이 뜨고,
-    // `/archive`의 필터 그리드에서 연 사진도 목록 조건과 상관없이 열린다.
-    // 예전에 건넨 `?p=` 링크는 `PhotoGrid`가 계속 연다.
     const url = photoShareUrl(photo, window.location.origin, window.location.href);
     const ok = await copyToClipboard(url);
     setCopyState(ok ? 'copied' : 'failed');
@@ -115,10 +78,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     copyTimer.current = setTimeout(() => setCopyState('idle'), 2000);
   }, [photo]);
 
-  // ── 프린트 문의 ──────────────────────────────────────────────────────────
-  // 마음에 든 사진을 "이거"라고 가리킬 방법이 메일에는 없었다. 복사 버튼과 같은
-  // 링크를 본문에 넣은 메일을 미리 채워 연다. 라이트박스는 클릭한 뒤에만
-  // 그려지므로 `window`가 있지만, 만약을 위해 서버에서는 정식 주소를 쓴다.
   const inquiryHref = printInquiryMailto(
     CONTACT_EMAIL,
     photo,
@@ -127,39 +86,25 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       : photoShareUrl(photo, window.location.origin, window.location.href),
   );
 
+  // Keyed by photo id: one <img> is reused across the album, so a single value mis-sizes on Next/Prev.
   const [ratios, setRatios] = useState<Record<number, number>>({});
-  // 촬영 정보 채우기가 저장한 크기가 있으면 첫 그림부터 그 비율로 프레임을
-  // 잡는다(아래 "Pre-load" 분기가 필요 없어진다). 비율만 쓴다 — 원본이 1500px
-  // 안팎으로 줄어 있어 크기 자체는 뜻이 없다. 실제로 읽은 비율이 오면 그쪽이 이긴다.
+  // 저장된 크기는 비율만 쓴다(원본이 1500px 안팎). 실제로 읽은 비율이 오면 그쪽이 이긴다.
   const storedRatio = photo.width && photo.height ? photo.width / photo.height : undefined;
   const ratio = ratios[photo.id] ?? storedRatio;
 
-  // 화면의 `<img>`가 로드를 마친 사진의 id. 이웃 미리 받기가 이것을 기다린다.
   const [loadedId, setLoadedId] = useState<number | null>(null);
 
   const rememberRatio = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight, dataset } = e.currentTarget;
     if (!naturalWidth || !naturalHeight) return;
-    // `onLoad` also fires for the blur/placeholder pass and, in dev, for
-    // re-decodes; pin the value to the id the element is actually showing
-    // rather than to whichever photo is current by the time this runs.
+    // `onLoad` also fires for placeholder passes; pin to the id the element is actually showing.
     const id = Number(dataset.photoId);
     if (!Number.isFinite(id)) return;
     setRatios(prev => (prev[id] ? prev : { ...prev, [id]: naturalWidth / naturalHeight }));
     setLoadedId(id);
   }, []);
 
-  // ── 이웃 사진 미리 받기 ──────────────────────────────────────────────────
-  // 넘길 때마다 네트워크를 기다리지 않도록, **지금 사진이 다 온 뒤에** 앞뒤 한
-  // 장씩을 받아 둔다. 먼저 시작하면 보고 있는 사진과 대역폭을 다툰다.
-  //
-  // `<link rel=preload>`가 아니라 문서 밖의 `Image`다: 낮은 우선순위로 받고,
-  // 넘기지 않으면 "preload했는데 쓰지 않았다"는 경고도 없다. `srcset`과
-  // `sizes`를 화면의 `<Image>`와 같은 함수(`getImageProps` → 전역 로더,
-  // `lightboxSizes`)로 만들어 넣으므로 브라우저가 고르는 후보가 같고, 넘겼을
-  // 때는 캐시에서 나온다.
-  //
-  // 데이터 절약 모드에서는 하지 않는다 — 안 볼 수도 있는 사진 두 장이다.
+  // 이웃은 지금 사진이 다 온 뒤에 같은 srcset·sizes로 받는다(대역폭 경쟁 방지). 데이터 절약 모드는 제외.
   const preloaded = useRef(new Set<number>());
   const prevPhoto = photos[(currentIndex - 1 + photos.length) % photos.length];
   const nextPhoto = photos[(currentIndex + 1) % photos.length];
@@ -167,7 +112,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     if (loadedId !== photo.id) return;
     const { connection } = navigator as Navigator & { connection?: { saveData?: boolean } };
     if (connection?.saveData) return;
-    // 다음 장이 먼저다 — 대부분 앞으로 넘긴다.
     for (const neighbour of [nextPhoto, prevPhoto]) {
       if (neighbour.id === photo.id || preloaded.current.has(neighbour.id)) continue;
       preloaded.current.add(neighbour.id);
@@ -188,15 +132,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     }
   }, [loadedId, photo.id, nextPhoto, prevPhoto, ratios]);
 
-  // ── 네이티브 모달 ────────────────────────────────────────────────────────
-  // `<dialog>` + `showModal()`이 예전에 손으로 만들던 것을 맡는다: 뒤 페이지를
-  // `inert`로(스크린리더의 가상 커서도 그리드로 새지 않는다), 포커스 가두기,
-  // 첫 컨트롤(닫기)로 포커스 옮기기, 닫을 때 연 타일로 포커스 돌려주기, top layer.
-  //
-  // 마운트에서 한 번 열고, 언마운트 직전에 닫는다. `useLayoutEffect`인 이유:
-  // 정리 함수가 노드가 문서에서 빠지기 **전에** 돌아야 `close()`가 포커스를
-  // 돌려준다. 그냥 떼어 내면 모달은 닫히지만 포커스는 body로 떨어진다.
-  // AnimatePresence의 퇴장 애니메이션(0.25초) 동안은 여전히 모달이다.
+  // `useLayoutEffect`: 노드가 빠지기 전에 `close()`해야 연 타일로 포커스가 돌아간다.
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -206,10 +142,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     };
   }, []);
 
-  // Esc, 안드로이드 뒤로가기 제스처 같은 "닫기 요청"은 `cancel`로 온다. 브라우저가
-  // 바로 닫게 두지 않고 막은 뒤 `onClose`로 넘긴다: 닫기는 URL(`?p=`)이 정하고,
-  // 퇴장 애니메이션도 그래야 보인다. 다만 사용자 활성화 없이 거듭된 닫기 요청은
-  // 막을 수 없어서 곧장 `close`가 온다 — 그 경로도 `onClose`로 보내되, 한 번만.
+  // 닫기 요청(`cancel`)은 막고 `onClose`로 넘긴다 — 닫기는 URL이 정한다. 곧장 온 `close`도 한 번만.
   const closing = useRef(false);
   const requestClose = useCallback(() => {
     if (closing.current) return;
@@ -221,11 +154,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     requestClose();
   }, [requestClose]);
 
-  // 스크롤 잠금은 `globals.css`의 `dialog:modal`/`::backdrop` 규칙이 한다
-  // (`body { overflow: hidden }`은 데스크톱에서 스크롤바가 사라지며 레이아웃을
-  // 민다). 그 규칙은 넘치지 않는 컨테이너에서 Safari가 아직 따르지 않으므로,
-  // 휠만 여기서 막는다 — 라이트박스 안에는 스크롤할 것이 없다. 터치는
-  // 아래 `touch-none`이 막는다. React의 onWheel은 passive라 직접 붙인다.
+  // Safari가 `dialog:modal` 스크롤 잠금을 아직 따르지 않아 휠만 직접 막는다(React onWheel은 passive).
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -234,7 +163,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     return () => dialog.removeEventListener('wheel', stop);
   }, []);
 
-  // 좌우 화살표로 넘기기. Esc와 Tab은 위의 네이티브 모달이 맡는다.
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft') { onPrev(); return; }
     if (e.key === 'ArrowRight') { onNext(); return; }
@@ -245,22 +173,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // ── Swipe ───────────────────────────────────────────────────────────────
-  // On a phone the arrows were the only way through an album of 45 photos,
-  // and the obvious gesture did the wrong thing twice over: a swipe across
-  // the picture did nothing (globals.css sets `pointer-events: none` on every
-  // <img>, so the image never sees a touch), and a swipe across the letterbox
-  // bands — 162px above and below a landscape photo on a 390×844 screen —
-  // registered as a backdrop click and CLOSED the lightbox.
-  //
-  // So the dialog, not the image, owns the gesture. One pointer handler pair
-  // decides between the two meanings a press can have:
-  //
-  //   moved sideways  → previous / next
-  //   barely moved    → a tap, which closes only if it landed on backdrop
-  //
-  // That is also why `onClick={onClose}` is gone from this element: a click
-  // fires at the end of a drag too, which is exactly the bug.
+  // The dialog owns the gesture (<img> has pointer-events: none); no onClick close, a drag ends in a click.
   const press = useRef<{
     x: number;
     y: number;
@@ -273,15 +186,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
   /** Past this many px a horizontal drag is a swipe, not a sloppy tap. */
   const SWIPE_PX = 45;
 
-  /**
-   * Decide what a finished press meant. Shared by `pointerup` and
-   * `pointercancel`, because a swipe does not reliably end in `pointerup`:
-   * the browser cancels the pointer when the thing under it changes mid-drag,
-   * which here is the photo itself resizing the frame as the previous swipe
-   * lands. Measured: every other swipe in a run arrived as `pointercancel`
-   * with zeroed coordinates and was dropped. Hence the running `last*`, and
-   * hence deciding from those rather than from the event.
-   */
+  /** Shared by pointerup and pointercancel: a swipe often ends in a cancel with zeroed coordinates. */
   const finishPress = useCallback(
     (dx: number, dy: number, onPhoto: boolean, cancelled: boolean) => {
       if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.5) {
@@ -289,18 +194,13 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         else onPrev();
         return;
       }
-      // A cancelled pointer is never a tap — the browser took it away, the
-      // reader did not lift a finger to dismiss anything.
       if (cancelled) return;
-      // A tap on the photo does nothing: dismissing the thing you are looking
-      // at because you touched it is not a gesture anyone means.
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && !onPhoto) requestClose();
     },
     [requestClose, onNext, onPrev],
   );
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Controls handle themselves; don't let their press become a swipe.
     if ((e.target as HTMLElement).closest('button, a')) {
       press.current = null;
       return;
@@ -312,8 +212,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       lastY: e.clientY,
       onPhoto: !!mediaRef.current?.contains(e.target as Node),
     };
-    // Keep the events coming to this element even if the frame under the
-    // pointer changes size mid-drag.
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -328,9 +226,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       const start = press.current;
       press.current = null;
       if (!start) return;
-      // Horizontal enough to be deliberate: a vertical drag (a scroll attempt)
-      // must not flip the photo. Swiping left goes forward, matching the
-      // direction the pictures move.
       finishPress(e.clientX - start.x, e.clientY - start.y, start.onPhoto, false);
     },
     [finishPress],
@@ -340,31 +235,13 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
     const start = press.current;
     press.current = null;
     if (!start) return;
-    // `pointercancel` carries no useful coordinates (Chromium zeroes them), so
-    // the last position seen by `pointermove` is what the gesture gets judged
-    // on.
     finishPress(start.lastX - start.x, start.lastY - start.y, start.onPhoto, true);
   }, [finishPress]);
 
   return (
     <motion.dialog
       ref={dialogRef}
-      // `select-none` keeps a drag from turning into a text selection, which
-      // is one of the ways the browser takes the pointer away mid-swipe.
-      // Opaque on phones. Any translucency let the neighbouring masonry
-      // cards ghost through the letterbox bands above and below a landscape
-      // photo — on a 390×844 screen those bands are 40% of the view.
-      //
-      // The dialog is the whole screen, so the UA box (margin, padding,
-      // border, max sizes) is reset and `::backdrop` is transparent — the
-      // dialog's own background is the backdrop the design has always had.
-      // `open:flex`, not `flex`: an unconditional `display` would override the
-      // closed dialog's `display: none`.
-      //
-      // `touch-none` rather than `touch-pan-y`: nothing in here scrolls, and
-      // a vertical drag the browser was allowed to pan chained to the page
-      // underneath now that `body` is no longer locked. It also means the
-      // browser never takes the pointer away mid-swipe to pan.
+      // `touch-none`: nothing scrolls here and vertical pans chained to the page. `open:flex` keeps closed hidden.
       className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden border-0 p-0 bg-forest-black md:bg-forest-black/95 backdrop:bg-transparent open:flex items-center justify-center touch-none select-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -378,7 +255,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25, ease: EASE }}
     >
-      {/* Close button */}
       {/* First in the dialog, so `showModal()` puts focus here on open. */}
       <button
         type="button"
@@ -389,8 +265,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         &times;
       </button>
 
-      {/* Copy link — mirrors Close in the other corner. The label itself
-          changes to the result, and the live region says it aloud. */}
+      {/* The label changes to the result, and the live region says it aloud. */}
       <button
         type="button"
         onClick={copyLink}
@@ -410,25 +285,15 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         {copyState === 'copied' ? '사진 링크를 복사했습니다.' : copyState === 'failed' ? '링크를 복사하지 못했습니다. 주소창의 주소를 사용해 주세요.' : ''}
       </span>
 
-      {/* Prev */}
       <button
         onClick={onPrev}
-        // Phones: down in the caption row, not across the middle of the
-        // photo — a full-width picture had a dark disc on each side of it.
         className={`absolute left-3 bottom-4 md:bottom-auto md:left-5 md:top-1/2 md:-translate-y-1/2 ${CONTROL}`}
         aria-label="이전 사진"
       >
         &lsaquo;
       </button>
 
-      {/* Image — sized to the viewport, not to a box inset within it.
-          The wrapper is a flex item with no width of its own, so it shrinks to
-          exactly the rendered photo: everything around it is still backdrop,
-          which is what makes "tap outside to close" meaningful now that the
-          photo reaches the edges. The wrapper is also how the pointer handler
-          above tells photo from backdrop, since the <img> itself never
-          receives events (globals.css turns them off site-wide to blunt
-          right-click saves). */}
+      {/* Wrapper shrinks to the photo: the pointer handler uses it to tell photo from backdrop. */}
       <motion.div
         ref={mediaRef}
         className="relative flex max-h-[100dvh] max-w-[100vw]"
@@ -445,50 +310,20 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
           sizes={lightboxSizes(photo, ratios[photo.id])}
           data-photo-id={photo.id}
           onLoad={rememberRatio}
-          // The width is stated outright, `min(100vw, 100dvh × ratio)`, and the
-          // height follows from it. The grid's `w-auto h-auto` is right for a
-          // thumbnail and wrong here: it never draws past the intrinsic size,
-          // and with a `w`-descriptor srcset that size is density corrected —
-          // real pixels divided by (chosen candidate ÷ `sizes`). Archive
-          // originals top out near 1500px, so a 3840w candidate had a 1500px
-          // photo reporting ~560 CSS px and opening at a third of the screen.
-          //
-          // A single definite axis doesn't work either: Chromium clamps only
-          // the axis that overflows its max and leaves the other one long, so
-          // the element covers backdrop that `object-contain` draws nothing on
-          // — measured both ways, a 390×844 box holding a 390×520 picture on a
-          // phone, a 1440×900 box holding 675×900 on a desktop — and a tap
-          // beside the photo hits the image instead of the overlay's close.
-          // `min()` settles both axes at once, so the box measures the picture.
-          //
-          // `aspect-auto` is load-bearing. `width={0} height={0}` is how this
-          // codebase says "dimensions unknown", but the browser still turns
-          // those attributes into `aspect-ratio: 0 / 0`, and a height resolved
-          // against a zero ratio is zero — the photo never appeared at all.
+          // Width is min(100vw, 100dvh × ratio) so both axes match the picture; `aspect-auto` stops 0/0.
           className="aspect-auto object-contain max-w-[100vw] max-h-[100dvh]"
           style={
             ratio
               ? { width: `min(100vw, calc(100dvh * ${ratio}))`, height: 'auto' }
-              // Pre-load, before any ratio is known. Collapsed rather than
-              // guessed: a placeholder box at the wrong shape would snap to
-              // another one a moment later, and the backdrop is already there.
               : { width: 'auto', height: 'auto' }
           }
-          // `priority` is deprecated as of Next 16, and it was the wrong tool
-          // here anyway: it preloads from the document <head>, and this element
-          // does not exist until a visitor clicks. What we actually want is
-          // "fetch this the instant it mounts, ahead of the queue", which is
-          // exactly what the docs point deprecated `priority` users toward.
+          // Not `priority`: this mounts on click, so eager + high fetchPriority instead.
           loading="eager"
           fetchPriority="high"
           draggable={false}
         />
       </motion.div>
 
-      {/* Caption — laid over the foot of the picture rather than stacked below
-          it. Stacked, it stole its own height from the photo; over it, the
-          photo gets the whole screen and the metadata still reads, carried by
-          a scrim that fades out well before the middle of the frame. */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-16 md:px-6 pb-6 pt-16 text-center
                    bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent"
@@ -499,15 +334,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         <p className={`label-ko text-white/70 ${caption.title ? 'mt-1.5' : ''}`}>
           {joinCaption([...caption.meta, `${currentIndex + 1} / ${photos.length}`])}
         </p>
-        {/* 촬영 정보. 캡션보다 한 단계 더 조용하게 — 대문자 자간 없는 mono,
-            더 낮은 불투명도. 값이 하나도 없으면 줄을 그리지 않는다. */}
         {exif.length > 0 && (
           <p className="mt-1.5 font-mono text-xs leading-snug tracking-normal text-white/60">
             {joinCaption(exif)}
           </p>
         )}
-        {/* 캡션 띠는 `pointer-events-none`이다(스와이프가 사진 위에서 끊기지
-            않게). 링크만 다시 받는다. */}
+        {/* 캡션 띠는 `pointer-events-none`(스와이프가 끊기지 않게). 링크만 다시 받는다. */}
         <a
           href={inquiryHref}
           className="pointer-events-auto mt-2.5 inline-block text-[13px] text-cream/80 underline decoration-cream/35 underline-offset-4 transition-colors hover:text-cream hover:decoration-moss"
@@ -516,7 +348,6 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
         </a>
       </div>
 
-      {/* Next */}
       <button
         onClick={onNext}
         className={`absolute right-3 bottom-4 md:bottom-auto md:right-5 md:top-1/2 md:-translate-y-1/2 ${CONTROL}`}

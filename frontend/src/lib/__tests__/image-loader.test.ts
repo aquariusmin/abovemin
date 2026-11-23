@@ -26,7 +26,6 @@ describe('imageLoader — Cloudinary', () => {
   });
 
   it('워터마크 네 조각은 어느 후보에서든 그대로, 순서대로, 줄인 뒤에 남는다', () => {
-    // 크기는 Cloudinary가 줄인 뒤의 폭에서 계산한다(fl_relative) — 주소의 체인은 같다.
     const src = cloudinary(real, { width: 1500, watermark: true });
     for (const width of [256, 640, 1500]) {
       expect(imageLoader({ src, width })).toBe(

@@ -5,7 +5,6 @@ export type PortfolioCapability = {
   body: string;
 };
 
-// Shared by the web overview and the print/PDF summary so the two never drift apart.
 export const portfolioCapabilities: Record<PortfolioLocale, PortfolioCapability[]> = {
   en: [
     { title: "Markets", body: "International trade, macro context, alternative data, and country or industry screening." },

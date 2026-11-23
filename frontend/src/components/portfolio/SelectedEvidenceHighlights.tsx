@@ -6,7 +6,6 @@ export default function SelectedEvidenceHighlights({
 }: {
   locale: EvidenceLocale;
 }) {
-  // Only the featured projects' numbers, in the featured order.
   const highlights = featuredPortfolioSlugs.flatMap(
     (slug) => portfolioEvidenceHighlights.find((item) => item.slug === slug) ?? [],
   );

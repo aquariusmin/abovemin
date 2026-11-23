@@ -28,8 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         "x-default": `/portfolio/${slug}`,
       },
     },
-    // The card carries this case study's own title and summary instead of the
-    // site default (`shareCard`), labelled as English.
     ...shareCard({
       title,
       description: project.summary,
@@ -42,8 +40,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EnglishPortfolioCasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  // Curated ordering so case numbers and prev/next match /en/portfolio and the
-  // Korean page; `route="normal"` keeps the links on /en/portfolio.
   const project = portfolio.getProject(slug);
   if (!project) notFound();
   return (

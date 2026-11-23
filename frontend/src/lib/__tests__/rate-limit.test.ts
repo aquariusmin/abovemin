@@ -44,8 +44,7 @@ describe('clientIp()', () => {
   const req = (headers: Record<string, string>) => new Request('https://x/', { headers });
 
   it('x-real-ip를 먼저 본다', () => {
-    // Vercel 엣지가 넣는 값이고 클라이언트가 위조할 수 없다. x-forwarded-for는
-    // 클라이언트가 앞에 덧붙일 수 있으므로 우선순위가 낮다.
+    // Vercel 엣지가 넣는 값은 위조할 수 없고, x-forwarded-for는 앞에 덧붙일 수 있다.
     expect(clientIp(req({ 'x-real-ip': '1.1.1.1', 'x-forwarded-for': '9.9.9.9' }))).toBe('1.1.1.1');
   });
 
@@ -58,4 +57,3 @@ describe('clientIp()', () => {
   });
 });
 
-// rateLimitShared()의 저장소 순서와 폴백은 rate-limit-shared.test.ts.

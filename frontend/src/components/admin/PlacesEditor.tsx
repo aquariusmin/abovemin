@@ -7,16 +7,6 @@ import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, use
 import { BTN_SM, CHIP_KO, FILTER_CHIP_CLASS, INPUT_COMPACT, PANEL_CLASS } from './adminStyles';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 장소 좌표 — `/archive`의 "지도로 보기"가 점을 찍는 자리.
- *
- * 장소 이름 하나에 좌표 하나, 소수점 한 자리(약 11km)다. 촬영 정보 채우기가
- * 사진 GPS의 중앙값으로 비어 있는 장소를 채우고("GPS"), 여기서 고치면 "직접"이
- * 된다. 채우기는 이미 있는 좌표를 덮어쓰지 않는다.
- *
- * 좌표가 없는 장소는 지도에서 빠질 뿐이다 — 필터와 앨범은 그대로다.
- */
-
 interface PlaceRow {
   name: string;
   count: number;
@@ -57,7 +47,6 @@ export default function PlacesEditor({ reloadKey }: { reloadKey: number }) {
     };
   }, [reloadKey, localReload]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(rows === null && message?.tone === 'error', () => setLocalReload(k => k + 1));
 
   const missing = rows?.filter(row => row.lat === null && row.count > 0).length ?? 0;
@@ -118,7 +107,6 @@ export default function PlacesEditor({ reloadKey }: { reloadKey: number }) {
   );
 }
 
-/** "37.5665, 126.9780"처럼 붙여 넣은 한 쌍. 아니면 null. */
 function parsePair(text: string): [string, string] | null {
   const match = text.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)$/);
   return match ? [match[1], match[2]] : null;
@@ -162,8 +150,7 @@ function PlaceEditRow({
   }
 
   async function clear() {
-    // 되돌리기가 없다. GPS로 채운 좌표면 다시 채울 수 있지만, 직접 적은 좌표는
-    // 어디에도 남지 않는다.
+    // 되돌리기가 없다 — 직접 적은 좌표는 어디에도 남지 않는다.
     const ok = await confirm({
       title: `“${row.name}” 좌표를 지울까요?`,
       body: (

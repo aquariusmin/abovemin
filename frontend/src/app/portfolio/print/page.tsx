@@ -13,9 +13,6 @@ export default async function PortfolioPrintPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  // The sheet always prints the curated ordering, because that is what
-  // /portfolio itself now shows. Only the back-link and the URL on the header
-  // depend on which overview the reader opened it from.
   return (
     <PortfolioPrintContent
       locale="ko"

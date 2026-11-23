@@ -111,9 +111,7 @@ describe('order-email', () => {
       expect(message.html).toContain('엽서');
       expect(message.html).not.toContain('엽서 · 추가');
     }
-    // 운영자 메일의 한 줄 요약도 같은 이름을 쓴다.
     expect(buildOwnerEmail(withAddon, OWNER).html).toContain('2027 Calendar · 추가: 거치대 &lt;원목&gt; ×1');
-    // 배송 안내는 상품 줄을 싣지 않는다 — 추가 상품이 있어도 만들어진다.
     expect(buildShippingEmail(withAddon, { carrier: 'CJ', trackingNumber: '123' }).html).toContain('123');
   });
 

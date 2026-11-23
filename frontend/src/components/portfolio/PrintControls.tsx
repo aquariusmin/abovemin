@@ -9,7 +9,6 @@ export default function PrintControls({
   route = "normal",
 }: {
   locale: EvidenceLocale;
-  /** Which overview to return to — the print sheet is reachable from both. */
   route?: PortfolioRoute;
 }) {
   const isKorean = locale === "ko";

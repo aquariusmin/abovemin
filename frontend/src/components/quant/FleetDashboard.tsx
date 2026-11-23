@@ -17,11 +17,8 @@ const REFRESH_MS = 60_000;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function FleetDashboard({
-  /** Server-rendered first paint. See `getFleet` in `app/lab/page.tsx`. */
   initialBots = null,
-  /** When the server read `initialBots` (epoch ms). Staleness is judged
-   *  against this until the first client fetch, so the server HTML and the
-   *  hydrating render pick the same state pill. */
+  /** Staleness is judged against this until the first client fetch, so server HTML and hydration agree. */
   renderedAt,
 }: {
   initialBots?: FleetBot[] | null;
@@ -39,8 +36,6 @@ export function FleetDashboard({
     }
   };
 
-  // Only a feed that never delivered anything is a full-screen error. Once
-  // there are numbers on screen, a failed poll keeps them and says so.
   if (error && !bots) {
     return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
@@ -52,14 +47,12 @@ export function FleetDashboard({
     );
   }
 
-  // Built from EVERY row, not the visible ones, so sorting can never repaint
-  // a bot's colour.
+  // Built from every row, not the visible ones, so sorting never repaints a bot's colour.
   const colors = buildSeriesColors(bots.map((b) => b.id), LAB_SERIES);
   const sorted = sortBots(bots, sortKey, sortDir);
   const { real, sim } = books(bots);
   const halted = bots.filter((b) => parseBotName(b.bot_name).halted).length;
-  // Counted on the BOT's last cycle, not the sync stamp — a dead bot behind a
-  // live sync container is precisely what this console exists to catch.
+  // Counted on the bot's last cycle, not the sync stamp — a dead bot behind a live sync is the point.
   const stale = bots.filter(
     (b) => staleness(lastCycle(parseEquityCurve(b.equity_curve), b.updated_at), now) !== "live",
   ).length;
@@ -109,28 +102,18 @@ export function FleetDashboard({
   );
 }
 
-/**
- * Polls the fleet route, seeded with the server's rows.
- *
- * Seeded so the console has numbers in the HTML itself; it still refreshes on
- * mount, so what you read is never older than the page's own ISR window.
- */
 function useFleetFeed(initialBots: FleetBot[] | null, renderedAt: number) {
   const [bots, setBots] = useState<FleetBot[] | null>(initialBots);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  // The clock staleness is judged by. Not `Date.now()` in render: an ISR page
-  // can be served minutes or days after it was rendered, and a bot crossing
-  // the 30h line in between would hydrate with a different pill — words and
-  // colour — than the HTML it is meant to adopt. It advances on every poll.
+  // Not `Date.now()` in render: an ISR page hydrating later would pick a different pill than its HTML.
   const [now, setNow] = useState(renderedAt);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        // Server route, not the browser Supabase client: it keeps the key on
-        // the server and adds an edge cache in front of the table.
+        // Server route, not the browser Supabase client: keeps the key server-side behind an edge cache.
         const res = await fetch("/api/market/quant-fleet");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: FleetBot[] = await res.json();
@@ -146,11 +129,6 @@ function useFleetFeed(initialBots: FleetBot[] | null, renderedAt: number) {
     };
     load();
 
-    // Don't poll a tab nobody is looking at. The console refreshes forever
-    // once opened, and a backgrounded tab was still spending a request a
-    // minute — on the client's battery and on the edge cache alike. Coming
-    // back to the tab refetches immediately, so what you see on return is
-    // current rather than however stale the last background tick left it.
     const loadIfVisible = () => {
       if (!document.hidden) load();
     };
@@ -167,11 +145,6 @@ function useFleetFeed(initialBots: FleetBot[] | null, renderedAt: number) {
   return { bots, error, lastFetched, now };
 }
 
-/**
- * Anything needing a human is stated in words before any number. A halted bot
- * is invisible otherwise: it keeps running, keeps syncing, and just quietly
- * stops trading.
- */
 function AttentionBanner({ halted, stale }: { halted: number; stale: number }) {
   if (halted === 0 && stale === 0) return null;
   return (
@@ -202,11 +175,7 @@ function AttentionBanner({ halted, stale }: { halted: number; stale: number }) {
   );
 }
 
-/**
- * One cell per book. There is deliberately no single fleet figure: KRW and USD
- * are not addable, and mock equity is not addable to real money — a paper
- * profit must never flatter a real loss.
- */
+/** No single fleet figure: KRW and USD, or mock and real equity, are not addable. */
 function BookMetrics({ real, sim }: { real: Book[]; sim: Book[] }) {
   const hasReal = real.length > 0;
   const lead = hasReal ? real : sim;

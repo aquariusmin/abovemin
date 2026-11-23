@@ -26,10 +26,6 @@ import {
 import { isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
 import type { z } from 'zod';
 
-/**
- * 이 파일이 지키는 것: 관리 API는 화이트리스트 밖의 키를 **거절**하고, 일괄
- * 작업은 상한을 넘지 못한다. 관리자 세션이 있어도 본문은 조작될 수 있다.
- */
 const ids = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
 describe('PhotoBulk', () => {
@@ -54,7 +50,6 @@ describe('PhotoBulk', () => {
   });
 
   it('작업에 없는 키, 잘못된 id, 모르는 작업을 거절한다', () => {
-    // `hidden` 작업에 `album_slug`를 끼워 넣어 한 번에 두 가지를 바꾸는 요청
     expect(PhotoBulk.safeParse({ action: 'hidden', ids: [1], hidden: true, album_slug: 'x' }).success).toBe(false);
     expect(PhotoBulk.safeParse({ action: 'delete', ids: [0] }).success).toBe(false);
     expect(PhotoBulk.safeParse({ action: 'delete', ids: ['1'] }).success).toBe(false);
@@ -315,17 +310,8 @@ describe('ProductCreate / ProductUpdate — 추가 상품·함께 구매', () =>
   });
 });
 
-/**
- * 아래 여섯 스키마는 손으로 쓴 검증을 옮긴 것이다(`api/admin/photos`, `order`,
- * `sign`, `api/admin/settings`). 이 테스트는 **옮기기 전의 동작**을 못 박는다 —
- * 옛 코드의 갈래마다 한 줄씩: 무엇을 받았고, 무엇을 어떤 문구로 거절했나.
- * 문구는 관리 화면이 그대로 보여 주므로 문자열까지 비교한다.
- *
- * 다른 스키마보다 너그러운 것(모르는 키를 버림, `"12"`를 12로 읽음)은 버그가
- * 아니라 옮겨 온 계약이다. 조이는 변경이면 이 테스트를 같이 고쳐야 한다.
- */
+// 아래 스키마의 너그러움(모르는 키 버림, "12"→12)은 버그가 아니라 옮겨 온 계약이다.
 
-/** 라우트가 응답에 싣는 것과 같은 값: 통과하면 `null`, 아니면 첫 이슈의 문구. */
 function rejection(schema: z.ZodType, input: unknown): string | null {
   const parsed = schema.safeParse(input);
   return parsed.success ? null : firstIssue(parsed.error);
@@ -335,11 +321,9 @@ const NEXT_YEAR = new Date().getFullYear() + 1;
 const BAD_SLUG = 'Invalid album_slug';
 const BAD_ID = 'Invalid id';
 
-/** `Number()`가 양의 정수로 읽는 것 / 그렇지 않은 것. id 세 곳이 같은 규칙을 쓴다. */
 const LOOSE_IDS: Array<[unknown, number]> = [[7, 7], ['7', 7], ['7.0', 7], [' 7 ', 7], [[7], 7], [true, 1], [1e20, 1e20]];
 const NOT_IDS: unknown[] = [undefined, null, 0, -1, 1.5, '', 'abc', '1.5', false, [], [1, 2], {}];
 
-/** 슬러그 한 칸을 쓰는 세 스키마(추가·순서·서명)가 같은 규칙, 같은 문구인지. */
 function slugCases(schema: z.ZodType, rest: Record<string, unknown>) {
   it('앨범 슬러그: 영문 소문자·숫자·하이픈 1~64자', () => {
     for (const slug of ['korea', 'a', 'a-1', '-', 'a'.repeat(64)]) {
@@ -534,7 +518,6 @@ describe('PhotoUpdate — 사진 한 장 수정', () => {
     expect(rejection(PhotoUpdate, { id: 5, src: 'https://res.cloudinary.com/x/image/upload/a.jpg' })).toBe(
       '변경할 내용이 없습니다.',
     );
-    // id가 틀렸으면 그 오류가 먼저다.
     expect(rejection(PhotoUpdate, {})).toBe(BAD_ID);
   });
 
@@ -589,10 +572,8 @@ describe('PhotoOrder — 앨범 안 사진 순서', () => {
   it('오류는 슬러그 → 길이 → 잘못된 id → 중복 순서로 하나만 보고한다', () => {
     const tooMany = Array.from({ length: 501 }, () => 'x');
     expect(rejection(PhotoOrder, { album_slug: 'Korea', ids: tooMany })).toBe(BAD_SLUG);
-    // 길이가 틀리면 안에 무엇이 들었든 길이 오류다.
     expect(rejection(PhotoOrder, order(tooMany))).toBe(BAD_LIST);
     expect(rejection(PhotoOrder, order(Array.from({ length: 501 }, () => 1)))).toBe(BAD_LIST);
-    // 잘못된 id가 중복보다 먼저다 — 어느 쪽이 앞에 있든.
     expect(rejection(PhotoOrder, order([2, 2, 'x']))).toBe(BAD_ITEM);
     expect(rejection(PhotoOrder, order(['x', 2, 2]))).toBe(BAD_ITEM);
   });
@@ -616,7 +597,6 @@ describe('SettingsUpdate — 사이트 설정', () => {
       ['hero_image', OWN],
       ['hero_title', 'a'],
     ]);
-    // 값은 자르지 않는다. 빈 문자열도 값이다("지운다").
     expect(SettingsUpdate.parse({ hero_title: '  a  ', hero_subtitle: '' })).toEqual([
       ['hero_title', '  a  '],
       ['hero_subtitle', ''],
@@ -634,7 +614,6 @@ describe('SettingsUpdate — 사이트 설정', () => {
     for (const body of [{}, { other: 'x' }, { hero_title: 5 }, { hero_image: null, hero_subtitle: ['a'] }]) {
       expect(rejection(SettingsUpdate, body)).toBe('No valid keys');
     }
-    // 읽지 못한 본문(`parseBody`의 undefined)과 배열도 옛 코드에서는 여기로 왔다.
     expect(rejection(SettingsUpdate, undefined)).toBe('No valid keys');
     expect(rejection(SettingsUpdate, [])).toBe('No valid keys');
     expect(rejection(SettingsUpdate, [['hero_title', 'a']])).toBe('No valid keys');

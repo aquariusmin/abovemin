@@ -3,12 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-/**
- * 사진 페이지의 ←/→: 앨범 안의 이전/다음 사진으로. 라이트박스와 같은 키다.
- *
- * 아무것도 그리지 않는다. 링크 자체는 서버가 그린 `<Link>`에 있고(키보드가
- * 없어도, JS가 없어도 넘어간다), 이 컴포넌트는 단축키만 더한다.
- */
 export default function PhotoKeyNav({ prevHref, nextHref }: { prevHref: string | null; nextHref: string | null }) {
   const router = useRouter();
 

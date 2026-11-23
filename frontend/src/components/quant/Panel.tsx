@@ -1,21 +1,9 @@
-/**
- * Console primitives, scoped to /lab.
- *
- * Colours come from `--lab-*` custom properties in `lab-console.css` via
- * arbitrary values rather than Tailwind theme utilities, so this second design
- * language never registers global `bg-surface-1`-style classes that the rest of
- * the site could pick up by accident.
- */
-/** Local join — not worth a dependency for this. */
+// Colours via `--lab-*` arbitrary values, so /lab never registers global classes the site could pick up.
+
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
 
-/**
- * The console is ONE grid, not a deck of cards: a single outer hairline, and
- * sections inside separated by shared rules. Cards-with-gaps is the web-page
- * idiom; a continuous ruled grid is the equipment idiom.
- */
 export function Frame({
   className,
   ...props
@@ -50,15 +38,6 @@ export function Bar({
   );
 }
 
-/**
- * A metric cell. Cells butt against each other divided by hairlines, not four
- * separate cards. Deliberately not a chart: when the story is one number, the
- * number IS the visualisation.
- *
- * Padding follows the site's rhythm rather than the tightest thing that fits.
- * The console is dense because its TABLES are dense; a stat cell has no such
- * excuse, and cramming it was what made this block read as a different site.
- */
 export function Metric({
   label,
   value,
@@ -78,13 +57,7 @@ export function Metric({
   }[tone];
   return (
     <div className="min-w-0 border-r border-[var(--lab-border)] px-4 py-3.5 last:border-r-0">
-      {/* The label wraps rather than truncating, and always reserves the two
-          lines it might need. `truncate` cost the unit on a phone — the
-          two-column grid left ~170px for "REAL EQUITY · USD" at 0.16em
-          tracking and it rendered as "REAL EQUITY · U…", which is the one word
-          in the string that cannot be inferred from the figure below it. The
-          fixed height is what keeps the values in a row on the same baseline
-          whether their labels take one line or two. */}
+      {/* The label wraps instead of truncating (it hid the unit); the fixed height keeps values on one baseline. */}
       <div className="lab-label mb-2 min-h-[2.6em] [overflow-wrap:anywhere]">{label}</div>
       <div className={cx("truncate text-[22px] leading-none tnum", color)}>
         {value}
@@ -98,9 +71,6 @@ export function Metric({
 
 type PillTone = "neutral" | "good" | "warning" | "serious" | "critical";
 
-/* Tone only sets the two colours; geometry lives in `.lab-pill`, which is the
-   site's own `.chip` shape. A pill here and a chip on the portfolio should
-   differ in what they say, not in how they are built. */
 const PILL: Record<PillTone, string> = {
   neutral: "border-[var(--lab-border-strong)] text-[var(--lab-ink-2)]",
   good: "border-[var(--lab-good)]/45 text-[var(--lab-good)] bg-[var(--lab-accent-wash)]",
@@ -109,39 +79,16 @@ const PILL: Record<PillTone, string> = {
   critical: "border-[var(--lab-critical)]/55 text-[var(--lab-critical)]",
 };
 
-/**
- * A string computed from `Date.now()` — "3m ago", "feed 0s ago".
- *
- * These render on the server now (the console is server-seeded so that a
- * crawler and the first paint both get real numbers), and a relative time at
- * second granularity is a *different string* by the moment the browser
- * hydrates. React reports that as a failed hydration (#418): it recovers by
- * re-rendering the subtree on the client, so nothing is visibly broken, but it
- * throws on every load and it discards the server HTML it was supposed to be
- * reusing.
- *
- * `suppressHydrationWarning` is React's sanctioned escape hatch for precisely
- * this case — the client's value wins, quietly. It only covers one element's
- * own text, which is why the wrapper sits as close to the string as it does.
- */
+/** Relative time differs by hydration (#418), so `suppressHydrationWarning` sits right on the string. */
 export function RelativeTime({ children }: { children: React.ReactNode }) {
   return <span suppressHydrationWarning>{children}</span>;
 }
 
-/**
- * A failed poll over data that is already on screen.
- *
- * One dropped request used to replace the whole console with "FEED ERROR",
- * throwing away numbers that were correct a minute ago. The last good data
- * stays up; this strip says in words that it is no longer refreshing, and the
- * next successful poll removes it.
- */
 export function FeedStale({
   error,
   since,
 }: {
   error: string;
-  /** Pre-formatted relative time of the last good fetch, if there was one. */
   since?: string | null;
 }) {
   return (
@@ -158,8 +105,7 @@ export function FeedStale({
   );
 }
 
-/** Status is never colour alone — each pill carries its own text, so the state
- *  survives colour-blindness, greyscale and a screenshot. */
+/** Status is never colour alone — each pill carries its own text. */
 export function Pill({
   tone = "neutral",
   children,

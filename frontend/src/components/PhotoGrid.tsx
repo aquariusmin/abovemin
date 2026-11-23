@@ -18,9 +18,7 @@ interface Photo {
   title: string;
   location: string;
   year: number;
-  /** 앨범을 가로지르는 목록에서만 온다. 라이트박스의 공유 링크가 쓴다. */
   album_slug?: string;
-  /** 촬영 정보 채우기 이후에만 있다. 여기서는 비율로만 쓴다. */
   width?: number | null;
   height?: number | null;
   taken_at?: string | null;
@@ -31,19 +29,7 @@ interface Photo {
   iso?: number | null;
 }
 
-/**
- * `eagerFirst`: 첫 칸을 바로, 높은 우선순위로 받는다. 이 그리드가 화면 맨 위에
- * 오는 곳(앨범 페이지)에서는 첫 칸이 LCP라 기본값이 true다. 다른 내용 아래에
- * 놓이는 곳(/archive — 앨범 표지들 밑)에서는 꺼야 한다: 보이지도 않는 사진이
- * 진짜 LCP인 표지와 대역폭을 다툰다.
- */
-/**
- * `feature`: 앨범 페이지에서만 켠다. 열두 장쯤마다 가로 사진 한 장을 그리드
- * 전체 폭으로 크게 놓아(`column-span: all`), 같은 크기의 칸이 끝까지 이어지는
- * 단조로움을 끊는다. 고르는 규칙은 `featureIndices`. 순서는 바뀌지 않으므로
- * 라이트박스의 앞뒤도 그대로다. 필터 결과(`/archive`)는 앨범의 이야기가 아니라
- * 검색 결과라 켜지 않는다.
- */
+/** `eagerFirst`: 첫 칸이 LCP인 앨범 페이지에서만. /archive에서는 꺼야 진짜 LCP인 표지와 대역폭을 다투지 않는다. */
 export default function PhotoGrid({
   photos,
   eagerFirst = true,
@@ -53,22 +39,8 @@ export default function PhotoGrid({
   eagerFirst?: boolean;
   feature?: boolean;
 }) {
-  // 열린 사진이 URL에 있다.
-  //
-  // 45장짜리 앨범에서 한 장을 누군가에게 보여 주려면 "japan 앨범 열고 열두
-  // 번째"라고 말하는 수밖에 없었다. `?p=<id>`면 주소 하나로 끝나고, 뒤로
-  // 가기가 라이트박스를 닫는 동작이 된다 — 폰에서 사람들이 실제로 하는 동작.
-  //
-  // 인덱스가 아니라 **사진 id**를 쓴다. 인덱스는 앨범에 사진이 추가되거나
-  // 순서가 바뀌면 다른 사진을 가리키게 되어, 공유한 링크가 조용히 틀려진다.
-  //
-  // `useSearchParams`가 아니라 히스토리 API를 직접 쓰는 이유: 그 훅은 Suspense
-  // 경계를 요구하고, 그러면 이 앨범 페이지가 정적 프리렌더를 잃는다. 사진
-  // 목록은 이 사이트의 본문이라 HTML에 들어 있어야 한다. 라이트박스는 어차피
-  // 클라이언트 전용 장치이므로, 쿼리 문자열도 클라이언트에서만 다룬다.
+  // 열린 사진은 `?p=<id>`(인덱스 아님). `useSearchParams`는 Suspense를 요구해 정적 프리렌더를 잃으므로 히스토리 API.
   const [openId, setOpenId] = useState<string | null>(null);
-  // 이 그리드가 연 라이트박스라서 히스토리에 한 칸을 쌓았는가. 공유받은 `?p=`
-  // 링크로 들어왔거나 앞으로 가기로 다시 열린 경우는 아니다.
   const pushed = useRef(false);
 
   const lightboxIndex = useMemo(() => {
@@ -77,8 +49,6 @@ export default function PhotoGrid({
     return at === -1 ? null : at;
   }, [openId, photos]);
 
-  // 주소창을 상태의 원천으로 삼는다: 첫 진입에서 한 번 읽고, 그 뒤로는
-  // 뒤로/앞으로 가기를 따라간다.
   useEffect(() => {
     const read = () => setOpenId(new URLSearchParams(window.location.search).get('p'));
     const onPop = () => {
@@ -90,13 +60,10 @@ export default function PhotoGrid({
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // 공유받은 링크로 바로 들어왔다면, 닫았을 때 그 사진이 화면에 있도록
-  // 뒤의 그리드를 미리 그 자리로 옮겨 둔다.
   useEffect(() => {
     if (openId === null) return;
     document.getElementById(`photo-${openId}`)?.scrollIntoView({ block: 'center' });
-    // 열리는 순간 한 번이면 된다. 넘길 때마다 스크롤하면 닫았을 때 처음 보던
-    // 자리를 잃는다.
+    // 열리는 순간 한 번만 스크롤한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openId === null]);
 
@@ -106,8 +73,7 @@ export default function PhotoGrid({
     else params.set('p', id);
     const query = params.toString();
     const url = `${window.location.pathname}${query ? `?${query}` : ''}`;
-    // 여는 것만 히스토리에 쌓는다. 스무 장을 넘긴 뒤 뒤로 가기를 스무 번
-    // 눌러야 앨범으로 돌아가는 것은 함정이다.
+    // 여는 것만 히스토리에 쌓는다 — 넘길 때마다 쌓으면 뒤로 가기가 함정이 된다.
     if (mode === 'push') window.history.pushState(null, '', url);
     else window.history.replaceState(null, '', url);
     setOpenId(id);
@@ -117,13 +83,7 @@ export default function PhotoGrid({
     setQuery(String(photos[index].id), 'push');
     pushed.current = true;
   }, [photos, setQuery]);
-  // 연 것이 우리라면 닫기는 그 한 칸을 **되돌린다**. 예전처럼 `replace`로 닫으면
-  // 히스토리에 같은 앨범 주소가 두 칸 남아, 다음 뒤로 가기는 아무 일도 하지
-  // 않는 헛걸음이 됐다. 라이트박스가 네이티브 `<dialog>`가 된 뒤로는 안드로이드의
-  // 뒤로가기 제스처도 브라우저가 dialog의 닫기 요청으로 먼저 가져가므로, 이것이
-  // 없으면 제스처마다 헛걸음이 하나씩 쌓인다. 되돌린 뒤의 상태는 popstate가 읽는다.
-  // 공유 링크로 들어온 경우에는 되돌릴 칸이 없으니(되돌리면 사이트를 떠난다)
-  // 주소에서 `?p=`만 지운다.
+  // 우리가 연 것이면 닫기는 그 한 칸을 되돌린다(뒤로가기 헛걸음 방지). 공유 링크로 왔으면 `?p=`만 지운다.
   const close = useCallback(() => {
     if (pushed.current) {
       pushed.current = false;
@@ -185,13 +145,7 @@ export default function PhotoGrid({
   );
 }
 
-/**
- * 그리드의 한 칸. 훅(`useBelowFoldReveal`)을 타일마다 써야 해서 따로 뺐다.
- *
- * 등장 애니메이션은 마운트 때 뷰포트 아래에 있던 타일에만 걸린다. 서버 HTML에서는
- * 모든 타일이 보이므로, CSS columns의 둘째·셋째 열 맨 위 타일도 하이드레이션을
- * 기다리지 않는다 — 판정 방식은 훅의 주석.
- */
+/** 등장 애니메이션은 마운트 때 뷰포트 아래에 있던 타일에만 — 서버 HTML에서는 모두 보인다. */
 function PhotoTile({
   photo,
   index,
@@ -203,25 +157,14 @@ function PhotoTile({
   index: number;
   onOpen: (index: number) => void;
   eager: boolean;
-  /** 그리드 전체 폭에 크게 — `PhotoGrid`의 `feature`. */
   featured: boolean;
 }) {
   const reduce = useReducedMotion();
   const { ref, deferred, hidden } = useBelowFoldReveal<HTMLButtonElement>();
-  // "-"·빈 값·제목과 같은 장소는 여기서 빠진다 — 규칙은 `lib/caption`.
   const caption = photoCaption(photo);
   const label = photoLabel(photo);
   const hasCaption = Boolean(caption.title || caption.meta.length > 0);
-  // 접근 가능한 이름은 **보이는 캡션 그대로** + "크게 보기".
-  //
-  // `aria-label="${label} 크게 보기"`는 보이는 글자와 어긋났다. 제목이 없으면
-  // 화면에는 "Somewhere · 2019"가 찍히는데 이름은 "Somewhere 크게 보기"였고,
-  // 음성 제어로 "Somewhere · 2019 누르기"라고 말하는 사람은 이 버튼을 부를 수
-  // 없었다(Lighthouse label-content-name-mismatch, WCAG 2.5.3). 그렇다고
-  // 이름을 내용에서 계산하게 두면 사진의 `alt`(= 제목)가 한 번 더 읽힌다.
-  // 그래서 캡션 블록과 숨긴 동작 문구를 `aria-labelledby`로 잇는다 — `alt`는
-  // 이미지 자체의 설명으로 그대로 남는다. 캡션이 하나도 없는 사진은 보이는
-  // 글자가 없으니 어긋날 것도 없어, 예전처럼 `aria-label`을 쓴다.
+  // 보이는 캡션 그대로를 이름으로 `aria-labelledby`(WCAG 2.5.3). 캡션이 없는 사진만 `aria-label`.
   const captionId = `photo-${photo.id}-caption`;
   const actionId = `photo-${photo.id}-action`;
   return (
@@ -229,8 +172,6 @@ function PhotoTile({
       ref={ref}
       type="button"
       id={`photo-${photo.id}`}
-      // 크게 놓는 사진은 열을 가로지른다(`column-span: all`). 그 앞의 사진들이
-      // 위에서 열을 채우고, 뒤의 사진들은 그 아래에서 새로 열을 채운다.
       className={`break-inside-avoid group block w-full text-left cursor-pointer ${featured ? '[column-span:all] sm:my-6 md:my-10' : ''}`}
       onClick={() => onOpen(index)}
       aria-labelledby={hasCaption ? `${captionId} ${actionId}` : undefined}
@@ -239,43 +180,21 @@ function PhotoTile({
       animate={revealTarget(hidden, reduce)}
       transition={{ duration: 0.6, ease: EASE }}
     >
-      {/* 크게 놓는 사진의 폭은 `min(100%, 비율 × 78svh)` — 가로 사진이 화면
-          높이를 넘지 않게 하고, 캡션도 같은 폭에 맞춰 가운데에 둔다. */}
       <div
         className={featured ? 'mx-auto' : undefined}
         style={featured && photo.width && photo.height ? { width: `min(100%, calc(${(photo.width / photo.height).toFixed(4)} * 78svh))` } : undefined}
       >
-      {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`). 프레임 크기는
-          아래 이미지가 정하므로, 사진이 오면 판을 정확히 덮는다. */}
       <div className="relative overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
-        {/* Next 16 deprecates `priority` in favour of `preload`, but a
-            preload link is the wrong migration for a masonry grid: the
-            column count changes with the viewport, so which tile is the
-            LCP element is not knowable from the markup — the docs name
-            this case explicitly and point at these two props instead.
-            Same treatment the Lightbox already uses. */}
+        {/* Not `preload`: the LCP tile depends on the column count, so `loading`/`fetchPriority` instead. */}
         <FadeImage
           src={cloudinary(photo.src, { watermark: true, width: featured ? 1600 : 800 })}
           alt={label}
           width={0}
           height={0}
-          // 칸의 실제 폭. 컨테이너는 1400px에서 멈추고(뷰포트 1480px = 1400 +
-          // 좌우 여백 80), 여백은 20/24/40px, 열 사이는 16px → md부터 24px다.
-          //   1480px~      (1400 − 2×24) ÷ 3 = 450.7px
-          //   1024~1479px  (100vw − 80 − 48) ÷ 3 = 33.3vw − 42.7px  → 31vw 이하
-          //   640~1023px   (100vw − 48 − 16) ÷ 2, md부터 (100vw − 80 − 24) ÷ 2 → 46vw 이하
-          //   ~639px       100vw − 40px
-          // 예전의 `33vw`는 상한이 없어 1920px 화면에서 451px 칸에 634px라고 말했다.
+          // `sizes`는 칸의 실제 폭: 컨테이너 1400px, 여백 20/24/40px, 열 간격 16px(md부터 24px)에서 계산.
           sizes={featured ? '(min-width: 640px) 75vw, calc(100vw - 40px)' : '(min-width: 1480px) 451px, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, calc(100vw - 40px)'}
           className="w-full h-auto block duration-700 group-hover:scale-105"
-          // 저장된 크기가 있으면 이미지를 받기 전에 자리를 잡는다. `width={0}
-          // height={0}`만으로는 높이가 0인 칸이 쌓였다가 사진이 올 때마다
-          // 아래 칸들이 밀려 내려간다 — 열 기반 masonry라 옆 열까지 흔들린다.
-          //
-          // 비율만 쓴다. 폭은 `w-full`이 정하고, 원본 픽셀 크기(1500px 안팎으로
-          // 줄어 있다)는 프레임 크기에 관여하지 않는다. `auto`를 앞에 두는 이유:
-          // 이미지가 도착하면 **실제** 비율이 이긴다 — 저장된 값이 회전 전
-          // 크기처럼 어긋나 있어도 사진이 찌그러지지 않는다.
+          // 저장된 비율로 먼저 자리를 잡는다(밀림 방지). `auto`가 앞이라 도착한 실제 비율이 이긴다.
           style={photo.width && photo.height ? { aspectRatio: `auto ${photo.width} / ${photo.height}` } : undefined}
           draggable={false}
           fadeIn={deferred}

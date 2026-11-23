@@ -1,12 +1,6 @@
 import { ALBUM_SLUG_RE } from './limits';
 
-/**
- * 앨범 제목 → 슬러그 제안. 제안일 뿐이고 관리자가 고칠 수 있다.
- *
- * 한글 제목은 로마자로 옮기지 않는다 — "제주"를 jeju로 옮기는 규칙은 표기법마다
- * 다르고, 틀린 제안은 빈칸보다 나쁘다(그대로 저장되면 URL로 영원히 남는다).
- * 옮길 수 없는 글자는 빼고, 남는 것이 없으면 빈 문자열을 돌려 직접 적게 한다.
- */
+// 한글은 로마자로 옮기지 않는다 — 틀린 제안은 URL로 영원히 남는다.
 export function suggestSlug(title: string): string {
   return title
     .normalize('NFKD')

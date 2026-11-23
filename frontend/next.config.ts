@@ -2,14 +2,9 @@ import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// Content Security Policy.
-// - Supabase, Cloudinary, Unsplash를 이미지/API 소스로 허용
-//   (api.cloudinary.com은 /admin에서 브라우저가 사진을 직접 업로드하는 엔드포인트)
-// - Next.js가 필요로 하는 unsafe-inline/eval은 개발에서만, 프로덕션에서도 style unsafe-inline은
-//   Tailwind JIT/styled-jsx 때문에 현실적으로 필요
-// - 체크아웃의 "주소 찾기"(카카오 우편번호): 로더 스크립트는 t1.kakaocdn.net, 본체는
-//   t1.daumcdn.net에서 올 수 있고, 검색 화면은 postcode.map.kakao.com의 iframe이다
-//   (`components/shop/AddressSearch.tsx`).
+// CSP는 사이트가 쓰는 외부 호스트를 모두 나열해야 한다.
+// 카카오 우편번호: 스크립트는 t1.kakaocdn.net·t1.daumcdn.net, 검색 화면은 postcode.map.kakao.com iframe.
+// api.cloudinary.com은 /admin에서 브라우저가 사진을 직접 업로드하는 곳.
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -36,20 +31,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // `opengraph-image`가 `readFile(process.cwd() + 'assets/…')`로 서체를 읽는다.
-  // 파일 트레이서는 그런 런타임 경로를 따라가지 못하므로 명시해 준다 — 없으면
-  // 로컬에서는 되고 배포에서만 카드가 폰트 없이(또는 500으로) 나온다.
+  // OG 이미지가 런타임에 assets/ 서체를 읽는데 트레이서가 못 따라가므로 명시한다.
   outputFileTracingIncludes: {
     '/opengraph-image': ['./assets/**'],
     '/portfolio/opengraph-image': ['./assets/**'],
   },
   experimental: {
-    // framer-motion re-exports its whole surface from one entry point, so a
-    // component that imports `{ motion }` drags the gesture, layout-animation
-    // and scroll modules in with it. Next ships this treatment for `recharts`
-    // by default; framer-motion is not on that list and is the heavier import
-    // of the two here. (`Reveal` no longer uses it at all — see its comment —
-    // so this only covers the routes that genuinely animate.)
     optimizePackageImports: ['framer-motion'],
   },
   async headers() {
@@ -59,10 +46,7 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        // `public/`는 파일명에 해시가 붙지 않아 기본 캐시가 사실상 없다.
-        // 국기 웹폰트는 내용이 고정된 벤더 파일이므로 1년 immutable로 못박는다.
-        // 교체할 일이 생기면 덮어쓰지 말고 **파일명을 바꿔야** 한다
-        // (public/fonts/README.md 참고).
+        // 1년 immutable 캐시: 폰트를 바꿀 때는 덮어쓰지 말고 파일명을 바꾼다.
         source: '/fonts/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
@@ -72,23 +56,15 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Korean is now the default locale at /portfolio; keep the old /ko URLs working.
       { source: '/ko/portfolio', destination: '/portfolio', permanent: true },
       { source: '/ko/portfolio/:path*', destination: '/portfolio/:path*', permanent: true },
-      // /en only holds the portfolio for now, so send the bare locale root there.
-      // Temporary on purpose: /en may become its own index if more pages get translated.
       { source: '/en', destination: '/en/portfolio', permanent: false },
     ];
   },
   images: {
-    // 원격 이미지는 이미 Cloudinary/Unsplash가 줄이고 포맷을 고른 것이라
-    // `/_next/image`로 한 번 더 통과시키지 않는다. 로더가 각 CDN에 폭과 품질을
-    // 직접 넘긴다(src/lib/image-loader.ts).
+    // 로더와 remotePatterns는 isRenderableImageUrl과 같은 호스트를 유지해야 한다.
     loader: 'custom',
     loaderFile: './src/lib/image-loader.ts',
-    // Next 16 warns about any `quality` not listed here. The custom loader passes
-    // the prop straight to the CDN (hero: q_90), but the list stays so the
-    // warning stays meaningful if someone adds a new value.
     qualities: [75, 90],
     remotePatterns: [
       new URL('https://res.cloudinary.com/dmljaqqzc/**'),

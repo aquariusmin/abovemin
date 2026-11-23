@@ -15,9 +15,7 @@ const REFRESH_MS = 60_000;
 
 export function BotDetail({
   botId,
-  /** Server-rendered first paint. See `getBot` in this route's page. */
   initialBot = null,
-  /** When the server read `initialBot` (epoch ms) — see `FleetDashboard`. */
   renderedAt,
 }: {
   botId: string;
@@ -26,20 +24,15 @@ export function BotDetail({
 }) {
   const [bot, setBot] = useState<FleetBot | null>(initialBot);
   const [error, setError] = useState<string | null>(null);
-  // Seeded rows are already "loaded": showing the spinner over numbers the
-  // server just delivered would be a step backwards.
   const [loaded, setLoaded] = useState(initialBot !== null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  // Staleness is judged against the server's render time until the first
-  // poll, so the state pill hydrates as rendered. See `FleetDashboard`.
+  // Staleness is judged against the server's render time until the first poll, so the pill hydrates as rendered.
   const [now, setNow] = useState(renderedAt);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        // ?id= scopes the response so the detail view doesn't download every
-        // bot's full equity_curve to render one.
         const res = await fetch(`/api/market/quant-fleet?id=${encodeURIComponent(botId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: FleetBot[] = await res.json();
@@ -58,8 +51,6 @@ export function BotDetail({
     };
     load();
 
-    // Same as the fleet view: a hidden tab is not worth a request a minute,
-    // and returning to it refetches at once.
     const id = setInterval(() => {
       if (!document.hidden) load();
     }, REFRESH_MS);
@@ -87,8 +78,6 @@ export function BotDetail({
       </Frame>
     );
   }
-  // A failed poll over a bot already on screen keeps it and says so; only a
-  // page that never got the bot at all is a full-screen error.
   if (error && !bot) {
     return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
   }
@@ -120,9 +109,6 @@ export function BotDetail({
         {error ? (
           <FeedStale error={error} since={lastFetched ? fmtRelative(lastFetched.toISOString()) : null} />
         ) : null}
-        {/* Identity first: the venue tag and halt state decide how to read
-            every number below, and mock equity looks identical to real money
-            otherwise. */}
         <Section className="flex flex-wrap items-center gap-3 px-4 py-3">
           <h1 className="lab-mono text-[16px] font-medium tracking-[0.12em] text-[var(--lab-ink-1)]">{name.tag}</h1>
           <span className="lab-mono text-[12px] text-[var(--lab-ink-3)]">{name.strategy}</span>
@@ -196,9 +182,7 @@ export function BotDetail({
               <KV k="market" v={`${bot.market} · ${bot.currency ?? "USD"}`} />
               <KV k="total fills" v={bot.fills_count !== null ? String(bot.fills_count) : "—"} />
               <KV k="last action" v={bot.last_fill ?? "—"} />
-              {/* Server-rendered, so these have to survive hydration — see
-                  `RelativeTime`. This page had the same latent mismatch as the
-                  fleet table. */}
+              {/* Server-rendered, so these have to survive hydration — see `RelativeTime`. */}
               <KV k="last cycle" v={<RelativeTime>{fmtRelative(new Date(seen).toISOString())}</RelativeTime>} />
               <KV k="row synced" v={<RelativeTime>{fmtRelative(bot.updated_at)}</RelativeTime>} />
             </div>

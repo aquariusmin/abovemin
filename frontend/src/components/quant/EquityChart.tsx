@@ -11,18 +11,7 @@ import {
 } from "@/lib/quant";
 import { LAB_AXIS, LAB_GRID, LAB_INK, LAB_STATUS, LAB_TOOLTIP } from "@/components/quant/theme";
 
-/**
- * One bot's equity, with its drawdown underneath.
- *
- * Two stacked panes rather than a dual axis: equity in currency and drawdown
- * in percent do not share a scale, and overlaying them on two y-axes would
- * invent an alignment the data does not have. Stacked, they share the x-axis
- * and stay honest.
- *
- * Drawdown earns its place because the fleet's L4 halt fires on drawdown, so
- * "how deep and how long" is the operational question — and that is exactly
- * what a headline equity line hides.
- */
+/** Two stacked panes, not a dual axis: currency and percent don't share a scale. */
 export function EquityChart({
   points,
   positive,
@@ -33,8 +22,7 @@ export function EquityChart({
   currency: string | null;
 }) {
   const dd = useMemo(() => {
-    // Plain loop rather than a closure over a running `peak`: the React
-    // compiler (enabled site-wide) rejects reassigning a captured variable.
+    // Plain loop, not a closure over a running `peak`: the React Compiler rejects reassigning a captured var.
     const out: Array<{ ts: number; dd: number }> = [];
     let peak = -Infinity;
     for (const p of points) {
@@ -52,19 +40,14 @@ export function EquityChart({
     );
   }
 
-  // Gain/loss is a good/bad judgement, so it wears the reserved status tokens
-  // rather than a series colour. The signed figure beside the chart is the
-  // label that keeps this from being colour-alone.
+  // Status tokens, not a series colour; the signed figure beside the chart keeps it from being colour-alone.
   const stroke = positive ? LAB_STATUS.good : LAB_STATUS.critical;
-  // 축과 툴팁 모두 KST. 플릿 차트와 같은 규칙이고, 이유는 `lib/quant`의 KST
-  // 주석에 있다 — 여기 계좌는 전부 한국 시장이다.
   const ticks = dayTicks(points.map((p) => p.ts));
 
   return (
     <div className="space-y-1">
       <div className="h-52 w-full">
-        {/* 높이는 위의 `h-52`(208px)와 같아야 한다 — 기본값 -1로 첫 측정이
-            들어가면 recharts가 콘솔에 경고를 찍는다. */}
+        {/* 높이는 위의 `h-52`(208px)와 같아야 한다 — 기본값 -1로 측정하면 recharts가 경고를 찍는다. */}
         <ResponsiveContainer initialDimension={{ width: 640, height: 208 }}>
           <AreaChart data={points} margin={{ top: 6, right: 12, bottom: 0, left: 0 }}>
             <defs>

@@ -14,12 +14,6 @@ import {
   roundCoord,
 } from '@/lib/admin/photo-metadata';
 
-/**
- * 이 파일이 지키는 것: 카메라마다 다른 EXIF 문자열이 한 가지 표시 형식으로
- * 모이고, **정밀한 GPS가 반올림을 거치지 않고 밖으로 나가는 경로가 없다.**
- * 입력 문자열은 2026-09-16 Cloudinary Admin API 응답에서 그대로 옮겼다.
- */
-
 describe('parseCamera', () => {
   it('제조사와 모델을 잇는다', () => {
     expect(parseCamera('Apple', 'iPhone 7')).toBe('Apple iPhone 7');
@@ -102,7 +96,6 @@ describe('parseIso', () => {
 describe('parseTakenAt', () => {
   it('벽시계 시각을 UTC 자리에 그대로 적는다 — 시간대를 지어내지 않는다', () => {
     expect(parseTakenAt('2019:07:31 14:55:19')).toBe('2019-07-31T14:55:19.000Z');
-    // 늦은 밤 사진이 UTC 변환으로 다음 날/전날로 밀리지 않는다.
     expect(parseTakenAt('2023:08:04 22:05:55')).toBe('2023-08-04T22:05:55.000Z');
   });
 
@@ -179,7 +172,6 @@ describe('normalizeResource', () => {
       iso: 20,
     });
     expect(gps).toEqual({ lat: 41.8, lng: 140.8 });
-    // 저장할 필드에는 좌표가 섞여 들어가지 않는다 — photos는 공개 테이블이다.
     expect(Object.keys(fields).some(key => /lat|lng|gps/i.test(key))).toBe(false);
   });
 

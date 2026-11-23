@@ -10,16 +10,7 @@ import LocationRename from './LocationRename';
 import { INPUT_CLASS, LABEL_CLASS, PANEL_CLASS } from './adminStyles';
 import { useRetryAfterRelogin } from './SessionRetry';
 
-/**
- * 아카이브 사진 관리. 앨범 하나를 골라 두고 그 아래에서 세 가지를 한다.
- *  - 새 사진 업로드
- *  - 이미 올라간 사진의 정보·순서·숨김·일괄 작업
- *  - 장소 이름 바꾸기(앨범을 가로질러)
- *
- * 앨범 선택을 이 컴포넌트가 쥐고 있는 이유는, 업로드 대기 중에 앨범이 바뀌면
- * 이미 Cloudinary의 이전 앨범 폴더로 올라간 파일과 저장될 `album_slug`가
- * 어긋나기 때문이다. 대기 중에는 선택을 잠근다.
- */
+/** 업로드 대기 중에는 앨범 선택을 잠근다 — 이미 올라간 Cloudinary 폴더와 `album_slug`가 어긋난다. */
 
 export interface AlbumOption {
   id: number;
@@ -47,17 +38,15 @@ export default function ArchiveTab() {
   const [pendingCount, setPendingCount] = useState(0);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  // 개요의 "고치기"가 URL을 바꾸면 이미 열려 있는 이 탭도 따라가야 한다. 렌더 중
-  // 비교로 맞춘다(effect에서 setState하면 한 번 옛 앨범으로 그렸다가 바뀐다).
+  // 렌더 중 비교로 URL을 따른다 — effect에서 setState하면 옛 앨범으로 한 번 그린다.
   const [seenParams, setSeenParams] = useState(`${albumParam}|${filterParam}`);
   if (seenParams !== `${albumParam}|${filterParam}`) {
     setSeenParams(`${albumParam}|${filterParam}`);
-    // 업로드 대기 중에는 앨범을 바꾸지 않는다(위 주석). 필터는 바꿔도 안전하다.
+    // 업로드 대기 중에는 앨범을 바꾸지 않는다. 필터는 바꿔도 안전하다.
     if (albumParam && pendingCount === 0) setAlbumSlug(albumParam);
     setFilter(isFilter(filterParam) ? filterParam : 'all');
   }
 
-  // 앨범 선택지(장수 포함). 업로드·이동·삭제 뒤에 `albumsKey`를 올려 다시 읽는다.
   const [albumsKey, setAlbumsKey] = useState(0);
   const [albumsFailed, setAlbumsFailed] = useState(false);
 
@@ -72,7 +61,6 @@ export default function ArchiveTab() {
         setAlbumsFailed(false);
       } catch {
         if (!cancelled) setAlbumsFailed(true);
-        // 앨범을 못 불러오면 선택지가 비고, 업로드 영역이 잠긴 채로 남는다.
       }
     })();
     return () => {
@@ -80,7 +68,6 @@ export default function ArchiveTab() {
     };
   }, [albumsKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(albumsFailed, () => setAlbumsKey(n => n + 1));
 
   const handleSaved = useCallback(() => {
@@ -88,8 +75,7 @@ export default function ArchiveTab() {
     setAlbumsKey(n => n + 1);
   }, []);
 
-  // 사진 목록 쪽에서 바꾼 것(이동·삭제)은 목록이 스스로 다시 읽는다. 여기서는
-  // 선택지의 장수만 맞춘다 — `handleSaved`를 쓰면 목록이 두 번 읽힌다.
+  // 선택지 장수만 맞춘다 — `handleSaved`를 쓰면 목록이 두 번 읽힌다.
   const refreshAlbums = useCallback(() => setAlbumsKey(n => n + 1), []);
 
   const album = albums.find(item => item.slug === albumSlug);

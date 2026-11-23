@@ -11,11 +11,6 @@ const TABS = [
 
 export type TabKey = (typeof TABS)[number]["key"];
 
-/**
- * Same frame as /lab: the site's page rhythm, one command bar, then content.
- * The bar says three things before any number: whose page this is (owner
- * only), how fresh the upload is, and where the numbers come from.
- */
 export function Shell({
   active,
   generatedAt,

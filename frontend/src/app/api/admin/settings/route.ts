@@ -19,11 +19,7 @@ export async function GET() {
   return NextResponse.json(settings);
 }
 
-/**
- * 아는 키(`hero_image`·`hero_title`·`hero_subtitle`)만 저장한다. 무엇을 고르고
- * 무엇을 거절하는지는 `SettingsUpdate`(`lib/admin/schemas.ts`)에 있다 — 히어로
- * 이미지의 호스트 확인도 거기서 한다.
- */
+// 아는 키만 저장한다. 히어로 이미지의 호스트 확인은 SettingsUpdate(schemas.ts)에서 한다.
 export async function PATCH(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -37,7 +33,6 @@ export async function PATCH(request: Request) {
     const { error } = await db.value
       .from('site_settings')
       .upsert({ key, value, updated_at: now }, { onConflict: 'key' });
-    // 키는 스키마가 고른 셋 중 하나라 로그 이름에 붙여도 된다.
     if (error) return dbErrorResponse(`admin_settings_upsert.${key}`, error);
   }
 

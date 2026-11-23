@@ -6,8 +6,6 @@ import {
 } from "@/data/portfolioEvidence";
 
 // Forest = independently reproduced; cream = quoted from the source as-is.
-// Two warm neighbours rather than a green/blue split, so the pair reads as one
-// scale of confidence instead of two unrelated categories.
 const statusStyles: Record<EvidenceStatus, string> = {
   verified: "border-primary/25 bg-moss-wash text-primary",
   reported: "border-cream-deep bg-cream/70 text-secondary-foreground",

@@ -7,30 +7,13 @@ import { cloudinary, mayHaveAlpha } from '@/lib/cloudinary';
 export interface GalleryImage {
   url: string;
   label: string | null;
-  /** 배포되는 이미지의 가로÷세로. 서버가 `cloudinaryAspect`로 읽는다. 못 읽었으면 null. */
   aspect: number | null;
 }
 
 /** 스와이프로 인정하는 가로 이동(px). 세로 스크롤을 스와이프로 오해하지 않게. */
 const SWIPE_THRESHOLD = 48;
 
-/**
- * 큰 사진의 `sizes` — 사진 칸(`md:col-span-7`)의 실제 폭.
- *
- * 상세 레이아웃은 `max-w-6xl`(1152px)에서 멈춘다(뷰포트 1232px = 1152 + 좌우
- * 여백 80). 12칸 그리드의 7칸은 `(폭 − 11×간격) × 7/12 + 6×간격`이다.
- *   1232px~      1152px, 간격 64 → 645.3px
- *   1024~1231px  58.3vw − 73.3px (간격 64)  → 53vw 이하
- *   768~1023px   58.3vw − 66.7px (간격 48)  → 53vw 이하
- *   ~767px       한 칸: 100vw − 40px(640px부터 − 48px)
- * 예전의 `58vw`는 상한도 간격도 없어 1920px 화면에서 646px 칸에 1114px라고 말했다.
- *
- * 비율을 아는 사진은 한 번 더 좁힌다. 프레임은 `min(칸, 비율 × 78svh)`라서,
- * 세로 사진은 흔한 데스크톱 화면에서 칸보다 좁다(1440×900의 2:3 사진은 472px).
- * 칸 폭이 고정인 1232px 이상에서는 "높이가 폭을 정하는가"가 화면 높이만의
- * 조건이므로 `max-height`로 적을 수 있다. 그 아래 구간은 칸 폭 그대로 둔다 —
- * 넉넉한 쪽으로 틀린다. `svh` 대신 `vh`: 크거나 같다.
- */
+/** `sizes`: 사진 칸(`md:col-span-7`, `max-w-6xl`, 간격 48/64px)의 실제 폭. 비율을 알면 `비율 × 78vh`로 더 좁힌다. */
 function mainSizes(ratio: number | null): string {
   const column = '(min-width: 1232px) 646px, (min-width: 768px) 53vw, calc(100vw - 40px)';
   if (!ratio) return column;
@@ -39,22 +22,7 @@ function mainSizes(ratio: number | null): string {
   return `(min-width: 1232px) and (max-height: ${heightBound}px) ${width}vh, ${column}`;
 }
 
-/**
- * 상품 상세의 사진들 — 큰 사진 한 장과 그 아래 썸네일 줄.
- *
- * **프레임이 사진을 따른다**(DESIGN.md § Image Treatment). 포스터의 앞면은
- * 세로, 사용 예는 가로일 수 있다. 정사각 프레임에 `object-cover`로 넣으면 둘 중
- * 하나는 잘리고, `contain`으로 넣으면 남는 띠를 채워야 한다. 그래서 비율을
- * 아는 사진은 그 비율의 상자를 만들고(이미지보다 먼저 자리를 잡아 레이아웃이
- * 흔들리지 않는다), 모르는 사진은 이미지 자신의 크기로 그린다. 세로가 긴 사진은
- * 화면 높이를 넘지 않도록 폭이 줄어든다 — 자르는 대신.
- *
- * 썸네일도 같은 규칙: 높이만 맞추고 폭은 사진 비율대로.
- *
- * 키보드: 썸네일은 버튼이라 Tab으로 닿고, 줄 안에서는 ←/→/Home/End로 옮겨
- * 다닌다(누르는 즉시 큰 사진이 바뀐다). 휴대폰에서는 큰 사진을 좌우로 밀어도
- * 넘어간다.
- */
+/** 프레임이 사진을 따른다 — 자르지 않는다(DESIGN.md § Image Treatment). */
 export default function ProductGallery({ images, name }: { images: GalleryImage[]; name: string }) {
   const [index, setIndex] = useState(0);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -97,14 +65,11 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
     if (!start || !touch || count < 2) return;
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
-    // 가로로 충분히, 그리고 세로보다 더 많이 움직였을 때만.
     if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
     go(dx < 0 ? index + 1 : index - 1);
   }
 
   const ratio = current.aspect;
-  // 배경을 지운 컷아웃은 프레임(바탕색·테두리) 없이 페이지 위에 그대로 놓는다
-  // (`mayHaveAlpha`). 사진은 지금처럼 프레임 안에.
   const frame = mayHaveAlpha(current.url) ? '' : 'rounded-lg border border-border-light bg-stone';
 
   return (
@@ -117,8 +82,6 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
           style={count > 1 ? { touchAction: 'pan-y' } : undefined}
         >
           {ratio ? (
-            // 비율을 아는 사진: 상자 = 사진. 폭은 칸을 넘지 않고, 높이는 화면의
-            // 78%를 넘지 않도록 `ratio × 78svh`로 묶는다.
             <div
               className={`relative overflow-hidden ${frame}`}
               style={{ aspectRatio: ratio, width: `min(100%, calc(${ratio} * 78svh))` }}
@@ -130,8 +93,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
                 fill
                 sizes={mainSizes(ratio)}
                 className="object-contain"
-                /* 첫 사진이 이 페이지의 LCP다. 다른 장으로 넘긴 뒤에는
-                   preload할 이유가 없다. */
+                /* 첫 사진만 preload한다 — 이 페이지의 LCP다. */
                 preload={index === 0}
                 fetchPriority={index === 0 ? 'high' : undefined}
               />
@@ -177,8 +139,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
               onClick={() => go(i)}
               aria-current={i === index ? 'true' : undefined}
               aria-label={`${i + 1}번째 사진 보기${image.label ? ` — ${image.label}` : ''}`}
-              // 현재 장만 Tab 순서에 두고 나머지는 방향키로 — 사진이 열 장이면
-              // Tab 열 번을 지나야 "담기"에 닿는다.
+              // 현재 장만 Tab 순서에 두고 나머지는 방향키로 옮긴다.
               tabIndex={i === index ? 0 : -1}
               className={`overflow-hidden rounded-md border transition-[border-color,opacity] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                 i === index ? 'border-primary opacity-100' : 'border-border-light opacity-70 hover:opacity-100'

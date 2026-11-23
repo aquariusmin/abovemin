@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OrderInput, isHoneypotFilled, type OrderInputValues } from '@/lib/orders-schema';
 
-/**
- * 이 파일이 지키는 것: 체크아웃 폼이 보내는 모든 필드가 서버까지 살아서 간다.
- *
- * 우편번호가 몇 달 동안 버려진 이유는 zod의 기본 동작이 strip이기 때문이다 —
- * 모르는 키는 오류가 아니라 침묵이다. 타입 쪽은 `OrderInputValues`가 막고,
- * 런타임 쪽은 여기가 막는다.
- */
 describe('OrderInput', () => {
   const valid: OrderInputValues = {
     name: '홍길동',
@@ -57,8 +50,6 @@ describe('OrderInput', () => {
   });
 
   it('장바구니 항목의 나머지 필드는 서버로 넘어가지 않는다', () => {
-    // 카트는 이름·가격·이미지도 들고 있다. 가격은 서버가 products에서 다시
-    // 읽으므로, 클라이언트가 보낸 값이 통과해서는 안 된다.
     const parsed = OrderInput.parse({
       ...valid,
       items: [{ id: 3, quantity: 1, name: '포스터', price: 999_999, image_url: 'x' }],
@@ -167,7 +158,6 @@ describe('허니팟', () => {
   };
 
   it('스키마가 허니팟 값을 버리지 않고 서버까지 넘긴다', () => {
-    // strip되면 봇의 주문이 그대로 저장되고 메일이 나간다.
     expect(OrderInput.parse({ ...base, website: 'http://spam.example' }).website).toBe('http://spam.example');
     expect(OrderInput.parse(base).website).toBeUndefined();
   });

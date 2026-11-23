@@ -1,9 +1,4 @@
-/**
- * Shapes of the files the owner's PC uploads (market-intelligence-dashboard,
- * `scripts/mi/publish.py`, schema `mi-web/1`). Only the fields the pages read are
- * typed; everything is optional because the producer is another repository and
- * a missing field must render as "없음", never crash the page.
- */
+// Producer is another repo: every field is optional and a missing one must render as "없음".
 
 export const MARKET_KEYS = ['sp', 'nq', 'ks', 'kq'] as const;
 export type MarketKey = (typeof MARKET_KEYS)[number];
@@ -52,7 +47,6 @@ export type MarketEntry = {
   as_of?: string;
   provisional?: string[];
   indicators?: MarketIndicators;
-  /** [date, close] pairs, oldest first, at most five years. */
   rows?: [string, number][];
   regime?: Regime;
 };
@@ -83,7 +77,6 @@ export type ForecastHistoryRow = {
   p_bear: number;
   expected_outcome_date?: string;
   validation_status?: string;
-  /** 'pending' until the h-th close is known, then 'evaluated'. */
   status?: string;
   predicted_class?: 'bullish' | 'neutral' | 'bearish';
   actual_class?: 'bullish' | 'neutral' | 'bearish' | null;

@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { NOTE_SLUG_RE, noteFromRow, parseTags, sortNotes, splitParagraphs, suggestNoteSlug } from '@/lib/notes';
 import { NoteCreate, NoteUpdate } from '@/lib/admin/schemas';
 
-/**
- * 이 파일이 지키는 것: 관리 화면에서 적은 텍스트가 공개 화면에서 같은 문단으로
- * 나뉘고, `boundary` 없는 글은 저장도 공개도 되지 않는다.
- */
-
 describe('splitParagraphs', () => {
   it('빈 줄로 문단을 나눈다', () => {
     expect(splitParagraphs('첫 문단.\n\n둘째 문단.')).toEqual(['첫 문단.', '둘째 문단.']);

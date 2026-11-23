@@ -11,11 +11,6 @@ import {
   runChunked,
 } from '@/lib/admin/route-helpers';
 
-/**
- * 앨범 순서를 통째로 다시 매긴다. `api/admin/photos/order`와 같은 계약이다:
- * 전체 id 목록을 받아 `sort_order`를 1..n으로 만들고, 집합이 DB와 다르면 409.
- * 같은 요청을 다시 보내면 같은 결과로 수렴한다(바뀌는 행이 없으면 쓰지 않는다).
- */
 export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;

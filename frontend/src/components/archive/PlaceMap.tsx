@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { geoMercator, geoNaturalEarth1, geoPath, type GeoProjection } from 'd3-geo';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
-// 빌드 때 번들에 들어간다 — 지도를 여는 순간 외부로 나가는 요청이 없다(CSP도
-// 그대로). 110m 해상도(55 KB)라 제주·홋카이도 정도까지는 형태가 남는다.
+// 번들에 넣어 지도를 열 때 외부 요청이 없다(CSP 그대로). 110m 해상도(55 KB).
 import landTopology from 'world-atlas/land-110m.json';
 import {
   REGIONS,
@@ -18,23 +17,7 @@ import {
   type Region,
 } from '@/lib/places';
 
-/**
- * `/archive`의 "지도로 보기". 장소마다 점 하나, 넓이는 사진 수.
- *
- * 이 컴포넌트는 `PhotoFilter`가 `next/dynamic`으로 **열 때만** 불러온다. d3-geo와
- * 세계 윤곽이 아카이브 첫 화면의 번들에 실리지 않는다.
- *
- * 그림은 두 겹이다: 땅은 SVG 한 장, 점은 그 위에 절대 위치로 올린 진짜
- * `<button>`. SVG 안의 `<circle>`로는 탭 포커스·Enter·스크린리더 이름을 전부
- * 손으로 만들어야 하고, 반지름을 viewBox 단위로 주면 폰에서 점이 1px로
- * 줄어든다. 그래서 SVG 좌표계를 컨테이너의 실제 픽셀과 같게 두고(ResizeObserver),
- * 점과 라벨은 화면 픽셀로 그린다.
- *
- * 겹치는 점은 묶는다(`clusterDots`). 묶음을 누르면 그 곳을 담는 지역으로 확대하고,
- * 이미 확대한 뒤라면 묶인 장소의 목록을 연다.
- *
- * 좌표는 소수점 한 자리(약 11km)다 — 점은 "이 근처"이지 촬영 위치가 아니다.
- */
+/** 점은 SVG 위의 진짜 `<button>`이다(포커스·스크린리더). SVG 좌표를 컨테이너의 실제 픽셀과 같게 둔다. */
 
 const topology = landTopology as unknown as Topology<{ land: GeometryCollection }>;
 const land = feature(topology, topology.objects.land);
@@ -46,8 +29,6 @@ function projectionFor(region: Region, width: number, height: number): GeoProjec
   const extent: [[number, number], [number, number]] = [[pad, pad], [width - pad, height - pad]];
   if (!region.bounds) return geoNaturalEarth1().fitExtent(extent, SPHERE);
   const [west, south, east, north] = region.bounds;
-  // 지역은 메르카토르 — 좁은 범위에서 사람들이 익숙한 모양이다. 네 모서리를
-  // 담도록 맞춘다.
   return geoMercator().fitExtent(extent, {
     type: 'MultiPoint',
     coordinates: [[west, south], [east, south], [east, north], [west, north]],
@@ -56,7 +37,6 @@ function projectionFor(region: Region, width: number, height: number): GeoProjec
 
 interface Props {
   places: MapPlace[];
-  /** 지금 필터에 걸린 장소. 점이 강조되고 라벨이 늘 보인다. */
   selected: string | null;
   onSelect: (name: string) => void;
 }
@@ -74,7 +54,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
   const regions = useMemo(() => availableRegions(places), [places]);
   const [regionId, setRegionId] = useState('world');
   const region = regions.find(r => r.id === regionId) ?? regions[0];
-  /** 목록을 연 묶음(첫 장소 이름으로 가리킨다). */
   const [openCluster, setOpenCluster] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,7 +73,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
     const projection = projectionFor(region, size.width, size.height);
     const path = geoPath(projection);
     const max = Math.max(...places.map(p => p.count), 1);
-    // 작은 화면에서는 점도 조금 작게. 390px 폭에서 가장 큰 점이 지름 26px.
     const maxRadius = size.width < 640 ? 13 : 18;
     const radius = (count: number) => dotRadius(count, max, { min: 5, maxRadius });
     const dots = places
@@ -114,7 +92,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
     };
   }, [size, region, places]);
 
-  // 목록은 Esc로 닫는다.
   useEffect(() => {
     if (!openCluster) return;
     const onKey = (event: KeyboardEvent) => {
@@ -135,9 +112,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
       onSelect(cluster.members[0].name);
       return;
     }
-    // 세계 지도에서 누른 묶음은 먼저 확대한다 — 묶인 장소를 가장 많이 담는 지역으로.
-    // 폰 폭에서는 한국과 일본이 한 묶음이 되는데, 그때 스물한 곳짜리 목록을 여는
-    // 것보다 한국으로 확대하고 일본은 칩으로 가게 두는 편이 읽기 쉽다.
     if (!region.bounds) {
       const zoom = REGIONS.filter(r => r.bounds)
         .map(r => ({ region: r, hits: cluster.members.filter(place => inRegion(place, r)).length }))
@@ -171,9 +145,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
       <div
         ref={frameRef}
         id="archive-map"
-        // 폰에서 세계 지도는 가로로 긴 틀, 지역은 정사각형 틀. 한국·일본은 세로로
-        // 길어서 4:3 틀에 맞추면 점 사이가 너무 좁아진다. 틀 크기가 바뀌면
-        // ResizeObserver가 투영을 다시 맞춘다.
         className={`relative w-full overflow-hidden rounded-lg border border-border bg-surface max-h-[560px] sm:aspect-[16/9] lg:aspect-[2/1] ${
           region.bounds ? 'aspect-square' : 'aspect-[16/10]'
         }`}
@@ -198,14 +169,11 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
                 const group = cluster.members.length > 1;
                 const active = cluster.members.some(place => place.name === selected);
                 const open = openCluster === key;
-                // 라벨이 틀 밖으로 잘리지 않게, 가장자리 근처에서는 붙는 쪽을 바꾼다.
                 const edge = cluster.x < 110 ? 'left' : cluster.x > size.width - 110 ? 'right' : 'center';
                 const below = cluster.y < 60;
-                // 목록은 틀 안쪽으로 연다 — 틀이 `overflow-hidden`이라 위쪽 점에서 위로
-                // 열면 잘린다(폰 한국 보기에서 서울 묶음이 그랬다).
+                // 목록은 틀 안쪽으로 연다 — 틀이 `overflow-hidden`이라 바깥으로 열면 잘린다.
                 const listBelow = cluster.y < size.height / 2;
                 const hit = Math.max(2 * cluster.r, 28);
-                // 선택한 장소가 묶음 안에 있으면 라벨은 그 장소의 이름과 **그 장소의** 사진 수.
                 const selectedPlace = active && group ? cluster.members.find(p => p.name === selected) : undefined;
                 return (
                   <li
@@ -233,7 +201,6 @@ export default function PlaceMap({ places, selected, onSelect }: Props) {
                         }`}
                         style={{ width: 2 * cluster.r, height: 2 * cluster.r }}
                       >
-                        {/* 묶음 표시: 안쪽 크림 고리. 숫자를 넣기에는 작은 점이 많다. */}
                         {group && cluster.r >= 8 && <span className="absolute inset-[3px] rounded-full border border-cream/60" />}
                       </span>
                       <span

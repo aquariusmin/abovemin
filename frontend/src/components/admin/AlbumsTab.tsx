@@ -18,13 +18,6 @@ import {
   PANEL_CLASS,
 } from './adminStyles';
 
-/**
- * 앨범 관리 — 만들기, 이름·슬러그·설명, 커버, 공개 여부, 순서, 지우기.
- *
- * 순서는 사진과 같은 방식이다: 끌어 놓거나 ↑↓로 바꾼 뒤 한 번에 저장하고,
- * 서버가 1..n으로 다시 매긴다(`api/admin/albums/order`).
- */
-
 interface AlbumRow {
   id: number;
   title: string;
@@ -74,11 +67,9 @@ export default function AlbumsTab({ active }: { active: boolean }) {
     };
   }, [active, reloadKey]);
 
-  // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError !== null && !albums, () => setReloadKey(k => k + 1));
 
-  // 개요의 "고치기"로 들어오면 그 앨범의 편집을 연다. 목록이 도착한 뒤에야
-  // id를 알 수 있으므로 렌더 중에 한 번 맞춘다.
+  // 목록이 도착해야 id를 알 수 있어 렌더 중에 한 번 맞춘다.
   const [focused, setFocused] = useState<string | null>(null);
   if (albums && focusSlug && focused !== focusSlug) {
     setFocused(focusSlug);
@@ -266,13 +257,10 @@ export default function AlbumsTab({ active }: { active: boolean }) {
   );
 }
 
-// ── 새 앨범 ─────────────────────────────────────────────────────────────────
-
 function NewAlbumForm({ onCreated, migrationPending }: { onCreated: (title: string) => void; migrationPending: boolean }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  /** 슬러그를 직접 고친 뒤에는 제목을 바꿔도 덮어쓰지 않는다. */
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -361,8 +349,6 @@ function NewAlbumForm({ onCreated, migrationPending }: { onCreated: (title: stri
     </form>
   );
 }
-
-// ── 편집 ─────────────────────────────────────────────────────────────────────
 
 function AlbumEditor({
   album,

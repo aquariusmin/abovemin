@@ -1,31 +1,8 @@
 @import "tailwindcss";
 
-/* ============================================================================
-   phorage design system — "Forest Editorial"
+/* phorage design system — "Forest Editorial" (shadcn token model) */
 
-   Architecture: shadcn/ui token model (semantic role tokens + `@theme inline`
-   bridge + component recipes). Palette: a five-colour botanical set.
-
-     forest  #386641   deep canopy green — primary actions, brand ink
-     fern    #6A994E   mid green        — hover, focus ring, secondary green
-     moss    #A7C957   lime highlight   — accents, markers, dark-surface text
-     cream   #F2E8CF   warm parchment   — secondary surfaces, section bands
-     brick   #BC4749   clay red         — destructive, editorial taxonomy
-
-   Neutrals are all warm/green-tinted so nothing in the UI reads as cold grey.
-   Canvas is a paper tint of `cream`, ink is a near-black pulled toward forest.
-
-   Deviation from stock shadcn, deliberate: `--accent` is the brand green rather
-   than a pale hover wash. `text-accent` reads as "brand" throughout this app;
-   hover surfaces use `--muted` / `--secondary` instead.
-   ========================================================================== */
-
-
-/* Country flags, and nothing else. `unicode-range` restricts this family to the
-   regional-indicator block, so it can sit in the middle of the general emoji
-   stack without ever being consulted for another character — and so a page with
-   no flag on it never triggers the download at all. See public/fonts/README.md
-   for provenance and licence (Twemoji, CC-BY 4.0). */
+/* Country flags only: unicode-range keeps it off other glyphs and off pages with no flag. */
 @font-face {
   font-family: "Twemoji Country Flags";
   src: url("/fonts/TwemojiCountryFlags.woff2") format("woff2");
@@ -42,11 +19,11 @@
   --brick: #bc4749;
 
   /* Tonal extensions of the five, for washes and dark bands */
-  --forest-deep: #24402c;   /* dark product / CTA bands */
-  --forest-black: #16231a;  /* lab shell, deepest surface */
-  --moss-wash: #eef4dc;     /* palest lime section wash */
-  --cream-deep: #e8dcbb;    /* cream pressed / border-on-cream */
-  --brick-soft: #e0a8a6;    /* brick chip borders */
+  --forest-deep: #24402c;
+  --forest-black: #16231a;
+  --moss-wash: #eef4dc;
+  --cream-deep: #e8dcbb;
+  --brick-soft: #e0a8a6;
   --brick-light: #d76668;   /* brick lifted for legibility on dark surfaces */
 
   /* ── shadcn semantic roles ─────────────────────────────────────────────── */
@@ -78,13 +55,10 @@
 
   --border: #e2decd;
   --input: #dcd7c4;
-  /* 입력칸·선택칸의 테두리. `--input`은 장식용 선(Lab 콘솔의 강한 선 등)으로도
-     쓰여서 따로 둔다. 바탕(#fcfaf4)과 카드(#fff) 모두에 3:1을 넘는다(WCAG 1.4.11) —
-     placeholder만 있는 칸은 테두리가 곧 "여기가 입력칸"이라는 표시다. */
+  /* 입력칸 테두리. 바탕·카드 모두 3:1 이상(WCAG 1.4.11). 장식선용 --input과 따로 둔다. */
   --field-edge: #948e78;
   --ring: var(--fern);
 
-  /* Data-viz ramp — canopy to clay, readable on light and dark */
   --chart-1: var(--forest);
   --chart-2: var(--fern);
   --chart-3: var(--moss);
@@ -92,13 +66,11 @@
   --chart-5: #8b7a4f;
 
   /* ── Legacy aliases ────────────────────────────────────────────────────── */
-  /* Names this codebase already speaks, re-pointed at the new palette. Prefer
-     the semantic roles above in new markup. */
   --canvas: var(--background);
-  --surface: #f7f2e3;          /* warm section surface, between canvas & cream */
+  --surface: #f7f2e3;
   --surface-muted: var(--muted);
   --surface-dark: var(--forest-black);
-  --stone: var(--cream);       /* image matting / placeholder fill */
+  --stone: var(--cream);
   --green-wash: var(--moss-wash);
   --blue-wash: var(--moss-wash);
   --card-border: #ebe7d9;
@@ -110,54 +82,15 @@
   --navy: var(--forest-black);
   --ink: var(--foreground);
   --ink-body: #2e3a2c;
-  --slate: #57624f;            /* secondary body copy */
+  --slate: #57624f;
 
-  /* ── Type stacks ───────────────────────────────────────────────────────────
-     Each stack pairs a Latin face with a real Korean face, so a mixed line
-     resolves per-glyph into two fonts chosen to sit together — not into a
-     webfont beside whatever Korean face the OS happens to ship. System faces
-     stay at the end as a last resort only. */
+  /* ── Type stacks ── */
 
-  /* Emoji, named explicitly. Album titles are admin-authored and carry flags
-     ("Korea 🇰🇷"), and font fallback resolves per glyph against the
-     stack in order — whichever family first claims a codepoint wins. Naming
-     the colour-emoji families keeps that decision here instead of leaving it
-     to whatever the OS happens to reach last.
-
-     Two separate Windows problems are being fixed, and only one of them is a
-     naming problem:
-
-     1. Ordering. Without these names the first family in the stack that
-        claimed an emoji codepoint on Windows was "Malgun Gothic" — the Korean
-        system face carries the older symbol block (☀ ★ ✈ ❤ …)
-        as flat monochrome outlines. Listing the colour fonts ahead of it fixes
-        that, and the position matters as much as the names: they sit AFTER the
-        webfonts, so Segoe UI Emoji is never asked about digits (it ships 0–9
-        and # as keycap bases, which would turn "2026" into emoji), and BEFORE
-        the Korean system faces, so Malgun is never asked about ✈.
-
-     2. Flags, which no ordering can fix. Segoe UI Emoji deliberately omits
-        every country flag — a Microsoft product decision — so Chromium on
-        Windows draws 🇰🇷 as the two boxed letters "KR" no matter what
-        we put in the stack. The only fix is to ship the glyphs, which is what
-        the @font-face below does.
-
-     The order is also what keeps that font off the wire for people who don't
-     need it. A webfont is fetched only when it is actually selected to draw
-     something, so Apple Color Emoji (macOS) and Noto Color Emoji (Android,
-     most Linux) both claim the flags first and Twemoji is never requested.
-     Windows has neither, falls through to Twemoji, and pays the 78 KB. */
+  /* Emoji: after webfonts (Segoe keycap digits), before Malgun (mono ✈); Twemoji = Windows flags. */
   --font-emoji: "Apple Color Emoji", "Noto Color Emoji", "Twemoji Country Flags",
     "Segoe UI Emoji", "Segoe UI Symbol";
 
-  /* Japanese: system faces only, no webfont. Album captions carry Japanese
-     place names ("嵐山 (아라시야마)"), and Plex Sans KR covers neither kana nor
-     those kanji, so the glyphs fell through to whatever the OS reached first —
-     tofu boxes on a machine without a CJK default (measured: headless Chromium
-     on Linux). Named after the emoji families for
-     the same reason the Korean system faces are: these fonts carry the old
-     monochrome symbol block too, and must never be asked about ✈ before a
-     colour emoji face is. */
+  /* Japanese: system faces only, after emoji so they never claim ✈. */
   --font-japanese: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
     "Noto Sans JP", "Noto Sans CJK JP";
 
@@ -171,8 +104,7 @@
     ui-monospace, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
 }
 
-/* Dark surfaces (the Lab shell). Available as a `.dark` scope for any block
-   that needs the full token set inverted onto forest-black. */
+/* Dark token scope (Lab shell). */
 .dark {
   --background: var(--forest-black);
   --foreground: #f1f3ec;
@@ -271,8 +203,6 @@
   --font-mono: var(--font-mono-stack);
   --font-display: var(--font-display-stack);
 
-  /* Radius scale — shadcn's derived ramp off a single `--radius` (16px).
-     xs 6 · sm 10 · md 13 · lg 16 · xl 22 · 2xl 29 · 3xl 35 */
   --radius-xs: calc(var(--radius) * 0.4);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -291,34 +221,15 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 
-  /* ── Korean line breaking, applied once for the whole app ────────────────
-     A browser's default `word-break: normal` treats every Hangul syllable as
-     a break opportunity, so "포트폴리오" happily splits into "포트폴/리오" at
-     the end of a line. `keep-all` moves every break onto a space — the way
-     Korean is actually typeset — and `break-word` is the escape hatch so a
-     long unbroken token (URL, 이메일 주소, a spaceless 문장) still wraps
-     instead of overflowing its box.
-
-     Set here rather than sprinkled as `break-keep` per element: both
-     properties inherit, and a `break-*` utility in the markup still wins
-     locally, because a rule matching the element beats an inherited value. */
+  /* 한국어 줄바꿈: 띄어쓰기에서만 끊고, 긴 토큰(URL 등)은 넘치지 않게 끊는다. */
   word-break: keep-all;
   overflow-wrap: break-word;
 
-  /* `pretty` guards the last line of a wrapped block, so copy never ends on a
-     single orphan word. Set here rather than on a list of prose tags because
-     `text-wrap-style` inherits, and plenty of copy on this site is not in a
-     <p> at all — the portfolio in particular carries whole sentences in
-     <span> and <div> (flow-diagram cells, evidence captions, chips). */
   text-wrap: pretty;
 }
 
 @layer base {
-  /* Headlines get the stronger treatment: `balance` evens out line lengths so
-     a display line never drops one orphan word. It matches the element
-     directly, which beats the inherited `pretty` above — an inherited value
-     always loses to a rule that matches. `:where()` keeps specificity at zero,
-     so any `text-*` utility in the markup still wins. */
+  /* :where() keeps specificity zero so text-* utilities still win. */
   :where(h1, h2, h3, h4) {
     text-wrap: balance;
   }
@@ -329,40 +240,19 @@ body {
   color: var(--foreground);
 }
 
-/* The portfolio is a document surface, and the one place where the app's type
-   pairing breaks down. Elsewhere the two voices alternate by section, so a
-   Fraunces headline never has to sit beside Hangul. Here they share a line
-   constantly: the Korean edition keeps its project titles in English
-   ("Korean Air Financial Analysis" a line below 재무비율), and evidence labels
-   run "DCF · APV · 멀티플". An old-style Latin serif touching Plex Sans KR at
-   that distance reads as two typefaces that met by accident.
-
-   So this surface drops the display voice and sets everything in IBM Plex:
-   Sans for Latin, Sans KR for Hangul — one superfamily drawn to a shared
-   skeleton, so a mixed line looks drawn rather than assembled. Hierarchy comes
-   from size and weight, which is what a case-study document wants anyway, and
-   it costs no extra webfont: both faces are already loaded. */
+/* Portfolio: IBM Plex only — Fraunces beside Hangul on one line looks accidental. */
 .portfolio-ui,
 .portfolio-ui :where(.font-serif, .font-sans) {
   font-family: var(--font-body-stack);
 }
 
-/* ── Component recipes ─────────────────────────────────────────────────────
-   Everything below lives in `@layer components` on purpose: Tailwind v4 orders
-   `theme, base, components, utilities`, so a utility in the markup
-   (`bg-moss`, `text-[11px]`, `rounded-none`) still overrides the recipe.
-   Unlayered rules would win over utilities and make these classes un-tunable.
-   ======================================================================== */
+/* ── Component recipes: @layer components so utilities in markup still override them ── */
 
 @layer components {
 
 /* ── Typographic marks ─────────────────────────────────────────────────── */
 
-/* Uppercase mono technical label (eyebrow / category / system marker).
-   12px, 0.16em: 11px at 0.24em read as a row of spaced dots on a phone, and the
-   wide tracking was the first thing to fall apart when the label held Hangul.
-   A label whose text may be Korean takes `.label-ko` (`labelFace` in
-   `lib/typography.ts` picks for text that comes from the database). */
+/* Korean label text takes .label-ko instead (labelFace in lib/typography.ts). */
 .eyebrow {
   font-family: var(--font-mono-stack);
   font-size: 0.75rem;
@@ -372,10 +262,7 @@ body {
   font-weight: 500;
 }
 
-/* Korean counterpart to `.eyebrow`. Hangul has no letter case, and its square
-   advance width visibly falls apart at 0.24em tracking, so this drops the
-   uppercase transform, pulls tracking back to near-normal, and uses the body
-   face rather than mono. Use it wherever a micro-label renders Korean. */
+/* Korean counterpart to .eyebrow: Hangul has no case and breaks apart under wide tracking. */
 .label-ko {
   font-family: var(--font-body-stack);
   font-size: 0.8125rem;
@@ -384,19 +271,12 @@ body {
   font-weight: 500;
 }
 
-/* Display voice for a heading that holds Hangul. Fraunces is Latin-only, so
-   under `font-serif` a Korean heading sets its digits and Latin in the serif
-   and its Hangul in Plex Sans KR: two faces meeting mid-line. This sets the
-   whole heading in IBM Plex (Sans + Sans KR, one superfamily) — what the
-   portfolio already does. Weight and size stay with the markup. Chosen per
-   heading by `displayFace()` (`lib/typography.ts`) or written directly where
-   the text is fixed Korean copy. */
+/* Heading with Hangul: all IBM Plex, since Fraunces is Latin-only (displayFace()). */
 .font-display-ko {
   font-family: var(--font-body-stack);
   letter-spacing: -0.02em;
 }
 
-/* Eyebrow with a lime tick in front — used to open a section */
 .eyebrow-marked {
   display: inline-flex;
   align-items: center;
@@ -410,13 +290,11 @@ body {
   background: linear-gradient(90deg, var(--forest), var(--moss));
 }
 
-/* Thin section rule */
 .rule {
   border: 0;
   border-top: 1px solid var(--border);
 }
 
-/* Section rule that fades canopy → lime → nothing */
 .rule-accent {
   border: 0;
   height: 2px;
@@ -460,7 +338,6 @@ body {
   opacity: 0.5;
 }
 
-/* Forest pill — the single highest-priority action on a light surface */
 .btn-primary {
   padding: 0.75rem 1.5rem;
   background: var(--primary);
@@ -477,7 +354,6 @@ body {
   box-shadow: none;
 }
 
-/* Cream pill — companion action that still needs a filled surface */
 .btn-secondary {
   padding: 0.75rem 1.5rem;
   background: var(--secondary);
@@ -489,7 +365,6 @@ body {
 }
 .btn-secondary:active { transform: translateY(0); }
 
-/* Outlined pill — filters, taxonomy, lightweight actions */
 .btn-outline {
   padding: 0.625rem 1.25rem;
   border: 1px solid var(--border);
@@ -515,7 +390,6 @@ body {
   border-color: var(--fern);
 }
 
-/* Unfilled action — lowest emphasis */
 .btn-ghost {
   padding: 0.625rem 1rem;
   background: transparent;
@@ -524,7 +398,6 @@ body {
 }
 .btn-ghost:hover { background: var(--muted); }
 
-/* Clay pill — destructive confirmations */
 .btn-destructive {
   padding: 0.75rem 1.5rem;
   background: var(--destructive);
@@ -536,7 +409,6 @@ body {
 }
 .btn-destructive:active { transform: translateY(0); }
 
-/* Underlined text link — companion / secondary action */
 .link-underline {
   position: relative;
   font-weight: 500;
@@ -549,7 +421,6 @@ body {
 }
 .link-underline:hover { opacity: 0.65; }
 
-/* Inline prose link — lime underline that thickens on hover */
 .link-leaf {
   color: var(--primary);
   font-weight: 500;
@@ -567,7 +438,6 @@ body {
 
 /* ── Chips & badges ────────────────────────────────────────────────────── */
 
-/* Neutral technical chip — metadata tags / categories */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -585,7 +455,6 @@ body {
   white-space: nowrap;
 }
 
-/* Brick editorial taxonomy chip (archive / blog categories) */
 .chip-brick {
   display: inline-flex;
   align-items: center;
@@ -607,7 +476,6 @@ body {
   border-color: var(--brick);
 }
 
-/* Forest chip — brand-side counterpart to `.chip-brick` */
 .chip-leaf {
   display: inline-flex;
   align-items: center;
@@ -623,7 +491,6 @@ body {
   font-weight: 500;
 }
 
-/* Solid pill badge over media (tags, "New", stock markers) */
 .badge-solid {
   display: inline-flex;
   align-items: center;
@@ -653,14 +520,11 @@ body {
   border: 1px solid var(--field-edge);
   background: var(--card);
   padding: 0.75rem 1rem;
-  /* 16px on phones: iOS Safari zooms the page on focus for any field under
-     16px, and the checkout form is nothing but fields. 15px returns at `md`,
-     where there is no focus zoom to avoid. */
+  /* 16px on phones: iOS Safari zooms on focus for fields under 16px. */
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-body);
-  /* 테두리 색만 움직인다. 포커스 헤일로(box-shadow)는 즉시 나타나야 한다 —
-     0.18초 동안 번져 오는 링은 키보드 사용자가 어디에 있는지 늦게 알려 준다. */
+  /* 테두리 색만 전환한다. 포커스 헤일로는 즉시 나타나야 한다. */
   transition: border-color 0.18s ease;
 }
 @media (min-width: 48rem) {
@@ -683,20 +547,12 @@ body {
 
 /* ── Surfaces ──────────────────────────────────────────────────────────── */
 
-/* Cream panel that carries controls (cart / checkout summary).
-   The default ring is fern, and fern on cream is 2.74:1 — under the 3:1 a focus
-   indicator needs (WCAG 1.4.11). Forest on cream clears it comfortably, so the
-   panel re-points `--ring` for everything inside it; the global
-   `:focus-visible` rule reads the variable, so no control needs its own class.
-   Small secondary text on this surface takes `text-slate`, not
-   `text-muted-foreground`: muted is tuned for the canvas and drops to 4.20:1
-   on cream. */
+/* fern ring on cream is 2.74:1 (< 3:1, WCAG 1.4.11): re-point --ring to forest. */
 .surface-cream {
   background: var(--stone);
   --ring: var(--forest);
 }
 
-/* shadcn card — bordered, near-flat, lifts on hover */
 .card-hair {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -709,12 +565,7 @@ body {
   box-shadow: 0 14px 32px -20px color-mix(in srgb, var(--forest) 70%, transparent);
 }
 
-/* Stretched link — lets a whole card be one click target without wrapping the
-   card's markup in an <a>. Put `.card-surface` on the card and `.card-link` on
-   the single anchor inside it; any real control in the card then sits above the
-   overlay with `position:relative` and stays independently operable. Avoids
-   nesting a <button> inside an <a>, which is invalid and unreachable by
-   screen readers. */
+/* Stretched link: .card-link covers .card-surface; avoids a <button> inside an <a>. */
 .card-surface {
   position: relative;
 }
@@ -725,7 +576,6 @@ body {
   z-index: 0;
 }
 
-/* Cream card — warm counterpart used inside white sections */
 .card-cream {
   border: 1px solid var(--cream-deep);
   border-radius: var(--radius-lg);
@@ -738,7 +588,6 @@ body {
   box-shadow: 0 14px 32px -20px color-mix(in srgb, var(--forest) 60%, transparent);
 }
 
-/* Full-width section bands */
 .band-cream {
   background: var(--secondary);
   color: var(--secondary-foreground);
@@ -760,12 +609,6 @@ body {
 
 /* ── Photographic hero ─────────────────────────────────────────────────── */
 
-/* Legibility scrim for copy laid over an arbitrary photograph. The hero image
-   is admin-supplied, so the copy has to stay readable over a blown-out sky and
-   over a dark forest alike — but a flat overlay would dim the whole picture.
-   This ramps from near-opaque at the baseline to fully clear by the top third,
-   so only the band actually carrying text is darkened. Forest-black rather
-   than neutral black keeps the overlay inside the palette. */
 .scrim-hero {
   background-image: linear-gradient(
     to top,
@@ -777,12 +620,6 @@ body {
   );
 }
 
-/* Companion to `.scrim-hero`, attached to the copy block rather than the frame.
-   The frame scrim fades by the photo's height, but the copy's height is set by
-   its type, so on a short frame the eyebrow landed in the ~30% part of the ramp
-   and moss-on-sunset went unreadable. This layer spans the copy block plus a
-   little headroom: a held plateau under the whole block, fading only above the
-   eyebrow. Stacked on the frame scrim, the text band stays dark at any ratio. */
 .scrim-hero-copy {
   background-image: linear-gradient(
     to top,
@@ -793,8 +630,7 @@ body {
   );
 }
 
-/* Organic paper grain — a whisper of texture on large flat bands.
-   Inline SVG so it costs no request and never breaks a strict CSP. */
+/* Inline SVG: no request, safe under a strict CSP. */
 .texture-grain {
   position: relative;
   isolation: isolate;
@@ -814,12 +650,7 @@ body {
 
 /* ── Winter decoration (home only, `lib/season.ts`) ─────────────────────── */
 
-/* 상자 위에 살짝 쌓인 눈 — 고정된 그림. 홈의 `<main data-winter>` 안에서만, 그리고
-   눈 캔버스가 돌지 않을 때만(동작 줄이기) 그려진다. 캔버스가 돌면 `<main>`에
-   `data-snow-live`가 붙고, 눈은 캔버스가 실시간으로 쌓아 그린다(`Snowfall.tsx`).
-   기간이 끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
-   SVG이고, 대부분 상자 **위**에 얹혀 사진은 가장자리 몇 px만 덮는다. 흰 눈이
-   크림 바탕에서도 보이도록 아주 옅은 그림자를 준다. 클릭은 막지 않는다. */
+/* 홈 [data-winter] 안에서, 눈 캔버스가 돌지 않을 때(data-snow-live 없음)만 그린다. */
 [data-winter] .snow-cap {
   position: relative;
 }
@@ -835,8 +666,7 @@ body {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 7C0 2 4 0 12 0H188C196 0 200 2 200 7C196 8 192 7 188 9C182 12 176 8 168 9C160 10 156 7 148 8C140 9 136 12 128 9C120 7 112 9 104 8C96 7 90 11 82 9C74 7 66 8 58 9C50 10 44 7 36 8C28 9 22 12 14 9C8 7 4 8 0 7Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
   filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--forest-black) 22%, transparent));
 }
-/* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
-   쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
+/* 알약 버튼은 안쪽에만. 짙은 띠 위에서만 쓴다(크림 위에선 눈이 안 보인다). */
 [data-winter]:not([data-snow-live]) .snow-cap-pill::before {
   left: 14px;
   right: 14px;
@@ -904,7 +734,6 @@ body.chromeless-route > div {
   outline-offset: 2px;
 }
 
-/* Skip-to-content link — visible only when focused */
 .skip-link {
   position: fixed;
   top: 0.75rem;
@@ -924,24 +753,16 @@ body.chromeless-route > div {
   outline-offset: 2px;
 }
 
-/* Smooth in-page anchor scrolling (respects reduced-motion below) */
 html {
   scroll-behavior: smooth;
-  /* 루트 배경. 본문은 `<body>`의 `bg-canvas`가 칠하고, 이 색은 iOS Safari가
-     주소창 뒤와 화면 끝의 튕김 영역에 쓴다. 푸터(`.band-navy`)가 보이는 동안은
-     푸터 색이다(`ThemeShell`). 지정하지 않으면 body의 크림색이 그 자리로 번져
-     짙은 푸터 아래에 흰 띠가 남는다. */
+  /* iOS Safari가 주소창 뒤·튕김 영역에 쓰는 색. 푸터가 보이면 숲색(ThemeShell). */
   background-color: var(--background);
 }
 html[data-footer-in-view] {
   background-color: var(--forest-black);
 }
 
-/* iOS Safari 26은 theme-color를 무시하고, 화면 아래 3px 안에 붙은 넓은 고정
-   요소의 배경색으로 아래 툴바를 칠한다. 그런 요소가 없으면 루트·body 배경으로
-   물러나는데 그 판단이 기기마다 흔들렸다. 그래서 화면 아래에 4px만 보이는 띠를
-   직접 두고 루트와 같은 색을 준다. `-webkit-touch-callout`은 iOS WebKit만 아는
-   속성이라 다른 브라우저에서는 그리지 않는다. */
+/* iOS 26은 아래 툴바를 화면 바닥 고정 띠의 색으로 칠한다. @supports로 iOS WebKit만. */
 .ios-toolbar-tint {
   display: none;
 }
@@ -962,19 +783,12 @@ html[data-footer-in-view] {
   }
 }
 
-/* 이 사이트는 라이트 테마 하나다. 루트에 밝히면 폼 컨트롤·스크롤바 같은 브라우저
-   UI가 OS 다크 모드에서도 같은 밝은 판으로 그려지고, 크롬의 자동 다크 모드도
-   사진 페이지의 색을 바꾸지 않는다(`only`). viewport 메타(`layout.tsx`)와 짝이다. */
+/* 라이트 테마 하나. only: 크롬 자동 다크 모드가 사진 색을 바꾸지 않게. */
 :root {
   color-scheme: only light;
 }
 
-/* 모달 <dialog>(라이트박스, 관리 화면 확인 창) 아래의 페이지가 스크롤되지 않게.
-   `body { overflow: hidden }`으로 잠그지 않는다 — 루트 스크롤바가 사라지며 데스크톱
-   레이아웃이 옆으로 밀린다. `::backdrop`은 기본값이 `overflow: visible`이라
-   스크롤 컨테이너가 아니어서, `overflow: hidden`을 줘야 `overscroll-behavior`가 먹는다.
-   넘치지 않는 컨테이너에서 이것을 따르지 않는 브라우저(Safari)를 위한 보완은
-   `Lightbox.tsx`의 휠 처리와 `touch-action`에 있다. */
+/* 모달 아래 스크롤 잠금. body overflow 잠금은 레이아웃이 밀려서 쓰지 않는다. */
 dialog:modal {
   overscroll-behavior: contain;
 }
@@ -983,10 +797,7 @@ dialog::backdrop {
   overscroll-behavior: contain;
 }
 
-/* 홈 히어로 문구의 등장. framer-motion 대신 CSS인 이유는 HomeContent의 주석:
-   서버 HTML이 그대로 보여야 한다(LCP). 그래서 불투명도는 움직이지 않고 위치만
-   옮긴다 — 첫 페인트부터 글자가 읽힌다. 움직임 줄이기에서는 아래 규칙이
-   시간을 0으로 만든다. */
+/* 불투명도는 움직이지 않는다 — 서버 HTML이 첫 페인트부터 읽혀야 한다(LCP). */
 @keyframes hero-rise {
   from {
     transform: translateY(16px);
@@ -1000,18 +811,7 @@ dialog::backdrop {
   animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* 홈 소품 카드가 hover에서 4px 뜬다. framer-motion의 `whileHover={{ y: -4 }}`를
-   그대로 옮긴 것이다 — 홈이 서버 컴포넌트가 되면서 이 움직임 하나 때문에
-   애니메이션 런타임을 실을 이유가 없어졌다.
-
-   뜰 때 0.3초, 내려앉을 때 0.7초. 비대칭은 실수가 아니라 framer에서 잰 값이다:
-   뜨는 쪽은 컴포넌트의 `transition`(0.3s)을 따랐고, hover가 끝나면 `animate`
-   목표에 실려 있던 등장 전환(0.7s)으로 돌아갔다. 그래서 기본 상태에 0.7초를
-   두고 `:hover`에서만 0.3초로 줄인다.
-
-   framer는 터치 포인터에서 hover를 걸지 않았으므로 `(hover: hover)` 안에
-   둔다(탭한 뒤 떠 있는 카드가 남지 않는다). 움직임 줄이기에서는 아래
-   `[data-reveal]` 규칙이 transform을 없애므로 뜨지 않는다. */
+/* 기본 0.7s·hover 0.3s 비대칭은 의도. 터치에서는 hover를 걸지 않는다. */
 .lift-card {
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1037,11 +837,7 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 
-  /* `Reveal` sets its travel as an inline style, and an inline style is the
-     one thing a stylesheet cannot outrank without `!important`. Zeroing the
-     transition above would otherwise leave the element snapped to its
-     pre-animation offset instead of where it belongs. The fade is kept — it
-     is instantaneous under the rule above — so nothing is withheld. */
+  /* Reveal sets transform inline; only !important can clear it. */
   [data-reveal] {
     transform: none !important;
   }

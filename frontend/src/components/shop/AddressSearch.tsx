@@ -1,25 +1,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
-// "use client"를 적지 않는다: 체크아웃(클라이언트 컴포넌트)에서만 쓰고, 함수
-// prop(`onSelect`)을 받는 컴포넌트는 서버 경계가 될 수 없다.
+// "use client"를 적지 않는다: 함수 prop(`onSelect`)을 받는 컴포넌트는 서버 경계가 될 수 없다.
 
-/**
- * 카카오(다음) 우편번호 서비스. 키 없이 쓰는 무료 서비스다 —
- * https://postcode.map.kakao.com/guide
- *
- * 스크립트는 이 버튼을 처음 누를 때만 받는다. 체크아웃에 들어온 모든 사람이
- * 받을 이유가 없고, 받지 못해도(차단·네트워크) 주문은 막히지 않는다 — 주소
- * 칸은 직접 적을 수 있게 열려 있다.
- *
- * 팝업 창 대신 페이지 안 대화상자에 심는다(`embed`). 휴대폰에서 새 창은 탭으로
- * 열려 돌아오는 길을 잃기 쉽다.
- *
- * CSP: 스크립트 `t1.kakaocdn.net`(로더가 본체를 `t1.daumcdn.net`에서 받을 수
- * 있다), 검색 화면은 `postcode.map.kakao.com`의 iframe이다(`next.config.ts`).
- */
+/** 카카오 우편번호(키 없음). 처음 누를 때만 스크립트를 받고, 실패해도 주소는 직접 적는다. CSP는 `next.config.ts`. */
 const SCRIPT_SRC = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
 
-/** 검색 결과 중 쓰는 것만. 전체 목록은 위 가이드의 "Data 객체". */
 interface PostcodeData {
   zonecode: string;
   roadAddress: string;
@@ -48,8 +33,7 @@ function loadScript(): Promise<void> {
     const script = document.createElement('script');
     script.src = SCRIPT_SRC;
     script.async = true;
-    // 로더 스크립트는 본체를 한 번 더 받아 `kakao.Postcode`를 채운다. onload
-    // 시점에 아직 비어 있을 수 있어 `kakao.Postcode.load`가 있으면 그것을 기다린다.
+    // onload 시점에 `kakao.Postcode`가 비어 있을 수 있어 `kakao.Postcode.load`가 있으면 기다린다.
     script.onload = () => {
       const postcode = window.kakao?.Postcode as unknown as { load?: (cb: () => void) => void } | undefined;
       if (postcode?.load) postcode.load(() => resolve());
@@ -65,10 +49,6 @@ function loadScript(): Promise<void> {
   return loading;
 }
 
-/**
- * 도로명 주소에 붙이는 참고 항목 — "(동이름, 건물명)". 가이드의 예제와 같은 규칙:
- * 법정동명은 끝이 동·로·가일 때만, 건물명은 공동주택일 때만.
- */
 function formatAddress(data: PostcodeData): string {
   if (data.userSelectedType === 'J') return data.jibunAddress;
   const extras: string[] = [];
@@ -127,7 +107,6 @@ export default function AddressSearch({
         주소 찾기
       </button>
 
-      {/* 바깥(배경)을 누르면 닫힌다. Esc는 <dialog>가 알아서 닫는다. */}
       <dialog
         ref={dialogRef}
         aria-labelledby="address-search-title"

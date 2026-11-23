@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * 이 파일이 지키는 것: `rateLimitShared()`는 Upstash → Postgres → in-memory
- * 순으로 저장소를 고르고, 어느 저장소가 실패해도 **던지지 않는다.** 레이트
- * 리미터 때문에 주문이나 로그인이 500을 내면 안 된다.
- */
 const h = vi.hoisted(() => ({
   kvEnabled: false,
   incrementWithTtl: vi.fn<(key: string, ttl: number) => Promise<number | null>>(),
@@ -35,7 +30,6 @@ vi.mock('@/lib/supabase-admin', () => ({
   },
 }));
 
-// 모듈 안의 상태(경고 한 번, 함수 없음 백오프)를 테스트마다 새로 시작한다.
 async function load() {
   vi.resetModules();
   return (await import('@/lib/rate-limit')).rateLimitShared;
@@ -89,7 +83,6 @@ describe('rateLimitShared() — 저장소 순서', () => {
   });
 
   it('둘 다 없으면 in-memory 리미터와 똑같이 동작한다', async () => {
-    // 설정하지 않은 로컬 개발에서 아무것도 달라지지 않는다는 것이 요점이다.
     h.adminThrows = true;
     const rateLimitShared = await load();
     const k = key();
@@ -110,7 +103,6 @@ describe('rateLimitShared() — Postgres 오류', () => {
     expect((await rateLimitShared(k, opts)).ok).toBe(true);
     expect((await rateLimitShared(k, opts)).ok).toBe(true);
     expect((await rateLimitShared(k, opts)).ok).toBe(false);
-    // 마이그레이션 전에 매 요청마다 왕복 하나를 버리지 않는다.
     expect(h.rpc).toHaveBeenCalledTimes(1);
     expect(h.warn).toHaveBeenCalledTimes(1);
     expect(h.warn.mock.calls[0][0]).toBe('rate_limit.pg.migration_pending');

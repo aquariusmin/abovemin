@@ -4,56 +4,25 @@ import { orderItemLabel, type OrderItemRecord } from './order-items';
 import type { EmailOutcome } from './order-email-status';
 import { DELIVERY_LABEL, deliveryMethodFromRow } from './delivery';
 
-/**
- * 주문 메일 본문. **주문 접수(`api/orders`)와 관리 화면의 재발송이 같은 함수를
- * 쓴다.**
- *
- * 예전에는 HTML이 주문 라우트 안에 문자열로 박혀 있었다. 관리 화면에서 "안내
- * 메일 다시 보내기"를 만들려면 그걸 복사해야 했고, 복사본은 반드시 어긋난다 —
- * 계좌 안내 문구를 한쪽만 고치면 재발송 메일만 옛 계좌를 안내한다.
- *
- * 모든 고객 입력은 `escapeHtml`을 거친다. 이름에 `<img onerror=…>`를 넣은
- * 주문이 관리자 메일함에서 실행되면 안 된다.
- */
-
-/**
- * 운영자 알림을 받는 주소. **기본값을 두지 않는다.**
- *
- * 예전에는 `?? 'owner@phorage.com'`이었다. 환경변수가 빠진 배포(프리뷰, 프로젝트
- * 이전, 복원 직후)에서는 손님 이름·연락처·주소가 든 알림이 오류 하나 없이 그
- * 주소로 나갔을 것이다. 없으면 보내지 않고, 호출부가 로그로 알린다.
- */
+// 모든 고객 입력은 `escapeHtml`을 거친다 — 관리자 메일함에서 스크립트가 실행되면 안 된다.
+// 기본값을 두지 않는다 — 환경변수가 빠진 배포에서 고객 정보가 엉뚱한 주소로 나가지 않게.
 export const OWNER_EMAIL: string | null = process.env.OWNER_EMAIL?.trim() || null;
 export const FROM_EMAIL = process.env.FROM_EMAIL ?? 'phorage <noreply@abovemin.com>';
 const BANK_INFO = process.env.BANK_INFO ?? '(계좌 정보 미설정 — 관리자에게 문의)';
 
-/**
- * 주문 완료 화면에 보여 줄 계좌 정보. 메일과 같은 환경변수에서 오지만, 설정되지
- * 않았을 때는 위의 자리표시 문구가 아니라 `null`이다 — 화면은 "메일을
- * 확인해주세요"로 안내하고, 손님에게 "미설정"을 계좌처럼 보여 주지 않는다.
- */
+// 미설정이면 `null` — 자리표시 문구를 계좌처럼 보여 주지 않는다. 계좌는 env에서만 온다.
 export function configuredBankInfo(value: string | undefined = process.env.BANK_INFO): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
 }
 
-/**
- * 옵션을 고른 줄은 `option_label`을 함께 적는다("포스터 · A3 · 매트지"). 옵션
- * 이전의 주문(키 자체가 없음)은 이름만 — 관리 화면의 재발송이 옛 주문도 보낸다.
- */
 export type EmailOrderItem = OrderItemRecord;
 
 export interface EmailOrder {
   id: number;
   name: string;
-  /**
-   * 체크아웃이 이메일을 받지 않게 된 뒤의 주문은 비어 있다(null, 또는
-   * 마이그레이션 전에 저장된 ''). 손님에게 가는 메일은 `hasBuyerEmail`로
-   * 확인한 주문에만 만든다.
-   */
   email: string | null;
   phone: string | null;
-  /** 없으면(컬럼 전의 주문) 택배. 메모의 표시로 대면 전달을 아는 경우도 있다(`deliveryMethodFromRow`). */
   delivery_method?: string | null;
   zipcode: string | null;
   address: string;
@@ -72,12 +41,7 @@ export function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/**
- * 메일 **제목**에 들어갈 고객 입력. 제목은 HTML이 아니라 평문이라 `escapeHtml`을
- * 거치면 "Kim &amp; Lee"가 그대로 보인다. 대신 줄바꿈·제어 문자를 지운다 —
- * 제목에 들어간 개행은 헤더를 끊고, 보이지 않는 문자는 알림 목록을 어지럽힌다.
- * 길이도 자른다: 이름 칸은 100자까지 받지만 제목에 다 들어갈 필요는 없다.
- */
+// 제목은 평문이라 escapeHtml 대신 줄바꿈·제어 문자를 지운다(개행은 헤더를 끊는다).
 export function subjectText(s: string, max = 60): string {
   const flat = s
     .replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ')
@@ -86,14 +50,12 @@ export function subjectText(s: string, max = 60): string {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
-/** 손님 메일을 보낼 주소가 있는 주문. */
 export type EmailableOrder = EmailOrder & { email: string };
 
 export function hasBuyerEmail<T extends { email?: string | null }>(order: T): order is T & { email: string } {
   return typeof order.email === 'string' && order.email.trim() !== '';
 }
 
-/** 고객에게 가는 주문 접수 확인(입금 안내 포함). */
 export function buildBuyerEmail(order: EmailableOrder): EmailMessage {
   const safeName = escapeHtml(order.name);
   const { id: orderId, total_price } = order;
@@ -149,14 +111,10 @@ export function buildBuyerEmail(order: EmailableOrder): EmailMessage {
   return { to: order.email, subject: `[phorage] 주문 접수 확인 — #${orderId}`, html };
 }
 
-/** 운영자에게 가는 새 주문 알림. 받는 주소는 호출부가 `OWNER_EMAIL`을 확인해 넘긴다. */
 export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
   const safeName = escapeHtml(order.name);
   const safeEmail = escapeHtml(order.email ?? '');
   const safePhone = escapeHtml(order.phone || '-');
-  // One line, the way it goes on a shipping label: `[12345] 서울시 …`. The zip
-  // is optional on the form, so an order without one reads as a plain address
-  // rather than an empty bracket.
   const method = deliveryMethodFromRow(order);
   const safeAddress = escapeHtml(order.zipcode ? `[${order.zipcode}] ${order.address}` : order.address);
   const safeNote = escapeHtml(order.note || '-');
@@ -190,7 +148,6 @@ export interface ShippingInfo {
   trackingNumber: string;
 }
 
-/** 고객에게 가는 배송 시작 안내. 관리 화면에서 `shipped`로 바꿀 때 보낸다. */
 export function buildShippingEmail(order: EmailableOrder, shipping: ShippingInfo): EmailMessage {
   const safeName = escapeHtml(order.name);
   const safeCarrier = escapeHtml(shipping.carrier || '택배');
@@ -224,7 +181,6 @@ export function buildShippingEmail(order: EmailableOrder, shipping: ShippingInfo
   return { to: order.email, subject: `[phorage] 배송 시작 안내 — #${order.id}`, html };
 }
 
-/** 메일 한 통을 보내는 함수. Resend SDK처럼 실패를 `{ error }`로 돌려줘도, 던져도 된다. */
 export type EmailSender = (message: EmailMessage) => Promise<{ error?: { message: string } | null }>;
 
 function resendSender(): EmailSender {
@@ -236,16 +192,7 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/**
- * 메일을 **한 통씩 따로** 보내고, 보낸 순서대로 결과를 돌려준다. 던지지 않는다.
- *
- * 예전에는 `Promise.all`이라 실패를 하나만 알렸다 — 손님 메일과 운영자 알림 중
- * 어느 쪽이 나갔는지 알 수 없었고, 그래서 기록할 수도 없었다
- * (`lib/order-email-status.ts`). 한 통이 실패해도 다른 한 통은 끝까지 간다.
- *
- * `send`는 테스트가 갈아 끼운다. 기본 sender를 만들다 실패하면(키 없음) 전부
- * 실패로 답한다.
- */
+// 한 통씩 따로 보내고 순서대로 결과를 돌려준다. 던지지 않는다.
 export async function sendEmails(messages: EmailMessage[], send?: EmailSender): Promise<EmailOutcome[]> {
   let sender: EmailSender;
   try {
@@ -256,17 +203,12 @@ export async function sendEmails(messages: EmailMessage[], send?: EmailSender): 
   const settled = await Promise.allSettled(messages.map(async message => sender(message)));
   return settled.map(result => {
     if (result.status === 'rejected') return { ok: false, error: errorText(result.reason) };
-    // Resend SDK는 실패를 throw하지 않고 `{ error }`로 돌려준다. 그걸 보지 않으면
-    // "보냈습니다"라고 띄워 놓고 아무것도 안 간다.
+    // Resend SDK는 실패를 throw하지 않고 `{ error }`로 돌려준다 — 반드시 확인한다.
     const error = result.value?.error;
     return error ? { ok: false, error: error.message } : { ok: true };
   });
 }
 
-/**
- * 하나라도 실패하면 던진다 — 관리 화면의 재발송과 배송 안내처럼 "보냈다/못
- * 보냈다"만 필요한 호출부용. 예전 `sendEmails`의 동작이다.
- */
 export async function sendEmailsOrThrow(messages: EmailMessage[], send?: EmailSender): Promise<void> {
   const outcomes = await sendEmails(messages, send);
   const failed = outcomes.find(outcome => !outcome.ok);

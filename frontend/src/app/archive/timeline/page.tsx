@@ -16,7 +16,6 @@ import { sectionTitle, shareCard } from '@/lib/share-card';
 const TITLE = 'Timeline';
 const DESCRIPTION = 'phorage 아카이브의 사진을 찍은 날짜순으로, 연도와 달별로 봅니다.';
 
-// 공유 카드가 사이트 기본값을 달고 나가지 않게(`/archive`의 metadata 주석).
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
@@ -24,20 +23,9 @@ export const metadata: Metadata = {
   ...shareCard({ title: sectionTitle(TITLE), description: DESCRIPTION, path: '/archive/timeline' }),
 };
 
-// `/archive`와 같다. `revalidateArchive()`가 사진이 바뀔 때 이 경로도 무효화한다.
 export const revalidate = 300;
 
-/**
- * 찍은 날짜순 아카이브.
- *
- * 앨범은 여행 단위이고 `/archive`의 필터는 조건을 고르는 도구라, "시간이 어떻게
- * 흘렀나"를 한눈에 보는 자리가 없었다. 여기서는 고를 것 없이 연도 → 달로 늘어놓고,
- * 사진마다 그 사진의 페이지로 간다.
- *
- * 서버 컴포넌트로만 그린다. 300장을 클라이언트 컴포넌트 props로 넘기면 그만큼이
- * RSC 페이로드에 한 번 더 실린다(`PhotoFilter`의 PAGE 주석) — 이 페이지는 넘겨
- * 보는 것 말고 할 일이 없어 JS가 필요 없다. 클라이언트 코드는 연도 색인 하나다.
- */
+// 서버 컴포넌트로만 그린다 — 300장을 클라이언트 props로 넘기면 RSC 페이로드가 두 배가 된다.
 export default async function TimelinePage() {
   // 조회 실패는 빌드 중에만 빈 목록 — `/archive`와 같다(`buildFallback`).
   const photos = await getAllPhotos().catch(buildFallback([]));
@@ -73,12 +61,8 @@ export default async function TimelinePage() {
         </p>
       ) : (
         <div className="max-w-[1400px] mx-auto">
-          {/* 연도 색인. 고정 내비(72/88px) 바로 아래에 붙는다. 배경을 깔아야
-              아래로 흘러가는 사진이 pill 사이로 비치지 않는다. */}
           <nav
             aria-label="연도로 이동"
-            // 좌우 여백은 목록 안쪽에 둔다 — 폰에서 넘치는 pill이 여백선에서 잘리지 않고
-            // 화면 끝까지 흘러가야 옆으로 밀 수 있다는 것이 보인다.
             className="sticky top-[72px] md:top-[88px] z-30 -mx-5 sm:-mx-6 md:-mx-10 bg-canvas/92 backdrop-blur-md border-b border-hairline"
           >
             <TimelineYearIndex years={years.map(({ anchor, label, count }) => ({ anchor, label, count }))} />
@@ -89,7 +73,6 @@ export default async function TimelinePage() {
               key={year.anchor}
               id={year.anchor}
               aria-labelledby={`${year.anchor}-title`}
-              // 앵커로 왔을 때 제목이 고정 내비 + 색인 뒤에 숨지 않게.
               className="scroll-mt-[140px] md:scroll-mt-[156px] pt-12 md:pt-16"
             >
               <div className="flex items-baseline gap-3 border-b border-hairline pb-3">
@@ -100,37 +83,23 @@ export default async function TimelinePage() {
               </div>
 
               {year.months.map(month => (
-                // 달 제목은 폰에서 사진 위, 데스크톱에서 왼쪽 칸. 칸 안에서 붙어
-                // 있어서 긴 달(2025년 2월, 50장)을 내려가도 어느 달인지 보인다.
                 <div key={month.key} className="mt-8 md:mt-10 md:grid md:grid-cols-[9rem_minmax(0,1fr)] md:gap-8">
                   <h3 className="mb-3 md:mb-0 text-[15px] font-medium text-ink md:sticky md:top-[168px] md:self-start">
                     {month.label}
                     <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">{month.photos.length}</span>
                   </h3>
-                  {/* 자르지 않는 masonry. 저장된 비율로 칸을 먼저 잡으므로 lazy
-                      로딩이 뷰포트 밖의 사진을 정말로 미룬다. */}
                   <ul className="columns-3 sm:columns-4 lg:columns-6 gap-2 md:gap-3 [&>li]:mb-2 md:[&>li]:mb-3">
                     {month.photos.map(photo => (
                       <li key={photo.id} className="break-inside-avoid">
                         <Link href={photoPagePath(photo)} className="group block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-                          {/* 흐린 미리보기(`placeholderStyle`)는 여기에 깔지 않는다. CSS 배경은
-                              lazy가 없어서, 300장짜리 이 페이지에서는 첫 화면에 미리보기
-                              300개(약 270 KB, 요청 300건)가 한꺼번에 내려왔다(측정). 칸은
-                              저장된 비율로 이미 잡혀 있어 bg 토큰만으로도 흔들리지 않는다. */}
+                          {/* 여기엔 흐린 미리보기를 깔지 않는다 — CSS 배경은 lazy가 없어 300개가 한꺼번에 내려온다. */}
                           <span className="block overflow-hidden rounded-sm bg-stone">
                             <Image
                               src={cloudinary(photo.src, { watermark: true, width: 480 })}
                               alt={photoLabel(photo)}
                               width={0}
                               height={0}
-                              // 칸의 실제 폭. md부터는 왼쪽에 달 제목 칸(9rem + 간격 2rem
-                              // = 176px)이 있어 목록이 그만큼 좁다 — 예전의 `25vw`는 그것을
-                              // 빼지 않아 태블릿에서 17vw짜리 칸에 25vw라고 말했다.
-                              //   1480px~      (1400 − 176 − 5×12) ÷ 6 = 194px
-                              //   1024~1479px  (100vw − 80 − 176 − 60) ÷ 6 = 16.7vw − 52.7px → 14vw 이하
-                              //   768~1023px   (100vw − 80 − 176 − 36) ÷ 4 = 25vw − 73px     → 18vw 이하
-                              //   640~767px    (100vw − 48 − 24) ÷ 4 = 25vw − 18px           → 23vw 이하
-                              //   ~639px       (100vw − 40 − 16) ÷ 3 = 33.3vw − 18.7px       → 31vw 이하
+                              // 칸의 실제 폭(md부터 달 제목 칸 176px 제외): ~639 31vw, 640 23vw, 768 18vw, 1024 14vw, 1480 194px.
                               sizes="(min-width: 1480px) 194px, (min-width: 1024px) 14vw, (min-width: 768px) 18vw, (min-width: 640px) 23vw, 31vw"
                               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.04]"
                               style={storedRatioStyle(photo)}

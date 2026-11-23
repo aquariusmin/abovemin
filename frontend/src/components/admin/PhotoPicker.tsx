@@ -6,15 +6,7 @@ import { adminFetch, errorMessage } from '@/lib/admin/client';
 import { EmptyLine, LoadingLine } from './AdminUi';
 import { CHIP_KO, INPUT_COMPACT } from './adminStyles';
 
-/**
- * 사진 고르기. 두 곳에서 쓴다.
- *  - 앨범 커버: 그 앨범의 사진만(`albumSlug`). 서버도 그 앨범 사진만 받는다.
- *  - 홈 히어로: 아카이브 전체에서 검색·앨범 필터로.
- *
- * URL을 붙여넣는 대신 고르게 하는 이유: 히어로에 오타 난 주소가 들어가면 홈이
- * 통째로 깨지고(`api/admin/settings` 주석), 커버에 남의 앨범 사진이 들어가는
- * 일이 실제로 있었다.
- */
+/** URL 붙여넣기 대신 고르게 한다 — 오타 난 히어로 주소는 홈을 통째로 깨뜨린다. */
 
 export interface PickablePhoto {
   id: number;
@@ -27,7 +19,6 @@ export interface PickablePhoto {
 }
 
 interface Props {
-  /** 주면 그 앨범만. 없으면 전체 + 앨범 필터. */
   albumSlug?: string;
   albums?: Array<{ slug: string; title: string }>;
   selectedSrc?: string | null;

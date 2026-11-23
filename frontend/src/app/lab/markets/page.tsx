@@ -3,11 +3,6 @@ import { Missing, Shell } from '@/components/markets/Shell';
 import { loadCore, requireOwner } from '@/lib/markets/store';
 import { marketParam } from '@/lib/markets/view';
 
-/**
- * Overview of one market (`?m=sp|nq|ks|kq`, default KOSPI). Rendered per
- * request: the admin cookie check makes it dynamic, and only the selected
- * market's series goes to the client chart — the full upload is ~1.3 MB.
- */
 export default async function MarketsOverview({ searchParams }: { searchParams: Promise<{ m?: string | string[] }> }) {
   await requireOwner();
   const active = marketParam((await searchParams).m);

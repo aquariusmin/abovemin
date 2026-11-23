@@ -12,12 +12,6 @@ import {
 } from '@/lib/photo-share';
 import { displayCamera, exifParts, takenDate } from '@/lib/caption';
 
-/**
- * 이 파일이 지키는 것: 프린트 문의 메일이 "링크 복사"와 같은 사진 링크를 싣고,
- * 메일 앱이 한글·줄바꿈을 그대로 읽는 모양으로 인코딩된다. 그리고 라이트박스의
- * 촬영 정보 줄이 빈 칸 없이 모인다.
- */
-
 const photo = { id: 42, album_slug: 'japan', title: 'Morning', location: 'Kyoto', year: 2019 };
 
 describe('photoShareUrl', () => {
@@ -58,7 +52,6 @@ describe('photoDocumentTitle', () => {
     const photos = [{ title: 'Morning', location: 'Kyoto' }, { title: '-', location: 'Kyoto' }];
     expect(photoDocumentTitle(photos, 0)).toBe('Morning');
     expect(photoDocumentTitle(photos, 1)).toBe('Kyoto');
-    // 화면의 제목은 어느 경우에도 바뀌지 않는다.
     expect(photoPageTitle(photos[1])).toEqual({ title: 'Kyoto', repeatsLocation: true });
   });
 
@@ -135,7 +128,6 @@ describe('photoJsonLd', () => {
       creator: { '@type': 'Organization', name: 'phorage', url: origin },
       contentLocation: { '@type': 'Place', name: '여수' },
     });
-    // 워터마크(사인 오버레이)가 실린 주소여야 한다 — 페이지가 그리는 것과 같은 것.
     expect(image.contentUrl).toContain('l_phorage:brand:signature');
   });
 

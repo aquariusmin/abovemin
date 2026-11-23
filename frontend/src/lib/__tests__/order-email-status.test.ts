@@ -9,14 +9,6 @@ import {
   type OrderUpdater,
 } from '@/lib/order-email-status';
 
-/**
- * 이 파일이 지키는 것: 주문 메일이 안 나갔을 때 **그 사실이 남는다.** 그리고
- * 그 기록이 주문을 깨지 않는다 — 컬럼이 아직 없어도, DB가 던져도.
- *
- * 네트워크는 타지 않는다: `sendEmails`에는 sender를, `recordEmailSent`에는 가짜
- * DB를 넣는다.
- */
-
 const buyer: EmailMessage = { to: 'buyer@example.com', subject: 'buyer', html: '<p>b</p>' };
 const owner: EmailMessage = { to: 'owner@example.com', subject: 'owner', html: '<p>o</p>' };
 const NOW = '2026-10-14T03:00:00.000Z';
@@ -97,7 +89,7 @@ describe('emailSentPatch — 어느 시각을 적을지', () => {
   });
 
   it('전체 한도에 걸려 손님 메일을 건너뛰었으면 손님 쪽은 비어 있다', () => {
-    // 운영자 알림만 시도했다: 결과의 0번은 운영자 것이지 손님 것이 아니다.
+    // 결과의 0번은 운영자 알림이지 손님 것이 아니다.
     expect(emailSentPatch(['owner'], [{ ok: true }], NOW)).toEqual({ owner_email_sent_at: NOW });
   });
 
@@ -111,7 +103,6 @@ describe('emailSentPatch — 어느 시각을 적을지', () => {
   });
 });
 
-/** `db.from('orders').update(patch).eq('id', id)`만 받는 가짜. 부른 내용을 남긴다. */
 function fakeDb(result: { error: unknown } | (() => never)) {
   const calls: Array<{ table: string; values: EmailSentPatch; column: string; id: number }> = [];
   const db: OrderUpdater = {

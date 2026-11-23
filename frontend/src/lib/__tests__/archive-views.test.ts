@@ -3,11 +3,6 @@ import { groupTimeline, monthDayLabel, UNKNOWN_DATE_LABEL, UNKNOWN_YEAR_LABEL } 
 import { onThisDay, seoulToday } from '@/lib/on-this-day';
 import { cameraArchiveHref, cameraOptions, matchesCamera } from '@/lib/camera';
 
-/**
- * 이 파일이 지키는 것: 아카이브를 가로지르는 세 보기(타임라인, 몇 년 전 오늘,
- * 카메라)가 날짜를 **찍은 곳의 날짜**로 읽고, 빈 값을 지어내지 않는다.
- */
-
 describe('groupTimeline()', () => {
   const photos = [
     { id: 1, year: 2025, taken_at: '2025-08-21T10:00:00+00:00' },
@@ -105,7 +100,7 @@ describe('onThisDay()', () => {
   it('해가 바뀌는 경계: 1월 1일에 보는 12월 30일 사진은 1년 전 이맘때', () => {
     const result = onThisDay([{ id: 1, taken_at: '2025-12-30T08:00:00Z' }], { year: 2027, month: 1, day: 1 });
     expect(result.memories.map(m => m.yearsAgo)).toEqual([1]);
-    // 반대 방향: 12월 30일에 보는 올해 1월 1일 사진은 달력 연도가 같아도 "1년 전".
+    // 12월 30일에 보는 올해 1월 1일 사진은 달력 연도가 같아도 "1년 전".
     const back = onThisDay([{ id: 1, taken_at: '2026-01-01T08:00:00Z' }], { year: 2026, month: 12, day: 30 });
     expect(back.memories.map(m => m.yearsAgo)).toEqual([1]);
   });

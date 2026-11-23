@@ -17,40 +17,15 @@ interface Props {
     image_url: string;
   };
   options: ProductOption[];
-  /** 이 상품에만 딸린 추가 상품. 없으면(마이그레이션 전 포함) 이 구역이 통째로 없다. */
   addons: ProductAddon[];
   priceMin: number;
   priceMax: number;
   soldOut: boolean;
-  /**
-   * 지금 살 수 있는 상품이 이것 하나뿐이다. 장바구니는 여러 상품을 모으는
-   * 자리라 이때는 거쳐 갈 이유가 없다 — 버튼이 "바로 주문하기"가 되어 고른
-   * 줄만으로 주문서로 간다. "장바구니 보기"와 추가 상품만 담기도 숨긴다.
-   */
+  /** 살 수 있는 상품이 이것 하나뿐 — 장바구니를 건너뛰고 "바로 주문하기"로 주문서에 간다. */
   directOrder?: boolean;
 }
 
-/**
- * 상세 페이지의 "사는 부분" — 가격, 옵션, 담기 버튼.
- *
- * 옵션이 있는 상품은 옵션을 **반드시** 고른다. 기본값을 미리 골라 두지 않는
- * 이유: 가장 싼 A4가 골라진 채로 "담기"를 누른 손님은 A2를 샀다고 믿는다.
- * 옵션이 하나뿐이고 살 수 있을 때만 그것을 골라 둔다 — 고를 것이 없는 선택은
- * 질문이 아니다.
- *
- * 선택지는 네이티브 라디오다. 방향키로 옮겨 다니고, 품절(disabled)은 건너뛰고,
- * 스크린리더가 "3개 중 2번째"를 읽는 것까지 브라우저가 해 준다 — 알약 모양은
- * 라벨이 입는다.
- *
- * 추가 상품은 옵션과 반대다: 고르지 않아도 되고 여러 개를 담을 수 있다. 그래서
- * 라디오가 아니라 0에서 시작하는 수량이고, "담기"가 상품 줄과 고른 추가 상품을
- * 한 번에 담는다. 추가 상품은 옵션이 아니라 상품에 붙는다 — 옵션을 바꿔도 고른
- * 수량은 그대로다. 품절인 추가 상품은 보이되 고를 수 없다. 상품 자체가 품절이면
- * 살 수 있는 것이 없으므로 구역을 그리지 않는다.
- *
- * 이 상품이 이미 장바구니에 있으면 고른 추가 상품**만** 담는 길이 하나 더 생긴다
- * (`AddAddonsOnly`). 장바구니에 없을 때는 아무것도 달라지지 않는다.
- */
+/** 옵션은 기본값을 골라 두지 않는다(A4가 골라진 채 담으면 A2를 샀다고 믿는다). 하나뿐일 때만 골라 둔다. */
 export default function ProductPurchase({ product, options, addons, priceMin, priceMax, soldOut, directOrder = false }: Props) {
   const hasOptions = options.length > 0;
   const [selectedId, setSelectedId] = useState<string | null>(() =>
@@ -82,7 +57,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
           image_url: product.image_url,
         };
 
-  // 고른 추가 상품 → 같이 담을 줄. 이름은 부모 상품의 이름이고, 가격은 표시용이다.
+  // 고른 추가 상품 → 같이 담을 줄. 가격은 표시용이다.
   const extras = showAddons
     ? addons
         .filter(addon => isAddonAvailable(addon) && (addonQuantity[addon.id] ?? 0) > 0)
@@ -104,9 +79,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
 
   return (
     <div className="space-y-6">
-      {/* 이름이 이 페이지의 제목이고 가격은 그 아래의 정보다 — 초록 굵은
-          2xl이면 "가격 미정"이 제목처럼 읽힌다. 옵션을 고르면 이 줄이 그
-          옵션의 가격으로 바뀐다(aria-live로 알린다). */}
+      {/* 옵션을 고르면 이 줄이 그 옵션의 가격으로 바뀐다(aria-live로 알린다). */}
       <p
         aria-live="polite"
         className={`text-lg tabular-nums ${priced && !soldOut ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}
@@ -141,9 +114,6 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
                     className="sr-only"
                   />
                   <span>{option.label}</span>
-                  {/* 품절 옵션은 가격 대신 상태를 적는다 — 흐린 가격만으로는 왜
-                      못 고르는지 알 수 없다. 재고는 있는데 가격이 0원이면
-                      `formatPrice`가 "가격 미정"을 적는다. */}
                   <span className={`text-[13px] tabular-nums ${disabled ? '' : 'opacity-75'}`}>
                     {option.in_stock ? formatPrice(option.price) : SOLD_OUT_LABEL}
                   </span>
@@ -163,8 +133,6 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
 
       {showAddons && (
         <fieldset className="space-y-1">
-          {/* 손님이 읽고 고르는 말이라 한국어다 — Hangul은 eyebrow의 대문자·자간을
-              받지 않으므로 label-ko. */}
           <legend className="label-ko text-muted-foreground mb-2">추가 상품</legend>
           <ul className="border-t border-hairline">
             {addons.map(addon => {
@@ -179,8 +147,6 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
                       {!addon.in_stock ? SOLD_OUT_LABEL : addon.price > 0 ? `+ ${formatPrice(addon.price)}` : formatPrice(addon.price)}
                     </p>
                   </div>
-                  {/* 살 수 없는 추가 상품에는 수량 버튼을 두지 않는다 — 왜 못
-                      고르는지는 가격 자리의 "품절"(또는 "가격 미정")이 말한다. */}
                   {available && (
                     <QuantityStepper
                       name={addon.label}
@@ -214,8 +180,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         directOrder={directOrder}
       />
 
-      {/* 이 상품이 이미 장바구니에 있고 추가 상품을 골랐을 때만 나타난다. 주 버튼
-          아래라 나타나도 주 버튼은 움직이지 않는다. 옵션을 고르지 않았어도 된다. */}
+      {/* 이 상품이 이미 장바구니에 있을 때만 나타난다 — 추가 상품 줄은 혼자 담기지 않는다. */}
       {showAddons && !directOrder && (
         <AddAddonsOnly
           productId={product.id}
@@ -225,8 +190,6 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         />
       )}
 
-      {/* 담을 수 없는 상품에서, 그리고 장바구니를 건너뛰는 상품에서 "장바구니
-          보기"는 갈 이유가 없는 길이다. */}
       <div className="flex items-center gap-5 pt-1">
         {!soldOut && !directOrder && (
           <Link href="/cart" className="link-underline text-sm text-slate">

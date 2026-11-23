@@ -1,29 +1,5 @@
 #!/usr/bin/env node
-/**
- * 아카이브 사진 일괄 업로드 (CLI).
- *
- *   npm run photos:add -- --album=korea --location=Seoul ./photos/*.jpg
- *
- * 하는 일은 /admin의 업로드 위젯과 같다: Cloudinary에 올리고 `photos` 행을
- * 만든다. 다만 이쪽은 수백 장을 한 번에 밀어 넣을 때를 위한 것이라 확인 화면이
- * 없다 — 먼저 `--dry-run`으로 무엇이 들어갈지 보고 실행하는 것을 권한다.
- *
- * 옵션
- *   --album=<slug>      (필수) 대상 앨범
- *   --location=<text>   모든 사진의 장소. 생략하면 빈 값
- *   --year=<yyyy>       모든 사진의 연도. 생략하면 EXIF 촬영일 → 없으면 올해
- *   --dry-run           업로드도 저장도 하지 않고 계획만 출력
- *
- * 필요한 환경변수 (.env.local): CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY /
- * CLOUDINARY_API_SECRET / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
- *
- * 위치 정보: 올리기 전에 파일에서 GPS·XMP·IPTC 위치를 지운다 — 관리 화면과 같은
- * 코드(`src/lib/exif-strip.ts`)다. JPEG은 무손실로 지우고, 위치가 든 HEIC·PNG
- * 같은 파일은 올리지 않는다(브라우저와 달리 여기에는 다시 인코딩할 도구가 없다).
- * 지우기 전에 읽은 좌표는 소수점 한 자리로 반올림해 `places`의 빈 장소에만 쓴다.
- *
- * TS 파일을 그대로 import한다 — Node 22.18+/24의 타입 제거(type stripping).
- */
+// 업로드 전에 GPS·위치 메타데이터를 지운다(exif-strip.ts). 지울 수 없는 파일은 올리지 않는다.
 
 import { createHash } from 'node:crypto';
 import { basename } from 'node:path';
@@ -32,15 +8,12 @@ import { createClient } from '@supabase/supabase-js';
 import { planUpload } from '../src/lib/exif-strip.ts';
 import { groupCoordsByPlace, placeFromCoords } from '../src/lib/admin/photo-metadata.ts';
 
-/** 동시 업로드 수. 원본 사진은 장당 수 MB라 무제한으로 열면 회선만 막힌다. */
 const CONCURRENCY = 3;
 
 function fail(message) {
   console.error(`\n  ✗ ${message}\n`);
   process.exit(1);
 }
-
-// ── 인자 ──────────────────────────────────────────────────────────────────────
 
 const options = { album: '', location: '', year: '', dryRun: false };
 const files = [];
@@ -60,8 +33,6 @@ if (!/^[a-z0-9-]{1,64}$/.test(options.album)) {
 if (files.length === 0) fail('업로드할 파일을 하나 이상 지정하세요.');
 if (options.year && !/^\d{4}$/.test(options.year)) fail('--year 는 네 자리 연도여야 합니다.');
 
-// ── 환경변수 ──────────────────────────────────────────────────────────────────
-
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -77,9 +48,7 @@ const missing = [
 ].filter(Boolean);
 if (missing.length > 0) fail(`.env.local 에 다음이 없습니다: ${missing.join(', ')}`);
 
-// ── Cloudinary ────────────────────────────────────────────────────────────────
-
-/** `src/lib/cloudinary-upload.ts`의 서명 규칙과 동일 — 바꿀 때 함께 고칠 것. */
+// `src/lib/cloudinary-upload.ts`의 서명 규칙과 같다 — 함께 고친다.
 function signUploadParams(params) {
   const toSign = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join('&');
   return createHash('sha1').update(toSign + apiSecret).digest('hex');
@@ -105,10 +74,6 @@ function exifYear(metadata) {
 const PRIVACY_LABEL = { removed: '위치 정보 제거됨', none: '위치 정보 없음' };
 const BLOCKED_MESSAGE = '위치 정보가 들어 있는데 무손실로 지울 수 없는 형식입니다 — JPEG로 내보낸 뒤 다시 올려 주세요';
 
-/**
- * 파일 → 올릴 바이트와 반올림된 좌표. 위치를 지울 수 없는 파일은 null.
- * 판단은 관리 화면과 같다(`planUpload`).
- */
 async function prepare(path) {
   const bytes = new Uint8Array(await readFile(path));
   const plan = planUpload(bytes);
@@ -142,8 +107,6 @@ async function upload(path, bytes) {
   }
   return body;
 }
-
-// ── 실행 ──────────────────────────────────────────────────────────────────────
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -186,7 +149,6 @@ if (options.dryRun) {
   process.exit(0);
 }
 
-// 결과를 인자 순서 그대로 유지해야 sort_order가 파일 순서와 맞는다.
 const results = new Array(files.length).fill(null);
 const failures = [];
 let cursor = 0;
@@ -227,7 +189,6 @@ if (rows.length === 0) fail('업로드에 성공한 사진이 없습니다.');
 
 const { error: insertError } = await supabase.from('photos').insert(rows);
 if (insertError) {
-  // 파일은 Cloudinary에 올라갔지만 DB 행이 없다 — 그대로 두면 유령 자산이 된다.
   console.error('\n  업로드된 URL (수동 복구용):');
   for (const row of rows) console.error(`    ${row.src}`);
   fail(`DB 저장 실패: ${insertError.message}`);
@@ -235,9 +196,6 @@ if (insertError) {
 
 console.log(`\n  ${rows.length}장을 ${album.title} 앨범에 추가했습니다.`);
 
-// 장소 좌표: `api/admin/photos` POST와 같은 규칙 — 좌표가 **없는** 장소에만 이번
-// 사진들의 중앙값을 넣는다(ignoreDuplicates = on conflict do nothing). 공개 화면과
-// 같은 모양의 이름이어야 하므로 앞뒤 공백을 걷고, 자리표시자(`-`)는 건너뛴다.
 const place = options.location.trim();
 const coordsByPlace = groupCoordsByPlace(
   uploadedResults.map(({ coord }) => ({ place: place && !['-', '—', '–'].includes(place) ? place : null, coord })),

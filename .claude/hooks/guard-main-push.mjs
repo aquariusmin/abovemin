@@ -1,9 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse(Bash) 훅: main으로 가는 `git push`를 막는다. main 푸시는 곧 Vercel 운영 배포다.
-//
-// 명령 글자로는 판단하지 않는다(`HEAD`, `@`, `HEAD:heads/main`, 따옴표 등 우회가 많다).
-// 같은 인자로 `git push --dry-run --porcelain`을 돌려 git이 실제로 갱신할 ref를 보고,
-// refs/heads/main이 있으면 막는다. 판단할 수 없으면 막는다. 종료 코드 2 = 차단.
+// main(=운영 배포)을 갱신할 push를 막는다. git dry-run으로 대상 ref를 묻고, 모르면 막는다.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
@@ -25,7 +21,6 @@ try {
 
 if (!/\bgit\b[\s\S]*\bpush\b/.test(command)) process.exit(0);
 
-// 따옴표를 풀어 셸처럼 단어로 나눈다. 명령 구분자(; && || | 줄바꿈)는 따로 토큰으로 남긴다.
 function tokenize(text) {
   const tokens = [];
   let cur = '';
@@ -40,7 +35,7 @@ function tokenize(text) {
       continue;
     }
     if (c === '"' || c === "'") { quote = c; has = true; continue; }
-    // 리다이렉션(`2>&1`, `>/dev/null`, `< file`)은 git 인자가 아니다 — 버린다.
+    // 리다이렉션(`2>&1`, `>/dev/null`)은 git 인자가 아니므로 버린다.
     if (c === '>' || c === '<') {
       if (/^\d+$/.test(cur)) { cur = ''; has = false; }
       if (has) { tokens.push(cur); cur = ''; has = false; }
@@ -80,11 +75,9 @@ const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 for (const words of segments) {
   const g = words.indexOf('git');
   if (g === -1) continue;
-  // git 전역 옵션(-C dir, -c k=v, --x[=y])을 건너뛴 첫 단어가 push일 때만 푸시다.
   let p = g + 1;
   while (p < words.length && words[p].startsWith('-')) p += words[p] === '-C' || words[p] === '-c' ? 2 : 1;
   if (words[p] !== 'push') continue;
-  // 셸 확장이 끼면 실제 인자를 알 수 없다.
   if (words.slice(g).some((w) => /\$|`/.test(w))) block('푸시 명령에 셸 확장이 있어 대상을 확인할 수 없습니다.');
 
   const globalOpts = words.slice(g + 1, p);

@@ -20,7 +20,6 @@ describe('세션 토큰', () => {
   });
 
   it('만료 시각을 뒤로 미뤄도 통하지 않는다', () => {
-    // 서명이 payload 전체에 걸려 있으므로 만료만 늘릴 수 없어야 한다.
     const [nonce, issued, expires, sig] = signSession().token.split(':');
     const later = String(Number(expires) + 86_400_000);
     expect(verifySession(`${nonce}:${issued}:${later}:${sig}`)).toBe(false);
@@ -41,7 +40,6 @@ describe('세션 토큰', () => {
   });
 
   it('매번 다른 nonce를 쓴다', () => {
-    // 같으면 한 번의 로그아웃이 이후 모든 세션을 죽인다.
     const a = signSession().token.split(':')[0];
     const b = signSession().token.split(':')[0];
     expect(a).not.toBe(b);
@@ -62,7 +60,6 @@ describe('assertSameOrigin()', () => {
   });
 
   it('호스트 접두사가 같다고 통과시키지 않는다', () => {
-    // abovemin.com.evil.example 같은 형태.
     expect(
       assertSameOrigin(req({ origin: 'https://abovemin.com.evil.example', host: 'abovemin.com' })),
     ).toBe(false);

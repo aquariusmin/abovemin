@@ -1,7 +1,3 @@
-/**
- * Pure display logic for /lab/markets. No React, no I/O — covered by
- * `src/lib/__tests__/markets-view.test.ts`.
- */
 import type { ForecastHistoryRow, Horizon, MarketKey } from './types';
 
 export type Tone = 'neutral' | 'good' | 'warning' | 'serious' | 'critical';
@@ -20,7 +16,6 @@ export function regimeKo(regime: string | undefined): string {
   return regime ? (REGIME_KO[regime] ?? regime) : '판정 없음';
 }
 
-/** Direction carries the tone; the pill always carries the words as well. */
 export function regimeTone(regime: string | undefined): Tone {
   if (!regime) return 'neutral';
   if (regime.startsWith('Bullish')) return 'good';
@@ -32,10 +27,7 @@ export function riskTone(level: string | undefined): Tone {
   return ({ Low: 'good', Moderate: 'neutral', Elevated: 'warning', High: 'critical' } as Record<string, Tone>)[level ?? ''] ?? 'neutral';
 }
 
-/**
- * The dashboard's rule: a probability that did not pass the fixed validation
- * gate is shown as untrustworthy, never as a plain number.
- */
+// A probability that failed the validation gate is shown as untrustworthy, never as a number.
 export function validationLabel(status: string | undefined): { text: string; tone: Tone } {
   if (status === 'validated') return { text: '검증 통과', tone: 'good' };
   if (status === 'not_validated') return { text: '신뢰할 수 없음', tone: 'warning' };
@@ -64,7 +56,6 @@ export function fmtKst(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? '—' : `${KST.format(d)} KST`;
 }
 
-/** Hours since an ISO timestamp, and whether the data should be called stale. */
 export function freshness(iso: string | null | undefined, now: number): { hours: number | null; tone: Tone } {
   if (!iso) return { hours: null, tone: 'critical' };
   const hours = (now - new Date(iso).getTime()) / 3_600_000;
@@ -75,7 +66,7 @@ export function freshness(iso: string | null | undefined, now: number): { hours:
 export const RANGES = { '3M': 92, '6M': 183, '1Y': 365, '3Y': 1096, '5Y': 1827 } as const;
 export type RangeKey = keyof typeof RANGES;
 
-/** Rows within `days` calendar days of the last row (the last close, not "today"). */
+// Relative to the last row (the last close), not "today".
 export function sliceRange<T extends [string, number]>(rows: readonly T[], range: RangeKey): T[] {
   if (rows.length === 0) return [];
   const last = Date.parse(rows[rows.length - 1][0]);
@@ -83,11 +74,7 @@ export function sliceRange<T extends [string, number]>(rows: readonly T[], range
   return rows.filter(r => Date.parse(r[0]) >= from);
 }
 
-/**
- * Trailing simple moving average over the FULL series, then sliced by the
- * caller — computing it on the visible slice would leave the first n-1 points
- * of every range empty. `null` until n closes exist (never a partial average).
- */
+// SMA over the FULL series, sliced by the caller; null until n closes exist.
 export function sma(rows: readonly [string, number][], n: number): (number | null)[] {
   const out: (number | null)[] = [];
   let sum = 0;
@@ -101,7 +88,7 @@ export function sma(rows: readonly [string, number][], n: number): (number | nul
 
 export type LiveRecord = { evaluated: number; hits: number; late: number; pending: number };
 
-/** Live (not backtest) forecasts of one market × horizon. Late calls are counted apart, never as hits. */
+// Live forecasts only. Late calls are counted apart, never as hits.
 export function liveRecord(history: readonly ForecastHistoryRow[], market: MarketKey, horizon: Horizon): LiveRecord {
   const rows = history.filter(r => r.market === market && String(r.horizon) === horizon);
   const done = rows.filter(r => r.status === 'evaluated');

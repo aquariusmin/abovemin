@@ -6,19 +6,7 @@ import type { FleetBot } from "@/lib/quant";
 
 export const revalidate = 60;
 
-/**
- * 이 봇의 현재 상태를 서버에서 한 번 읽는다.
- *
- * `/lab`과 같은 이유다 — 첫 페인트부터 숫자가 있어야 하고, 클라이언트 fetch만
- * 있으면 HTML에는 "loading…"밖에 없다. `select('*')`인 이유도 같다(스키마를
- * 소유한 쪽은 동기화 컨테이너이고 컬럼이 뒤늦게 따라온다).
- *
- * 조회 실패와 "그런 봇 없음"을 구분한다. 예전에는 존재하지 않는 id도 200을
- * 돌려주고 화면에만 "no bot with id …"를 그렸다 — 오타 난 URL이 정상 페이지로
- * 취급되는 soft-404다. 없으면 404를 준다.
- *
- * `readAt`은 `/lab`의 `getFleet`과 같은 이유로 함께 돌려준다.
- */
+// 조회 실패와 "그런 봇 없음"을 구분한다 — 없으면 404(soft-404 방지). select('*')는 /lab과 같은 이유.
 async function getBot(
   id: string,
 ): Promise<{ bot: FleetBot | null | "error"; readAt: number }> {
@@ -44,8 +32,7 @@ export default async function BotPage({
   const botId = decodeURIComponent(id);
   const { bot: result, readAt } = await getBot(botId);
 
-  // 조회 자체가 실패한 경우에는 404를 주지 않는다 — 그건 "없다"가 아니라
-  // "모른다"이고, 클라이언트가 다시 시도해 살아날 수 있다.
+  // 조회 실패는 404가 아니다 — "없다"가 아니라 "모른다"이고, 클라이언트가 다시 시도한다.
   if (result === null) notFound();
 
   return (

@@ -6,10 +6,6 @@ import {
 
 afterEach(() => vi.useRealTimers());
 
-/**
- * 이 파일들이 파싱하는 문자열은 NAS의 `sync_dashboard.py`가 만든다. 그쪽 형식이
- * 바뀌면 여기가 먼저 깨져야 한다 — 콘솔이 조용히 "—"만 그리는 것보다 낫다.
- */
 describe('parseBotName()', () => {
   it('태그·전략·거래소·정지 상태를 분해한다', () => {
     expect(parseBotName('NASDAQ100 / scanner [TOSS·REAL] ⛔ HALTED(daily)')).toEqual({
@@ -19,7 +15,6 @@ describe('parseBotName()', () => {
   });
 
   it('모의 계좌를 실자금으로 읽지 않는다', () => {
-    // 이 한 글자가 종이 수익과 실제 손실을 가른다.
     expect(parseBotName('BTC / vb [KIS-MOCK]').real).toBe(false);
     expect(parseBotName('BTC / vb [KIS]').real).toBe(true);
     expect(parseBotName('BTC / vb').venue).toBeNull();
@@ -46,8 +41,6 @@ describe('parseEquityCurve()', () => {
 });
 
 describe('KST 날짜', () => {
-  // 콘솔이 다루는 계좌가 전부 한국 시장이라, UTC로 찍으면 장 시작 시간대가
-  // 통째로 전날로 밀린다. 이 세 테스트가 그 회귀를 막는다.
   const kstMorning = Date.parse('2026-09-11T21:30:00Z'); // = 09-12 06:30 KST
 
   it('자정~오전 9시 KST를 전날로 밀지 않는다', () => {
@@ -66,7 +59,6 @@ describe('dayTicks()', () => {
   const base = Date.parse('2026-09-01T03:00:00Z'); // 09-01 12:00 KST
 
   it('하루에 눈금 하나만 남긴다', () => {
-    // 같은 날의 두 지점이 함께 뽑히면 축에 같은 라벨이 두 번 찍혔다.
     const stamps = [base, base + 3600_000, base + 7200_000, base + day];
     const ticks = dayTicks(stamps);
     expect(ticks).toHaveLength(2);
@@ -171,7 +163,6 @@ describe('sortBots()', () => {
   });
 
   it('값이 없는 행은 어느 방향이든 맨 뒤에 둔다', () => {
-    // null을 0이나 최저값으로 읽으면 기준선 없는 봇이 "오늘 최악"처럼 보인다.
     const bs = [bot('a', null), bot('b', -5), bot('c', 4)];
     expect(ids(sortBots(bs, 'day_pnl_pct', 'desc'))).toEqual(['c', 'b', 'a']);
     expect(ids(sortBots(bs, 'day_pnl_pct', 'asc'))).toEqual(['b', 'c', 'a']);

@@ -13,9 +13,6 @@ export const metadata: Metadata = {
     canonical: "/portfolio",
     languages: { ko: "/portfolio", en: "/en/portfolio", "x-default": "/portfolio" },
   },
-  // Without its own block the card inherits the root's title and description
-  // (shallow merge — see `shareCard`), so a link handed to a recruiter previews
-  // as the photo studio.
   ...shareCard({
     title: sectionTitle(TITLE),
     description: DESCRIPTION,
@@ -24,10 +21,6 @@ export const metadata: Metadata = {
   }),
 };
 
-// Same page as `/portfolio/submission`: three defensible projects first, the
-// rest demoted to Explore. `route="normal"` keeps every link on
-// `/portfolio/...`, the indexed URL family; the noindex `/portfolio/submission`
-// pages stay valid for links already handed out.
 export default function PortfolioPage() {
   return <PortfolioOverview locale="ko" route="normal" />;
 }

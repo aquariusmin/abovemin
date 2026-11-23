@@ -29,20 +29,7 @@ import {
   type ProductStatus,
 } from '@/lib/product';
 
-/**
- * 샵 상품 관리. 모든 변경 뒤에 `/`, `/shop`, `/shop/[id]`, sitemap을 다시 굽는다.
- *
- * 주문(`orders.items`)은 주문 시점의 이름·가격을 복사해 두므로, 상품을 고치거나
- * 지워도 이미 들어온 주문은 바뀌지 않는다. 장바구니에 지운 상품이 남은 손님은
- * 주문 API가 "더 이상 판매하지 않는 상품"으로 막는다.
- */
-
-/**
- * 상품 이미지로 저장할 수 있는 주소. 샵은 `next/image`로 렌더하므로
- * `next.config.ts`의 `remotePatterns`를 벗어나면 페이지가 렌더 도중 죽는다.
- * Cloudinary는 **이 계정**의 업로드 URL만(fetch 프록시 형태 차단), 그 밖에는
- * 기존 자리표시자가 쓰는 Unsplash만 허용한다.
- */
+// next/image remotePatterns 밖 주소는 렌더 중 죽는다 — 이 계정 Cloudinary 업로드와 Unsplash만.
 function isAllowedProductImage(url: string, cloudName: string): boolean {
   if (isOwnCloudinaryUrl(url, cloudName)) return true;
   try {
@@ -53,7 +40,6 @@ function isAllowedProductImage(url: string, cloudName: string): boolean {
   }
 }
 
-/** 들어온 이미지 주소 전부(`image_url` + 갤러리)를 같은 규칙으로 본다. */
 function checkImages(urls: Array<string | undefined>): Response | null {
   const given = urls.filter((url): url is string => url !== undefined);
   if (given.length === 0) return null;
@@ -66,20 +52,12 @@ function checkImages(urls: Array<string | undefined>): Response | null {
   return null;
 }
 
-/**
- * 새 컬럼이 아직 없을 때의 저장 규칙(벗겨서 다시 쓰기, 내용이 사라지면 409)은
- * `lib/admin/product-columns.ts`에 있다. 여기서는 그 결과를 응답으로 바꾼다.
- */
 function migrationBlockedResponse(blocked: BlockedBy): Response {
   const file = blocked === 'addons' ? PRODUCT_ADDONS_MIGRATION : SHOP_READY_MIGRATION;
   return jsonError(migrationNotice(file), 409, { migration: true });
 }
 
-/**
- * 합쳐진 상품(기존 행 + 이번 변경)을 검증하고, 서버가 맞추는 호환 컬럼을 계산한다.
- * "판매 중인데 팔 가격이 없음"은 여기서 막는다 — 공개 화면은 그런 상품을 초안처럼
- * 숨기지만, 관리자는 저장이 됐다고 믿고 있을 것이다.
- */
+// "판매 중인데 가격 없음"은 여기서 막는다 — 공개 화면은 조용히 숨기기 때문이다.
 function finalize(merged: {
   status: ProductStatus;
   price: number;
@@ -96,17 +74,13 @@ function finalize(merged: {
   return { ok: true, columns };
 }
 
-// ── 목록 ──────────────────────────────────────────────────────────────────────
-
 export async function GET() {
   const denied = await guardRead();
   if (denied) return denied;
   const db = adminDb('admin_products');
   if (!db.ok) return db.response;
 
-  // 목록은 `*`라 적용 전후 모두 읽힌다. 새 컬럼이 있는지는 행을 보고 알 수
-  // 없으므로(상품이 0개일 수도 있다) 한 컬럼만 따로 찔러 본다. 마이그레이션
-  // 파일마다 하나씩 — `addons`와 `related_ids`는 한 파일이 같이 더한다.
+  // 상품이 0개일 수 있어 새 컬럼 유무는 마이그레이션 파일마다 한 컬럼씩 찔러 본다.
   const [list, probe, addonsProbe] = await Promise.all([
     withColumnFallback(
       'admin_products.list',
@@ -128,8 +102,6 @@ export async function GET() {
   });
 }
 
-// ── 만들기 ────────────────────────────────────────────────────────────────────
-
 export async function POST(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -139,8 +111,7 @@ export async function POST(request: Request) {
   const badImage = checkImages([input.image_url, ...(input.images ?? []).map(image => image.url)]);
   if (badImage) return badImage;
 
-  // 새 상품은 기본으로 초안이다. 가격을 확인하기 전에 0원 상품이 샵에 걸리거나
-  // 장바구니에 담기는 일을 막는다 — 공개는 관리자가 한다.
+  // 새 상품은 초안이 기본이다 — 가격 확인 전 0원 상품이 샵에 걸리지 않게.
   const status = input.status ?? 'draft';
   const images = input.images ?? [];
   const options = input.options ?? [];
@@ -161,8 +132,7 @@ export async function POST(request: Request) {
     images,
     options,
     edition: input.edition ?? null,
-    // 비어 있으면 키째 뺀다(DB 기본값이 `[]`다) — 추가 상품이 없는 상품의 등록이
-    // 그 마이그레이션 전에도 첫 시도에 들어가게.
+    // 비어 있으면 키째 뺀다 — 그 마이그레이션 전에도 첫 시도에 들어가게.
     ...(input.addons?.length ? { addons: input.addons } : {}),
     ...(input.related_ids?.length ? { related_ids: input.related_ids } : {}),
     ...(sort_order === undefined ? {} : { sort_order }),
@@ -170,9 +140,7 @@ export async function POST(request: Request) {
 
   const insert = (values: Record<string, unknown>) => db.value.from('products').insert(values).select('*').single();
 
-  // 컬럼이 없다는 오류면 한 겹씩 벗겨 다시 넣는다: 추가 상품 컬럼, shop_ready
-  // 컬럼(`writeWithFallback`), 그래도 없으면 `sort_order`(admin_studio). 순서
-  // 하나 때문에 등록 자체가 막히면 안 된다.
+  // 컬럼 없음 오류면 한 겹씩 벗겨 다시 넣는다(추가 상품 → shop_ready → sort_order).
   const attempt = await writeWithFallback(row, insert);
   if (attempt.blocked) return migrationBlockedResponse(attempt.blocked);
   let { result } = attempt;
@@ -189,8 +157,6 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, product: result.data, migrationPending });
 }
 
-// ── 고치기 ────────────────────────────────────────────────────────────────────
-
 export async function PATCH(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;
@@ -202,8 +168,7 @@ export async function PATCH(request: Request) {
   const db = adminDb('admin_products');
   if (!db.ok) return db.response;
 
-  // 상태·가격·옵션은 서로를 검증한다("판매 중이면 팔 가격이 있어야"). 이번에
-  // 한 필드만 왔어도 나머지는 지금 행에서 가져와 합친 모양으로 판단한다.
+  // 상태·가격·옵션은 서로를 검증하므로 지금 행과 합친 모양으로 판단한다.
   const { data: current, error: lookupError } = await db.value.from('products').select('*').eq('id', id).maybeSingle();
   if (lookupError) return dbErrorResponse('admin_products_lookup', lookupError);
   if (!current) return jsonError('상품을 찾을 수 없습니다.', 404);
@@ -233,12 +198,7 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ ok: true, product: result.data, migrationPending });
 }
 
-// ── 지우기 ────────────────────────────────────────────────────────────────────
-
-/**
- * 상품 행만 지운다. Cloudinary의 이미지는 남는다 — 설정 탭의 "쓰이지 않는 원본"
- * 정리가 `phorage/shop/`까지 훑으므로 거기서 지운다.
- */
+// 상품 행만 지운다. Cloudinary 이미지는 설정 탭의 "쓰이지 않는 원본"에서 정리한다.
 export async function DELETE(request: Request) {
   const denied = await guardMutation(request);
   if (denied) return denied;

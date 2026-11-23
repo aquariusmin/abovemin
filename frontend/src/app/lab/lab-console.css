@@ -1,154 +1,48 @@
-/* ---------------------------------------------------------------------------
-   Lab console — the site's design language, an instrument's structure.
-
-   The STRUCTURE diverges and stays diverged: one continuous hairline grid
-   instead of a deck of cards, dense tables, tabular figures, a condition
-   stripe per row. It is machinery read at a glance to answer "is anything
-   wrong", not an editorial page, and nothing below changes that.
-
-   The DESIGN does not diverge any more. Ground, panels, borders, ink, accent,
-   radii, type and elevation are all the site's own, pulled from `globals.css`
-   rather than restated:
-
-     - Every `--lab-*` plane, edge and status token is now `var(--…)` off the
-       site's token set. They used to be hex literals copied out of
-       `globals.css`, which is a second source of truth for exactly the values
-       that must not drift. Only `--lab-grid` is still a literal, because the
-       site has no token for a rule that recessive.
-     - Type is the site's PAIRING, not one face. Prose runs in the body stack
-       like every other page; mono is reserved for the things mono is *for* —
-       micro-labels, identifiers and figures in columns. A whole screen of
-       monospace was the single loudest reason this page read as a different
-       website.
-     - Radii come off the site's `--radius` ramp: `--radius-lg` on the outer
-       pane exactly like `.card-hair`, `--radius-pill` on status pills exactly
-       like `.chip`. The console used to sit at a flat 2px everywhere.
-     - Elevation is `.card-hair`'s hairline-plus-whisper shadow, and the
-       section marker is `.eyebrow-marked`'s forest→moss gradient.
-
-   Two dark versions came before all of this and both were muddy, for reasons
-   worth keeping written down:
-
-     1. Series colours taken at the LOWEST lightness that still cleared 3:1.
-        Every check passed; dark low-chroma marks on a dark ground are mud.
-     2. Planes and ink copied verbatim from the `.dark` tokens. Measured in
-        OKLCH those sit at C 0.025-0.037 across h 120-158 — a whole screen in
-        one narrow green band, at the worst possible chroma: too much to read
-        as neutral, too little to read as intent. The ink carried MORE chroma
-        than the ground beneath it.
-
-   The deeper problem was that a dark console between a light header and a
-   light footer is not "the site in another mode", it is a hole in the page.
-   Matching the site's own theme removes the question entirely.
-
-   EVERY rule is nested under `.lab-console`. That is the requirement, not
-   tidiness: an unscoped token or a bare `*` reset would reach the portfolio,
-   the shop and the archive. Nothing here may be written unscoped.
-
-   COLOUR IS VALIDATED, NOT EYEBALLED. The categorical series could not be the
-   brand's five: forest/fern/moss are three greens that collapse under
-   colour-blindness, and moss reaches only 1.89:1 on white — the site's own
-   rule that moss never carries text on a light surface. The series are
-   generated in OKLCH and searched, and on paper they use LIGHTNESS as a second
-   channel: colour-blindness flattens hue, it does not flatten value, so an
-   equal-lightness set is exactly the one that fails.
-
-   Against the panel surface (#f7f2e3, i.e. `--surface`), via the dataviz
-   validator:
-
-     categorical 4: lightness band PASS · chroma floor PASS
-                    CVD adjacent worst ΔE 17.8 PASS · normal-vision 24.1 PASS
-                    contrast vs surface all >= 3:1 PASS   (no warnings)
-                    — also re-checked against the canvas #fcfaf4: all pass
-
-     status 4:      forest 5.97 · amber 4.80 · ember 4.82 · brick 4.54
-     ink:           primary 12.07 · body 8.29 · muted 5.00
-
-   Change `--surface` in `globals.css` → re-run the validator. Contrast only
-   means anything against the surface a chart actually renders on.
---------------------------------------------------------------------------- */
+/* Lab console. Every rule is scoped under .lab-console — unscoped rules leak to other pages. */
+/* Colours are validated against --surface; change it and re-run the dataviz validator. */
 
 .lab-console {
   color-scheme: light;
 
-  /* ── Planes ──────────────────────────────────────────────────────────────
-     The site's own, by reference. The canvas is the same `--background` the
-     header and footer sit on, so there is no seam. */
-  --lab-plane: var(--background);      /* matches the nav */
-  --lab-surface-1: var(--surface);     /* the validated chart surface */
-  --lab-surface-2: var(--muted);       /* the chrome tint */
+  /* ── Planes ── */
+  --lab-plane: var(--background);
+  --lab-surface-1: var(--surface);
+  --lab-surface-2: var(--muted);
 
   /* ── Structure ─────────────────────────────────────────────────────────── */
   --lab-border: var(--border);
   --lab-border-strong: var(--input);
-  /* The one literal left. A chart's gridlines have to sit further back than
-     any border the site defines — 1.18:1 off the surface — and there is no
-     token for a rule that recessive. Mirrored in `quant/theme.ts`. */
+  /* Gridlines sit further back than any border (1.18:1). Mirrored in quant/theme.ts. */
   --lab-grid: #e6e0cf;
 
-  /* ── Ink — spaced, not maxed ─────────────────────────────────────────────
-     `--foreground` on `--surface` is 14.91:1, and a whole screen of near-black
-     on near-white is glare, not legibility. The ramp is 12.07 / 8.29 / 5.00
-     against the panel: every step still clears 4.5:1 by a wide margin, and the
-     three are far enough apart to read as a hierarchy. Steps 2 and 3 ARE the
-     site's `--ink-body` and `--slate`; only the top step is console-specific,
-     pulled back off `--foreground`. */
+  /* ── Ink: contrast against the panel ── */
   --lab-ink-1: #26312a;            /* 12.07:1 */
   --lab-ink-2: var(--ink-body);    /*  8.29:1 */
   --lab-ink-3: var(--slate);       /*  5.00:1 */
 
-  /* Chrome tint. On paper a translucent white pane is invisible, so the
-     floating layer is warm cream over blur with a white specular top edge —
-     the same trick the site nav uses, inverted for the ground it sits on. */
   --lab-glass-edge: rgb(255 255 255 / 0.75);
 
-  /* ── Status — reserved, never reused as a series colour, always beside a
-     label. Keeps the site's directional semantics: green up, brick down. Moss
-     is NOT the "good" token here: it reads 1.89:1 on white, which is the
-     site's own rule that moss never carries text on a light surface. Forest
-     does. Amber and ember have no site token — they are the two mid-warm steps
-     the palette lacks, and they are searched, not picked. */
+  /* ── Status: never a series colour. Moss is a fill only (1.89:1 on white). ── */
   --lab-good: var(--forest);       /* 5.97:1 */
   --lab-warning: #8a6410;          /* 4.80:1 */
   --lab-serious: #a85222;          /* 4.82:1 */
   --lab-critical: var(--brick);    /* 4.54:1 */
 
-  --lab-accent: var(--primary);         /* forest, the accent-of-record on light */
-  --lab-accent-wash: var(--moss-wash);  /* fills and hovers where moss belongs */
+  --lab-accent: var(--primary);
+  --lab-accent-wash: var(--moss-wash);
   --lab-moss: var(--moss);              /* a FILL only, never type — 1.89:1. */
 
-  /* The categorical series lives in `components/quant/theme.ts`, NOT here.
-     Recharts needs the values in JS, and duplicating them as custom properties
-     would be a second source of truth for the one set of colours that was
-     searched and validated — exactly the drift this file's scoping is meant to
-     prevent. */
+  /* The categorical series lives in components/quant/theme.ts (Recharts needs JS). */
 
   color: var(--lab-ink-1);
 
-  /* ── Type: the site's pairing, not one face ──────────────────────────────
-     The body stack is the default here exactly as it is everywhere else, so
-     the console's prose reads in the site's voice. Mono is applied BELOW, to
-     the three things it is actually for: micro-labels, identifiers, and
-     figures that have to align in a column. A screen set entirely in
-     monospace was the single loudest reason this page read as a different
-     site.
-
-     `--font-body-stack` / `--font-mono-stack`, NOT the bare `--font-body` /
-     `--font-mono`: the bare variables are only the Latin faces `next/font`
-     loads, and the stacks are what pair each with the Korean face. Using the
-     bare one dropped every Hangul glyph in the console onto whatever the OS
-     happened to ship. */
+  /* Use the -stack vars: bare --font-body / --font-mono lack the Korean face. */
   font-family: var(--font-body-stack, ui-sans-serif, system-ui, sans-serif);
   font-size: 13px;
   line-height: 1.5;
-  /* No `-webkit-font-smoothing: antialiased` here. It thins strokes, which is
-     right for light type on a dark ground and wrong for dark type on paper —
-     it made a dense grid of figures look frail. Let the platform render it. */
+  /* No antialiased smoothing: it thins dark type on paper. */
 }
 
-/* Identifiers, labels and figures keep the mono voice: a column of numbers has
-   to align, and a bot tag or a ticker is a machine string, not prose. Tables
-   are mono wholesale — that is the instrument surface. */
 .lab-console :where(table),
 .lab-console .lab-label,
 .lab-console .lab-mono,
@@ -156,36 +50,16 @@
   font-family: var(--font-mono-stack, ui-monospace, "SFMono-Regular", Menlo, monospace);
 }
 
-/* Prose inside the console — disclaimers, alert sentences, empty states. Set
-   at the site's small-copy size and leading so a paragraph here reads like a
-   paragraph anywhere else on the site. */
 .lab-console .lab-prose {
   font-size: 0.8125rem;
   line-height: 1.7;
 }
 
-/* ── Geometry ──────────────────────────────────────────────────────────────
-   Off the site's `--radius` ramp rather than a flat 2px. Tables stay square so
-   the grid stays a grid. */
 .lab-console :where(table, thead, tbody, tr, th, td) {
   border-radius: 0;
 }
 
-/* CONTENT is opaque paper with a hairline edge and the same whisper of a
-   shadow `.card-hair` carries — a see-through surface has no fixed colour, so
-   the validated contrast figures stop being verifiable and dense figures read
-   against a moving ground.
-
-   The panel sits SLIGHTLY DARKER than the canvas rather than lighter. Pure
-   white panels were 0% off the maximum the screen can emit and read as glare
-   across a dense console; `--surface` is 11% less light and still
-   unmistakably paper. It also separates better — 1.07:1 against the canvas
-   where white managed 1.03:1 — so the panel reads as a well, and the hairline
-   confirms an edge rather than inventing one.
-
-   `overflow: hidden` is what lets the rounded corner actually clip the first
-   and last sections; without it the inner hairlines square the corners off
-   again. */
+/* overflow: hidden lets the rounded corner clip the inner hairlines. */
 .lab-console .pane {
   background: var(--lab-surface-1);
   border: 1px solid var(--lab-border);
@@ -194,8 +68,6 @@
   box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--forest-black) 5%, transparent);
 }
 
-/* CHROME is glass: header strips, the layer that floats above content. Same
-   blur-over-tint the site nav uses. */
 .lab-console .glass-inset {
   background: color-mix(in oklab, var(--lab-surface-2) 78%, transparent);
   backdrop-filter: blur(8px) saturate(120%);
@@ -203,17 +75,13 @@
   box-shadow: inset 0 1px 0 var(--lab-glass-edge);
 }
 
-/* A standalone glass strip (the command bar) needs its own corners; one inside
-   a pane or a table head is clipped by its parent and must stay square. */
+/* Only a standalone glass strip gets corners; inside a pane it stays square. */
 .lab-console :where(header, section) > .glass-inset,
 .lab-console > .glass-inset,
 .lab-console .glass-inset:where(header) {
   border-radius: var(--radius-md);
 }
 
-/* Section bar: a forest→moss tick on the leading edge — the site's own
-   `.eyebrow-marked` gradient, doing the same job it does on the editorial
-   pages. */
 .lab-console .bar {
   position: relative;
   border-bottom: 1px solid var(--lab-border);
@@ -228,10 +96,7 @@
   background: linear-gradient(to bottom, var(--forest), var(--moss));
 }
 
-/* A bar is one line at every width. At 390px "RELATIVE PERFORMANCE" and "ALL
-   BOTS · ONE AXIS" each wrapped inside a fixed 36px strip — four lines of
-   label spilling out of the bar. The title keeps its line; the right-hand
-   annotation is the part that can lose its tail. */
+/* One line at every width: the title keeps its line, the annotation truncates. */
 .lab-console .bar > .lab-label:first-child {
   white-space: nowrap;
   flex-shrink: 0;
@@ -244,11 +109,7 @@
   white-space: nowrap;
 }
 
-/* Stat cells below `lg` sit two to a row, and the fleet shows three or five
-   of them — an odd count left one cell alone with an empty half-row beside it
-   and a hairline on its open side. The last odd cell takes the whole row
-   instead, rows get a rule between them, and the right-hand cell of each row
-   drops its outer edge (the pane already draws that one). */
+/* Below lg: two cells per row; a lone odd last cell spans the row. */
 @media (max-width: 1023.98px) {
   .lab-console .lab-stats > :nth-child(even) {
     border-right-width: 0;
@@ -261,13 +122,7 @@
   }
 }
 
-/* A table wider than the phone scrolls sideways, but nothing said so: the
-   columns simply ended at the pane edge as if that were the whole table.
-   Pure-CSS scroll shadows — two `local` covers in the panel colour ride with
-   the content, two `scroll` shades stay pinned to the edges, so a shade shows
-   only on a side that still has more table behind it. No listener, no
-   wrapper element. The head row's own glass fill paints over the shade,
-   which is fine: the body rows are what carry the cue. */
+/* Pure-CSS scroll shadows: a shade shows only on a side with more table. */
 .lab-console .lab-scroll {
   background:
     linear-gradient(to right, var(--lab-surface-1) 40%, transparent) left center / 2.5rem 100% no-repeat local,
@@ -277,10 +132,7 @@
   background-color: var(--lab-surface-1);
 }
 
-/* The tracked micro-label heading every panel, column and field. Same
-   construction as the site's `.eyebrow`, one notch tighter: `.eyebrow` sits at
-   0.24em, which is right for a line of three words and falls apart across ten
-   table headers in a row. */
+/* Tighter than .eyebrow so it holds across a row of table headers. */
 .lab-console .lab-label {
   font-size: 11px;
   line-height: 1.3;
@@ -290,8 +142,6 @@
   color: var(--lab-ink-3);
 }
 
-/* Status pill — the site's `.chip` geometry with the console's tones. Pill
-   radius and mono tracking are what tie it to the chips on every other page. */
 .lab-console .lab-pill {
   display: inline-flex;
   align-items: center;
@@ -307,15 +157,11 @@
   white-space: nowrap;
 }
 
-/* Figures in columns must align vertically — that is what makes a dense table
-   scannable at a glance. */
 .lab-console .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
-/* A sortable column header. Reads as a header until you approach it, then
-   picks up the site's underline-on-hover the same way `.link-underline` does. */
 .lab-console .lab-sort {
   cursor: pointer;
   background-image: linear-gradient(currentColor, currentColor);
@@ -332,8 +178,6 @@
   color: var(--lab-ink-1);
 }
 
-/* Row hover is a wash, not a colour change: the row settles rather than
-   changing identity. Moss-wash is the site's own hover tone. */
 .lab-console .row-hover:hover {
   background: var(--lab-accent-wash);
 }

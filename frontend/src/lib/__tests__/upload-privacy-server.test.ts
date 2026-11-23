@@ -3,11 +3,6 @@ import { groupCoordsByPlace, hasLocationMetadata, normalizeResource, placeFromCo
 import { MetadataRecheck, PlaceCoord, YearSync } from '@/lib/admin/schemas';
 import { PHOTO_COLUMN_LEVEL, photoColumnSets, selectWithColumnSets } from '@/lib/admin/photo-columns';
 
-/**
- * 업로드 프라이버시의 서버 쪽: 저장 본문의 좌표는 서버가 다시 자르고, 원본에
- * 남은 위치 정보는 표시만 하며, 마이그레이션이 빠진 만큼 내려가며 읽는다.
- */
-
 describe('PlaceCoord', () => {
   it('서버가 다시 소수점 한 자리로 자른다', () => {
     expect(PlaceCoord.parse({ lat: 37.566535, lng: 126.977969 })).toEqual({ lat: 37.6, lng: 127 });

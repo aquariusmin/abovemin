@@ -49,10 +49,6 @@ export function HoldingsTable({
                 </td>
                 <td className="px-3 py-2 text-right">
                   {w !== null ? (
-                    // The weight bar is the chart here: a value in a column of
-                    // values is hard to rank at a glance, a proportional rule
-                    // beside it is read instantly. One colour for every row —
-                    // the length already encodes magnitude.
                     <span className="flex items-center justify-end gap-2">
                       <span className="h-[3px] w-14 shrink-0" style={{ background: "var(--lab-grid)" }} aria-hidden>
                         <span className="block h-full"

@@ -15,22 +15,7 @@ import {
 
 export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
 
-/**
- * 관리 API가 받는 본문의 형태. **라우트와 테스트가 이 파일 하나를 같이 본다.**
- *
- * 모든 스키마가 `strictObject`인 이유: zod 기본(strip)은 모르는 키를 조용히
- * 버린다. 공개 주문 폼에서는 그 침묵이 우편번호를 몇 달 동안 삼켰고
- * (`orders-schema.ts` 주석), 관리 API에서는 반대 방향이 문제다 — 화면이
- * `cover`를 보냈는데 서버가 `cover_photo_id`만 안다면, 버리지 말고 400으로
- * 알려야 고칠 수 있다. 화이트리스트 밖의 키는 거절한다.
- *
- * 예외는 "손 검증에서 옮긴 것" 묶음 하나다(사진 한 장·순서·서명·사이트 설정).
- * 그쪽은 옮기기 전에 받던 입력을 그대로 받는다 — 이유는 그 묶음 머리에 있다.
- *
- * 메시지는 한국어로 적는다. 관리 화면이 서버 메시지를 그대로 보여준다.
- */
-
-// ── 공통 조각 ─────────────────────────────────────────────────────────────────
+// strictObject: 모르는 키는 버리지 말고 400으로 거절한다. 예외는 "손 검증에서 옮긴 것" 묶음.
 
 export const Id = z.number({ error: 'id가 올바르지 않습니다.' }).int().positive();
 
@@ -46,7 +31,7 @@ function uniqueIds(max: number) {
     .refine(ids => new Set(ids).size === ids.length, '목록에 중복된 id가 있습니다.');
 }
 
-/** 비워 두면 `null`로 저장되는 선택 텍스트. 빈 문자열과 null을 따로 두지 않는다. */
+// 비우면 null로 저장한다. 빈 문자열과 null을 따로 두지 않는다.
 function optionalText(max: number, label: string) {
   return z
     .string()
@@ -64,8 +49,6 @@ const Year = z
 
 const Location = z.string().trim().max(200, '장소가 너무 깁니다.');
 
-// ── 앨범 ──────────────────────────────────────────────────────────────────────
-
 const AlbumTitle = z.string().trim().min(1, '제목이 비어 있습니다.').max(120, '제목이 너무 깁니다.');
 
 export const AlbumCreate = z.strictObject({
@@ -81,11 +64,7 @@ export const AlbumUpdate = z
     slug: AlbumSlug.optional(),
     description: optionalText(2000, '설명').optional(),
     published: z.boolean().optional(),
-    /**
-     * 커버는 URL이 아니라 **그 앨범 사진의 id**로 받는다. URL을 받으면 다른
-     * 앨범의 사진이나 외부 주소를 커버로 걸 수 있고, 실제로 `cal` 앨범이
-     * `aus`의 커버를 빌려 쓰고 있다. 서버가 id → src를 직접 찾는다.
-     */
+    // 커버는 URL이 아니라 그 앨범 사진의 id로 받는다 — 서버가 id → src를 찾는다.
     cover_photo_id: Id.optional(),
   })
   .refine(body => Object.keys(body).length > 1, '변경할 내용이 없습니다.');
@@ -93,8 +72,6 @@ export const AlbumUpdate = z
 export const IdOrder = z.strictObject({
   ids: uniqueIds(500),
 });
-
-// ── 사진 일괄 작업 ────────────────────────────────────────────────────────────
 
 const BulkIds = uniqueIds(MAX_BULK);
 
@@ -111,10 +88,7 @@ export const PhotoBulk = z.discriminatedUnion(
 );
 export type PhotoBulkInput = z.infer<typeof PhotoBulk>;
 
-/**
- * 장소 이름 바꾸기. `from`은 **저장된 값 그대로** 비교한다(trim하지 않는다) —
- * `"서울 "`처럼 끝에 공백이 붙은 표기를 찾아 고치는 것도 이 도구의 일이다.
- */
+// `from`은 저장된 값 그대로 비교한다(trim하지 않는다) — 끝 공백 표기도 고칠 대상이다.
 export const LocationRename = z
   .strictObject({
     from: z.string().max(200, '장소가 너무 깁니다.'),
@@ -123,13 +97,7 @@ export const LocationRename = z
   })
   .refine(body => body.from !== body.to, '바꿀 이름이 지금과 같습니다.');
 
-// ── 장소 좌표 ─────────────────────────────────────────────────────────────────
-
-/**
- * 좌표는 받자마자 소수점 한 자리로 자른다(`places`의 `numeric(4,1)`과 같은
- * 규칙). 관리자가 지도 앱에서 복사한 `37.566535`를 붙여 넣어도 정밀한 값은
- * 서버를 통과하지 못한다 — `places`는 anon이 읽는 테이블이다.
- */
+// 좌표는 받자마자 소수점 한 자리로 자른다 — places는 anon이 읽는 테이블이다(개인정보).
 function coordinate(limit: number, label: string) {
   return z
     .number({ error: `${label}는 숫자여야 합니다.` })
@@ -142,7 +110,6 @@ function coordinate(limit: number, label: string) {
     });
 }
 
-/** 장소 이름은 `photos.location`을 공개 화면이 읽는 모양(앞뒤 공백 없음)으로. */
 const PlaceName = z.string().trim().min(1, '장소 이름이 비어 있습니다.').max(200, '장소가 너무 깁니다.');
 
 export const PlaceUpsert = z.strictObject({
@@ -153,11 +120,7 @@ export const PlaceUpsert = z.strictObject({
 
 export const PlaceDelete = z.strictObject({ name: PlaceName });
 
-/**
- * 새 사진 저장에 딸려 오는 좌표(`api/admin/photos` POST의 `place_coord`).
- * 브라우저가 이미 반올림해 보내지만 **서버가 다시 자른다** — 이 값은 사진별로
- * 저장되지 않고 장소마다 중앙값 하나로만 `places`에 들어간다.
- */
+// 브라우저가 이미 반올림해 보내지만 서버가 다시 자른다.
 export const PlaceCoord = z.strictObject(
   {
     lat: coordinate(90, '위도'),
@@ -166,24 +129,8 @@ export const PlaceCoord = z.strictObject(
   { error: '좌표가 올바르지 않습니다.' },
 );
 
-// ── 사진 한 장·순서·사이트 설정 (손 검증에서 옮긴 것) ─────────────────────────
-//
-// 이 묶음은 **위의 규칙과 일부러 다르다.** `api/admin/photos`(+ `order`, `sign`)와
-// `api/admin/settings`는 이 파일보다 먼저 생겼고 본문을 손으로 검증했다. 스키마로
-// 옮기면서 받는 입력과 돌려주는 메시지를 한 글자도 바꾸지 않았다 — 화면이 서버
-// 메시지를 그대로 보여 주고, 무엇을 받는지는 이미 계약이다.
-//
-//  - **모르는 키를 거절하지 않고 버린다**(`z.object`, strict 아님). 옛 코드는
-//    아는 키만 꺼내 읽었다.
-//  - **id와 연도는 `Number()`로 읽는다.** `"12"`, `"12.0"`, `[12]`도 12이고,
-//    `true`는 1이다. zod의 `z.number()`는 이것들을 거절하므로 쓰지 않는다.
-//    정수 판정도 `Number.isInteger` 그대로다(`.int()`는 안전 정수 범위까지 본다).
-//  - **장소는 자르기 전 길이로 200자**를 본다(제목은 자른 뒤 길이).
-//  - 메시지는 옛 문구 그대로다(`Invalid id`, `Invalid album_slug` 포함).
-//
-// 조이려면(strict, 숫자만 받기) 화면이 보내는 모양을 확인하고 따로 한다.
+// 손 검증에서 옮긴 묶음: 옛 계약(모르는 키 버림, Number() 해석, 옛 메시지)을 일부러 그대로 둔다.
 
-/** `Number(value)`가 조건에 맞는 정수일 때만 통과. 실패는 전부 같은 메시지. */
 function looseInt(message: string, accept: (n: number) => boolean) {
   return z.unknown().transform((value, ctx) => {
     const n = Number(value);
@@ -198,7 +145,6 @@ function looseInt(message: string, accept: (n: number) => boolean) {
 const INVALID_ALBUM_SLUG = 'Invalid album_slug';
 const INVALID_ID = 'Invalid id';
 
-/** 요청이 가리키는 앨범. 형식은 `AlbumSlug`와 같고 메시지만 옛 문구다. */
 const AlbumSlugParam = z.string(INVALID_ALBUM_SLUG).regex(ALBUM_SLUG_RE, INVALID_ALBUM_SLUG);
 
 const PhotoId = looseInt(INVALID_ID, id => id > 0);
@@ -209,7 +155,7 @@ const PhotoTitle = z
   .min(1, '제목이 비어 있습니다.')
   .max(200, '제목이 너무 깁니다.');
 
-/** 빈 값은 받는다("장소 없음"). 길이는 **자르기 전**에 본다 — 순서가 뜻이다. */
+// 빈 값은 받는다. 길이는 자르기 전에 본다 — 순서가 뜻이다.
 const PhotoLocation = z.string('장소가 올바르지 않습니다.').max(200, '장소가 올바르지 않습니다.').trim();
 
 const PhotoYear = looseInt(
@@ -217,13 +163,10 @@ const PhotoYear = looseInt(
   year => year >= MIN_YEAR && year <= new Date().getFullYear() + 1,
 );
 
-/**
- * 좌표가 틀리면 사진 저장까지 막지 않고 좌표만 버린다 — 좌표는 지도용 부가
- * 정보다. (0, 0)은 GPS가 잡히기 전의 값이라 같이 버린다.
- */
+// 좌표가 틀리면 사진 저장은 막지 않고 좌표만 버린다. (0, 0)도 버린다.
 const OptionalPlaceCoord = z
   .unknown()
-  // `optional()`이 있어야 키가 아예 없을 때도 변환이 돈다(없으면 "필수 키 없음").
+  // `optional()`이 있어야 키가 아예 없을 때도 변환이 돈다.
   .optional()
   .transform(value => {
     if (value === undefined || value === null) return null;
@@ -231,16 +174,10 @@ const OptionalPlaceCoord = z
     return coord.success && !(coord.data.lat === 0 && coord.data.lng === 0) ? coord.data : null;
   });
 
-/** 한 번에 넣을 수 있는 장수. 업로드 UI가 배치로 보내므로 상한만 둔다. */
 export const MAX_PHOTO_BATCH = 60;
-/** 한 앨범에 이보다 많은 사진이 쌓이면 순서 변경 UI 자체를 다시 생각해야 한다. */
 export const MAX_PHOTO_ORDER = 500;
 
-/**
- * 새 사진 저장의 **봉투**. 사진 하나하나는 여기서 보지 않는다(`unknown`) —
- * `src`가 이 사이트의 Cloudinary인지는 클라우드 이름을 알아야 하고, 그 설정이
- * 없으면 503이 항목 오류보다 먼저다. 라우트가 `photoCreateItem`으로 하나씩 본다.
- */
+// 사진 하나하나는 라우트가 photoCreateItem으로 본다 — 클라우드 설정이 없으면 503이 먼저다.
 export const PhotoCreate = z.object(
   {
     album_slug: AlbumSlugParam,
@@ -254,13 +191,7 @@ export const PhotoCreate = z.object(
 
 const NOT_OWN_SRC = '이 사이트의 Cloudinary 주소가 아닙니다.';
 
-/**
- * 새 사진 한 장. `isOwnSrc`는 라우트가 넘긴다(`isOwnCloudinaryUrl` + 클라우드
- * 이름). 키 순서가 곧 오류 순서다: src → 제목 → 장소 → 연도.
- *
- * 배열을 `{}`로 읽는 이유: 옛 검증은 `typeof raw === 'object'`만 봤고 배열은
- * 그걸 통과해 "주소가 아닙니다"에서 걸렸다. 메시지를 그대로 두려는 것뿐이다.
- */
+// 키 순서가 곧 오류 순서다: src → 제목 → 장소 → 연도.
 export function photoCreateItem(isOwnSrc: (src: string) => boolean) {
   return z.preprocess(
     raw => (Array.isArray(raw) ? {} : raw),
@@ -278,7 +209,7 @@ export function photoCreateItem(isOwnSrc: (src: string) => boolean) {
 }
 export type PhotoCreateItemInput = z.output<ReturnType<typeof photoCreateItem>>;
 
-/** 사진 한 장 수정. 보낸 필드만 바뀐다. `src`는 받지 않는다(보내면 버린다). */
+// 보낸 필드만 바뀐다. `src`는 받지 않는다.
 export const PhotoUpdate = z
   .object(
     {
@@ -298,11 +229,7 @@ export const PhotoUpdate = z
 
 export const PhotoDelete = z.object({ id: PhotoId }, INVALID_ID);
 
-/**
- * 앨범 안 사진 순서. 두 단계로 본다(`pipe`) — 길이가 틀리면 그 메시지가 먼저고,
- * id 하나하나는 그다음이다. 한 단계로 합치면 501개짜리 목록에 섞인 잘못된 id가
- * 먼저 보고된다.
- */
+// 두 단계(pipe): 길이 오류가 id 오류보다 먼저 보고되어야 한다.
 export const PhotoOrder = z.object(
   {
     album_slug: AlbumSlugParam,
@@ -319,24 +246,12 @@ export const PhotoOrder = z.object(
   INVALID_ALBUM_SLUG,
 );
 
-/** 업로드 서명을 받을 앨범. */
 export const PhotoSign = z.object({ album_slug: AlbumSlugParam }, INVALID_ALBUM_SLUG);
 
 export const SETTINGS_KEYS = ['hero_image', 'hero_title', 'hero_subtitle'] as const;
 export type SettingsKey = (typeof SETTINGS_KEYS)[number];
 
-/**
- * 사이트 설정. 아는 키이면서 값이 문자열인 것만 **고르고**, 나머지는 거절하지
- * 않고 버린다. 결과는 `[키, 값]` 목록이다 — 보낸 순서대로 저장한다.
- *
- * 본문을 읽지 못했거나(`undefined`) 배열이면 빈 객체로 본다: 옛 코드가 그 둘에
- * "Invalid body"가 아니라 "No valid keys"로 답했다.
- *
- * `hero_image`는 홈에서 `next/image`로 렌더된다. 허용되지 않은 호스트가 들어가면
- * 렌더 도중 throw가 나고 홈 전체가 error 바운더리로 떨어지므로 저장을 막는다 —
- * 잘못된 값이 들어간 뒤에는 관리 화면에서 되돌리기 전까지 홈이 깨져 있다.
- * 빈 문자열은 "기본 이미지로"라는 뜻이라 받는다.
- */
+// hero_image는 허용 호스트만 받는다 — 아니면 홈 렌더가 throw한다. 빈 문자열은 기본 이미지.
 export const SettingsUpdate = z
   .preprocess(
     body => (body === undefined || Array.isArray(body) ? {} : body),
@@ -354,25 +269,16 @@ export const SettingsUpdate = z
     return heroImage === undefined || heroImage === '' || isRenderableImageUrl(heroImage);
   }, '히어로 이미지는 res.cloudinary.com 또는 images.unsplash.com의 https 주소여야 합니다.');
 
-// ── 데이터 점검 고치기 ────────────────────────────────────────────────────────
-
-/** 촬영일 기준으로 연도 맞추기. 개요가 어긋난 사진의 id를 보낸다(전체는 여러 번에 나눠). */
 export const YearSync = z.strictObject({
   ids: uniqueIds(MAX_BULK),
 });
 
-/**
- * 촬영 정보 다시 확인. 본문 없이 부르면 아직 시도하지 않은 사진을 채우고,
- * `ids`를 주면 이미 확인한 사진도 다시 묻는다(원본을 고친 뒤 표시 갱신용).
- * Admin API 호출이 장당 한 번이라 한 요청에 20장까지.
- */
+// Admin API 호출이 장당 한 번이라 한 요청에 20장까지.
 export const MetadataRecheck = z.strictObject({
   ids: uniqueIds(20),
 });
 
-// ── 노트 ──────────────────────────────────────────────────────────────────────
-
-/** `YYYY-MM-DD`이면서 달력에 있는 날짜. `2026-02-30`은 정규식만으로는 통과한다. */
+// `2026-02-30`은 정규식만으로는 통과한다.
 const NoteDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜는 YYYY-MM-DD 형식이어야 합니다.')
@@ -391,11 +297,7 @@ const NoteFields = {
     .max(12, '태그는 12개까지 붙일 수 있습니다.')
     .transform(tags => [...new Set(tags)]),
   body: z.string().trim().min(1, '본문이 비어 있습니다.').max(50_000, '본문이 너무 깁니다.'),
-  /**
-   * 해석 범위. 비워 둘 수 없다 — 노트가 존재하는 이유가 "무엇을 말하지
-   * 않는지"를 먼저 긋는 데 있다(`lib/notes.ts` 머리 주석). DB도 not null이지만
-   * 빈 문자열은 not null을 통과하므로 여기서 막는다.
-   */
+  // 비워 둘 수 없다. 빈 문자열은 DB의 not null을 통과하므로 여기서 막는다.
   boundary: z.string().trim().min(1, '해석 범위(이 글이 주장하지 않는 것)는 필수입니다.').max(2000, '해석 범위가 너무 깁니다.'),
   related_project: z
     .string()
@@ -431,27 +333,18 @@ export const NoteUpdate = z
 
 export const NoteDelete = z.strictObject({ id: Id });
 
-// ── 상품 ──────────────────────────────────────────────────────────────────────
-
 const Price = z
   .number({ error: '가격은 숫자여야 합니다.' })
   .int('가격은 원 단위 정수여야 합니다.')
   .min(0, '가격은 0 이상이어야 합니다.');
 
-/**
- * 갤러리 한 장. 주소가 이 사이트의 Cloudinary인지는 라우트가 본다(클라우드
- * 이름이 환경 변수라 스키마가 모른다). 설명은 비우면 null.
- */
+// 주소가 이 사이트의 Cloudinary인지는 라우트가 본다.
 export const ProductImageInput = z.strictObject({
   url: z.string().trim().min(1, '이미지 주소가 비어 있습니다.').max(1000, '이미지 주소가 너무 깁니다.'),
   label: optionalText(MAX_IMAGE_LABEL, '이미지 설명').optional().transform(value => value ?? null),
 });
 
-/**
- * 옵션 하나. id는 장바구니와 주문 기록에 남는 열쇠라 형식을 엄격히 본다
- * (`OPTION_ID_RE`). 가격 0은 저장할 수 있다 — "가격 미정" 옵션은 담기지 않을
- * 뿐이다(`isOptionAvailable`).
- */
+// id는 장바구니·주문 기록의 열쇠라 엄격히 본다. 가격 0("가격 미정")은 저장할 수 있다.
 function pricedChoiceInput(noun: string) {
   return z.strictObject({
     id: z.string().regex(OPTION_ID_RE, `${noun} id는 영문 소문자·숫자·하이픈 1~32자여야 합니다.`),
@@ -463,10 +356,7 @@ function pricedChoiceInput(noun: string) {
 
 export const ProductOptionInput = pricedChoiceInput('옵션');
 
-/**
- * 추가 상품 하나. 모양과 id 형식이 옵션과 같아서 같은 스키마를 이름만 바꿔 쓴다 —
- * 오류 문구가 "옵션"이라고 말하면 관리자는 엉뚱한 칸을 고친다.
- */
+// 오류 문구가 "추가 상품"이라고 말해야 관리자가 맞는 칸을 고친다.
 export const ProductAddonInput = pricedChoiceInput('추가 상품');
 
 const ProductFields = {
@@ -491,22 +381,14 @@ const ProductFields = {
     .array(ProductAddonInput)
     .max(MAX_ADDONS, `추가 상품은 ${MAX_ADDONS}개까지 둘 수 있습니다.`)
     .refine(addons => new Set(addons.map(addon => addon.id)).size === addons.length, '추가 상품 id가 겹칩니다.'),
-  /**
-   * 함께 구매로 이어 둘 다른 상품의 id. 순서가 화면 순서다. 그 id의 상품이
-   * 실제로 있는지는 보지 않는다 — 나중에 지워질 수도 있어서, 읽는 쪽이 없는
-   * id를 무시한다(`relatedProducts`). 자기 자신은 `ProductUpdate`가 막는다.
-   */
+  // 상품 존재 여부는 보지 않는다 — 읽는 쪽이 없는 id를 무시한다. 자기 자신은 ProductUpdate가 막는다.
   related_ids: z
     .array(Id)
     .max(MAX_RELATED, `함께 구매는 ${MAX_RELATED}개까지 고를 수 있습니다.`)
     .refine(ids => new Set(ids).size === ids.length, '함께 구매에 같은 상품이 두 번 들어 있습니다.'),
 };
 
-/**
- * `in_stock`은 받지 않는다 — 서버가 `status`에서 계산해 맞춘다(`syncedColumns`).
- * 둘을 따로 받으면 "초안인데 in_stock = true" 같은 어긋난 행이 생긴다.
- * `image_url`도 `images`가 있으면 서버가 첫 장으로 덮어쓴다.
- */
+// in_stock은 받지 않는다 — 서버가 status에서 계산한다. image_url도 images 첫 장으로 덮어쓴다.
 export const ProductCreate = z
   .strictObject({
     name: ProductFields.name,
@@ -547,8 +429,6 @@ export const ProductUpdate = z
   .refine(body => !body.related_ids?.includes(body.id), '함께 구매에 이 상품 자신을 넣을 수 없습니다.');
 export type ProductUpdateInput = z.output<typeof ProductUpdate>;
 
-// ── 주문 ──────────────────────────────────────────────────────────────────────
-
 export const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -559,7 +439,7 @@ export const OrderUpdate = z
     tracking_carrier: optionalText(60, '택배사').optional(),
     tracking_number: optionalText(100, '송장번호').optional(),
     admin_memo: optionalText(5000, '메모').optional(),
-    /** `shipped`로 바뀌고 송장번호가 있을 때 배송 안내 메일을 보낼지. */
+    // `shipped`로 바뀌고 송장번호가 있을 때 배송 안내 메일을 보낼지.
     notify: z.boolean().optional(),
   })
   .refine(
@@ -572,8 +452,6 @@ export const OrderEmail = z.strictObject({
   kind: z.enum(['confirmation', 'shipping'], { error: '메일 종류가 올바르지 않습니다.' }),
 });
 
-// ── Cloudinary 정리 ───────────────────────────────────────────────────────────
-
 export const OrphanDelete = z.strictObject({
   public_ids: z
     .array(z.string().min(1).max(300))
@@ -582,9 +460,6 @@ export const OrphanDelete = z.strictObject({
     .refine(ids => new Set(ids).size === ids.length, '목록에 중복된 항목이 있습니다.'),
 });
 
-// ── 공통 ──────────────────────────────────────────────────────────────────────
-
-/** 첫 번째 이슈의 메시지. 관리 화면은 한 번에 하나씩 고친다. */
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? '입력이 올바르지 않습니다.';
 }
