@@ -54,6 +54,7 @@ export default function CheckoutPage() {
     // 장바구니가 비어 있는데 방금 낸 주문의 요약이 남아 있다: 완료 화면에서
     // 새로고침한 것이다. 장바구니에 무언가 담겨 있으면 새 주문을 하러 온 것이니
     // 지난 요약은 치운다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage는 하이드레이션 뒤에만 읽을 수 있다
     if (useCartStore.getState().items.length === 0) setPlaced(readPlacedOrder());
     else clearPlacedOrder();
     // useSearchParams 대신 직접 읽는다 — 그 훅은 이 정적 페이지를 Suspense 경계로
