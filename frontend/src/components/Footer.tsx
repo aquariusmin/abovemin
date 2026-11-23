@@ -61,7 +61,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
 
           {/* Brand — signature wordmark + studio line */}
           <div className="col-span-5 md:col-span-4 space-y-2.5">
-            <p className="eyebrow text-moss">Collecting the greenery</p>
+            <p className="eyebrow text-moss">Collecting the winter light</p>
             <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-none text-cream">
               phorage
             </h2>

@@ -80,7 +80,7 @@ export default async function OgImage() {
             fontFamily: 'IBM Plex Sans',
           }}
         >
-          Collecting the Greenery
+          Collecting the Winter Light
         </div>
         <div
           style={{

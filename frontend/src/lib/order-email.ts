@@ -141,7 +141,7 @@ export function buildBuyerEmail(order: EmailableOrder): EmailMessage {
         입금이 확인되면 발송합니다. 궁금한 점은 이 메일에 답장해 주세요.
       </p>
       <div style="border-top:1px solid #eee;margin-top:40px;padding-top:20px;">
-        <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the greenery</p>
+        <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the winter light</p>
       </div>
     </div>
   `;
@@ -216,7 +216,7 @@ export function buildShippingEmail(order: EmailableOrder, shipping: ShippingInfo
         택배사 조회는 반나절쯤 지나야 될 수 있습니다. 궁금한 점은 이 메일에 답장해 주세요.
       </p>
       <div style="border-top:1px solid #eee;margin-top:40px;padding-top:20px;">
-        <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the greenery</p>
+        <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin:0;">phorage studio · collecting the winter light</p>
       </div>
     </div>
   `;
