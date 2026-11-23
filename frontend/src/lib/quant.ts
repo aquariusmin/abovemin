@@ -344,3 +344,30 @@ export function buildSeriesColors(
     [...ids].sort().slice(0, palette.length).map((id, i) => [id, palette[i]]),
   );
 }
+
+export type FleetSortKey = "equity" | "pnl_pct" | "day_pnl_pct" | "updated_at" | "bot_name";
+export type SortDir = "asc" | "desc";
+
+// Sorted as numbers, and nullable — `day_pnl_pct` is null whenever the bot has
+// not cycled recently enough to have a baseline.
+const NUMERIC_SORT = new Set<FleetSortKey>(["equity", "pnl_pct", "day_pnl_pct"]);
+
+/** A sorted copy of the fleet table's rows. */
+export function sortBots(bots: FleetBot[], key: FleetSortKey, dir: SortDir): FleetBot[] {
+  return [...bots].sort((a, b) => {
+    const av = a[key];
+    const bv = b[key];
+    if (NUMERIC_SORT.has(key)) {
+      const an = typeof av === "number" ? av : null;
+      const bn = typeof bv === "number" ? bv : null;
+      // "No number" is not a small number: a null sorts last in BOTH
+      // directions rather than landing at the top of an ascending sort as
+      // if the bot were the day's worst performer.
+      if (an === null || bn === null) return an === bn ? 0 : an === null ? 1 : -1;
+      return dir === "desc" ? bn - an : an - bn;
+    }
+    return dir === "desc"
+      ? String(bv ?? "").localeCompare(String(av ?? ""))
+      : String(av ?? "").localeCompare(String(bv ?? ""));
+  });
+}

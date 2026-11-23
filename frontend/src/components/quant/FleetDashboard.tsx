@@ -1,24 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { EquitySparkline } from "@/components/quant/EquitySparkline";
 import { FleetEquityChart } from "@/components/quant/FleetEquityChart";
-import { Bar, FeedStale, Frame, Metric, Pill, RelativeTime, Section, cx } from "@/components/quant/Panel";
+import { FleetTable } from "@/components/quant/FleetTable";
+import { Bar, FeedStale, Frame, Metric, Pill, Section, cx } from "@/components/quant/Panel";
 import { LAB_SERIES } from "@/components/quant/theme";
 import {
   books, buildSeriesColors, fmtAmount, fmtPct, fmtRelative, lastCycle,
-  parseBotName, parseEquityCurve, staleness, type FleetBot,
+  parseBotName, parseEquityCurve, sortBots, staleness,
+  type Book, type FleetBot, type FleetSortKey, type SortDir,
 } from "@/lib/quant";
 
 const REFRESH_MS = 60_000;
 
-type SortKey = "equity" | "pnl_pct" | "day_pnl_pct" | "updated_at" | "bot_name";
-
-// Sorted as numbers, and nullable — `day_pnl_pct` is null whenever the bot has
-// not cycled recently enough to have a baseline.
-const NUMERIC_SORT = new Set<SortKey>(["equity", "pnl_pct", "day_pnl_pct"]);
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function FleetDashboard({
   /** Server-rendered first paint. See `getFleet` in `app/lab/page.tsx`. */
@@ -31,13 +27,97 @@ export function FleetDashboard({
   initialBots?: FleetBot[] | null;
   renderedAt: number;
 }) {
-  // Seeded from the server so the console has numbers in the HTML itself; the
-  // effect below still refreshes on mount, so what you read is never older
-  // than the page's own ISR window.
+  const { bots, error, lastFetched, now } = useFleetFeed(initialBots, renderedAt);
+  const [sortKey, setSortKey] = useState<FleetSortKey>("equity");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const toggleSort = (k: FleetSortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
+  };
+
+  // Only a feed that never delivered anything is a full-screen error. Once
+  // there are numbers on screen, a failed poll keeps them and says so.
+  if (error && !bots) {
+    return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
+  }
+  if (!bots) {
+    return (
+      <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
+        <span aria-hidden className="pulse mr-1 inline-block h-2 w-2 bg-current align-middle" /> establishing feed…
+      </Frame>
+    );
+  }
+
+  // Built from EVERY row, not the visible ones, so sorting can never repaint
+  // a bot's colour.
+  const colors = buildSeriesColors(bots.map((b) => b.id), LAB_SERIES);
+  const sorted = sortBots(bots, sortKey, sortDir);
+  const { real, sim } = books(bots);
+  const halted = bots.filter((b) => parseBotName(b.bot_name).halted).length;
+  // Counted on the BOT's last cycle, not the sync stamp — a dead bot behind a
+  // live sync container is precisely what this console exists to catch.
+  const stale = bots.filter(
+    (b) => staleness(lastCycle(parseEquityCurve(b.equity_curve), b.updated_at), now) !== "live",
+  ).length;
+  const feedAge = lastFetched ? fmtRelative(lastFetched.toISOString()) : null;
+
+  return (
+    <Frame>
+      {error ? <FeedStale error={error} since={feedAge} /> : null}
+
+      <AttentionBanner halted={halted} stale={stale} />
+
+      <Section className="lab-stats grid grid-cols-2 lg:grid-cols-4">
+        <BookMetrics real={real} sim={sim} />
+        <Metric
+          label="halted"
+          value={String(halted)}
+          tone={halted > 0 ? "critical" : "neutral"}
+          sub={halted ? "trading stopped" : "all bots trading"}
+        />
+        <Metric
+          label="not cycling"
+          value={String(stale)}
+          tone={stale > 0 ? "warning" : "neutral"}
+          sub={feedAge ? `feed ${feedAge}` : "—"}
+        />
+      </Section>
+
+      <Section>
+        <Bar title="relative performance" right={<span className="lab-label">all bots · one axis</span>} />
+        <div className="p-4">
+          <FleetEquityChart bots={bots} colors={colors} />
+        </div>
+      </Section>
+
+      <Section>
+        <Bar title="fleet" right={<span className="lab-label">{plural(sorted.length, "row")}</span>} />
+        <FleetTable
+          bots={sorted}
+          colors={colors}
+          now={now}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+        />
+      </Section>
+    </Frame>
+  );
+}
+
+/**
+ * Polls the fleet route, seeded with the server's rows.
+ *
+ * Seeded so the console has numbers in the HTML itself; it still refreshes on
+ * mount, so what you read is never older than the page's own ISR window.
+ */
+function useFleetFeed(initialBots: FleetBot[] | null, renderedAt: number) {
   const [bots, setBots] = useState<FleetBot[] | null>(initialBots);
   const [error, setError] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("equity");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
   // The clock staleness is judged by. Not `Date.now()` in render: an ISR page
   // can be served minutes or days after it was rendered, and a bot crossing
@@ -71,352 +151,82 @@ export function FleetDashboard({
     // minute — on the client's battery and on the edge cache alike. Coming
     // back to the tab refetches immediately, so what you see on return is
     // current rather than however stale the last background tick left it.
-    const id = setInterval(() => {
-      if (!document.hidden) load();
-    }, REFRESH_MS);
-    const onVisible = () => {
+    const loadIfVisible = () => {
       if (!document.hidden) load();
     };
-    document.addEventListener("visibilitychange", onVisible);
+    const id = setInterval(loadIfVisible, REFRESH_MS);
+    document.addEventListener("visibilitychange", loadIfVisible);
 
     return () => {
       cancelled = true;
       clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("visibilitychange", loadIfVisible);
     };
   }, []);
 
-  // Built from EVERY row, not the visible ones, so sorting can never repaint
-  // a bot's colour.
-  const colors = useMemo(
-    () => buildSeriesColors((bots ?? []).map((b) => b.id), LAB_SERIES),
-    [bots],
-  );
+  return { bots, error, lastFetched, now };
+}
 
-  const sorted = useMemo(() => {
-    if (!bots) return [];
-    return [...bots].sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      if (NUMERIC_SORT.has(sortKey)) {
-        const an = typeof av === "number" ? av : null;
-        const bn = typeof bv === "number" ? bv : null;
-        // "No number" is not a small number: a null sorts last in BOTH
-        // directions rather than landing at the top of an ascending sort as
-        // if the bot were the day's worst performer.
-        if (an === null || bn === null) return an === bn ? 0 : an === null ? 1 : -1;
-        return sortDir === "desc" ? bn - an : an - bn;
-      }
-      return sortDir === "desc"
-        ? String(bv ?? "").localeCompare(String(av ?? ""))
-        : String(av ?? "").localeCompare(String(bv ?? ""));
-    });
-  }, [bots, sortKey, sortDir]);
-
-  const totals = useMemo(() => {
-    if (!bots) return null;
-    const parsed = bots.map((b) => parseBotName(b.bot_name));
-    return {
-      ...books(bots),
-      count: bots.length,
-      halted: parsed.filter((p) => p.halted).length,
-      // Counted on the BOT's last cycle, not the sync stamp — a dead bot behind
-      // a live sync container is precisely what this console exists to catch.
-      stale: bots.filter(
-        (b) => staleness(lastCycle(parseEquityCurve(b.equity_curve), b.updated_at), now) !== "live",
-      ).length,
-    };
-  }, [bots, now]);
-
-  const toggleSort = (k: SortKey) => {
-    if (sortKey === k) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-    else {
-      setSortKey(k);
-      setSortDir("desc");
-    }
-  };
-
-  // Only a feed that never delivered anything is a full-screen error. Once
-  // there are numbers on screen, a failed poll keeps them and says so.
-  if (error && !bots) {
-    return <Frame className="lab-prose p-4 text-[var(--lab-critical)]">FEED ERROR · {error}</Frame>;
-  }
-  if (!bots) {
-    return (
-      <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
-        <span aria-hidden className="pulse mr-1 inline-block h-2 w-2 bg-current align-middle" /> establishing feed…
-      </Frame>
-    );
-  }
-
-  const lead = totals && totals.real.length ? totals.real : totals?.sim ?? [];
-
+/**
+ * Anything needing a human is stated in words before any number. A halted bot
+ * is invisible otherwise: it keeps running, keeps syncing, and just quietly
+ * stops trading.
+ */
+function AttentionBanner({ halted, stale }: { halted: number; stale: number }) {
+  if (halted === 0 && stale === 0) return null;
   return (
-    <Frame>
-      {error ? (
-        <FeedStale error={error} since={lastFetched ? fmtRelative(lastFetched.toISOString()) : null} />
+    <Section
+      className={cx(
+        "flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 px-4 py-3",
+        halted > 0
+          ? "border-l-[var(--lab-critical)] bg-[color-mix(in_srgb,var(--lab-critical)_5%,transparent)]"
+          : "border-l-[var(--lab-warning)] bg-[color-mix(in_srgb,var(--lab-warning)_6%,transparent)]",
+      )}
+    >
+      {halted > 0 ? (
+        <Pill tone="critical" dot>
+          {halted} bot{halted > 1 ? "s" : ""} halted
+        </Pill>
       ) : null}
-
-      {/* Anything needing a human is stated in words before any number. A
-          halted bot is invisible otherwise: it keeps running, keeps syncing,
-          and just quietly stops trading. */}
-      {totals && (totals.halted > 0 || totals.stale > 0) ? (
-        <Section
-          className={cx(
-            "flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 px-4 py-3",
-            totals.halted > 0
-              ? "border-l-[var(--lab-critical)] bg-[color-mix(in_srgb,var(--lab-critical)_5%,transparent)]"
-              : "border-l-[var(--lab-warning)] bg-[color-mix(in_srgb,var(--lab-warning)_6%,transparent)]",
-          )}
-        >
-          {totals.halted > 0 ? (
-            <Pill tone="critical" dot>
-              {totals.halted} bot{totals.halted > 1 ? "s" : ""} halted
-            </Pill>
-          ) : null}
-          {totals.stale > 0 ? (
-            <Pill tone="warning" dot>
-              {totals.stale} not cycling
-            </Pill>
-          ) : null}
-          <span className="lab-prose text-[var(--lab-ink-2)]">
-            {totals.halted > 0
-              ? "A halted bot holds flat and re-checks each cycle. daily → clears at UTC midnight · kill_switch → remove reports/STOP · terminal → operator only."
-              : "The row still syncs, but the bot behind it has not run."}
-          </span>
-        </Section>
+      {stale > 0 ? (
+        <Pill tone="warning" dot>
+          {stale} not cycling
+        </Pill>
       ) : null}
-
-      <Section className="lab-stats grid grid-cols-2 lg:grid-cols-4">
-        {/* One cell per book. There is deliberately no single fleet figure:
-            KRW and USD are not addable, and mock equity is not addable to real
-            money — a paper profit must never flatter a real loss. */}
-        {lead.map((b) => (
-          <Metric
-            key={b.currency}
-            label={`${totals && totals.real.length ? "real" : "sim"} equity · ${b.currency}`}
-            value={fmtAmount(b.equity, b.currency, 0)}
-            sub={`${b.count} bot${b.count === 1 ? "" : "s"} · ${fmtPct(b.pnl)}`}
-          />
-        ))}
-        {totals && totals.real.length > 0 && totals.sim.length > 0 ? (
-          <Metric
-            label="sim (not real money)"
-            value={totals.sim.map((b) => fmtAmount(b.equity, b.currency, 0)).join("  ")}
-            sub={`${totals.sim.reduce((n, b) => n + b.count, 0)} mock bot(s)`}
-          />
-        ) : null}
-        <Metric
-          label="halted"
-          value={String(totals?.halted ?? 0)}
-          tone={totals && totals.halted > 0 ? "critical" : "neutral"}
-          sub={totals?.halted ? "trading stopped" : "all bots trading"}
-        />
-        <Metric
-          label="not cycling"
-          value={String(totals?.stale ?? 0)}
-          tone={totals && totals.stale > 0 ? "warning" : "neutral"}
-          sub={lastFetched ? `feed ${fmtRelative(lastFetched.toISOString())}` : "—"}
-        />
-      </Section>
-
-      <Section>
-        <Bar title="relative performance" right={<span className="lab-label">all bots · one axis</span>} />
-        <div className="p-4">
-          <FleetEquityChart bots={bots} colors={colors} />
-        </div>
-      </Section>
-
-      <Section>
-        <Bar
-          title="fleet"
-          right={<span className="lab-label">{sorted.length} row{sorted.length === 1 ? "" : "s"}</span>}
-        />
-        <div className="lab-scroll overflow-x-auto">
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr className="glass-inset border-b border-[var(--lab-border)]">
-                <Th onClick={() => toggleSort("bot_name")} active={sortKey === "bot_name"} dir={sortDir}>bot</Th>
-                <Th>venue</Th>
-                <Th>state</Th>
-                <Th align="right" onClick={() => toggleSort("equity")} active={sortKey === "equity"} dir={sortDir}>equity</Th>
-                <Th align="right" onClick={() => toggleSort("pnl_pct")} active={sortKey === "pnl_pct"} dir={sortDir}>pnl</Th>
-                <Th align="right" onClick={() => toggleSort("day_pnl_pct")} active={sortKey === "day_pnl_pct"} dir={sortDir}>day</Th>
-                <Th align="right">pos</Th>
-                <Th align="right">hold</Th>
-                <Th align="right">fills</Th>
-                <Th>trend</Th>
-                <Th align="right" onClick={() => toggleSort("updated_at")} active={sortKey === "updated_at"} dir={sortDir}>last cycle</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((b) => {
-                const bot = parseBotName(b.bot_name);
-                const points = parseEquityCurve(b.equity_curve);
-                const positive = (b.pnl_pct ?? 0) >= 0;
-                const day = b.day_pnl_pct;
-                const age = staleness(lastCycle(points, b.updated_at), now);
-                return (
-                  <tr key={b.id} className="row-hover border-b border-[var(--lab-border)] transition-colors last:border-0">
-                    <td className="relative py-2 pl-4 pr-3">
-                      {/* Leading stripe carries series identity, tying the row
-                          to its line above. Condition is the STATE pill, in
-                          words — two colour marks per row was just noise. */}
-                      <span
-                        className="absolute inset-y-0 left-0 w-[3px]"
-                        style={{ background: colors.get(b.id) ?? "var(--lab-border-strong)" }}
-                        aria-hidden
-                      />
-                      <Link href={`/lab/bot/${encodeURIComponent(b.id)}`} className="group flex items-center gap-2">
-                        <span className="lab-mono shrink-0 font-medium text-[var(--lab-ink-1)] transition-colors group-hover:text-[var(--lab-accent)]">
-                          {bot.tag}
-                        </span>
-                        {/* A legacy bot name can be a whole parameter dump. */}
-                        <span className="lab-mono min-w-0 truncate text-[11px] text-[var(--lab-ink-3)]" title={bot.strategy}>
-                          {bot.strategy}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Pill tone={bot.venue ? (bot.real ? "serious" : "neutral") : "neutral"}>
-                        {bot.venue ?? "SIM"}
-                      </Pill>
-                    </td>
-                    <td className="px-3 py-2">
-                      {bot.halted ? (
-                        <Pill tone="critical" dot>halted·{bot.haltKind}</Pill>
-                      ) : age === "live" ? (
-                        <Pill tone="good" dot>trading</Pill>
-                      ) : (
-                        <Pill tone="warning" dot>{age}</Pill>
-                      )}
-                    </td>
-                    <Td right mono>{fmtAmount(b.equity, b.currency, 2)}</Td>
-                    <Td right mono className={positive ? "text-[var(--lab-good)]" : "text-[var(--lab-critical)]"}>
-                      {fmtPct(b.pnl_pct)}
-                    </Td>
-                    {/* Since the bot's last cycle. Uncoloured when null so a
-                        missing baseline never reads as a flat day. */}
-                    <Td
-                      right
-                      mono
-                      muted={day === null || day === undefined}
-                      className={
-                        day === null || day === undefined
-                          ? undefined
-                          : day >= 0
-                            ? "text-[var(--lab-good)]"
-                            : "text-[var(--lab-critical)]"
-                      }
-                      title={
-                        day === null || day === undefined
-                          ? "no baseline — the bot has not cycled since before yesterday"
-                          : "since the previous daily cycle"
-                      }
-                    >
-                      {fmtPct(day)}
-                    </Td>
-                    <Td right mono muted>{b.position_pct !== null ? `${b.position_pct.toFixed(0)}%` : "—"}</Td>
-                    <Td right mono muted>{b.holdings_count ?? "—"}</Td>
-                    <Td right mono muted>{b.fills_count ?? "—"}</Td>
-                    <td className="px-3 py-2">
-                      <EquitySparkline points={points} positive={positive} />
-                    </td>
-                    <Td right mono muted>
-                      <RelativeTime>
-                        {fmtRelative(new Date(lastCycle(points, b.updated_at)).toISOString())}
-                      </RelativeTime>
-                    </Td>
-                  </tr>
-                );
-              })}
-              {sorted.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="lab-prose px-3 py-8 text-center text-[var(--lab-ink-3)]">
-                    No bots have synced yet.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-    </Frame>
+      <span className="lab-prose text-[var(--lab-ink-2)]">
+        {halted > 0
+          ? "A halted bot holds flat and re-checks each cycle. daily → clears at UTC midnight · kill_switch → remove reports/STOP · terminal → operator only."
+          : "The row still syncs, but the bot behind it has not run."}
+      </span>
+    </Section>
   );
 }
 
 /**
- * A column header, sortable ones as a real <button>.
- *
- * It used to be an onClick on the <th> itself, which no keyboard could reach
- * and no screen reader announced as actionable. `aria-sort` on the cell is the
- * other half: the arrow glyph is visual-only, so without it the current sort
- * is invisible to anyone not looking at the arrow.
+ * One cell per book. There is deliberately no single fleet figure: KRW and USD
+ * are not addable, and mock equity is not addable to real money — a paper
+ * profit must never flatter a real loss.
  */
-function Th({
-  children, onClick, active, dir, align = "left",
-}: {
-  children?: React.ReactNode;
-  onClick?: () => void;
-  active?: boolean;
-  dir?: "asc" | "desc";
-  align?: "left" | "right";
-}) {
-  const label = (
+function BookMetrics({ real, sim }: { real: Book[]; sim: Book[] }) {
+  const hasReal = real.length > 0;
+  const lead = hasReal ? real : sim;
+  return (
     <>
-      {children}
-      {active ? (dir === "desc" ? " ↓" : " ↑") : ""}
+      {lead.map((b) => (
+        <Metric
+          key={b.currency}
+          label={`${hasReal ? "real" : "sim"} equity · ${b.currency}`}
+          value={fmtAmount(b.equity, b.currency, 0)}
+          sub={`${plural(b.count, "bot")} · ${fmtPct(b.pnl)}`}
+        />
+      ))}
+      {hasReal && sim.length > 0 ? (
+        <Metric
+          label="sim (not real money)"
+          value={sim.map((b) => fmtAmount(b.equity, b.currency, 0)).join("  ")}
+          sub={`${sim.reduce((n, b) => n + b.count, 0)} mock bot(s)`}
+        />
+      ) : null}
     </>
-  );
-  return (
-    <th
-      aria-sort={
-        onClick ? (active ? (dir === "desc" ? "descending" : "ascending") : "none") : undefined
-      }
-      className={cx(
-        // 머리글은 한 줄로 — 좁은 폰에서 "last cycle"이 두 줄로 꺾여 행 높이가 흔들렸다.
-        "px-3 py-2 font-normal whitespace-nowrap",
-        align === "right" ? "text-right" : "text-left",
-      )}
-    >
-      {onClick ? (
-        <button
-          type="button"
-          onClick={onClick}
-          className={cx("lab-label lab-sort select-none", active && "text-[var(--lab-ink-1)]")}
-        >
-          {label}
-        </button>
-      ) : (
-        <span className="lab-label">{label}</span>
-      )}
-    </th>
-  );
-}
-
-function Td({
-  children, right, mono, muted, className, title,
-}: {
-  children?: React.ReactNode;
-  right?: boolean;
-  mono?: boolean;
-  muted?: boolean;
-  className?: string;
-  /** Hover text — used to explain a cell that renders "—" on purpose. */
-  title?: string;
-}) {
-  return (
-    <td
-      title={title}
-      className={cx(
-        "px-3 py-2",
-        right && "text-right",
-        mono && "tnum",
-        muted ? "text-[var(--lab-ink-2)]" : "text-[var(--lab-ink-1)]",
-        className,
-      )}
-    >
-      {children}
-    </td>
   );
 }
