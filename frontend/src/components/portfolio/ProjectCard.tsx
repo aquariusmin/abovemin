@@ -20,7 +20,7 @@ const styles = {
     cta: "eyebrow text-accent",
   },
   ko: {
-    link: "group flex h-full flex-col justify-between card-hair p-6 transition-all hover:-translate-y-1 md:p-8",
+    link: "group flex h-full flex-col justify-between card-hair p-6 transition-[transform,box-shadow,border-color] hover:-translate-y-1 md:p-8",
     category: "text-right text-[11px] font-semibold tracking-[0.14em] text-slate",
     title: "font-serif text-2xl font-semibold leading-tight tracking-tight text-ink transition-colors group-hover:text-accent",
     questionBlock: "border-l-2 border-accent/25 pl-4",

@@ -53,6 +53,7 @@ The five source colours. Everything else is derived from them.
 | `--destructive` | `--brick` | `#d76668` |
 | `--border` | `#e2decd` | `#2c3b31` |
 | `--input` | `#dcd7c4` | `#34453a` |
+| `--field-edge` | `#948e78` | `#6f8577` |
 | `--ring` | `--fern` | `--moss` |
 
 **Documented deviation from stock shadcn:** `--accent` is the brand green rather than a pale hover wash. `text-accent` reads as "brand" throughout this app. Hover surfaces use `--muted` or `--secondary` instead.
@@ -73,7 +74,8 @@ Directional colour in editorial contexts uses `trend.up` = moss and `trend.down`
 
 - Moss (`#a7c957`) never carries text on a light surface — it is a highlight, an underlay, or dark-surface text only.
 - `--muted-foreground` is tuned to clear 4.5:1 on the paper canvas, so uppercase 11px eyebrows stay legible. On cream (`--stone`) it drops to 4.20:1 — small text on a cream panel uses `text-slate` (5.27:1) instead.
-- The fern focus ring is 2.74:1 on cream. A cream panel that holds controls uses `.surface-cream`, which re-points `--ring` to forest inside it.
+- The fern focus ring is 2.74:1 on cream. A cream panel that holds controls uses `.surface-cream`, and a full-width `.band-cream` does the same: both re-point `--ring` to forest inside them.
+- Field edges (`.field-input`, selects) use `--field-edge`, not `--input`: 3.14:1 on canvas, 3.28:1 on white, so an empty field still reads as a field (WCAG 1.4.11). `--input` stays the soft decorative line.
 - Forest and brick both clear 5:1 on canvas and are safe for body-size links.
 
 ## Typography
@@ -239,7 +241,7 @@ Mono uppercase pills. Neutral, forest-on-moss-wash, clay editorial (with an `dat
 
 ### **`.field-label`** / **`.field-input`**
 
-shadcn field behaviour: 1px `--input` border, `--radius-md`, and a 3px `--ring/40` focus halo. `aria-invalid="true"` swaps border and halo to clay.
+shadcn field behaviour: 1px `--field-edge` border, `--radius-md`, and a 3px `--ring/40` focus halo. `aria-invalid="true"` swaps border and halo to clay.
 
 ### **`.band-cream`** / **`.band-wash`** / **`.band-dark`** / **`.band-navy`**
 

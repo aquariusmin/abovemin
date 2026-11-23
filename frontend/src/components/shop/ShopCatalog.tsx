@@ -156,7 +156,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as typeof sortBy)}
                 aria-label="상품 정렬"
-                className="appearance-none bg-transparent pr-6 text-sm font-medium text-ink cursor-pointer rounded-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="appearance-none bg-transparent border-b border-field-edge pb-0.5 pr-6 text-sm font-medium text-ink cursor-pointer rounded-none focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <option value="newest">최신순</option>
                 <option value="price-asc">가격 낮은순</option>

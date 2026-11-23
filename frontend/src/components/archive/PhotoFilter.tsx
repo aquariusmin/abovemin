@@ -320,7 +320,7 @@ function PillSelect({
         value={value}
         onChange={e => onChange(e.target.value)}
         data-active={active}
-        className="btn-outline appearance-none cursor-pointer pr-10 max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="btn-outline appearance-none cursor-pointer pr-10 border-field-edge data-[active=true]:border-primary max-w-[70vw] truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>

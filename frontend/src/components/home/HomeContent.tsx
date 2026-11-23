@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { cloudinary } from '@/lib/cloudinary';
+import { cloudinary, mayHaveAlpha } from '@/lib/cloudinary';
 import { formatPrice } from '@/lib/price';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 import { photoPagePath } from '@/lib/photo-share';
@@ -307,7 +307,7 @@ export default function HomeContent({
                                 />
                               </div>
                               {meta && (
-                                <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
+                                <p className="mt-2 eyebrow text-slate group-hover:text-primary transition-colors">
                                   {meta}
                                 </p>
                               )}
@@ -400,7 +400,7 @@ export default function HomeContent({
                       <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
                         {when}
                       </p>
-                      {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
+                      {place && <p className="eyebrow text-slate">{place}</p>}
                     </Link>
                   </Reveal>
                   </li>
@@ -448,7 +448,11 @@ export default function HomeContent({
                     width={0}
                     height={0}
                     sizes="(min-width: 1480px) 650px, (min-width: 768px) 45vw, calc(100vw - 40px)"
-                    className="h-auto w-auto max-w-full max-h-[min(36rem,70svh)] rounded-lg border border-card-border bg-stone transition-transform duration-700 group-hover:scale-[1.01]"
+                    // 배경을 지운 컷아웃(투명 PNG)은 프레임 없이 바탕 위에 둔다 — 샵과 같은
+                    // 규칙(`mayHaveAlpha`). 사진은 지금처럼 테두리 안에.
+                    className={`h-auto w-auto max-w-full max-h-[min(36rem,70svh)] transition-transform duration-700 group-hover:scale-[1.01] ${
+                      mayHaveAlpha(featured[0].image_url) ? '' : 'rounded-lg border border-card-border bg-stone'
+                    }`}
                   />
                 ) : (
                   <div className="aspect-square w-full rounded-lg bg-accent/5" />
@@ -477,19 +481,25 @@ export default function HomeContent({
                   className="group lift-card flex flex-col gap-3"
                   {...RISE_ITEM}
                 >
-                  <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
+                  {/* 사진을 자르지 않는다: 정사각 칸에 `object-cover`로 채우던 것을
+                      사진 비율 그대로 그린다(상품 상세·샵 목록과 같은 원칙). 컷아웃은
+                      프레임 없이. */}
+                  <div
+                    className={`overflow-hidden ${
+                      item.image_url && mayHaveAlpha(item.image_url) ? '' : 'rounded-md bg-stone border border-card-border'
+                    }`}
+                  >
                     {item.image_url ? (
                       <Image
                         src={cloudinary(item.image_url, { width: 600 })}
                         alt={item.name}
-                        fill={false}
-                        width={600}
-                        height={600}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        width={0}
+                        height={0}
+                        className="block w-full h-auto transition-transform duration-700 group-hover:scale-[1.03]"
                         sizes="(min-width: 1480px) 332px, (min-width: 1024px) 23vw, (min-width: 768px) 45vw, 47vw"
                       />
                     ) : (
-                      <div className="w-full h-full bg-accent/5" />
+                      <div className="aspect-square w-full bg-accent/5" />
                     )}
                   </div>
                   <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>

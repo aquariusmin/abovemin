@@ -96,7 +96,7 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
             <h2 className="font-serif text-xl md:text-2xl font-medium tracking-tight text-cream">
               {album.title}
             </h2>
-            <span className="mt-3 label-ko text-cream/85 translate-y-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <span className="mt-3 label-ko text-cream/85 translate-y-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-y-0 group-hover:opacity-100">
               앨범 보기 →
             </span>
           </div>

@@ -144,7 +144,7 @@ export function FleetDashboard({
   if (!bots) {
     return (
       <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
-        <span className="pulse">◼</span> establishing feed…
+        <span aria-hidden className="pulse mr-1 inline-block h-2 w-2 bg-current align-middle" /> establishing feed…
       </Frame>
     );
   }
@@ -374,7 +374,8 @@ function Th({
         onClick ? (active ? (dir === "desc" ? "descending" : "ascending") : "none") : undefined
       }
       className={cx(
-        "px-3 py-2 font-normal",
+        // 머리글은 한 줄로 — 좁은 폰에서 "last cycle"이 두 줄로 꺾여 행 높이가 흔들렸다.
+        "px-3 py-2 font-normal whitespace-nowrap",
         align === "right" ? "text-right" : "text-left",
       )}
     >

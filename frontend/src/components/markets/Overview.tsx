@@ -152,9 +152,18 @@ function Factors({ title, items, tone }: { title: string; items?: string[]; tone
         <ul className="space-y-1">
           {items.map((t) => (
             <li key={t} className="flex gap-2 text-[13px] leading-snug text-[var(--lab-ink-2)]">
-              <span aria-hidden className={tone === "good" ? "text-[var(--lab-good)]" : "text-[var(--lab-critical)]"}>
-                {tone === "good" ? "↗" : "↘"}
-              </span>
+              <svg
+                aria-hidden
+                viewBox="0 0 12 12"
+                className={`mt-[0.2em] h-3 w-3 shrink-0 ${tone === "good" ? "text-[var(--lab-good)]" : "text-[var(--lab-critical)]"}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {tone === "good" ? <path d="M3 9 9 3M4.5 3H9v4.5" /> : <path d="M3 3l6 6M9 4.5V9H4.5" />}
+              </svg>
               {t}
             </li>
           ))}
