@@ -19,6 +19,7 @@ import {
 } from '@/lib/order-placed';
 import { CONTACT_EMAIL } from '@/lib/site';
 import AddressSearch from '@/components/shop/AddressSearch';
+import { DELIVERY_LABEL, DELIVERY_METHODS, type DeliveryMethod } from '@/lib/delivery';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -35,6 +36,8 @@ export default function CheckoutPage() {
   // 방금 낸 주문에서만 안다(장바구니 합계는 저장하지 않는다). 새로고침 뒤에는 꺼진다.
   const [priceChanged, setPriceChanged] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', zipcode: '', address: '', addressDetail: '', note: '', website: '' });
+  // 택배가 기본이다. 대면 전달이면 주소 칸을 통째로 감추고 보내지 않는다.
+  const [delivery, setDelivery] = useState<DeliveryMethod>('parcel');
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
   // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
@@ -73,7 +76,7 @@ export default function CheckoutPage() {
     if (!form.name.trim()) e.name = '이름을 입력해주세요';
     if (!form.phone.trim()) e.phone = '연락처를 입력해주세요';
     else if (form.phone.replace(/\D/g, '').length < 9) e.phone = '연락처를 확인해주세요';
-    if (!form.address.trim()) e.address = '주소를 입력해주세요';
+    if (delivery === 'parcel' && !form.address.trim()) e.address = '주소를 입력해주세요';
     return e;
   }
 
@@ -108,9 +111,11 @@ export default function CheckoutPage() {
       name: form.name.trim(),
       // 이메일은 받지 않는다 — 연락은 전화로 한다(`orders-schema.ts`).
       phone: form.phone.trim(),
-      zipcode: form.zipcode.trim() || null,
+      delivery_method: delivery,
+      // 대면 전달이면 적다 만 주소가 있어도 보내지 않는다.
+      zipcode: delivery === 'parcel' ? form.zipcode.trim() || null : null,
       // 기본 주소(검색 결과)와 상세 주소(동·호수)는 칸만 나뉘고 저장은 한 줄이다.
-      address: [form.address.trim(), form.addressDetail.trim()].filter(Boolean).join(' '),
+      address: delivery === 'parcel' ? [form.address.trim(), form.addressDetail.trim()].filter(Boolean).join(' ') : '',
       note: form.note.trim() || null,
       items: toOrderItems(items),
       idempotency_key: idempotencyKey,
@@ -287,6 +292,37 @@ export default function CheckoutPage() {
               {errors.phone && <p id="phone-error" className={errorClass}>{errors.phone}</p>}
             </div>
 
+            {/* 수령 방법. 네이티브 라디오라 방향키로 옮기고 스크린리더가 "2개 중 1번째"를
+                읽는다 — 알약 모양은 라벨이 입는다(상품 옵션과 같은 모양). */}
+            <fieldset>
+              <legend className={labelClass}>받는 방법 *</legend>
+              <div className="flex flex-wrap gap-2">
+                {DELIVERY_METHODS.map(method => (
+                  <label
+                    key={method}
+                    className="inline-flex min-h-11 cursor-pointer items-center rounded-[var(--radius-pill)] border border-field-edge bg-card px-5 text-[14px] font-medium text-ink transition-[background-color,border-color,color] duration-200 hover:border-forest/60 has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring"
+                  >
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={method}
+                      checked={delivery === method}
+                      onChange={() => { setDelivery(method); setErrors(er => ({ ...er, address: undefined })); }}
+                      className="sr-only"
+                    />
+                    {DELIVERY_LABEL[method]}
+                  </label>
+                ))}
+              </div>
+              {delivery === 'pickup' && (
+                <p className="mt-2 text-xs text-slate leading-relaxed">
+                  만날 곳과 시간은 적어 주신 연락처로 정합니다.
+                </p>
+              )}
+            </fieldset>
+
+            {delivery === 'parcel' && (
+            <>
             {/* 주소: 우편번호 + 기본 주소는 "주소 찾기"(카카오 우편번호)가 채우고,
                 동·호수는 손님이 적는다. 검색을 못 쓰는 경우(스크립트 차단 등)에도
                 주문할 수 있도록 세 칸 모두 직접 적을 수 있다. 저장은 기본 주소와
@@ -341,6 +377,8 @@ export default function CheckoutPage() {
                 />
               </div>
             </fieldset>
+            </>
+            )}
 
             <div>
               <label htmlFor="note" className={labelClass}>메모</label>
@@ -351,7 +389,7 @@ export default function CheckoutPage() {
                 autoComplete="off"
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="전할 말이 있으면 적어 주세요"
+                placeholder={delivery === 'pickup' ? '편한 동네나 시간이 있으면 적어 주세요' : '전할 말이 있으면 적어 주세요'}
               />
             </div>
 

@@ -42,6 +42,15 @@ describe('OrderInput', () => {
     expect(OrderInput.safeParse({ ...valid, phone: '   ' }).success).toBe(false);
   });
 
+  it('택배는 주소가 필요하고, 대면 전달은 주소 없이 받는다', () => {
+    expect(OrderInput.safeParse({ ...valid, address: '' }).success).toBe(false);
+    expect(OrderInput.safeParse({ ...valid, delivery_method: 'parcel', address: '  ' }).success).toBe(false);
+    const pickup = OrderInput.safeParse({ ...valid, delivery_method: 'pickup', address: '', zipcode: null });
+    expect(pickup.success).toBe(true);
+    expect(pickup.data?.delivery_method).toBe('pickup');
+    expect(OrderInput.safeParse({ ...valid, delivery_method: 'drone' }).success).toBe(false);
+  });
+
   it('이메일 칸이 있던 옛 탭의 이메일도 받는다', () => {
     expect(OrderInput.parse({ ...valid, email: 'hong@example.com' }).email).toBe('hong@example.com');
   });

@@ -7,6 +7,7 @@ import { ordersToCsv } from '@/lib/admin/orders-csv';
 import { emailTrackingStart, isBuyerEmailMissing } from '@/lib/order-email-status';
 import type { OrderItemRecord } from '@/lib/order-items';
 import { ADDON_LABEL } from '@/lib/product';
+import { DELIVERY_LABEL, deliveryMethodFromRow } from '@/lib/delivery';
 import { useAdminNav } from './AdminApp';
 import { EmptyLine, LoadingLine, MigrationNotice, SectionHeader, StatusLine, useConfirm, type Message } from './AdminUi';
 import { useRetryAfterRelogin } from './SessionRetry';
@@ -44,6 +45,8 @@ interface Order {
   phone: string | null;
   zipcode: string | null;
   address: string;
+  /** `20261123010000_orders_delivery_method` 이후 컬럼. 없으면 택배(메모의 표시로 대면 전달을 아는 경우 제외). */
+  delivery_method?: string | null;
   note: string | null;
   items: OrderItem[];
   total_price: number;
@@ -323,6 +326,7 @@ function OrderCard({
     }
   }
 
+  const delivery = deliveryMethodFromRow(order);
   const created = new Date(order.created_at).toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul',
     month: 'short',
@@ -344,6 +348,10 @@ function OrderCard({
         <span className="flex items-center gap-3 sm:contents">
           <span className="w-12 shrink-0 font-mono text-[12px] text-muted-foreground">#{order.id}</span>
           <span className={`${ORDER_STATUS_CHIP[order.status]} shrink-0`}>{ORDER_STATUS_LABEL[order.status]}</span>
+          {/* 택배가 기본이라 대면 전달만 표시한다 — 목록에서 주소 없는 주문을 바로 알아보게. */}
+          {delivery === 'pickup' && (
+            <span className={`chip ${CHIP_KO} shrink-0 whitespace-nowrap bg-muted text-ink-body`}>{DELIVERY_LABEL.pickup}</span>
+          )}
           {emailMissing && (
             <span
               className={`chip-brick ${CHIP_KO} shrink-0 whitespace-nowrap`}
@@ -375,7 +383,8 @@ function OrderCard({
           <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
             <dl className="space-y-2 text-ink-body">
               <Row label="연락처">{order.phone || '-'}</Row>
-              <Row label="주소">{order.zipcode ? `[${order.zipcode}] ` : ''}{order.address}</Row>
+              <Row label="수령">{DELIVERY_LABEL[delivery]}</Row>
+              {delivery === 'parcel' && <Row label="주소">{order.zipcode ? `[${order.zipcode}] ` : ''}{order.address}</Row>}
               {order.note && <Row label="요청">{order.note}</Row>}
             </dl>
             <div>

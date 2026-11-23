@@ -64,6 +64,13 @@ describe('order-email', () => {
     expect(buildOwnerEmail(order, OWNER).html).toContain('buyer@example.com');
   });
 
+  it('운영자 알림에 수령 방법을 적고, 대면 전달이면 주소 줄을 뺀다', () => {
+    expect(buildOwnerEmail(order, OWNER).html).toContain('택배');
+    const pickup = buildOwnerEmail({ ...order, delivery_method: 'pickup', address: '', zipcode: null }, OWNER).html;
+    expect(pickup).toContain('대면 전달');
+    expect(pickup).not.toContain('>주소<');
+  });
+
   it('받는 사람과 제목', () => {
     expect(buildBuyerEmail(order)).toMatchObject({ to: 'buyer@example.com', subject: '[phorage] 주문 접수 확인 — #12' });
     expect(buildShippingEmail(order, { carrier: null, trackingNumber: '1' })).toMatchObject({

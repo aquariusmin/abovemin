@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OPTION_ID_RE } from './product';
+import { DELIVERY_METHODS } from './delivery';
 
 /**
  * 주문 요청의 형태. **체크아웃 폼과 API가 이 파일 하나를 같이 본다.**
@@ -47,7 +48,12 @@ export const OrderInput = z.object({
   /** 손님에게 닿는 유일한 길이라 필수다. 공백만 있는 값은 빈 값으로 본다. */
   phone: z.string().trim().min(1).max(40),
   zipcode: z.string().max(20).optional().nullable(),
-  address: z.string().min(1).max(500),
+  /**
+   * 택배면 필수, 대면 전달이면 비어 있어도 된다(아래 `superRefine`). 옛 탭은
+   * `delivery_method` 없이 오고 그때는 택배다.
+   */
+  address: z.string().max(500),
+  delivery_method: z.enum(DELIVERY_METHODS).optional(),
   note: z.string().max(1000).optional().nullable(),
   items: z.array(OrderItemInput).min(1).max(50),
   /**
@@ -63,6 +69,10 @@ export const OrderInput = z.object({
    * 주문으로 답한다(`api/orders`). 구버전 탭은 키 없이 오므로 optional.
    */
   idempotency_key: z.string().uuid().optional().nullable(),
+}).superRefine((order, ctx) => {
+  if ((order.delivery_method ?? 'parcel') === 'parcel' && order.address.trim() === '') {
+    ctx.addIssue({ code: 'custom', path: ['address'], message: '택배로 받으려면 주소가 필요합니다.' });
+  }
 });
 
 /** 허니팟에 뭔가 들어 있으면 봇이다 — 공백 한 칸이라도. 사람은 이 칸을 볼 수 없다. */

@@ -2,6 +2,7 @@ import 'server-only';
 import { Resend } from 'resend';
 import { orderItemLabel, type OrderItemRecord } from './order-items';
 import type { EmailOutcome } from './order-email-status';
+import { DELIVERY_LABEL, deliveryMethodFromRow } from './delivery';
 
 /**
  * 주문 메일 본문. **주문 접수(`api/orders`)와 관리 화면의 재발송이 같은 함수를
@@ -52,6 +53,8 @@ export interface EmailOrder {
    */
   email: string | null;
   phone: string | null;
+  /** 없으면(컬럼 전의 주문) 택배. 메모의 표시로 대면 전달을 아는 경우도 있다(`deliveryMethodFromRow`). */
+  delivery_method?: string | null;
   zipcode: string | null;
   address: string;
   note: string | null;
@@ -154,6 +157,7 @@ export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
   // One line, the way it goes on a shipping label: `[12345] 서울시 …`. The zip
   // is optional on the form, so an order without one reads as a plain address
   // rather than an empty bracket.
+  const method = deliveryMethodFromRow(order);
   const safeAddress = escapeHtml(order.zipcode ? `[${order.zipcode}] ${order.address}` : order.address);
   const safeNote = escapeHtml(order.note || '-');
   const { id: orderId, total_price } = order;
@@ -165,7 +169,8 @@ export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
         <tr><td style="padding:4px 8px;color:#999;">이름</td><td style="padding:4px 8px;">${safeName}</td></tr>
         ${order.email ? `<tr><td style="padding:4px 8px;color:#999;">이메일</td><td style="padding:4px 8px;">${safeEmail}</td></tr>` : ''}
         <tr><td style="padding:4px 8px;color:#999;">연락처</td><td style="padding:4px 8px;">${safePhone}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${safeAddress}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">수령</td><td style="padding:4px 8px;font-weight:bold;">${DELIVERY_LABEL[method]}</td></tr>
+        ${method === 'parcel' ? `<tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${safeAddress}</td></tr>` : ''}
         <tr><td style="padding:4px 8px;color:#999;">메모</td><td style="padding:4px 8px;">${safeNote}</td></tr>
         <tr><td style="padding:4px 8px;color:#999;">총액</td><td style="padding:4px 8px;font-weight:bold;">₩ ${total_price.toLocaleString()}</td></tr>
       </table>

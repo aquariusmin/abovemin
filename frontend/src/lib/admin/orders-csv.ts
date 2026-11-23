@@ -1,4 +1,5 @@
 import { orderItemLabel, type OrderItemRecord } from '@/lib/order-items';
+import { DELIVERY_LABEL, deliveryMethodFromRow } from '@/lib/delivery';
 
 /**
  * 주문 목록 → CSV. 관리 화면에서 지금 필터에 걸린 주문을 내려받는 데 쓴다.
@@ -27,6 +28,8 @@ export interface CsvOrder {
   phone: string | null;
   zipcode: string | null;
   address: string;
+  /** 없으면 택배(컬럼 전의 주문). */
+  delivery_method?: string | null;
   note: string | null;
   items: CsvOrderItem[] | null;
   total_price: number;
@@ -88,6 +91,7 @@ const HEADERS = [
   '이름',
   '이메일',
   '연락처',
+  '수령 방법',
   '우편번호',
   '주소',
   '요청사항',
@@ -110,6 +114,7 @@ export function ordersToCsv(orders: CsvOrder[]): string {
     order.name,
     order.email,
     order.phone,
+    DELIVERY_LABEL[deliveryMethodFromRow(order)],
     order.zipcode,
     order.address,
     order.note,

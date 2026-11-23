@@ -92,6 +92,15 @@
 
 되돌리기: 코드를 이전 배포로 되돌린 뒤 `update public.orders set email = '' where email is null; alter table public.orders alter column email set not null;`
 
+`supabase/migrations/20261123010000_orders_delivery_method.sql`도 **순서와 무관하게** 적용합니다. 추가만 하고, 다시 돌려도 안전하고, backfill이 없습니다.
+
+- `orders.delivery_method`(`text`, nullable, `parcel` 또는 `pickup`) — 체크아웃의 "받는 방법". 대면 전달 주문은 주소를 받지 않고 `address`는 빈 문자열입니다. 기존 주문은 null이고 택배로 읽습니다.
+- 주문 탭은 대면 전달 주문에 칩을 붙이고, 펼치면 "수령"을 보여 주며 대면 전달이면 주소 줄을 뺍니다. CSV에 "수령 방법" 칸이, 운영자 알림 메일에 "수령" 줄이 있습니다.
+
+이 파일 없이도 주문은 받습니다. insert가 컬럼이 없다는 오류를 받으면 컬럼 없이 다시 넣고, 대면 전달이면 메모 앞에 `[대면 전달]`을 붙입니다. 관리 화면·CSV·메일은 그 표시도 대면 전달로 읽습니다.
+
+되돌리기: 코드를 이전 배포로 되돌린 뒤 `alter table public.orders drop constraint if exists orders_delivery_method_check; alter table public.orders drop column if exists delivery_method;`
+
 **위치 정보는 공개 테이블에 저장하지 않습니다.** `photos`는 누구나 anon 키로 읽을 수 있어서, 사진별 위도·경도 컬럼은 두지 않습니다. 사진 GPS는 채우기 작업이 서버 메모리에서만 읽어 장소마다 중앙값을 소수점 한 자리로 반올림한 뒤 `places`에 넣고, 어떤 API 응답에도 반올림 전 좌표를 싣지 않습니다.
 
 ### 탭

@@ -24,6 +24,7 @@ paths:
 - **허니팟**(`website` 필드, `isHoneypotFilled`)을 지우지 않는다.
 - 판매 가능 여부는 `lib/product.ts`의 `productStatus`/`isAvailable`로만 판단한다. `in_stock`·`image_url`·`price`는 호환용 컬럼이고 서버가 맞춘다.
 - **체크아웃은 이메일을 받지 않는다**(연락처 필수). 손님 메일은 `hasBuyerEmail`인 주문(이메일 칸이 있던 시절의 주문)에만 나간다. `orders.email`은 null이거나, NOT NULL을 푸는 마이그레이션 전에는 ''일 수 있다.
+- **수령 방법은 `lib/delivery.ts`로만 읽는다**(`deliveryMethodFromRow`). 택배는 주소 필수, 대면 전달은 주소 없음(`address = ''`) — 스키마의 `superRefine`이 판단한다. 값이 없는 주문은 택배다.
 - 주문 메일(`lib/order-email.ts`)은 사용자 입력을 `escapeHtml`로 거른다. 계좌 정보는 `BANK_INFO` 환경변수에서만 온다 — 코드에 적지 않는다.
 
 ## 확인할 때

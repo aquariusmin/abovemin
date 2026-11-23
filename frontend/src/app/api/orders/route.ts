@@ -8,6 +8,7 @@ import { emailSentPatch, recordEmailSent, type OrderEmailKind } from '@/lib/orde
 import { isMissingColumnError, isNotNullViolation, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
 import { orderPlacedBody } from '@/lib/order-placed';
+import { noteWithPickupTag, type DeliveryMethod } from '@/lib/delivery';
 
 /**
  * 주문 한 건은 메일 두 통(손님·운영자)을 부른다. 이 엔드포인트는 로그인 없이
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
     );
   }
   const { name, email, phone, zipcode, address, note, items, website, idempotency_key } = parsed.data;
+  // 옛 탭은 수령 방법 없이 온다 — 그때까지는 전부 택배였다.
+  const deliveryMethod: DeliveryMethod = parsed.data.delivery_method ?? 'parcel';
+  const pickup = deliveryMethod === 'pickup';
 
   // 허니팟이 채워져 왔다: 봇. 성공처럼 보이게 답하되 아무것도 남기지 않는다 —
   // 오류로 답하면 봇이 무엇이 걸렸는지 배운다.
@@ -155,24 +159,47 @@ export async function POST(request: Request) {
   }
   const { items: resolved, total: total_price } = resolution;
 
-  const row = {
+  // 대면 전달은 주소를 받지 않는다. `orders.address`는 NOT NULL이라 빈 문자열이다.
+  const row: {
+    name: string;
+    email: string | null;
+    phone: string;
+    zipcode: string | null;
+    address: string;
+    note: string | null;
+    items: typeof resolved;
+    total_price: number;
+    delivery_method?: DeliveryMethod;
+  } = {
     name,
-    email: buyerEmail as string | null,
+    email: buyerEmail,
     phone,
-    zipcode: zipcode || null,
-    address,
+    zipcode: pickup ? null : zipcode || null,
+    address: pickup ? '' : address,
     note: note || null,
     items: resolved,
     total_price,
+    delivery_method: deliveryMethod,
   };
   // `idempotency_key`는 `20260927000000_orders_idempotency` 이후 컬럼이다. 없으면
   // 키 없이 넣는다 — 중복 방지만 꺼질 뿐 주문은 받는다.
-  const insertOrder = (values: typeof row) => {
+  const insertKeyed = (values: typeof row) => {
     const keyed: typeof row & { idempotency_key?: string } = idempotencyKey ? { ...values, idempotency_key: idempotencyKey } : values;
     return withColumnFallback(
       'orders.insert',
       () => supabase.from('orders').insert(keyed).select('id').single(),
       () => supabase.from('orders').insert(values).select('id').single(),
+    );
+  };
+  // `delivery_method`는 `20261123010000_orders_delivery_method` 이후 컬럼이다. 없으면
+  // 컬럼 없이 넣되, 대면 전달은 메모 앞의 표시로 남긴다(`lib/delivery.ts`) —
+  // 주문을 막지도, 수령 방법을 잃지도 않는다.
+  const insertOrder = (values: typeof row) => {
+    const { delivery_method, ...legacy } = values;
+    return withColumnFallback(
+      'orders.insert.delivery_method',
+      () => insertKeyed(values),
+      () => insertKeyed(delivery_method === 'pickup' ? { ...legacy, note: noteWithPickupTag(legacy.note) } : legacy),
     );
   };
   let { data: order, error: dbError } = await insertOrder(row);
@@ -204,8 +231,9 @@ export async function POST(request: Request) {
     name,
     email: buyerEmail,
     phone,
-    zipcode: zipcode || null,
-    address,
+    zipcode: row.zipcode,
+    address: row.address,
+    delivery_method: deliveryMethod,
     note: note || null,
     items: resolved,
     total_price,

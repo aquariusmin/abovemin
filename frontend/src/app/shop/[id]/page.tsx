@@ -244,9 +244,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               <h2 id="order-steps" className="eyebrow text-slate">How to order</h2>
               <ol className="mt-4 space-y-3 text-[14px] leading-relaxed text-ink-body">
                 {[
-                  ['주문서 작성', '주문서에 이름·연락처·주소를 적어 주문합니다.'],
+                  ['주문서 작성', '이름과 연락처를 적고, 택배와 대면 전달 중에서 고릅니다.'],
                   ['입금 안내', '주문하면 입금할 금액과 계좌가 화면에 바로 나옵니다.'],
-                  ['확인 후 발송', '입금이 확인되면 발송하고, 송장번호를 연락처로 알려 드립니다.'],
+                  ['확인 후 전달', '입금이 확인되면 택배로 보내거나, 연락드려 만나서 전합니다.'],
                 ].map(([title, body], index) => (
                   <li key={title} className="flex gap-3">
                     <span
