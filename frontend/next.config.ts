@@ -7,13 +7,17 @@ const isProd = process.env.NODE_ENV === 'production';
 //   (api.cloudinary.com은 /admin에서 브라우저가 사진을 직접 업로드하는 엔드포인트)
 // - Next.js가 필요로 하는 unsafe-inline/eval은 개발에서만, 프로덕션에서도 style unsafe-inline은
 //   Tailwind JIT/styled-jsx 때문에 현실적으로 필요
+// - 체크아웃의 "주소 찾기"(카카오 우편번호): 로더 스크립트는 t1.kakaocdn.net, 본체는
+//   t1.daumcdn.net에서 올 수 있고, 검색 화면은 postcode.map.kakao.com의 iframe이다
+//   (`components/shop/AddressSearch.tsx`).
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://t1.kakaocdn.net https://t1.daumcdn.net${isProd ? '' : " 'unsafe-eval'"}`,
+  "frame-src 'self' https://postcode.map.kakao.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.supabase.co",
   "font-src 'self' data:",

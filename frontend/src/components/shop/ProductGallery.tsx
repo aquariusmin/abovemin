@@ -2,7 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent, type TouchEvent } from 'react';
 import Image from 'next/image';
-import { cloudinary } from '@/lib/cloudinary';
+import { cloudinary, mayHaveAlpha } from '@/lib/cloudinary';
 
 export interface GalleryImage {
   url: string;
@@ -103,6 +103,9 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
   }
 
   const ratio = current.aspect;
+  // 배경을 지운 컷아웃은 프레임(바탕색·테두리) 없이 페이지 위에 그대로 놓는다
+  // (`mayHaveAlpha`). 사진은 지금처럼 프레임 안에.
+  const frame = mayHaveAlpha(current.url) ? '' : 'rounded-lg border border-border-light bg-stone';
 
   return (
     <div className="space-y-4">
@@ -117,7 +120,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
             // 비율을 아는 사진: 상자 = 사진. 폭은 칸을 넘지 않고, 높이는 화면의
             // 78%를 넘지 않도록 `ratio × 78svh`로 묶는다.
             <div
-              className="relative overflow-hidden rounded-lg border border-border-light bg-stone"
+              className={`relative overflow-hidden ${frame}`}
               style={{ aspectRatio: ratio, width: `min(100%, calc(${ratio} * 78svh))` }}
             >
               <Image
@@ -141,7 +144,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
               width={0}
               height={0}
               sizes={mainSizes(null)}
-              className="h-auto w-auto max-w-full max-h-[78svh] rounded-lg border border-border-light bg-stone"
+              className={`h-auto w-auto max-w-full max-h-[78svh] ${frame}`}
               preload={index === 0}
               fetchPriority={index === 0 ? 'high' : undefined}
             />
@@ -187,7 +190,7 @@ export default function ProductGallery({ images, name }: { images: GalleryImage[
                 width={0}
                 height={0}
                 sizes="120px"
-                className="block h-16 w-auto bg-stone"
+                className={`block h-16 w-auto ${mayHaveAlpha(image.url) ? '' : 'bg-stone'}`}
                 style={image.aspect ? { aspectRatio: image.aspect } : undefined}
               />
             </button>
