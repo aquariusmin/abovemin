@@ -3,6 +3,7 @@ import {
   isMissingColumnError,
   isMissingSchemaError,
   isMissingTableError,
+  isNotNullViolation,
   isUniqueViolation,
   withColumnFallback,
 } from '@/lib/db-compat';
@@ -103,6 +104,15 @@ describe('withColumnFallback', () => {
     expect(result.error).toBe(error);
     expect(result.migrationPending).toBe(false);
     expect(fallback).not.toHaveBeenCalled();
+  });
+});
+
+describe('isNotNullViolation', () => {
+  it('NOT NULL 위반만 잡는다', () => {
+    expect(isNotNullViolation({ code: '23502', message: 'null value in column "email" of relation "orders" violates not-null constraint' })).toBe(true);
+    expect(isNotNullViolation({ code: null, message: 'null value in column "email" violates not-null constraint' })).toBe(true);
+    expect(isNotNullViolation({ code: '23505', message: 'duplicate key value violates unique constraint "x"' })).toBe(false);
+    expect(isNotNullViolation(null)).toBe(false);
   });
 });
 

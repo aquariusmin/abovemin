@@ -83,6 +83,8 @@ export async function recordEmailSent(db: OrderUpdater, orderId: number, patch: 
 /** 관리 화면이 보는 주문의 일부. 컬럼이 없으면 두 필드는 `undefined`다. */
 export interface EmailStatusRow {
   created_at: string;
+  /** 이메일 없이 받은 주문(null 또는 '')은 보낼 메일이 없으므로 미발송도 아니다. */
+  email?: string | null;
   buyer_email_sent_at?: string | null;
   owner_email_sent_at?: string | null;
 }
@@ -126,6 +128,7 @@ export function emailTrackingStart(orders: readonly EmailStatusRow[]): number | 
  * 직후부터 첫 기록이 생기기 전까지 두 통이 다 실패한 주문은 표시되지 않는다.
  */
 export function isBuyerEmailMissing(order: EmailStatusRow, trackingStart: number | null): boolean {
+  if (order.email !== undefined && !order.email?.trim()) return false;
   if (order.buyer_email_sent_at) return false;
   if (order.owner_email_sent_at) return true;
   if (trackingStart === null) return false;

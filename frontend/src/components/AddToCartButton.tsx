@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import { SOLD_OUT_LABEL } from '@/lib/product';
 import type { NewCartLine } from '@/lib/cart-lines';
@@ -22,13 +23,22 @@ interface Props {
   extras?: ReadonlyArray<{ line: NewCartLine; quantity: number }>;
   /** 담은 직후. 고른 추가 상품 수량을 되돌리는 데 쓴다 — 다시 누르면 또 담기지 않게. */
   onAdded?: () => void;
+  /**
+   * 장바구니를 건너뛰고 바로 주문서로 간다(살 수 있는 상품이 하나뿐일 때).
+   * 장바구니를 이 줄과 추가 상품으로 **바꿔 놓고** 체크아웃으로 보낸다 — 체크아웃은
+   * 장바구니를 읽어 주문을 만들기 때문이다. 더하지 않고 바꾸는 이유: 예전에 담아
+   * 둔 같은 상품이 있으면 수량이 몰래 늘어난다.
+   */
+  directOrder?: boolean;
 }
 
-export default function AddToCartButton({ line, soldOut, describedBy, extras, onAdded }: Props) {
+export default function AddToCartButton({ line, soldOut, describedBy, extras, onAdded, directOrder = false }: Props) {
   // Selector, not the whole store: destructuring subscribes this button to
   // every cart change, so adding one item re-rendered every Add button on the
   // page. `addItems` is a stable reference, so this never re-renders at all.
   const addItems = useCartStore(state => state.addItems);
+  const clearCart = useCartStore(state => state.clearCart);
+  const router = useRouter();
   const [added, setAdded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -36,6 +46,13 @@ export default function AddToCartButton({ line, soldOut, describedBy, extras, on
 
   const handleAddToCart = () => {
     if (!line || soldOut) return;
+    if (directOrder) {
+      clearCart();
+      addItems([{ line }, ...(extras ?? [])]);
+      // `from`: 주문서의 "돌아가기"가 장바구니가 아니라 이 상품을 가리키게.
+      router.push(`/cart/checkout?from=${line.id}`);
+      return;
+    }
     addItems([{ line }, ...(extras ?? [])]);
     onAdded?.();
     setAdded(true);
@@ -63,6 +80,8 @@ export default function AddToCartButton({ line, soldOut, describedBy, extras, on
     ? '옵션을 골라 주세요'
     : added
     ? '장바구니에 담았습니다'
+    : directOrder
+    ? '바로 주문하기'
     : '장바구니에 담기';
 
   const announced = line?.option_label ? `${line.name} ${line.option_label}` : line?.name;

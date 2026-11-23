@@ -170,7 +170,7 @@ function Th({
       aria-sort={
         onClick ? (active ? (dir === "desc" ? "descending" : "ascending") : "none") : undefined
       }
-      className={cx("px-3 py-2 font-normal", align === "right" ? "text-right" : "text-left")}
+      className={cx("px-3 py-2 font-normal whitespace-nowrap", align === "right" ? "text-right" : "text-left")}
     >
       {onClick ? (
         <button

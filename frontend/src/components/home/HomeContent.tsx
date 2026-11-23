@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { cloudinary } from '@/lib/cloudinary';
+import { cloudinary, mayHaveAlpha } from '@/lib/cloudinary';
 import { formatPrice } from '@/lib/price';
 import { joinCaption, photoCaption, photoLabel } from '@/lib/caption';
 import { photoPagePath } from '@/lib/photo-share';
@@ -9,6 +9,8 @@ import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
 import { balanceColumns, photoRatio } from '@/lib/layout-photos';
+import { displayFace } from '@/lib/typography';
+import Snowfall from './Snowfall';
 
 // Minimal shape of the fields this view actually renders.
 interface FeaturedProduct {
@@ -58,6 +60,8 @@ const RISE_BLOCK = { ...RISE, amount: 0.25 } as const;
 const RISE_ITEM = { ...RISE, amount: 0.15 } as const;
 
 interface HomeContentProps {
+  /** 겨울 장식 기간이면 눈·전구 줄·상자 위 눈을 그린다(`lib/season.ts`). */
+  winter?: boolean;
   heroImage: string;
   /** Delivered width ÷ height of the hero photo. The frame is built from it. */
   heroAspect: number;
@@ -75,6 +79,7 @@ interface HomeContentProps {
 }
 
 export default function HomeContent({
+  winter = false,
   heroImage,
   heroAspect,
   titleHead,
@@ -121,7 +126,8 @@ export default function HomeContent({
   const heroWidth = Math.min(1400, Math.round(heroAspect * 850));
 
   return (
-    <main className="bg-canvas text-ink-body">
+    <main className="relative bg-canvas text-ink-body" data-winter={winter || undefined}>
+      {winter && <Snowfall />}
 
       {/* ── Hero: one photograph, sized by that photograph ─────────────────
            The hero image is admin-configurable and arrives in any
@@ -212,7 +218,7 @@ export default function HomeContent({
                 admin-configurable, so a forced break turns any longer title
                 (or a Korean one) into a three-line rag. `text-balance` lets
                 the browser even out the lines instead. */}
-            <h1 className={`font-serif font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
+            <h1 className={`${displayFace(`${titleHead} ${titleTail}`)} font-medium tracking-tight leading-[1.05] text-[clamp(1.9rem,7cqw,4.25rem)] text-ink ${onPhoto('md:text-cream')} text-balance max-w-[15ch]`}>
               {titleHead ? <>{titleHead} </> : null}
               {/* Lime underlay behind the last word — the one graphic flourish
                   the hero gets, sized off the cap height. The word itself
@@ -262,7 +268,7 @@ export default function HomeContent({
             <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
               <div className="space-y-3">
                 <p className="eyebrow eyebrow-marked text-primary">Recently archived</p>
-                <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+                <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
                   최근 올라온 사진
                 </h2>
               </div>
@@ -291,7 +297,7 @@ export default function HomeContent({
                           <Reveal as="li" {...RISE_ITEM} key={photo.id}>
                             <Link
                               href={photoPagePath(photo)}
-                              className="group block"
+                              className="group block snow-cap"
                             >
                               <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
                                 <FadeImage
@@ -307,7 +313,7 @@ export default function HomeContent({
                                 />
                               </div>
                               {meta && (
-                                <p className="mt-2 eyebrow text-[10px] text-slate group-hover:text-primary transition-colors">
+                                <p className="mt-2 label-ko text-slate group-hover:text-primary transition-colors">
                                   {meta}
                                 </p>
                               )}
@@ -348,7 +354,7 @@ export default function HomeContent({
           >
             <Reveal {...RISE_BLOCK} className={`mb-8 md:mb-10 space-y-3 ${memoryRow ? 'lg:mb-10' : ''}`}>
               <p className="eyebrow eyebrow-marked text-primary">On this day</p>
-              <h2 id="on-this-day-title" className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-ink">
+              <h2 id="on-this-day-title" className="font-display-ko text-3xl md:text-4xl font-medium text-ink">
                 몇 년 전 오늘
               </h2>
               {!onThisDay.some(photo => photo.exact) && (
@@ -377,7 +383,7 @@ export default function HomeContent({
                     style={memoryRow ? { flex: `${memoryRatios[index].toFixed(3)} 1 0%` } : undefined}
                   >
                   <Reveal {...RISE_ITEM}>
-                    <Link href={photoPagePath(photo)} className="group block">
+                    <Link href={photoPagePath(photo)} className="group block snow-cap">
                       <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
                         <FadeImage
                           src={cloudinary(photo.src, { watermark: true, width: 600 })}
@@ -397,10 +403,10 @@ export default function HomeContent({
                           loading="lazy"
                         />
                       </div>
-                      <p className="mt-2 text-[13px] font-medium text-ink-body group-hover:text-primary transition-colors">
+                      <p className="mt-2 text-sm font-medium text-ink-body group-hover:text-primary transition-colors">
                         {when}
                       </p>
-                      {place && <p className="eyebrow text-[10px] text-slate">{place}</p>}
+                      {place && <p className="label-ko text-slate">{place}</p>}
                     </Link>
                   </Reveal>
                   </li>
@@ -422,7 +428,7 @@ export default function HomeContent({
           <Reveal {...RISE_BLOCK} className="flex flex-wrap items-end justify-between gap-4 mb-10 md:mb-14">
             <div className="space-y-3">
               <p className="eyebrow eyebrow-marked text-muted-foreground">New collectibles</p>
-              <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-[-0.01em] text-ink break-keep">
+              <h2 className="font-display-ko text-3xl md:text-4xl font-medium text-ink break-keep">
                 새로 나온 소품
               </h2>
             </div>
@@ -448,18 +454,22 @@ export default function HomeContent({
                     width={0}
                     height={0}
                     sizes="(min-width: 1480px) 650px, (min-width: 768px) 45vw, calc(100vw - 40px)"
-                    className="h-auto w-auto max-w-full max-h-[min(36rem,70svh)] rounded-lg border border-card-border bg-stone transition-transform duration-700 group-hover:scale-[1.01]"
+                    // 배경을 지운 컷아웃(투명 PNG)은 프레임 없이 바탕 위에 둔다 — 샵과 같은
+                    // 규칙(`mayHaveAlpha`). 사진은 지금처럼 테두리 안에.
+                    className={`h-auto w-auto max-w-full max-h-[min(36rem,70svh)] transition-transform duration-700 group-hover:scale-[1.01] ${
+                      mayHaveAlpha(featured[0].image_url) ? '' : 'rounded-lg border border-card-border bg-stone'
+                    }`}
                   />
                 ) : (
                   <div className="aspect-square w-full rounded-lg bg-accent/5" />
                 )}
               </div>
               <div className="max-w-md">
-                <p className="eyebrow text-muted-foreground">새 소품</p>
-                <p className="mt-4 font-serif text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors">
+                <p className="label-ko text-muted-foreground">새 소품</p>
+                <p className={`mt-4 ${displayFace(featured[0].name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors`}>
                   {featured[0].name}
                 </p>
-                <p className="mt-4 text-lg font-mono tabular-nums text-primary">{formatPrice(featured[0].price)}</p>
+                <p className="mt-4 text-lg font-medium tabular-nums text-ink-body">{formatPrice(featured[0].price)}</p>
                 <span className="mt-8 inline-block link-underline text-sm text-ink">자세히 보기 →</span>
               </div>
             </Reveal>
@@ -477,19 +487,25 @@ export default function HomeContent({
                   className="group lift-card flex flex-col gap-3"
                   {...RISE_ITEM}
                 >
-                  <div className="aspect-square overflow-hidden rounded-md bg-stone border border-card-border">
+                  {/* 사진을 자르지 않는다: 정사각 칸에 `object-cover`로 채우던 것을
+                      사진 비율 그대로 그린다(상품 상세·샵 목록과 같은 원칙). 컷아웃은
+                      프레임 없이. */}
+                  <div
+                    className={`overflow-hidden ${
+                      item.image_url && mayHaveAlpha(item.image_url) ? '' : 'rounded-md bg-stone border border-card-border'
+                    }`}
+                  >
                     {item.image_url ? (
                       <Image
                         src={cloudinary(item.image_url, { width: 600 })}
                         alt={item.name}
-                        fill={false}
-                        width={600}
-                        height={600}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        width={0}
+                        height={0}
+                        className="block w-full h-auto transition-transform duration-700 group-hover:scale-[1.03]"
                         sizes="(min-width: 1480px) 332px, (min-width: 1024px) 23vw, (min-width: 768px) 45vw, 47vw"
                       />
                     ) : (
-                      <div className="w-full h-full bg-accent/5" />
+                      <div className="aspect-square w-full bg-accent/5" />
                     )}
                   </div>
                   <p className="text-sm font-medium text-ink-body group-hover:text-primary transition-colors">{item.name}</p>
@@ -509,7 +525,7 @@ export default function HomeContent({
         <Reveal {...RISE_BLOCK} className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8 md:gap-12">
           <div className="space-y-4 max-w-2xl">
             <p className="eyebrow eyebrow-marked text-moss">The Archive</p>
-            <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.1] text-cream">
+            <h2 className="font-display-ko text-3xl md:text-4xl font-medium leading-[1.15] text-cream">
               {photoCount > 0
                 ? `${albumCount}개의 앨범, ${photoCount.toLocaleString()}장의 사진`
                 : '아직 올린 사진이 없습니다.'}
@@ -521,7 +537,7 @@ export default function HomeContent({
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
             <Link
               href="/archive"
-              className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
+              className="btn-primary snow-cap snow-cap-pill bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
             >
               사진 보기
             </Link>

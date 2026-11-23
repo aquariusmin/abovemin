@@ -286,12 +286,12 @@ function PhotoTile({
       {hasCaption && (
         <div id={captionId} className="mt-3">
           {caption.title && (
-            <p className="text-[13px] font-medium text-ink-body group-hover:text-accent transition-colors">
+            <p className="text-sm font-medium text-ink-body group-hover:text-accent transition-colors">
               {caption.title}
             </p>
           )}
           {caption.meta.length > 0 && (
-            <p className={`eyebrow text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
+            <p className={`label-ko text-muted-foreground ${caption.title ? 'mt-1' : ''}`}>
               {joinCaption(caption.meta)}
             </p>
           )}

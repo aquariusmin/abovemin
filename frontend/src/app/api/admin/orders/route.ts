@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { isMissingColumnError } from '@/lib/db-compat';
 import { OrderUpdate } from '@/lib/admin/schemas';
-import { buildShippingEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
+import { buildShippingEmail, configuredBankInfo, hasBuyerEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
 import {
   adminDb,
   dbErrorResponse,
@@ -35,6 +35,9 @@ export async function GET() {
     orders: list.data ?? [],
     migrationPending: Boolean(probe.error && isMissingColumnError(probe.error)),
     emailStatusPending: Boolean(emailProbe.error && isMissingColumnError(emailProbe.error)),
+    // 주문 탭이 입금 안내 문자에 넣는다(`lib/admin/order-flow.ts`의 `smsBody`). 관리자
+    // 세션 뒤에서만 나가는 값이고, 손님의 완료 화면에도 이미 보이는 정보다.
+    bankInfo: configuredBankInfo(),
   });
 }
 
@@ -82,10 +85,13 @@ export async function PATCH(request: Request) {
   if (!order) return jsonError('주문을 찾을 수 없습니다.', 404);
 
   let email: 'sent' | 'failed' | 'skipped' = 'skipped';
-  if (becameShipped && notify !== false && order.tracking_number) {
+  // 이메일이 없는 주문(체크아웃이 이메일을 받지 않게 된 뒤)은 'skipped' —
+  // 송장번호는 운영자가 연락처로 알린다.
+  const target = order as EmailOrder;
+  if (becameShipped && notify !== false && order.tracking_number && hasBuyerEmail(target)) {
     try {
       await sendEmailsOrThrow([
-        buildShippingEmail(order as EmailOrder, {
+        buildShippingEmail(target, {
           carrier: order.tracking_carrier ?? null,
           trackingNumber: order.tracking_number,
         }),

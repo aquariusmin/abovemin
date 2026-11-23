@@ -47,7 +47,7 @@ export function FleetDashboard({
   if (!bots) {
     return (
       <Frame className="lab-prose p-4 text-[var(--lab-ink-3)]">
-        <span className="pulse">◼</span> establishing feed…
+        <span aria-hidden className="pulse mr-1 inline-block h-2 w-2 bg-current align-middle" /> establishing feed…
       </Frame>
     );
   }

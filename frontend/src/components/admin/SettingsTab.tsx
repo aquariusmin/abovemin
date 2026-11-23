@@ -108,7 +108,7 @@ function HeroSettings() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
           <label htmlFor="hero-title" className={LABEL_CLASS}>타이틀</label>
-          <input id="hero-title" className={INPUT_CLASS} value={heroTitle} onChange={e => setHeroTitle(e.target.value)} placeholder="Collecting the Greenery" />
+          <input id="hero-title" className={INPUT_CLASS} value={heroTitle} onChange={e => setHeroTitle(e.target.value)} placeholder="Collecting the Winter Light" />
         </div>
         <div>
           <label htmlFor="hero-subtitle" className={LABEL_CLASS}>서브타이틀</label>

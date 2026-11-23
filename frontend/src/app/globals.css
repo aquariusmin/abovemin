@@ -78,6 +78,10 @@
 
   --border: #e2decd;
   --input: #dcd7c4;
+  /* 입력칸·선택칸의 테두리. `--input`은 장식용 선(Lab 콘솔의 강한 선 등)으로도
+     쓰여서 따로 둔다. 바탕(#fcfaf4)과 카드(#fff) 모두에 3:1을 넘는다(WCAG 1.4.11) —
+     placeholder만 있는 칸은 테두리가 곧 "여기가 입력칸"이라는 표시다. */
+  --field-edge: #948e78;
   --ring: var(--fern);
 
   /* Data-viz ramp — canopy to clay, readable on light and dark */
@@ -187,6 +191,7 @@
   --destructive: #d76668;
   --border: #2c3b31;
   --input: #34453a;
+  --field-edge: #6f8577;
   --ring: var(--moss);
 
   --canvas: var(--background);
@@ -234,6 +239,7 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-field-edge: var(--field-edge);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -352,12 +358,16 @@ body {
 
 /* ── Typographic marks ─────────────────────────────────────────────────── */
 
-/* Uppercase mono technical label (eyebrow / category / system marker) */
+/* Uppercase mono technical label (eyebrow / category / system marker).
+   12px, 0.16em: 11px at 0.24em read as a row of spaced dots on a phone, and the
+   wide tracking was the first thing to fall apart when the label held Hangul.
+   A label whose text may be Korean takes `.label-ko` (`labelFace` in
+   `lib/typography.ts` picks for text that comes from the database). */
 .eyebrow {
   font-family: var(--font-mono-stack);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.4;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -368,10 +378,22 @@ body {
    face rather than mono. Use it wherever a micro-label renders Korean. */
 .label-ko {
   font-family: var(--font-body-stack);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   letter-spacing: 0.02em;
   font-weight: 500;
+}
+
+/* Display voice for a heading that holds Hangul. Fraunces is Latin-only, so
+   under `font-serif` a Korean heading sets its digits and Latin in the serif
+   and its Hangul in Plex Sans KR: two faces meeting mid-line. This sets the
+   whole heading in IBM Plex (Sans + Sans KR, one superfamily) — what the
+   portfolio already does. Weight and size stay with the markup. Chosen per
+   heading by `displayFace()` (`lib/typography.ts`) or written directly where
+   the text is fixed Korean copy. */
+.font-display-ko {
+  font-family: var(--font-body-stack);
+  letter-spacing: -0.02em;
 }
 
 /* Eyebrow with a lime tick in front — used to open a section */
@@ -555,9 +577,9 @@ body {
   background: var(--card);
   color: var(--slate);
   font-family: var(--font-mono-stack);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.2;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
   white-space: nowrap;
@@ -609,9 +631,9 @@ body {
   background: var(--forest-deep);
   color: var(--primary-foreground);
   padding: 0.25rem 0.75rem;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -628,7 +650,7 @@ body {
 .field-input {
   width: 100%;
   border-radius: var(--radius-md);
-  border: 1px solid var(--input);
+  border: 1px solid var(--field-edge);
   background: var(--card);
   padding: 0.75rem 1rem;
   /* 16px on phones: iOS Safari zooms the page on focus for any field under
@@ -637,13 +659,15 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-body);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  /* 테두리 색만 움직인다. 포커스 헤일로(box-shadow)는 즉시 나타나야 한다 —
+     0.18초 동안 번져 오는 링은 키보드 사용자가 어디에 있는지 늦게 알려 준다. */
+  transition: border-color 0.18s ease;
 }
 @media (min-width: 48rem) {
   .field-input { font-size: 0.9375rem; }
 }
 .field-input::placeholder { color: var(--muted-foreground); }
-.field-input:hover { border-color: color-mix(in srgb, var(--forest) 30%, var(--input)); }
+.field-input:hover { border-color: color-mix(in srgb, var(--forest) 40%, var(--field-edge)); }
 .field-input:focus,
 .field-input:focus-visible {
   outline: none;
@@ -718,6 +742,8 @@ body {
 .band-cream {
   background: var(--secondary);
   color: var(--secondary-foreground);
+  /* fern 링은 크림 위에서 2.67:1이다. `.surface-cream`과 같은 이유로 숲색으로. */
+  --ring: var(--forest);
 }
 .band-wash {
   background: var(--moss-wash);
@@ -785,6 +811,38 @@ body {
 }
 
 } /* @layer components */
+
+/* ── Winter decoration (home only, `lib/season.ts`) ─────────────────────── */
+
+/* 상자 위에 살짝 쌓인 눈 — 고정된 그림. 홈의 `<main data-winter>` 안에서만, 그리고
+   눈 캔버스가 돌지 않을 때만(동작 줄이기) 그려진다. 캔버스가 돌면 `<main>`에
+   `data-snow-live`가 붙고, 눈은 캔버스가 실시간으로 쌓아 그린다(`Snowfall.tsx`).
+   기간이 끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
+   SVG이고, 대부분 상자 **위**에 얹혀 사진은 가장자리 몇 px만 덮는다. 흰 눈이
+   크림 바탕에서도 보이도록 아주 옅은 그림자를 준다. 클릭은 막지 않는다. */
+[data-winter] .snow-cap {
+  position: relative;
+}
+[data-winter]:not([data-snow-live]) .snow-cap::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 6px;
+  right: 6px;
+  top: -6px;
+  height: 11px;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 7C0 2 4 0 12 0H188C196 0 200 2 200 7C196 8 192 7 188 9C182 12 176 8 168 9C160 10 156 7 148 8C140 9 136 12 128 9C120 7 112 9 104 8C96 7 90 11 82 9C74 7 66 8 58 9C50 10 44 7 36 8C28 9 22 12 14 9C8 7 4 8 0 7Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--forest-black) 22%, transparent));
+}
+/* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
+   쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
+[data-winter]:not([data-snow-live]) .snow-cap-pill::before {
+  left: 14px;
+  right: 14px;
+  top: -5px;
+  height: 9px;
+}
 
 /* ── Print (portfolio) — preserved ─────────────────────────────────────── */
 
@@ -869,6 +927,39 @@ body.chromeless-route > div {
 /* Smooth in-page anchor scrolling (respects reduced-motion below) */
 html {
   scroll-behavior: smooth;
+  /* 루트 배경. 본문은 `<body>`의 `bg-canvas`가 칠하고, 이 색은 iOS Safari가
+     주소창 뒤와 화면 끝의 튕김 영역에 쓴다. 푸터(`.band-navy`)가 보이는 동안은
+     푸터 색이다(`ThemeShell`). 지정하지 않으면 body의 크림색이 그 자리로 번져
+     짙은 푸터 아래에 흰 띠가 남는다. */
+  background-color: var(--background);
+}
+html[data-footer-in-view] {
+  background-color: var(--forest-black);
+}
+
+/* iOS Safari 26은 theme-color를 무시하고, 화면 아래 3px 안에 붙은 넓은 고정
+   요소의 배경색으로 아래 툴바를 칠한다. 그런 요소가 없으면 루트·body 배경으로
+   물러나는데 그 판단이 기기마다 흔들렸다. 그래서 화면 아래에 4px만 보이는 띠를
+   직접 두고 루트와 같은 색을 준다. `-webkit-touch-callout`은 iOS WebKit만 아는
+   속성이라 다른 브라우저에서는 그리지 않는다. */
+.ios-toolbar-tint {
+  display: none;
+}
+@supports (-webkit-touch-callout: none) {
+  .ios-toolbar-tint {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: -8px;
+    height: 12px;
+    z-index: 45;
+    pointer-events: none;
+    background-color: var(--background);
+  }
+  html[data-footer-in-view] .ios-toolbar-tint {
+    background-color: var(--forest-black);
+  }
 }
 
 /* 이 사이트는 라이트 테마 하나다. 루트에 밝히면 폼 컨트롤·스크롤바 같은 브라우저

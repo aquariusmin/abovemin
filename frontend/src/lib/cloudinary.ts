@@ -110,6 +110,30 @@ export function cloudinary(url: string, { width = 1600, watermark = false }: Opt
   return url.replace('/upload/', `/upload/${transform}/`);
 }
 
+/** 알파 채널을 담을 수 있는 원본 형식. JPG(카메라 사진)는 여기에 없다. */
+const ALPHA_FORMATS = new Set(['png', 'webp', 'gif', 'avif']);
+
+/**
+ * 배경을 뺀(투명한) 이미지일 수 있는가 — 원본 파일의 확장자로 판단한다.
+ *
+ * 상품 컷아웃(배경을 지운 PNG)은 사진처럼 프레임에 넣으면 어색하다. 흐린
+ * 미리보기(`cloudinaryPlaceholder`)가 투명한 자리에 번져 사진 둘레에 갈색
+ * 얼룩이 지고, 프레임의 바탕색·테두리가 사물 둘레에 상자를 그린다. 이런
+ * 이미지는 프레임 없이 페이지 바탕 위에 그대로 놓는다.
+ *
+ * 픽셀을 읽지 않는 이유: 렌더마다 서버가 이미지를 받아 디코딩해야 한다.
+ * 불투명한 PNG가 여기에 걸려도 테두리와 미리보기가 빠질 뿐 사진은 그대로다.
+ */
+export function mayHaveAlpha(url: string): boolean {
+  try {
+    const { pathname } = new URL(url);
+    const ext = pathname.slice(pathname.lastIndexOf('.') + 1).toLowerCase();
+    return ALPHA_FORMATS.has(ext);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * 이미지가 오기 전에 프레임 배경으로 까는 흐린 미리보기.
  *

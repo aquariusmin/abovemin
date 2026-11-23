@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { cloudinary } from '@/lib/cloudinary';
 import { placeholderStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
+import { displayFace } from '@/lib/typography';
 
 interface AlbumCard {
   slug: string;
@@ -93,10 +94,10 @@ function AlbumTile({ album, index }: { album: AlbumCard; index: number }) {
 
           <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
             <p className="eyebrow text-moss mb-2">{album.photo_count} pieces</p>
-            <h2 className="font-serif text-xl md:text-2xl font-medium tracking-tight text-cream">
+            <h2 className={`${displayFace(album.title)} text-xl md:text-2xl font-medium tracking-tight text-cream`}>
               {album.title}
             </h2>
-            <span className="mt-3 label-ko text-cream/85 translate-y-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <span className="mt-3 label-ko text-cream/85 translate-y-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-y-0 group-hover:opacity-100">
               앨범 보기 →
             </span>
           </div>

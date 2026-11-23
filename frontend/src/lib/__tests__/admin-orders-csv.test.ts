@@ -70,7 +70,7 @@ describe('ordersToCsv', () => {
 
   it('행의 칸이 헤더 칸 수와 맞고, 값이 이스케이프된다', () => {
     const [header, row] = ordersToCsv([order]).slice(1).split('\r\n');
-    expect(header.split(',')).toHaveLength(14);
+    expect(header.split(',')).toHaveLength(15);
     expect(row).toBe(
       [
         '7',
@@ -79,6 +79,7 @@ describe('ordersToCsv', () => {
         '"김, 철수"',
         'kim@example.com',
         '',
+        '택배',
         '04524',
         '"서울시 중구 ""세종대로"" 110"',
         '',
@@ -142,5 +143,32 @@ describe('ordersToCsv — 추가 상품', () => {
       },
     ]);
     expect(csv).toContain('2027 Calendar ×1 / 2027 Calendar · 추가: 거치대 ×1 / Postcard ×1');
+  });
+});
+
+describe('ordersToCsv — 수령 방법', () => {
+  const base: CsvOrder = {
+    id: 8,
+    created_at: '2026-11-23T01:00:00Z',
+    status: 'pending',
+    name: '홍길동',
+    email: null,
+    phone: '010-0000-0000',
+    zipcode: null,
+    address: '서울시 중구 세종대로 110',
+    note: null,
+    items: [{ name: 'Calendar', price: 13000, quantity: 1 }],
+    total_price: 13000,
+  };
+  const cell = (o: CsvOrder) => ordersToCsv([o]).split('\r\n')[1].split(',')[6];
+
+  it('대면 전달은 그렇게 적고, 값이 없는 옛 주문은 택배다', () => {
+    expect(cell({ ...base, delivery_method: 'pickup', address: '' })).toBe('대면 전달');
+    expect(cell({ ...base, delivery_method: null })).toBe('택배');
+    expect(cell(base)).toBe('택배');
+  });
+
+  it('컬럼이 생기기 전에 들어온 대면 전달은 메모의 표시로 안다', () => {
+    expect(cell({ ...base, note: '[대면 전달] 주말 오후' })).toBe('대면 전달');
   });
 });

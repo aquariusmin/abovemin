@@ -10,6 +10,7 @@ import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/
 import { shareCard } from '@/lib/share-card';
 import { isOptionAvailable, parseImages, priceRange, publicState, relatedProducts, SOLD_OUT_LABEL } from '@/lib/product';
 import BackLink from '@/components/BackLink';
+import { displayFace, labelFace } from '@/lib/typography';
 
 export const revalidate = 60;
 
@@ -84,16 +85,23 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const aspects = await Promise.all(images.map(image => cloudinaryAspect(image.url)));
   const gallery = images.map((image, i) => ({ ...image, aspect: aspects[i] }));
 
-  // 함께 구매. 이어 둔 상품이 있을 때만 목록을 읽는다 — 없으면(마이그레이션 전
-  // 포함) 조회가 하나도 늘지 않는다. 공개 목록에서 찾으므로 초안과 지워진 상품은
+  // 함께 구매. 공개 목록에서 찾으므로 초안과 지워진 상품은
   // 저절로 빠진다. 이 조회가 실패해도 상품 페이지는 떠야 한다: 구역만 뺀다.
   //
   // 여기 실리는 것은 **다른 상품의** 이름·가격·사진·상태다. 그 상품을 고치면
   // 이 페이지도 다시 구워져야 하는데, 관리 API의 `revalidateShop`이
   // `revalidatePath('/shop/[id]', 'page')`로 상세 페이지 **전부**를 무효화하므로
   // 따로 할 일이 없다(`lib/admin/revalidate.ts`).
+  //
+  // 같은 목록으로 "지금 살 수 있는 상품이 이것 하나뿐인가"도 본다. 그렇다면
+  // 장바구니를 건너뛰고 바로 주문서로 보낸다(`ProductPurchase`의 `directOrder`).
+  // 목록을 못 읽으면 평소처럼 장바구니에 담는다 — 그쪽은 언제나 맞는 길이다.
+  // 다른 상품의 판매 상태가 바뀌어도 `revalidateShop`이 상세 페이지 전부를
+  // 다시 굽는다(위 주석).
   const relatedIds = product.related_ids ?? [];
-  const catalog = relatedIds.length ? await getProducts().catch(() => []) : [];
+  const catalog = await getProducts().catch(() => []);
+  const directOrder =
+    !soldOut && catalog.filter(item => publicState(item) === 'available').length === 1;
   const related: RelatedItem[] = relatedProducts(relatedIds, catalog, product.id).map(item => {
     const { min, max } = priceRange(item);
     return {
@@ -172,7 +180,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <div className="flex items-center gap-3">
               {product.category && (
                 <>
-                  <p className="eyebrow text-muted-foreground">{product.category}</p>
+                  <p className={`${labelFace(product.category)} text-muted-foreground`}>{product.category}</p>
                   <span aria-hidden className="h-3 w-px bg-hairline" />
                 </>
               )}
@@ -182,7 +190,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 {soldOut ? SOLD_OUT_LABEL : '판매 중'}
               </span>
             </div>
-            <h1 className="font-serif text-5xl sm:text-6xl font-medium tracking-tight leading-[1.05] text-ink">
+            <h1 className={`${displayFace(product.name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink`}>
               {product.name}
             </h1>
             {product.edition && (
@@ -197,6 +205,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             priceMin={range.min}
             priceMax={range.max}
             soldOut={soldOut}
+            directOrder={directOrder}
           />
 
           {(story || specs.length > 0) && (
@@ -236,9 +245,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               <h2 id="order-steps" className="eyebrow text-slate">How to order</h2>
               <ol className="mt-4 space-y-3 text-[14px] leading-relaxed text-ink-body">
                 {[
-                  ['주문서 작성', '장바구니에서 이름·연락처·주소를 적어 주문합니다.'],
-                  ['입금 안내', '주문하면 입금할 금액과 계좌가 화면과 메일로 바로 나옵니다.'],
-                  ['확인 후 발송', '입금이 확인되면 발송하고, 송장번호를 메일로 보냅니다.'],
+                  ['주문서 작성', '이름과 연락처를 적고, 택배와 대면 전달 중에서 고릅니다.'],
+                  ['입금 안내', '주문하면 입금할 금액과 계좌가 화면에 바로 나옵니다.'],
+                  ['확인 후 전달', '입금이 확인되면 택배로 보내고, 대면 전달은 추후 연락드립니다.'],
                 ].map(([title, body], index) => (
                   <li key={title} className="flex gap-3">
                     <span

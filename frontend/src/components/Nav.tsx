@@ -164,8 +164,9 @@ export default function Nav() {
                   {link.label}
                   <span
                     aria-hidden
-                    className={`pointer-events-none absolute -bottom-0.5 left-0 h-px ${underline} transition-all duration-300 ease-out ${
-                      active ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-100'
+                    // 폭이 아니라 scaleX로 그린다 — 레이아웃을 다시 계산하지 않고 합성만 한다.
+                    className={`pointer-events-none absolute -bottom-0.5 left-0 h-px w-full origin-left ${underline} transition-[transform,opacity] duration-300 ease-out ${
+                      active ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
                     }`}
                   />
                 </Link>
@@ -188,23 +189,26 @@ export default function Nav() {
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
             >
-              <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-current transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-[transform,opacity] duration-300 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-[transform,opacity] duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-[transform,opacity] duration-300 ${menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''}`} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile / tablet dropdown.
-          `inert` while collapsed: max-height only clips the panel visually, so
-          without it the links stay in the tab order behind a closed menu. */}
+      {/* Mobile / tablet dropdown. 바 아래에 겹쳐 내려오는 판이다 — 높이(max-height)를
+          애니메이션하면 매 프레임 레이아웃을 다시 계산하므로, 투명도와 이동만 움직인다.
+          `invisible`은 전환이 끝난 뒤에 적용되어 닫히는 모습이 보이고, `inert`가
+          닫힌 메뉴의 링크를 탭 순서에서 뺀다. */}
       <div
         id="mobile-menu"
         inert={!menuOpen}
-        className={`lg:hidden overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}
+        className={`lg:hidden absolute inset-x-0 top-full bg-canvas border-b border-border shadow-xs transition-[opacity,transform,visibility] duration-300 ${
+          menuOpen ? 'visible opacity-100 translate-y-0' : 'invisible opacity-0 -translate-y-2'
+        }`}
       >
-        <div className={`border-t border-border/70 px-5 sm:px-6 md:px-10 py-3 flex flex-col`}>
+        <div className={`px-5 sm:px-6 md:px-10 py-3 flex flex-col`}>
           {navLinks.map(link => {
             const active = isActiveLink(link.href);
             return (

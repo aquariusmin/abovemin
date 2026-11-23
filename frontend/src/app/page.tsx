@@ -2,6 +2,7 @@ import { getAllPhotos, getProducts, getSiteSettings } from '@/lib/supabase';
 import { isAvailable } from '@/lib/product';
 import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
+import { isWinterDecor } from '@/lib/season';
 import { onThisDay, seoulToday } from '@/lib/on-this-day';
 import { buildFallback } from '@/lib/build-phase';
 import type { Metadata } from 'next';
@@ -93,7 +94,7 @@ export default async function Home() {
     .slice(0, 4);
 
   const heroImage = settings['hero_image'] || DEFAULT_HERO_IMAGE;
-  const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
+  const heroTitle = settings['hero_title'] || 'Collecting the Winter Light';
   const heroSubtitle =
     settings['hero_subtitle'] ||
     '여행지에서, 사는 동네에서 찍은 사진을 모아 둡니다.';
@@ -109,6 +110,7 @@ export default async function Home() {
 
   return (
     <HomeContent
+      winter={isWinterDecor()}
       heroImage={heroImage}
       heroAspect={heroAspect}
       titleHead={titleHead}

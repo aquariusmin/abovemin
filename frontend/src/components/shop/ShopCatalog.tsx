@@ -9,6 +9,8 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPriceRange } from '@/lib/price';
 import { SOLD_OUT_LABEL } from '@/lib/product';
 import { placeholderStyle } from '@/components/photo-placeholder';
+import { mayHaveAlpha } from '@/lib/cloudinary';
+import { labelFace } from '@/lib/typography';
 
 /**
  * 목록 카드가 그리는 것만. 상태·가격 범위는 서버(`shop/page.tsx`)가
@@ -101,6 +103,11 @@ export default function ShopCatalog({ products, loadError }: { products: Product
     if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
   }, []);
 
+  // 살 수 있는 상품이 하나뿐이면 장바구니는 거쳐 갈 이유가 없는 단계다. 상세
+  // 페이지가 "바로 주문하기"로 체크아웃에 보내므로(`ProductPurchase`), 목록의
+  // 담기(+) 버튼도 두지 않는다 — 카드를 누르면 상세로 간다.
+  const directOrder = products.filter(p => p.state === 'available').length === 1;
+
   const categories = [ALL, ...Array.from(new Set(products.map(i => i.category)))];
   const filtered = (selectedCategory === ALL ? products : products.filter(i => i.category === selectedCategory))
     .toSorted((a, b) => {
@@ -121,7 +128,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
       {/* Page header */}
       <header className="max-w-[1400px] mx-auto mb-10 md:mb-16">
         <p className="eyebrow eyebrow-marked text-primary mb-4">Shop Collection</p>
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] text-ink max-w-3xl">
+        <h1 className="font-display-ko text-3xl sm:text-4xl md:text-5xl font-medium leading-[1.1] text-ink max-w-3xl">
           사진으로 만든 작은 것들.
         </h1>
 
@@ -150,7 +157,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as typeof sortBy)}
                 aria-label="상품 정렬"
-                className="appearance-none bg-transparent pr-6 text-sm font-medium text-ink cursor-pointer rounded-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="appearance-none bg-transparent border-b border-field-edge pb-0.5 pr-6 text-sm font-medium text-ink cursor-pointer rounded-none focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <option value="newest">최신순</option>
                 <option value="price-asc">가격 낮은순</option>
@@ -191,6 +198,10 @@ export default function ShopCatalog({ products, loadError }: { products: Product
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto">
           {filtered.map((item, i) => {
             const available = item.state === 'available';
+            // 배경을 지운 컷아웃(투명 PNG)은 프레임 없이 페이지 바탕 위에 놓는다.
+            // 흐린 미리보기가 투명한 자리에 번져 사물 둘레에 얼룩이 지고, 바탕색과
+            // 테두리가 상자를 그리기 때문이다(`mayHaveAlpha`).
+            const cutout = mayHaveAlpha(item.image_url);
             return (
             // The card is a plain container, not an <a>. The product link
             // stretches over the whole card via `.card-link`, and the add-to-cart
@@ -204,8 +215,12 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               {/* 흐린 미리보기가 프레임 배경이다(`placeholderStyle`) — 아카이브
                   타일과 같다. 프레임 크기는 아래 이미지가 정한다. */}
               <div
-                className="relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary"
-                style={placeholderStyle(item.image_url)}
+                className={
+                  cutout
+                    ? 'relative overflow-hidden'
+                    : 'relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary'
+                }
+                style={cutout ? undefined : placeholderStyle(item.image_url)}
               >
                 {/* Sits above the stretched link but must not swallow its
                     clicks, hence pointer-events-none. */}
@@ -214,7 +229,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                     작업의 일부로 보이는 아카이브여서다(초안은 아예 오지 않는다).
                     Hangul은 대문자·자간 규칙을 받지 않는다. */}
                 {!available ? (
-                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-[11px]">
+                  <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-xs">
                     {SOLD_OUT_LABEL}
                   </span>
                 ) : item.tag ? (
@@ -254,18 +269,18 @@ export default function ShopCatalog({ products, loadError }: { products: Product
               {/* Info */}
               <div className="mt-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="eyebrow text-muted-foreground mb-1.5">{item.category}</p>
+                  <p className={`${labelFace(item.category)} text-muted-foreground mb-1.5`}>{item.category}</p>
                   <h2 className="text-[15px] font-medium text-ink-body leading-snug group-hover:text-primary transition-colors">
                     <Link href={`/shop/${item.id}`} className="card-link outline-none">
                       {item.name}
                     </Link>
                   </h2>
                   {item.edition && (
-                    <p className="mt-1 text-[12px] text-muted-foreground">{item.edition}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">{item.edition}</p>
                   )}
                   {/* 품절이면 가격은 참고 정보다 — 초록 굵은 글씨로 "살 수 있다"는
                       인상을 주지 않는다. 600이 최대 무게다(DESIGN.md). */}
-                  <p className={`mt-1.5 text-sm tabular-nums ${available && item.priceMin > 0 ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
+                  <p className={`mt-1.5 text-[15px] tabular-nums ${available && item.priceMin > 0 ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}>
                     {formatPriceRange({ min: item.priceMin, max: item.priceMax })}
                   </p>
                 </div>
@@ -274,7 +289,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                     버튼에 "—"를 넣어 두었더니 "빼기"로 읽혔고, 상태는 이미
                     사진 위 배지가 말하고 있다. 옵션 상품도 두지 않는다 — 무엇을
                     담을지 고르는 자리는 상세 페이지다. */}
-                {available && !item.hasOptions && (
+                {available && !item.hasOptions && !directOrder && (
                 <button
                   onClick={() => handleAddToCart(item)}
                   aria-label={`${item.name} 장바구니에 담기`}

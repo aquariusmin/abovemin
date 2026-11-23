@@ -13,7 +13,7 @@ export const contentType = 'image/png';
  *
  * `/portfolio`는 링크로 건네는 페이지다 — 채용 담당자가 이 사이트에서 처음
  * 보는 것이 이 카드일 가능성이 높다. 그런데 루트의 카드("phorage ·
- * Collecting the Greenery")를 그대로 물려받고 있어서, 데이터 분석 포트폴리오
+ * Collecting the Winter Light")를 그대로 물려받고 있어서, 데이터 분석 포트폴리오
  * 링크가 사진 스튜디오 미리보기로 떴다. 아카이브와 상품 페이지는 이미 각자의
  * 이미지를 쓰고 있었고, 여기만 빠져 있었다.
  *

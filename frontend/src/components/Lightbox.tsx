@@ -8,6 +8,7 @@ import { exifParts, joinCaption, photoCaption, photoLabel } from '@/lib/caption'
 import { photoShareUrl, printInquiryMailto } from '@/lib/photo-share';
 import { copyToClipboard } from '@/lib/clipboard';
 import { CONTACT_EMAIL, SITE_URL } from '@/lib/site';
+import { displayFace } from '@/lib/typography';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -493,15 +494,15 @@ export default function Lightbox({ photos, currentIndex, onClose, onPrev, onNext
                    bg-gradient-to-t from-forest-black/85 via-forest-black/45 to-transparent"
       >
         {caption.title && (
-          <p className="text-white text-sm font-serif font-medium tracking-tight">{caption.title}</p>
+          <p className={`text-white text-base ${displayFace(caption.title)} font-medium tracking-tight`}>{caption.title}</p>
         )}
-        <p className={`eyebrow text-white/70 ${caption.title ? 'mt-1.5' : ''}`}>
+        <p className={`label-ko text-white/70 ${caption.title ? 'mt-1.5' : ''}`}>
           {joinCaption([...caption.meta, `${currentIndex + 1} / ${photos.length}`])}
         </p>
         {/* 촬영 정보. 캡션보다 한 단계 더 조용하게 — 대문자 자간 없는 mono,
             더 낮은 불투명도. 값이 하나도 없으면 줄을 그리지 않는다. */}
         {exif.length > 0 && (
-          <p className="mt-1.5 font-mono text-[11px] leading-snug tracking-normal text-white/50">
+          <p className="mt-1.5 font-mono text-xs leading-snug tracking-normal text-white/60">
             {joinCaption(exif)}
           </p>
         )}

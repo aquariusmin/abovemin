@@ -25,7 +25,7 @@ export default function Error({
     <div role="alert" className="min-h-screen flex items-center justify-center px-8 bg-canvas">
       <div className="text-center space-y-6">
         <p className="eyebrow text-brick">Error</p>
-        <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[-0.01em] text-ink break-keep">
+        <h1 className="font-display-ko text-2xl md:text-3xl font-medium text-ink break-keep">
           페이지를 불러오지 못했습니다.
         </h1>
         <p className="text-sm text-slate break-keep">

@@ -47,7 +47,13 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
     // the other way at the same time: the dimmed text (links at 70%, labels and
     // meta at 40%) is lifted, because "smaller" only reads as tidy if the type
     // that remains is easier to read, not fainter.
-    <footer className="band-navy texture-grain">
+    <>
+    {/* iOS Safari 26의 아래 툴바 색. 화면 아래 가장자리에 붙은 고정 요소의 배경을
+        읽으므로, 거의 보이지 않는 얇은 띠를 두고 그 색을 루트와 맞춘다(푸터가
+        보이면 푸터 색). iOS Safari에서만 그린다(`globals.css`의 `.ios-toolbar-tint`).
+        푸터 밖에 둔다 — 푸터의 `isolation`에 갇히지 않게. */}
+    <div aria-hidden className="ios-toolbar-tint" />
+    <footer data-site-footer className="band-navy texture-grain">
       {/* Canopy gradient hairline capping the band */}
       <div aria-hidden className="h-[2px] bg-gradient-to-r from-forest via-fern to-moss" />
 
@@ -61,11 +67,11 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
 
           {/* Brand — signature wordmark + studio line */}
           <div className="col-span-5 md:col-span-4 space-y-2.5">
-            <p className="eyebrow text-moss">Collecting the greenery</p>
+            <p className="eyebrow text-moss">Collecting the winter light</p>
             <h2 className="font-serif text-3xl md:text-4xl font-medium tracking-tight leading-none text-cream">
               phorage
             </h2>
-            <p className="text-[13px] leading-relaxed text-cream/65 max-w-xs break-keep">
+            <p className="text-sm leading-relaxed text-cream/70 max-w-xs break-keep">
               사진을 찍고, 그 사진으로 작은 것들을 만듭니다.
             </p>
           </div>
@@ -75,7 +81,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           {/* Index */}
           <nav className="col-span-2 md:col-span-3 space-y-3" aria-label="Footer">
             <h3 className="eyebrow text-cream/50">Index</h3>
-            <ul className="space-y-2 text-[13px]">
+            <ul className="space-y-2 text-sm">
               {navItems(hasNotes).map(item => (
                 <li key={item.href}>
                   <Link
@@ -92,7 +98,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
           {/* Connect */}
           <div className="col-span-3 md:col-span-4 space-y-3">
             <h3 className="eyebrow text-cream/50">Connect</h3>
-            <ul className="space-y-2 text-[13px]">
+            <ul className="space-y-2 text-sm">
               {CONNECT.map(item => (
                 <li key={item.href}>
                   <a
@@ -117,5 +123,6 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
         </div>
       </div>
     </footer>
+    </>
   );
 }

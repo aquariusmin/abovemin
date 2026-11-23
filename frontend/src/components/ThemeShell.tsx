@@ -16,7 +16,11 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   // between a light header and a light footer is a hole in the page, not a
   // mode. The console carries the site's own light theme now, so the body it
   // sits on is the same canvas every other route uses.
-  const bgColor = 'bg-canvas';
+  // 바탕색은 body가 아니라 본문 영역(`#main-content`, `layout.tsx`)과 루트(`html`,
+  // `globals.css`)가 칠한다. iOS Safari 26은 화면 아래 툴바 영역과 튕김 영역을
+  // 루트·body 배경에서 가져오는데, body가 크림색이면 짙은 푸터 아래가 늘 흰색으로
+  // 남았다. body를 비워 두면 그 자리는 루트 색 하나로 정해진다.
+  const bgColor = 'bg-transparent';
   const textColor = 'text-ink-body';
 
   // Document language follows the URL.
@@ -40,6 +44,28 @@ export default function ThemeShell({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  // iOS Safari는 주소창 뒤와 화면 끝에서 튕겨 보이는 자리를 문서 맨 바깥(루트)의
+  // 배경색으로 칠한다. 페이지 바탕은 `<body>`의 크림색이라, 짙은 숲색 푸터까지
+  // 내려가도 그 자리는 흰색에 가깝게 남았다. 푸터가 화면에 보이는 동안만 루트를
+  // 푸터 색으로 바꾼다(`globals.css`의 `html[data-footer-in-view]`) — 맨 위에서
+  // 끌어내릴 때는 계속 크림색이다. 푸터가 없는 경로(관리 화면 등)는 표시가 없다.
+  useEffect(() => {
+    const root = document.documentElement;
+    const footer = document.querySelector('footer[data-site-footer]');
+    if (!footer) {
+      root.removeAttribute('data-footer-in-view');
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      root.toggleAttribute('data-footer-in-view', entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => {
+      observer.disconnect();
+      root.removeAttribute('data-footer-in-view');
+    };
+  }, [pathname]);
 
   useEffect(() => {
     function blockContextMenu(e: MouseEvent) {
