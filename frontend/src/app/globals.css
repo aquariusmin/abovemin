@@ -48,6 +48,7 @@
   --cream-deep: #e8dcbb;    /* cream pressed / border-on-cream */
   --brick-soft: #e0a8a6;    /* brick chip borders */
   --brick-light: #d76668;   /* brick lifted for legibility on dark surfaces */
+  --bulb-gold: #e3b04b;     /* seasonal only: warm bulb in the winter lights (components/home/WinterDecor) */
 
   /* ── shadcn semantic roles ─────────────────────────────────────────────── */
   --radius: 1rem;
@@ -814,14 +815,16 @@ body {
 
 /* ── Winter decoration (home only, `lib/season.ts`) ─────────────────────── */
 
-/* 상자 위에 살짝 쌓인 눈. 홈의 `<main data-winter>` 안에서만 그려지고, 기간이
-   끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
+/* 상자 위에 살짝 쌓인 눈 — 고정된 그림. 홈의 `<main data-winter>` 안에서만, 그리고
+   눈 캔버스가 돌지 않을 때만(동작 줄이기) 그려진다. 캔버스가 돌면 `<main>`에
+   `data-snow-live`가 붙고, 눈은 캔버스가 실시간으로 쌓아 그린다(`Snowfall.tsx`).
+   기간이 끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
    SVG이고, 대부분 상자 **위**에 얹혀 사진은 가장자리 몇 px만 덮는다. 흰 눈이
    크림 바탕에서도 보이도록 아주 옅은 그림자를 준다. 클릭은 막지 않는다. */
 [data-winter] .snow-cap {
   position: relative;
 }
-[data-winter] .snow-cap::before {
+[data-winter]:not([data-snow-live]) .snow-cap::before {
   content: "";
   position: absolute;
   z-index: 2;
@@ -833,9 +836,32 @@ body {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 7C0 2 4 0 12 0H188C196 0 200 2 200 7C196 8 192 7 188 9C182 12 176 8 168 9C160 10 156 7 148 8C140 9 136 12 128 9C120 7 112 9 104 8C96 7 90 11 82 9C74 7 66 8 58 9C50 10 44 7 36 8C28 9 22 12 14 9C8 7 4 8 0 7Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
   filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--forest-black) 22%, transparent));
 }
+/* 전구 반짝임과 오너먼트 흔들림(`components/home/WinterDecor.tsx`). 전구마다
+   시작 시각을 엇갈려 줄 전체가 한꺼번에 깜박이지 않는다. "동작 줄이기"면
+   아래 reduced-motion 규칙이 애니메이션을 사실상 0으로 만든다. */
+.winter-bulb {
+  animation: winter-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes winter-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+/* 짙은 띠 위에서는 불빛이 번지게. */
+.winter-lights-dark .winter-bulb {
+  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 6px currentColor);
+}
+.winter-bauble {
+  transform-origin: 50% 0;
+  animation: winter-sway 5s ease-in-out infinite;
+}
+@keyframes winter-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
 /* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
    쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
-[data-winter] .snow-cap-pill::before {
+[data-winter]:not([data-snow-live]) .snow-cap-pill::before {
   left: 14px;
   right: 14px;
   top: -5px;
