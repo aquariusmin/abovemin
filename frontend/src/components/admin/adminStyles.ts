@@ -78,10 +78,15 @@ export const ORDER_STATUS_CHIP: Record<string, string> = {
   cancelled: `chip ${CHIP_KO} bg-muted text-muted-foreground`,
 };
 
+/**
+ * 수령 방법을 모르는 자리(개요 탭의 상태별 개수)의 이름. 주문 탭의 단계 이름과 같다
+ * (`lib/admin/order-flow.ts`의 `STAGE_LABEL`) — 택배와 대면 전달을 함께 세므로
+ * "배송"이라는 말을 쓰지 않는다. 주문 한 건의 이름은 `statusLabel`이 정한다.
+ */
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   pending: '입금 대기',
-  confirmed: '입금 확인',
+  confirmed: '준비 중',
   shipped: '배송 중',
-  delivered: '배송 완료',
+  delivered: '완료',
   cancelled: '취소',
 };
