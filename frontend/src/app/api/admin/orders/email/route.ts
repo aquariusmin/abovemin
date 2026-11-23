@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { rateLimitShared } from '@/lib/rate-limit';
 import { OrderEmail } from '@/lib/admin/schemas';
-import { buildBuyerEmail, buildShippingEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
+import { buildBuyerEmail, buildShippingEmail, hasBuyerEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
 import { recordEmailSent } from '@/lib/order-email-status';
 import {
   adminDb,
@@ -47,18 +47,23 @@ export async function POST(request: Request) {
   const { data: order, error } = await db.value.from('orders').select('*').eq('id', id).maybeSingle();
   if (error) return dbErrorResponse('admin_orders_email_lookup', error);
   if (!order) return jsonError('주문을 찾을 수 없습니다.', 404);
+  // 체크아웃이 이메일을 받지 않게 된 뒤의 주문. 보낼 곳이 없다.
+  const target = order as EmailOrder;
+  if (!hasBuyerEmail(target)) {
+    return jsonError('이메일이 없는 주문입니다. 연락처로 안내해 주세요.', 400);
+  }
 
   let message;
   if (kind === 'shipping') {
     if (!order.tracking_number) {
       return jsonError('송장번호가 없어 배송 안내를 보낼 수 없습니다. 먼저 송장번호를 저장해 주세요.', 400);
     }
-    message = buildShippingEmail(order as EmailOrder, {
+    message = buildShippingEmail(target, {
       carrier: order.tracking_carrier ?? null,
       trackingNumber: order.tracking_number,
     });
   } else {
-    message = buildBuyerEmail({ ...(order as EmailOrder), items: Array.isArray(order.items) ? order.items : [] });
+    message = buildBuyerEmail({ ...target, items: Array.isArray(order.items) ? order.items : [] });
   }
 
   try {

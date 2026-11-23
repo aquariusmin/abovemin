@@ -26,7 +26,7 @@ const throwingStore = {
   removeItem: () => { throw new Error('blocked'); },
 };
 
-const placed: PlacedOrder = { orderId: 41, total: 76000, bankInfo: '은행 000-00 (예금주)', email: 'buyer@example.com' };
+const placed: PlacedOrder = { orderId: 41, total: 76000, bankInfo: '은행 000-00 (예금주)' };
 
 describe('orderPlacedBody', () => {
   it('계좌 정보가 있으면 싣는다', () => {
@@ -46,14 +46,13 @@ describe('orderPlacedBody', () => {
 });
 
 describe('placedOrderFromResponse', () => {
-  const fallback = { email: 'buyer@example.com', cartTotal: 70000 };
+  const fallback = { cartTotal: 70000 };
 
   it('서버의 번호·금액·계좌를 쓴다. 금액은 장바구니 합계가 아니라 서버 값이다', () => {
     expect(placedOrderFromResponse(orderPlacedBody(41, 76000, '은행 000-00'), fallback)).toEqual({
       orderId: 41,
       total: 76000,
-      bankInfo: '은행 000-00',
-      email: 'buyer@example.com',
+      bankInfo: '은행 000-00'
     });
   });
 
@@ -67,8 +66,7 @@ describe('placedOrderFromResponse', () => {
       expect(placedOrderFromResponse(body, fallback)).toEqual({
         orderId: null,
         total: 70000,
-        bankInfo: null,
-        email: 'buyer@example.com',
+        bankInfo: null
       });
     }
   });
@@ -85,11 +83,11 @@ describe('placed order storage', () => {
     expect(readPlacedOrder(store)).toEqual(placed);
   });
 
-  it('번호·금액·계좌·이메일 말고는 저장하지 않는다', () => {
+  it('번호·금액·계좌 말고는 저장하지 않는다', () => {
     const store = memoryStore();
-    const wider = { ...placed, name: '홍길동', address: '서울시 어딘가', phone: '010-0000-0000', cartTotal: 1 };
+    const wider = { ...placed, name: '홍길동', address: '서울시 어딘가', phone: '010-0000-0000', email: 'a@b.co', cartTotal: 1 };
     writePlacedOrder(wider, store);
-    expect(Object.keys(JSON.parse(store.data.get(PLACED_ORDER_KEY)!)).sort()).toEqual(['bankInfo', 'email', 'orderId', 'total']);
+    expect(Object.keys(JSON.parse(store.data.get(PLACED_ORDER_KEY)!)).sort()).toEqual(['bankInfo', 'orderId', 'total']);
   });
 
   it('지우면 없다', () => {
@@ -111,25 +109,29 @@ describe('placed order storage', () => {
       JSON.stringify({ orderId: 41, bankInfo: null, email: 'a@b.co' }), // 금액 없음
       JSON.stringify({ orderId: 41, total: '76000', bankInfo: null, email: 'a@b.co' }),
       JSON.stringify({ orderId: 41, total: -1, bankInfo: null, email: 'a@b.co' }),
-      JSON.stringify({ orderId: 41, total: 76000, bankInfo: null }), // 이메일 없음
-      JSON.stringify({ orderId: 41, total: 76000, bankInfo: null, email: '' }),
     ]) {
       expect(parsePlacedOrder(raw), raw).toBeNull();
     }
   });
 
   it('번호와 계좌는 없어도 된다', () => {
-    expect(parsePlacedOrder(JSON.stringify({ total: 76000, email: 'a@b.co' }))).toEqual({
+    expect(parsePlacedOrder(JSON.stringify({ total: 76000 }))).toEqual({
       orderId: null,
       total: 76000,
       bankInfo: null,
-      email: 'a@b.co',
     });
-    expect(parsePlacedOrder(JSON.stringify({ orderId: 1.5, total: 76000, bankInfo: 3, email: 'a@b.co' }))).toEqual({
+    expect(parsePlacedOrder(JSON.stringify({ orderId: 1.5, total: 76000, bankInfo: 3 }))).toEqual({
       orderId: null,
       total: 76000,
       bankInfo: null,
-      email: 'a@b.co',
+    });
+  });
+
+  it('이메일 칸이 있던 시절의 요약도 읽되, 이메일은 버린다', () => {
+    expect(parsePlacedOrder(JSON.stringify({ orderId: 41, total: 76000, bankInfo: null, email: 'a@b.co' }))).toEqual({
+      orderId: 41,
+      total: 76000,
+      bankInfo: null,
     });
   });
 

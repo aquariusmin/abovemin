@@ -51,6 +51,18 @@ export function isMissingSchemaError(error: unknown): boolean {
 }
 
 /**
+ * NOT NULL 제약 위반(`23502`). `orders.email`이 nullable이 되기 전
+ * (`20261123000000_orders_email_optional.sql` 적용 전)에 이메일 없는 주문을
+ * 넣으면 이 오류가 온다 — 주문 라우트는 빈 문자열로 다시 넣는다.
+ */
+export function isNotNullViolation(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { code, message } = error as PgErrorLike;
+  if (code === '23502') return true;
+  return typeof message === 'string' && /violates not-null constraint/i.test(message);
+}
+
+/**
  * 유니크 제약 위반(`23505`). 오류로 볼 일이 아닐 때가 있다 — 같은 멱등 키로
  * 동시에 들어온 두 주문 중 늦은 쪽은 이 오류를 받고, 먼저 들어간 주문을 다시
  * 읽어 답하면 된다(`api/orders`).

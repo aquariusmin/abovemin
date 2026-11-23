@@ -18,6 +18,8 @@ import {
   type PlacedOrder,
 } from '@/lib/order-placed';
 import { CONTACT_EMAIL } from '@/lib/site';
+import AddressSearch from '@/components/shop/AddressSearch';
+import { DELIVERY_LABEL, DELIVERY_METHODS, type DeliveryMethod } from '@/lib/delivery';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -33,7 +35,9 @@ export default function CheckoutPage() {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   // 방금 낸 주문에서만 안다(장바구니 합계는 저장하지 않는다). 새로고침 뒤에는 꺼진다.
   const [priceChanged, setPriceChanged] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', note: '', website: '' });
+  const [form, setForm] = useState({ name: '', phone: '', zipcode: '', address: '', addressDetail: '', note: '', website: '' });
+  // 택배가 기본이다. 대면 전달이면 주소 칸을 통째로 감추고 보내지 않는다.
+  const [delivery, setDelivery] = useState<DeliveryMethod>('parcel');
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
   // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
@@ -42,6 +46,9 @@ export default function CheckoutPage() {
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const [mounted, setMounted] = useState(false);
+  // 상품 상세의 "바로 주문하기"로 왔으면(`?from=상품 id`) 돌아가는 곳은 장바구니가
+  // 아니라 그 상품이다. 장바구니를 거치지 않았으니까.
+  const [fromProduct, setFromProduct] = useState<number | null>(null);
 
   useEffect(() => {
     // 장바구니가 비어 있는데 방금 낸 주문의 요약이 남아 있다: 완료 화면에서
@@ -49,6 +56,10 @@ export default function CheckoutPage() {
     // 지난 요약은 치운다.
     if (useCartStore.getState().items.length === 0) setPlaced(readPlacedOrder());
     else clearPlacedOrder();
+    // useSearchParams 대신 직접 읽는다 — 그 훅은 이 정적 페이지를 Suspense 경계로
+    // 감싸게 만든다. 값은 돌아가기 링크 하나에만 쓴다.
+    const from = Number(new URLSearchParams(window.location.search).get('from'));
+    if (Number.isSafeInteger(from) && from > 0) setFromProduct(from);
     setMounted(true);
   }, []);
 
@@ -63,8 +74,9 @@ export default function CheckoutPage() {
   function validate() {
     const e: Partial<typeof form> = {};
     if (!form.name.trim()) e.name = '이름을 입력해주세요';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = '올바른 이메일을 입력해주세요';
-    if (!form.address.trim()) e.address = '주소를 입력해주세요';
+    if (!form.phone.trim()) e.phone = '연락처를 입력해주세요';
+    else if (form.phone.replace(/\D/g, '').length < 9) e.phone = '연락처를 확인해주세요';
+    if (delivery === 'parcel' && !form.address.trim()) e.address = '주소를 입력해주세요';
     return e;
   }
 
@@ -97,10 +109,13 @@ export default function CheckoutPage() {
     // 서버가 `products.addons`에서 읽는다.
     const payload: OrderInputValues = {
       name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
-      zipcode: form.zipcode.trim() || null,
-      address: form.address.trim(),
+      // 이메일은 받지 않는다 — 연락은 전화로 한다(`orders-schema.ts`).
+      phone: form.phone.trim(),
+      delivery_method: delivery,
+      // 대면 전달이면 적다 만 주소가 있어도 보내지 않는다.
+      zipcode: delivery === 'parcel' ? form.zipcode.trim() || null : null,
+      // 기본 주소(검색 결과)와 상세 주소(동·호수)는 칸만 나뉘고 저장은 한 줄이다.
+      address: delivery === 'parcel' ? [form.address.trim(), form.addressDetail.trim()].filter(Boolean).join(' ') : '',
       note: form.note.trim() || null,
       items: toOrderItems(items),
       idempotency_key: idempotencyKey,
@@ -142,7 +157,7 @@ export default function CheckoutPage() {
 
       const cartTotal = totalPrice();
       const body: unknown = await res.json().catch(() => null);
-      const order = placedOrderFromResponse(body, { email: payload.email, cartTotal });
+      const order = placedOrderFromResponse(body, { cartTotal });
       writePlacedOrder(order);
       setPriceChanged(order.total !== cartTotal);
       setPlaced(order);
@@ -175,10 +190,10 @@ export default function CheckoutPage() {
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문을 받았습니다.</h1>
         <p className="text-[15px] text-ink-body mb-8 break-keep">
-          <span className="text-accent font-medium">{placed.email}</span>으로 확인 메일을 보냈습니다.
+          아래 계좌로 입금해 주세요. 확인되면 적어 주신 연락처로 알려 드립니다.
         </p>
 
-        {/* 메일이 오지 않아도 이 화면만으로 입금할 수 있어야 한다: 번호, 금액, 계좌. */}
+        {/* 메일을 보내지 않으므로 손님이 받는 안내는 이 화면이 전부다: 번호, 금액, 계좌. */}
         <dl className="w-full max-w-sm rounded-lg surface-cream p-6 space-y-4 text-left">
           {placed.orderId !== null && (
             <div className="flex items-baseline justify-between gap-4">
@@ -195,7 +210,7 @@ export default function CheckoutPage() {
             {placed.bankInfo ? (
               <dd className="mt-1 text-[15px] font-semibold text-ink">{placed.bankInfo}</dd>
             ) : (
-              <dd className="mt-1 text-sm text-ink-body">확인 메일에 적어 보냅니다.</dd>
+              <dd className="mt-1 text-sm text-ink-body">적어 주신 연락처로 알려 드립니다.</dd>
             )}
           </div>
         </dl>
@@ -205,7 +220,7 @@ export default function CheckoutPage() {
           </p>
         )}
         <p className="mt-6 mb-10 max-w-sm text-[13px] text-slate leading-relaxed">
-          메일이 오지 않거나 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
+          이 화면을 저장해 두세요. 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="link-leaf">{CONTACT_EMAIL}</a>으로 알려 주세요.
         </p>
         {/* 이 화면을 스스로 떠날 때 요약을 지운다. 지우지 않으면 빈 장바구니로
@@ -229,7 +244,11 @@ export default function CheckoutPage() {
       >
 
         <header className="mb-10 border-b border-hairline pb-6">
-          <BackLink href="/cart">장바구니로</BackLink>
+          {fromProduct !== null ? (
+            <BackLink href={`/shop/${fromProduct}`}>상품으로</BackLink>
+          ) : (
+            <BackLink href="/cart">장바구니로</BackLink>
+          )}
           <p className="eyebrow text-muted-foreground mt-6 mb-3">Checkout</p>
           <h1 className="font-serif text-4xl md:text-5xl tracking-tight leading-[1.05] text-ink">주문 정보를 입력해 주세요.</h1>
         </header>
@@ -256,72 +275,113 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className={labelClass}>이메일 *</label>
-              <input
-                id="email"
-                className={inputClass}
-                type="email"
-                value={form.email}
-                onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: undefined })); }}
-                placeholder="hello@phorage.com"
-                autoComplete="email"
-                required
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
-              />
-              {errors.email && <p id="email-error" className={errorClass}>{errors.email}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="phone" className={labelClass}>연락처</label>
+              <label htmlFor="phone" className={labelClass}>연락처 *</label>
               <input
                 id="phone"
                 className={inputClass}
                 type="tel"
                 value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                onChange={e => { setForm(f => ({ ...f, phone: e.target.value })); setErrors(er => ({ ...er, phone: undefined })); }}
                 placeholder="010-0000-0000"
                 autoComplete="tel"
                 inputMode="tel"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="zipcode" className={labelClass}>우편번호</label>
-              <input
-                id="zipcode"
-                className={inputClass}
-                value={form.zipcode}
-                onChange={e => setForm(f => ({ ...f, zipcode: e.target.value }))}
-                placeholder="12345"
-                autoComplete="postal-code"
-                inputMode="numeric"
-                maxLength={5}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="address" className={labelClass}>배송 주소 *</label>
-              {/* 한 줄 입력이 아니라 textarea: `street-address`는 여러 줄 값을 뜻하는
-                  자동완성 토큰이고, "도로명 + 동·호수"는 폰의 한 줄 칸에서 앞이 밀려
-                  나가 확인이 안 된다. 줄바꿈은 메일·관리 화면에서 공백으로 읽힌다. */}
-              <textarea
-                id="address"
-                className={`${inputClass} resize-none`}
-                rows={2}
-                value={form.address}
-                onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setErrors(er => ({ ...er, address: undefined })); }}
-                placeholder="서울시 마포구 ..."
-                autoComplete="street-address"
                 required
-                aria-invalid={!!errors.address}
-                aria-describedby={errors.address ? 'address-error' : undefined}
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? 'phone-error' : undefined}
               />
-              {errors.address && <p id="address-error" className={errorClass}>{errors.address}</p>}
+              {errors.phone && <p id="phone-error" className={errorClass}>{errors.phone}</p>}
             </div>
 
+            {/* 수령 방법. 네이티브 라디오라 방향키로 옮기고 스크린리더가 "2개 중 1번째"를
+                읽는다 — 알약 모양은 라벨이 입는다(상품 옵션과 같은 모양). */}
+            <fieldset>
+              <legend className={labelClass}>받는 방법 *</legend>
+              <div className="flex flex-wrap gap-2">
+                {DELIVERY_METHODS.map(method => (
+                  <label
+                    key={method}
+                    className="inline-flex min-h-11 cursor-pointer items-center rounded-[var(--radius-pill)] border border-field-edge bg-card px-5 text-[14px] font-medium text-ink transition-[background-color,border-color,color] duration-200 hover:border-forest/60 has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring"
+                  >
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={method}
+                      checked={delivery === method}
+                      onChange={() => { setDelivery(method); setErrors(er => ({ ...er, address: undefined })); }}
+                      className="sr-only"
+                    />
+                    {DELIVERY_LABEL[method]}
+                  </label>
+                ))}
+              </div>
+              {delivery === 'pickup' && (
+                <p className="mt-2 text-xs text-slate leading-relaxed">
+                  추후 연락드리겠습니다.
+                </p>
+              )}
+            </fieldset>
+
+            {delivery === 'parcel' && (
+            <>
+            {/* 주소: 우편번호 + 기본 주소는 "주소 찾기"(카카오 우편번호)가 채우고,
+                동·호수는 손님이 적는다. 검색을 못 쓰는 경우(스크립트 차단 등)에도
+                주문할 수 있도록 세 칸 모두 직접 적을 수 있다. 저장은 기본 주소와
+                상세 주소를 공백으로 이은 한 줄이다(`handleSubmit`). */}
+            <fieldset className="space-y-3">
+              <legend className={labelClass}>배송 주소 *</legend>
+              <div className="flex gap-2">
+                <label htmlFor="zipcode" className="sr-only">우편번호</label>
+                <input
+                  id="zipcode"
+                  className={`${inputClass} min-w-0 flex-1`}
+                  value={form.zipcode}
+                  onChange={e => setForm(f => ({ ...f, zipcode: e.target.value }))}
+                  placeholder="우편번호"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                  maxLength={5}
+                />
+                <AddressSearch
+                  onSelect={({ zipcode, address }) => {
+                    setForm(f => ({ ...f, zipcode, address }));
+                    setErrors(er => ({ ...er, address: undefined }));
+                    // 남은 일은 동·호수 — 커서를 거기로.
+                    requestAnimationFrame(() => document.getElementById('addressDetail')?.focus());
+                  }}
+                />
+              </div>
+              <div>
+                <label htmlFor="address" className="sr-only">기본 주소</label>
+                <input
+                  id="address"
+                  className={inputClass}
+                  value={form.address}
+                  onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setErrors(er => ({ ...er, address: undefined })); }}
+                  placeholder="기본 주소"
+                  autoComplete="address-line1"
+                  required
+                  aria-invalid={!!errors.address}
+                  aria-describedby={errors.address ? 'address-error' : undefined}
+                />
+                {errors.address && <p id="address-error" className={errorClass}>{errors.address}</p>}
+              </div>
+              <div>
+                <label htmlFor="addressDetail" className="sr-only">상세 주소</label>
+                <input
+                  id="addressDetail"
+                  className={inputClass}
+                  value={form.addressDetail}
+                  onChange={e => setForm(f => ({ ...f, addressDetail: e.target.value }))}
+                  placeholder="상세 주소 (동·호수)"
+                  autoComplete="address-line2"
+                />
+              </div>
+            </fieldset>
+            </>
+            )}
+
             <div>
-              <label htmlFor="note" className={labelClass}>배송 메모</label>
+              <label htmlFor="note" className={labelClass}>메모</label>
               <textarea
                 id="note"
                 className={`${inputClass} resize-none`}
@@ -329,7 +389,7 @@ export default function CheckoutPage() {
                 autoComplete="off"
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="문 앞에 놓아주세요"
+                placeholder="전할 말이 있으면 적어 주세요"
               />
             </div>
 
@@ -424,7 +484,7 @@ export default function CheckoutPage() {
               </div>
               <p className="text-xs text-slate leading-relaxed">
                 * 현재는 계좌이체로 주문을 받고 있습니다.<br />
-                주문하면 입금 안내를 메일로 보냅니다.
+                주문하면 입금 계좌가 바로 화면에 나옵니다.
               </p>
             </div>
           </div>

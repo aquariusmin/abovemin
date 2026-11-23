@@ -1,0 +1,13 @@
+-- 체크아웃이 이메일을 받지 않게 되었다 — 연락은 전화로 한다. `orders.email`의
+-- NOT NULL을 푼다. 다른 파일에 의존하지 않고, 다시 돌려도 안전하다(이미
+-- nullable이면 아무 일도 없다). 행은 건드리지 않는다.
+--
+-- 코드가 먼저 배포돼도 주문은 받는다: `api/orders`는 이메일 없는 주문을 null로
+-- 넣다가 NOT NULL 위반(`23502`)을 받으면 빈 문자열로 다시 넣는다
+-- (`lib/db-compat.ts`의 `isNotNullViolation`). 읽는 쪽은 null과 ''를 똑같이
+-- "이메일 없음"으로 본다(`lib/order-email.ts`의 `hasBuyerEmail`).
+--
+-- 되돌리기(코드를 먼저 이전 배포로 되돌린 뒤):
+--   update public.orders set email = '' where email is null;
+--   alter table public.orders alter column email set not null;
+alter table public.orders alter column email drop not null;

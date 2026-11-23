@@ -2,6 +2,7 @@ import 'server-only';
 import { Resend } from 'resend';
 import { orderItemLabel, type OrderItemRecord } from './order-items';
 import type { EmailOutcome } from './order-email-status';
+import { DELIVERY_LABEL, deliveryMethodFromRow } from './delivery';
 
 /**
  * 주문 메일 본문. **주문 접수(`api/orders`)와 관리 화면의 재발송이 같은 함수를
@@ -45,8 +46,15 @@ export type EmailOrderItem = OrderItemRecord;
 export interface EmailOrder {
   id: number;
   name: string;
-  email: string;
+  /**
+   * 체크아웃이 이메일을 받지 않게 된 뒤의 주문은 비어 있다(null, 또는
+   * 마이그레이션 전에 저장된 ''). 손님에게 가는 메일은 `hasBuyerEmail`로
+   * 확인한 주문에만 만든다.
+   */
+  email: string | null;
   phone: string | null;
+  /** 없으면(컬럼 전의 주문) 택배. 메모의 표시로 대면 전달을 아는 경우도 있다(`deliveryMethodFromRow`). */
+  delivery_method?: string | null;
   zipcode: string | null;
   address: string;
   note: string | null;
@@ -78,8 +86,15 @@ export function subjectText(s: string, max = 60): string {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
+/** 손님 메일을 보낼 주소가 있는 주문. */
+export type EmailableOrder = EmailOrder & { email: string };
+
+export function hasBuyerEmail<T extends { email?: string | null }>(order: T): order is T & { email: string } {
+  return typeof order.email === 'string' && order.email.trim() !== '';
+}
+
 /** 고객에게 가는 주문 접수 확인(입금 안내 포함). */
-export function buildBuyerEmail(order: EmailOrder): EmailMessage {
+export function buildBuyerEmail(order: EmailableOrder): EmailMessage {
   const safeName = escapeHtml(order.name);
   const { id: orderId, total_price } = order;
 
@@ -137,11 +152,12 @@ export function buildBuyerEmail(order: EmailOrder): EmailMessage {
 /** 운영자에게 가는 새 주문 알림. 받는 주소는 호출부가 `OWNER_EMAIL`을 확인해 넘긴다. */
 export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
   const safeName = escapeHtml(order.name);
-  const safeEmail = escapeHtml(order.email);
+  const safeEmail = escapeHtml(order.email ?? '');
   const safePhone = escapeHtml(order.phone || '-');
   // One line, the way it goes on a shipping label: `[12345] 서울시 …`. The zip
   // is optional on the form, so an order without one reads as a plain address
   // rather than an empty bracket.
+  const method = deliveryMethodFromRow(order);
   const safeAddress = escapeHtml(order.zipcode ? `[${order.zipcode}] ${order.address}` : order.address);
   const safeNote = escapeHtml(order.note || '-');
   const { id: orderId, total_price } = order;
@@ -151,9 +167,10 @@ export function buildOwnerEmail(order: EmailOrder, to: string): EmailMessage {
       <h2 style="font-size:16px;">새 주문 #${orderId}</h2>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <tr><td style="padding:4px 8px;color:#999;">이름</td><td style="padding:4px 8px;">${safeName}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">이메일</td><td style="padding:4px 8px;">${safeEmail}</td></tr>
+        ${order.email ? `<tr><td style="padding:4px 8px;color:#999;">이메일</td><td style="padding:4px 8px;">${safeEmail}</td></tr>` : ''}
         <tr><td style="padding:4px 8px;color:#999;">연락처</td><td style="padding:4px 8px;">${safePhone}</td></tr>
-        <tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${safeAddress}</td></tr>
+        <tr><td style="padding:4px 8px;color:#999;">수령</td><td style="padding:4px 8px;font-weight:bold;">${DELIVERY_LABEL[method]}</td></tr>
+        ${method === 'parcel' ? `<tr><td style="padding:4px 8px;color:#999;">주소</td><td style="padding:4px 8px;">${safeAddress}</td></tr>` : ''}
         <tr><td style="padding:4px 8px;color:#999;">메모</td><td style="padding:4px 8px;">${safeNote}</td></tr>
         <tr><td style="padding:4px 8px;color:#999;">총액</td><td style="padding:4px 8px;font-weight:bold;">₩ ${total_price.toLocaleString()}</td></tr>
       </table>
@@ -174,7 +191,7 @@ export interface ShippingInfo {
 }
 
 /** 고객에게 가는 배송 시작 안내. 관리 화면에서 `shipped`로 바꿀 때 보낸다. */
-export function buildShippingEmail(order: EmailOrder, shipping: ShippingInfo): EmailMessage {
+export function buildShippingEmail(order: EmailableOrder, shipping: ShippingInfo): EmailMessage {
   const safeName = escapeHtml(order.name);
   const safeCarrier = escapeHtml(shipping.carrier || '택배');
   const safeTracking = escapeHtml(shipping.trackingNumber);

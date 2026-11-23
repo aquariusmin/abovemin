@@ -5,13 +5,15 @@ import {
   buildShippingEmail,
   configuredBankInfo,
   escapeHtml,
+  hasBuyerEmail,
   subjectText,
+  type EmailableOrder,
   type EmailOrder,
 } from '@/lib/order-email';
 
 const OWNER = 'owner@example.com';
 
-const order: EmailOrder = {
+const order: EmailableOrder = {
   id: 12,
   name: '<img src=x onerror=alert(1)>',
   email: 'buyer@example.com',
@@ -47,6 +49,28 @@ describe('order-email', () => {
     }
   });
 
+  it('이메일 없이 받은 주문(null, 마이그레이션 전의 빈 문자열)은 손님 메일 대상이 아니다', () => {
+    expect(hasBuyerEmail(order)).toBe(true);
+    expect(hasBuyerEmail({ ...order, email: null })).toBe(false);
+    expect(hasBuyerEmail({ ...order, email: '' })).toBe(false);
+    expect(hasBuyerEmail({ ...order, email: '  ' })).toBe(false);
+  });
+
+  it('운영자 알림은 이메일이 없으면 그 줄을 빼고, 연락처를 적는다', () => {
+    const noEmail: EmailOrder = { ...order, email: null, phone: '010-1234-5678' };
+    const html = buildOwnerEmail(noEmail, OWNER).html;
+    expect(html).not.toContain('이메일');
+    expect(html).toContain('010-1234-5678');
+    expect(buildOwnerEmail(order, OWNER).html).toContain('buyer@example.com');
+  });
+
+  it('운영자 알림에 수령 방법을 적고, 대면 전달이면 주소 줄을 뺀다', () => {
+    expect(buildOwnerEmail(order, OWNER).html).toContain('택배');
+    const pickup = buildOwnerEmail({ ...order, delivery_method: 'pickup', address: '', zipcode: null }, OWNER).html;
+    expect(pickup).toContain('대면 전달');
+    expect(pickup).not.toContain('>주소<');
+  });
+
   it('받는 사람과 제목', () => {
     expect(buildBuyerEmail(order)).toMatchObject({ to: 'buyer@example.com', subject: '[phorage] 주문 접수 확인 — #12' });
     expect(buildShippingEmail(order, { carrier: null, trackingNumber: '1' })).toMatchObject({
@@ -57,7 +81,7 @@ describe('order-email', () => {
   });
 
   it('옵션을 고른 줄은 옵션 이름을 같이 적고(이스케이프), 옛 주문은 이름만', () => {
-    const withOption: EmailOrder = {
+    const withOption: EmailableOrder = {
       ...order,
       items: [
         { id: 3, name: '숲 포스터', option_id: 'a3', option_label: 'A3 <매트지>', price: 38000, quantity: 1 },
@@ -72,7 +96,7 @@ describe('order-email', () => {
   });
 
   it('추가 상품 줄은 "상품 · 추가: 이름"으로 적고(이스케이프), 키가 없는 옛 줄은 그대로', () => {
-    const withAddon: EmailOrder = {
+    const withAddon: EmailableOrder = {
       ...order,
       items: [
         { id: 9, name: '2027 Calendar', option_id: null, option_label: null, price: 18000, quantity: 1 },

@@ -22,6 +22,12 @@ interface Props {
   priceMin: number;
   priceMax: number;
   soldOut: boolean;
+  /**
+   * 지금 살 수 있는 상품이 이것 하나뿐이다. 장바구니는 여러 상품을 모으는
+   * 자리라 이때는 거쳐 갈 이유가 없다 — 버튼이 "바로 주문하기"가 되어 고른
+   * 줄만으로 주문서로 간다. "장바구니 보기"와 추가 상품만 담기도 숨긴다.
+   */
+  directOrder?: boolean;
 }
 
 /**
@@ -45,7 +51,7 @@ interface Props {
  * 이 상품이 이미 장바구니에 있으면 고른 추가 상품**만** 담는 길이 하나 더 생긴다
  * (`AddAddonsOnly`). 장바구니에 없을 때는 아무것도 달라지지 않는다.
  */
-export default function ProductPurchase({ product, options, addons, priceMin, priceMax, soldOut }: Props) {
+export default function ProductPurchase({ product, options, addons, priceMin, priceMax, soldOut, directOrder = false }: Props) {
   const hasOptions = options.length > 0;
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     options.length === 1 && isOptionAvailable(options[0]) ? options[0].id : null,
@@ -191,10 +197,10 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
           </ul>
           <p aria-live="polite" className="pt-2 text-[13px] text-muted-foreground">
             {extras.length === 0
-              ? '수량을 정하면 이 상품과 함께 담깁니다.'
+              ? `수량을 정하면 이 상품과 함께 ${directOrder ? '주문됩니다' : '담깁니다'}.`
               : line
               ? `추가 상품을 더해 ${formatPrice(line.price + extrasTotal)}`
-              : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 담깁니다.`}
+              : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 ${directOrder ? '주문됩니다' : '담깁니다'}.`}
           </p>
         </fieldset>
       )}
@@ -205,11 +211,12 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         describedBy={hasOptions ? hintId : undefined}
         extras={extras}
         onAdded={() => setAddonQuantity({})}
+        directOrder={directOrder}
       />
 
       {/* 이 상품이 이미 장바구니에 있고 추가 상품을 골랐을 때만 나타난다. 주 버튼
           아래라 나타나도 주 버튼은 움직이지 않는다. 옵션을 고르지 않았어도 된다. */}
-      {showAddons && (
+      {showAddons && !directOrder && (
         <AddAddonsOnly
           productId={product.id}
           productName={product.name}
@@ -218,9 +225,10 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         />
       )}
 
-      {/* 담을 수 없는 상품에서 "장바구니 보기"는 갈 이유가 없는 길이다. */}
+      {/* 담을 수 없는 상품에서, 그리고 장바구니를 건너뛰는 상품에서 "장바구니
+          보기"는 갈 이유가 없는 길이다. */}
       <div className="flex items-center gap-5 pt-1">
-        {!soldOut && (
+        {!soldOut && !directOrder && (
           <Link href="/cart" className="link-underline text-sm text-slate">
             장바구니 보기 →
           </Link>

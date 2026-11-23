@@ -4,6 +4,7 @@ import {
   cloudinaryOgImage,
   cloudinaryPlaceholder,
   isRenderableImageUrl,
+  mayHaveAlpha,
   publicIdFromUrl,
   withWatermark,
   DEFAULT_ASPECT,
@@ -127,6 +128,20 @@ describe('cloudinaryOgImage()', () => {
 
   it('Cloudinary가 아니면 null', () => {
     expect(cloudinaryOgImage('/local.jpg')).toBeNull();
+  });
+});
+
+describe('mayHaveAlpha()', () => {
+  it('treats formats that can carry transparency as possible cutouts', () => {
+    expect(mayHaveAlpha(`https://res.cloudinary.com/${CLOUD}/image/upload/v1/phorage/shop/a.png`)).toBe(true);
+    expect(mayHaveAlpha(`https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto/v1/a.PNG`)).toBe(true);
+    expect(mayHaveAlpha(`https://res.cloudinary.com/${CLOUD}/image/upload/v1/a.webp`)).toBe(true);
+  });
+
+  it('leaves photos and unparseable values framed', () => {
+    expect(mayHaveAlpha(real)).toBe(false);
+    expect(mayHaveAlpha('https://images.unsplash.com/photo-123?fm=png')).toBe(false);
+    expect(mayHaveAlpha('/relative/a.png')).toBe(false);
   });
 });
 

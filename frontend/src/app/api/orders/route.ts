@@ -3,11 +3,12 @@ import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, configuredBankInfo, sendEmails, type EmailMessage } from '@/lib/order-email';
+import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, configuredBankInfo, hasBuyerEmail, sendEmails, type EmailMessage } from '@/lib/order-email';
 import { emailSentPatch, recordEmailSent, type OrderEmailKind } from '@/lib/order-email-status';
-import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
+import { isMissingColumnError, isNotNullViolation, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
 import { orderPlacedBody } from '@/lib/order-placed';
+import { noteWithPickupTag, type DeliveryMethod } from '@/lib/delivery';
 
 /**
  * 주문 한 건은 메일 두 통(손님·운영자)을 부른다. 이 엔드포인트는 로그인 없이
@@ -15,9 +16,11 @@ import { orderPlacedBody } from '@/lib/order-placed';
  * 만드는 것"에 대한 방어다. 세 겹이다.
  *
  *  - IP: 한 곳에서 몰아치는 것.
- *  - 받는 사람(소문자 이메일): IP를 바꿔 가며 한 사람에게 메일을 쏟는 것.
- *    이건 주문을 받기 **전에** 막는다 — 메일만 빼고 주문을 받으면 가짜 주문이
- *    관리 화면에 쌓인다.
+ *  - 손님 연락처(전화번호의 숫자): IP를 바꿔 가며 한 사람 이름으로 주문을
+ *    쏟는 것. 이건 주문을 받기 **전에** 막는다 — 가짜 주문이 관리 화면에
+ *    쌓인다. 체크아웃이 이메일을 받지 않게 된 뒤로 이메일 대신 이것을 센다.
+ *    (이메일 칸이 있던 탭에서 온 주문은 손님 메일이 나가지만, 전체 한도가
+ *    받친다.)
  *  - 전체: 누가 주소 목록을 돌리는 것. 손님 메일만 멈추고 주문은 받는다 —
  *    진짜 손님의 주문을 놓치는 것이 더 나쁘고, 입금 안내는 관리 화면에서 다시
  *    보낼 수 있다(`api/admin/orders/email`). 발신 도메인 평판은 한 번 떨어지면
@@ -26,7 +29,7 @@ import { orderPlacedBody } from '@/lib/order-placed';
  * 전부 `rateLimitShared` — in-memory 카운터는 서버리스에서 "인스턴스당"이다.
  */
 const PER_IP = { limit: 10, windowMs: 10 * 60 * 1000 };
-const PER_RECIPIENT = { limit: 3, windowMs: 60 * 60 * 1000 };
+const PER_CONTACT = { limit: 3, windowMs: 60 * 60 * 1000 };
 const BUYER_EMAIL_GLOBAL = { limit: 30, windowMs: 60 * 60 * 1000 };
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -76,6 +79,9 @@ export async function POST(request: Request) {
     );
   }
   const { name, email, phone, zipcode, address, note, items, website, idempotency_key } = parsed.data;
+  // 옛 탭은 수령 방법 없이 온다 — 그때까지는 전부 택배였다.
+  const deliveryMethod: DeliveryMethod = parsed.data.delivery_method ?? 'parcel';
+  const pickup = deliveryMethod === 'pickup';
 
   // 허니팟이 채워져 왔다: 봇. 성공처럼 보이게 답하되 아무것도 남기지 않는다 —
   // 오류로 답하면 봇이 무엇이 걸렸는지 배운다.
@@ -102,10 +108,13 @@ export async function POST(request: Request) {
   const existing = await findOrderByIdempotencyKey(supabase, idempotencyKey);
   if (existing) return replayResponse(existing);
 
-  const recipient = await rateLimitShared(`orders:to:${email.trim().toLowerCase()}`, PER_RECIPIENT);
-  if (!recipient.ok) {
+  // 이메일은 이메일 칸이 있던 옛 탭에서만 온다(`orders-schema.ts`).
+  const buyerEmail = email?.trim() || null;
+  const contactKey = phone.replace(/\D/g, '') || phone.toLowerCase();
+  const contact = await rateLimitShared(`orders:contact:${contactKey}`, PER_CONTACT);
+  if (!contact.ok) {
     return NextResponse.json(
-      { error: '같은 이메일로 주문이 너무 잦습니다. 잠시 후 다시 시도해주세요.' },
+      { error: '같은 연락처로 주문이 너무 잦습니다. 잠시 후 다시 시도해주세요.' },
       { status: 429 },
     );
   }
@@ -150,24 +159,57 @@ export async function POST(request: Request) {
   }
   const { items: resolved, total: total_price } = resolution;
 
-  const row = {
+  // 대면 전달은 주소를 받지 않는다. `orders.address`는 NOT NULL이라 빈 문자열이다.
+  const row: {
+    name: string;
+    email: string | null;
+    phone: string;
+    zipcode: string | null;
+    address: string;
+    note: string | null;
+    items: typeof resolved;
+    total_price: number;
+    delivery_method?: DeliveryMethod;
+  } = {
     name,
-    email,
-    phone: phone || null,
-    zipcode: zipcode || null,
-    address,
+    email: buyerEmail,
+    phone,
+    zipcode: pickup ? null : zipcode || null,
+    address: pickup ? '' : address,
     note: note || null,
     items: resolved,
     total_price,
+    delivery_method: deliveryMethod,
   };
   // `idempotency_key`는 `20260927000000_orders_idempotency` 이후 컬럼이다. 없으면
   // 키 없이 넣는다 — 중복 방지만 꺼질 뿐 주문은 받는다.
-  const keyedRow: typeof row & { idempotency_key?: string } = idempotencyKey ? { ...row, idempotency_key: idempotencyKey } : row;
-  const { data: order, error: dbError } = await withColumnFallback(
-    'orders.insert',
-    () => supabase.from('orders').insert(keyedRow).select('id').single(),
-    () => supabase.from('orders').insert(row).select('id').single(),
-  );
+  const insertKeyed = (values: typeof row) => {
+    const keyed: typeof row & { idempotency_key?: string } = idempotencyKey ? { ...values, idempotency_key: idempotencyKey } : values;
+    return withColumnFallback(
+      'orders.insert',
+      () => supabase.from('orders').insert(keyed).select('id').single(),
+      () => supabase.from('orders').insert(values).select('id').single(),
+    );
+  };
+  // `delivery_method`는 `20261123010000_orders_delivery_method` 이후 컬럼이다. 없으면
+  // 컬럼 없이 넣되, 대면 전달은 메모 앞의 표시로 남긴다(`lib/delivery.ts`) —
+  // 주문을 막지도, 수령 방법을 잃지도 않는다.
+  const insertOrder = (values: typeof row) => {
+    const { delivery_method, ...legacy } = values;
+    return withColumnFallback(
+      'orders.insert.delivery_method',
+      () => insertKeyed(values),
+      () => insertKeyed(delivery_method === 'pickup' ? { ...legacy, note: noteWithPickupTag(legacy.note) } : legacy),
+    );
+  };
+  let { data: order, error: dbError } = await insertOrder(row);
+  // `orders.email`이 아직 NOT NULL이다(`20261123000000_orders_email_optional.sql`
+  // 적용 전). 이메일 없는 주문은 빈 문자열로 다시 넣는다 — 읽는 쪽은 null과
+  // ''를 똑같이 "이메일 없음"으로 본다(`hasBuyerEmail`).
+  if (dbError && row.email === null && isNotNullViolation(dbError)) {
+    log.warn('orders.email_not_null', { hint: 'apply 20261123000000_orders_email_optional.sql' });
+    ({ data: order, error: dbError } = await insertOrder({ ...row, email: '' }));
+  }
 
   // 같은 키의 요청이 동시에 들어와 둘 다 위의 조회를 통과했다. 늦은 쪽이 유니크
   // 인덱스에 막힌 것이니, 먼저 들어간 주문으로 답한다.
@@ -176,7 +218,7 @@ export async function POST(request: Request) {
     if (winner) return replayResponse(winner);
   }
 
-  if (dbError) {
+  if (dbError || !order) {
     log.error('orders.insert', dbError);
     return NextResponse.json({ error: '주문을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
@@ -187,10 +229,11 @@ export async function POST(request: Request) {
   const emailOrder = {
     id: orderId,
     name,
-    email,
-    phone: phone || null,
-    zipcode: zipcode || null,
-    address,
+    email: buyerEmail,
+    phone,
+    zipcode: row.zipcode,
+    address: row.address,
+    delivery_method: deliveryMethod,
     note: note || null,
     items: resolved,
     total_price,
@@ -208,13 +251,17 @@ export async function POST(request: Request) {
   after(async () => {
     // 이 콜백에서 나가는 예외는 받을 곳이 없다. 기록은 부가 기능이다.
     try {
-      const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
-      if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
       const kinds: OrderEmailKind[] = [];
       const messages: EmailMessage[] = [];
-      if (buyerQuota.ok) {
-        kinds.push('buyer');
-        messages.push(buildBuyerEmail(emailOrder));
+      // 손님 메일은 이메일이 있는 주문(옛 탭)에만. 없으면 손님에게는 완료 화면의
+      // 계좌 안내가 전부이고, 운영자가 전화로 연락한다.
+      if (hasBuyerEmail(emailOrder)) {
+        const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
+        if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
+        else {
+          kinds.push('buyer');
+          messages.push(buildBuyerEmail(emailOrder));
+        }
       }
       // 운영자 주소가 없으면 알림을 건너뛴다(`OWNER_EMAIL`의 주석). 주문은 이미
       // 저장됐고 관리 화면에 보이지만, 알림이 안 간다는 사실은 로그에 남긴다.

@@ -40,7 +40,6 @@ export interface PlacedOrder {
   total: number;
   /** 설정되지 않았으면 `null` — 화면은 메일을 보라고 안내한다. */
   bankInfo: string | null;
-  email: string;
 }
 
 const isAmount = (value: unknown): value is number =>
@@ -56,13 +55,12 @@ const bankInfoOf = (value: unknown): string | null =>
  * 성공 응답에서 요약을 만든다. 본문이 깨졌거나 필드가 빠져도 주문은 이미
  * 들어갔으므로 던지지 않는다: 금액은 장바구니 합계로, 나머지는 `null`로 물러난다.
  */
-export function placedOrderFromResponse(body: unknown, fallback: { email: string; cartTotal: number }): PlacedOrder {
+export function placedOrderFromResponse(body: unknown, fallback: { cartTotal: number }): PlacedOrder {
   const data = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   return {
     orderId: isOrderId(data.orderId) ? data.orderId : null,
     total: isAmount(data.total_price) ? data.total_price : fallback.cartTotal,
     bankInfo: bankInfoOf(data.bank_info),
-    email: fallback.email,
   };
 }
 
@@ -78,13 +76,13 @@ export function parsePlacedOrder(raw: string | null | undefined): PlacedOrder | 
     return null;
   }
   if (!data || typeof data !== 'object') return null;
-  const { orderId, total, bankInfo, email } = data as Record<string, unknown>;
-  if (!isAmount(total) || typeof email !== 'string' || !email) return null;
+  // 이메일 칸이 있던 시절에 저장된 요약에는 `email`도 있다 — 읽지 않고 버린다.
+  const { orderId, total, bankInfo } = data as Record<string, unknown>;
+  if (!isAmount(total)) return null;
   return {
     orderId: isOrderId(orderId) ? orderId : null,
     total,
     bankInfo: bankInfoOf(bankInfo),
-    email,
   };
 }
 
@@ -111,12 +109,11 @@ export function readPlacedOrder(store: ReadStore | null = sessionStore()): Place
 }
 
 export function writePlacedOrder(order: PlacedOrder, store: WriteStore | null = sessionStore()): void {
-  // 필드를 하나씩 옮겨 적는다 — 호출하는 쪽이 더 넓은 객체를 넘겨도 네 값만 남는다.
+  // 필드를 하나씩 옮겨 적는다 — 호출하는 쪽이 더 넓은 객체를 넘겨도 세 값만 남는다.
   const summary: PlacedOrder = {
     orderId: order.orderId,
     total: order.total,
     bankInfo: order.bankInfo,
-    email: order.email,
   };
   try {
     store?.setItem(PLACED_ORDER_KEY, JSON.stringify(summary));

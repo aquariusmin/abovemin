@@ -159,7 +159,7 @@ export default function MetadataFill({ onPlacesAdded }: { onPlacesAdded: () => v
             aria-valuenow={done}
             className="h-2 overflow-hidden rounded-full bg-muted"
           >
-            <div className="h-full rounded-full bg-forest transition-[width] duration-500" style={{ width: `${percent}%` }} />
+            <div className="h-full w-full origin-left rounded-full bg-forest transition-transform duration-500" style={{ transform: `scaleX(${percent / 100})` }} />
           </div>
           {(running || session.processed > 0) && (
             <p className="text-[13px] text-slate">
