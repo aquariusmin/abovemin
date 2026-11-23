@@ -34,7 +34,7 @@ export default function CheckoutPage() {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   // 방금 낸 주문에서만 안다(장바구니 합계는 저장하지 않는다). 새로고침 뒤에는 꺼진다.
   const [priceChanged, setPriceChanged] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', zipcode: '', address: '', addressDetail: '', note: '', website: '' });
+  const [form, setForm] = useState({ name: '', phone: '', zipcode: '', address: '', addressDetail: '', note: '', website: '' });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
   // 주문 시도 하나에 키 하나. 실패 후 다시 누르거나 응답이 끊겨 다시 보내도 같은
@@ -73,7 +73,6 @@ export default function CheckoutPage() {
     if (!form.name.trim()) e.name = '이름을 입력해주세요';
     if (!form.phone.trim()) e.phone = '연락처를 입력해주세요';
     else if (form.phone.replace(/\D/g, '').length < 9) e.phone = '연락처를 확인해주세요';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = '올바른 이메일을 입력해주세요';
     if (!form.address.trim()) e.address = '주소를 입력해주세요';
     return e;
   }
@@ -107,8 +106,8 @@ export default function CheckoutPage() {
     // 서버가 `products.addons`에서 읽는다.
     const payload: OrderInputValues = {
       name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
+      // 이메일은 받지 않는다 — 연락은 전화로 한다(`orders-schema.ts`).
+      phone: form.phone.trim(),
       zipcode: form.zipcode.trim() || null,
       // 기본 주소(검색 결과)와 상세 주소(동·호수)는 칸만 나뉘고 저장은 한 줄이다.
       address: [form.address.trim(), form.addressDetail.trim()].filter(Boolean).join(' '),
@@ -153,7 +152,7 @@ export default function CheckoutPage() {
 
       const cartTotal = totalPrice();
       const body: unknown = await res.json().catch(() => null);
-      const order = placedOrderFromResponse(body, { email: payload.email, cartTotal });
+      const order = placedOrderFromResponse(body, { cartTotal });
       writePlacedOrder(order);
       setPriceChanged(order.total !== cartTotal);
       setPlaced(order);
@@ -186,10 +185,10 @@ export default function CheckoutPage() {
         <p className="eyebrow text-muted-foreground mb-4">Order Placed</p>
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink mb-4">주문을 받았습니다.</h1>
         <p className="text-[15px] text-ink-body mb-8 break-keep">
-          <span className="text-accent font-medium">{placed.email}</span>으로 확인 메일을 보냈습니다.
+          아래 계좌로 입금해 주세요. 확인되면 적어 주신 연락처로 알려 드립니다.
         </p>
 
-        {/* 메일이 오지 않아도 이 화면만으로 입금할 수 있어야 한다: 번호, 금액, 계좌. */}
+        {/* 메일을 보내지 않으므로 손님이 받는 안내는 이 화면이 전부다: 번호, 금액, 계좌. */}
         <dl className="w-full max-w-sm rounded-lg surface-cream p-6 space-y-4 text-left">
           {placed.orderId !== null && (
             <div className="flex items-baseline justify-between gap-4">
@@ -206,7 +205,7 @@ export default function CheckoutPage() {
             {placed.bankInfo ? (
               <dd className="mt-1 text-[15px] font-semibold text-ink">{placed.bankInfo}</dd>
             ) : (
-              <dd className="mt-1 text-sm text-ink-body">확인 메일에 적어 보냅니다.</dd>
+              <dd className="mt-1 text-sm text-ink-body">적어 주신 연락처로 알려 드립니다.</dd>
             )}
           </div>
         </dl>
@@ -216,7 +215,7 @@ export default function CheckoutPage() {
           </p>
         )}
         <p className="mt-6 mb-10 max-w-sm text-[13px] text-slate leading-relaxed">
-          메일이 오지 않거나 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
+          이 화면을 저장해 두세요. 문제가 있으면{placed.orderId !== null && ' 주문번호와 함께'}{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="link-leaf">{CONTACT_EMAIL}</a>으로 알려 주세요.
         </p>
         {/* 이 화면을 스스로 떠날 때 요약을 지운다. 지우지 않으면 빈 장바구니로
@@ -286,24 +285,6 @@ export default function CheckoutPage() {
                 aria-describedby={errors.phone ? 'phone-error' : undefined}
               />
               {errors.phone && <p id="phone-error" className={errorClass}>{errors.phone}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="email" className={labelClass}>이메일 *</label>
-              <input
-                id="email"
-                className={inputClass}
-                type="email"
-                value={form.email}
-                onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: undefined })); }}
-                placeholder="hello@phorage.com"
-                autoComplete="email"
-                required
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error email-hint' : 'email-hint'}
-              />
-              {errors.email && <p id="email-error" className={errorClass}>{errors.email}</p>}
-              <p id="email-hint" className="mt-1.5 text-xs text-slate">입금 안내와 송장번호를 이 주소로 보냅니다.</p>
             </div>
 
             {/* 주소: 우편번호 + 기본 주소는 "주소 찾기"(카카오 우편번호)가 채우고,
@@ -465,7 +446,7 @@ export default function CheckoutPage() {
               </div>
               <p className="text-xs text-slate leading-relaxed">
                 * 현재는 계좌이체로 주문을 받고 있습니다.<br />
-                주문하면 입금 안내를 메일로 보냅니다.
+                주문하면 입금 계좌가 바로 화면에 나옵니다.
               </p>
             </div>
           </div>

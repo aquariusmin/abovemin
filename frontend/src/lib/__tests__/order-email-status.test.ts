@@ -223,3 +223,12 @@ describe('"메일 미발송" 표시 — 옛 주문은 절대 표시하지 않는
     expect(emailTrackingStart([{ created_at: NOW, buyer_email_sent_at: 'garbage' }])).toBeNull();
   });
 });
+
+describe('isBuyerEmailMissing — 이메일 없이 받은 주문', () => {
+  it('보낼 곳이 없으니 미발송으로 표시하지 않는다', () => {
+    const base = { created_at: '2026-11-23T00:00:00Z', buyer_email_sent_at: null, owner_email_sent_at: '2026-11-23T00:00:01Z' };
+    expect(isBuyerEmailMissing({ ...base, email: 'a@b.co' }, null)).toBe(true);
+    expect(isBuyerEmailMissing({ ...base, email: null }, null)).toBe(false);
+    expect(isBuyerEmailMissing({ ...base, email: '' }, null)).toBe(false);
+  });
+});

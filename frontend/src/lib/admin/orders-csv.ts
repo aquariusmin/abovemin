@@ -22,7 +22,8 @@ export interface CsvOrder {
   created_at: string;
   status: string;
   name: string;
-  email: string;
+  /** 이메일 없이 받은 주문은 null(또는 ''). */
+  email: string | null;
   phone: string | null;
   zipcode: string | null;
   address: string;

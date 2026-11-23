@@ -11,7 +11,6 @@ import { OrderInput, isHoneypotFilled, type OrderInputValues } from '@/lib/order
 describe('OrderInput', () => {
   const valid: OrderInputValues = {
     name: '홍길동',
-    email: 'hong@example.com',
     phone: '010-0000-0000',
     zipcode: '04524',
     address: '서울시 중구 세종대로 110',
@@ -23,16 +22,28 @@ describe('OrderInput', () => {
     const parsed = OrderInput.parse(valid);
     // 키 단위로 확인한다. `toMatchObject`는 사라진 키를 못 잡는다.
     expect(Object.keys(parsed).sort()).toEqual(
-      ['address', 'email', 'items', 'name', 'note', 'phone', 'zipcode'].sort(),
+      ['address', 'items', 'name', 'note', 'phone', 'zipcode'].sort(),
     );
     expect(parsed.zipcode).toBe('04524');
   });
 
   it('선택 필드는 비워도 통과한다', () => {
-    const { phone, zipcode, note, ...required } = valid;
-    void phone; void zipcode; void note;
+    const { zipcode, note, ...required } = valid;
+    void zipcode; void note;
     expect(OrderInput.safeParse(required).success).toBe(true);
-    expect(OrderInput.safeParse({ ...valid, phone: null, zipcode: null, note: null }).success).toBe(true);
+    expect(OrderInput.safeParse({ ...valid, zipcode: null, note: null, email: null }).success).toBe(true);
+  });
+
+  it('연락처는 필수다 — 이메일을 받지 않으므로 손님에게 닿는 유일한 길이다', () => {
+    const { phone, ...rest } = valid;
+    void phone;
+    expect(OrderInput.safeParse(rest).success).toBe(false);
+    expect(OrderInput.safeParse({ ...valid, phone: null }).success).toBe(false);
+    expect(OrderInput.safeParse({ ...valid, phone: '   ' }).success).toBe(false);
+  });
+
+  it('이메일 칸이 있던 옛 탭의 이메일도 받는다', () => {
+    expect(OrderInput.parse({ ...valid, email: 'hong@example.com' }).email).toBe('hong@example.com');
   });
 
   it('장바구니 항목의 나머지 필드는 서버로 넘어가지 않는다', () => {
@@ -58,7 +69,7 @@ describe('OrderInput', () => {
 describe('OrderInput — 옵션', () => {
   const base: OrderInputValues = {
     name: '홍길동',
-    email: 'hong@example.com',
+    phone: '010-0000-0000',
     address: '서울시 중구 세종대로 110',
     items: [{ id: 3, option_id: 'a3-matte', quantity: 1 }],
   };
@@ -90,7 +101,7 @@ describe('OrderInput — 옵션', () => {
 describe('OrderInput — 추가 상품', () => {
   const base: OrderInputValues = {
     name: '홍길동',
-    email: 'hong@example.com',
+    phone: '010-0000-0000',
     address: '서울시 중구 세종대로 110',
     items: [
       { id: 9, option_id: null, quantity: 1 },
@@ -141,7 +152,7 @@ describe('OrderInput — 추가 상품', () => {
 describe('허니팟', () => {
   const base: OrderInputValues = {
     name: '홍길동',
-    email: 'hong@example.com',
+    phone: '010-0000-0000',
     address: '서울시 중구 세종대로 110',
     items: [{ id: 3, quantity: 1 }],
   };
@@ -164,7 +175,7 @@ describe('허니팟', () => {
 describe('멱등 키', () => {
   const base: OrderInputValues = {
     name: '홍길동',
-    email: 'hong@example.com',
+    phone: '010-0000-0000',
     address: '서울시 중구 세종대로 110',
     items: [{ id: 3, quantity: 1 }],
   };

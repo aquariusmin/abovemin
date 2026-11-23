@@ -39,7 +39,8 @@ interface Order {
   id: number;
   created_at: string;
   name: string;
-  email: string;
+  /** 체크아웃이 이메일을 받지 않게 된 뒤의 주문은 null(또는 ''). 메일 기능이 꺼진다. */
+  email: string | null;
   phone: string | null;
   zipcode: string | null;
   address: string;
@@ -127,7 +128,7 @@ export default function OrdersTab() {
   const filtered = orders.filter(order => {
     if (filter !== 'all' && order.status !== filter) return false;
     if (!needle) return true;
-    return [String(order.id), order.name, order.email, order.phone ?? '', order.tracking_number ?? '']
+    return [String(order.id), order.name, order.email ?? '', order.phone ?? '', order.tracking_number ?? '']
       .some(value => value.toLowerCase().includes(needle));
   });
   // 옛 주문의 null은 "모름"이다 — 기록이 시작된 뒤의 주문만 미발송으로 본다.
@@ -355,7 +356,8 @@ function OrderCard({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-ink">{order.name}</span>
-          <span className="block truncate text-[12px] text-slate">{order.email}</span>
+          {/* 이메일이 없는 주문(지금 체크아웃)은 연락처를 보인다. */}
+          <span className="block truncate text-[12px] text-slate">{order.email || order.phone || '-'}</span>
         </span>
         {order.tracking_number && (
           <span className="hidden truncate font-mono text-[12px] text-slate md:block">
@@ -445,7 +447,7 @@ function OrderCard({
                   {busy === 'status' ? '처리 중…' : `→ ${next.label}`}
                 </button>
               )}
-              {next?.status === 'shipped' && (
+              {next?.status === 'shipped' && order.email && (
                 <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] text-slate">
                   <input type="checkbox" className={CHECKBOX_CLASS} checked={notify} onChange={e => setNotify(e.target.checked)} />
                   송장번호가 있으면 배송 안내 메일 보내기
@@ -457,6 +459,8 @@ function OrderCard({
                 </button>
               )}
             </div>
+            {/* 이메일이 없는 주문에는 보낼 곳이 없다. 안내는 연락처로 한다. */}
+            {order.email ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="label-ko mr-1 text-muted-foreground">안내 메일 다시 보내기</span>
               <button type="button" onClick={() => void resend('confirmation')} disabled={busy !== null} className={`btn-outline ${BTN_SM}`}>
@@ -472,6 +476,9 @@ function OrderCard({
                 배송 안내
               </button>
             </div>
+            ) : (
+              <p className="text-[13px] text-slate">이메일 없이 받은 주문입니다. 입금 확인과 송장번호는 연락처로 알려 주세요.</p>
+            )}
             <StatusLine message={message} />
           </div>
         </div>

@@ -20,9 +20,10 @@ paths:
 - **가격은 서버가 다시 계산한다.** 요청 본문에 가격 필드가 없고(`orders-schema.ts` — 줄마다 상품 id, 옵션 id 또는 추가 상품 id, 수량뿐이다), `resolveOrderItems`(`lib/order-items.ts`)가 DB의 상품·옵션·추가 상품에서 금액을 만든다. 클라이언트가 보낸 금액을 믿는 경로를 만들지 않는다.
 - **추가 상품 줄은 혼자 주문되지 않는다.** 같은 주문에 부모 상품의 줄이 있고, 부모가 살 수 있는 상태이고, 추가 상품이 `products.addons`에 재고와 가격을 가지고 있을 때만 받는다. 이 판단도 `resolveOrderItems`가 DB 값으로 한다 — 장바구니가 부모 없는 추가 상품 줄을 지우는 것은 편의이지 방어가 아니다.
 - **중복 제출은 `idempotency_key`로 한 건이 된다.** 조회 → insert → 유니크 위반이면 다시 조회. 이 순서를 바꾸지 않는다.
-- **제한은 셋이다**: IP당, 수신 이메일당, 구매자 메일 전체. 전부 `rateLimitShared` — 인메모리 `rateLimit`은 서버리스에서 인스턴스마다 따로 센다.
+- **제한은 셋이다**: IP당, 손님 연락처(전화번호 숫자)당, 구매자 메일 전체. 전부 `rateLimitShared` — 인메모리 `rateLimit`은 서버리스에서 인스턴스마다 따로 센다.
 - **허니팟**(`website` 필드, `isHoneypotFilled`)을 지우지 않는다.
 - 판매 가능 여부는 `lib/product.ts`의 `productStatus`/`isAvailable`로만 판단한다. `in_stock`·`image_url`·`price`는 호환용 컬럼이고 서버가 맞춘다.
+- **체크아웃은 이메일을 받지 않는다**(연락처 필수). 손님 메일은 `hasBuyerEmail`인 주문(이메일 칸이 있던 시절의 주문)에만 나간다. `orders.email`은 null이거나, NOT NULL을 푸는 마이그레이션 전에는 ''일 수 있다.
 - 주문 메일(`lib/order-email.ts`)은 사용자 입력을 `escapeHtml`로 거른다. 계좌 정보는 `BANK_INFO` 환경변수에서만 온다 — 코드에 적지 않는다.
 
 ## 확인할 때

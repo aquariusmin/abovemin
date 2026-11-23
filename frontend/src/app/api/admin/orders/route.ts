@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 import { isMissingColumnError } from '@/lib/db-compat';
 import { OrderUpdate } from '@/lib/admin/schemas';
-import { buildShippingEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
+import { buildShippingEmail, hasBuyerEmail, sendEmailsOrThrow, type EmailOrder } from '@/lib/order-email';
 import {
   adminDb,
   dbErrorResponse,
@@ -82,10 +82,13 @@ export async function PATCH(request: Request) {
   if (!order) return jsonError('주문을 찾을 수 없습니다.', 404);
 
   let email: 'sent' | 'failed' | 'skipped' = 'skipped';
-  if (becameShipped && notify !== false && order.tracking_number) {
+  // 이메일이 없는 주문(체크아웃이 이메일을 받지 않게 된 뒤)은 'skipped' —
+  // 송장번호는 운영자가 연락처로 알린다.
+  const target = order as EmailOrder;
+  if (becameShipped && notify !== false && order.tracking_number && hasBuyerEmail(target)) {
     try {
       await sendEmailsOrThrow([
-        buildShippingEmail(order as EmailOrder, {
+        buildShippingEmail(target, {
           carrier: order.tracking_carrier ?? null,
           trackingNumber: order.tracking_number,
         }),
