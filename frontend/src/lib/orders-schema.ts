@@ -39,12 +39,6 @@ export const OrderItemInput = z
 
 export const OrderInput = z.object({
   name: z.string().min(1).max(100),
-  /**
-   * 체크아웃은 이메일을 받지 않는다 — 연락은 전화로 한다. 이메일 칸이 있던
-   * 시절의 탭이 아직 열려 있을 수 있어 키 자체는 받는다. 오면 입금 안내 메일을
-   * 보낸다(`api/orders`).
-   */
-  email: z.string().email().max(200).optional().nullable(),
   /** 손님에게 닿는 유일한 길이라 필수다. 공백만 있는 값은 빈 값으로 본다. */
   phone: z.string().trim().min(1).max(40),
   zipcode: z.string().max(20).optional().nullable(),

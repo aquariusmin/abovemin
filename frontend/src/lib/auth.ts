@@ -1,17 +1,13 @@
 import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
-import { exists, kvEnabled, setWithTtl } from './kv';
 import { log } from './logger';
+import { getSupabaseAdmin } from './supabase-admin';
+import { isRevoked, recordRevocation, type RevocationDb } from './admin/session-revocation';
 
-// 관리자 세션 관리.
-//
-// 토큰 구조: `${nonce}:${issuedAt}:${expires}:${sig}`
-// - 로그아웃 시 해당 nonce를 revoke set에 추가해 재사용 차단
-//
-// revoke set은 in-memory가 기본이라 서버리스 인스턴스 간 공유되지 않는다.
-// Upstash가 설정돼 있으면(`lib/kv`) 그쪽에도 같이 적어, 로그아웃이 인스턴스를
-// 넘어 효력을 갖는다. 설정이 없으면 예전과 똑같이 동작한다.
+// 관리자 세션. 토큰: `${nonce}:${issuedAt}:${expires}:${sig}`.
+// 로그아웃한 nonce는 이 인스턴스의 메모리와 Supabase(`session-revocation.ts`)에
+// 함께 남겨, 다른 인스턴스에서도 다시 쓰이지 않게 한다.
 
 const SECRET_RAW = process.env.ADMIN_SESSION_SECRET;
 const LEGACY_SECRET = process.env.ADMIN_PASSWORD;
@@ -85,36 +81,32 @@ export function passwordMatches(input: string, expected: string | undefined): bo
   return timingSafeEqual(a, b);
 }
 
-export function revoke(token: string): void {
+function revocationDb(): RevocationDb | null {
+  try {
+    return getSupabaseAdmin() as unknown as RevocationDb;
+  } catch {
+    return null;
+  }
+}
+
+export async function revoke(token: string): Promise<void> {
   const parts = token.split(':');
   if (parts.length !== 4) return;
   const [nonce, , expiresStr] = parts;
   revokedNonces.add(nonce);
-
-  // 공유 저장소에도 남긴다. 토큰이 어차피 만료되는 시점까지만 보관하면
-  // 되므로 TTL을 남은 수명으로 잡는다 — 지워진 세션 목록이 무한히 자라지
-  // 않는다. 실패해도 기다리지 않는다: 로그아웃은 로컬에서 이미 끝났고,
-  // 이건 그것을 넓히는 시도일 뿐이다.
-  const remainingSec = Math.ceil((Number(expiresStr) - Date.now()) / 1000);
-  if (kvEnabled && Number.isFinite(remainingSec) && remainingSec > 0) {
-    void setWithTtl(`revoked:${nonce}`, '1', remainingSec);
-  }
+  const expires = Number(expiresStr);
+  const db = revocationDb();
+  if (db && Number.isFinite(expires) && expires > Date.now()) await recordRevocation(db, nonce, expires);
 }
 
 export async function isAdminRequest(): Promise<boolean> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
 
-  // 서명·만료·로컬 revoke를 먼저 본다. 대부분의 요청이 여기서 끝나므로
-  // 네트워크를 타지 않는다.
   if (!verifySession(token)) return false;
-  if (!kvEnabled) return true;
-
-  // 다른 인스턴스에서 로그아웃된 세션인지 확인한다. 저장소가 대답하지
-  // 못하면(`null`) 통과시킨다 — 저장소 장애로 관리자가 잠기는 것이
-  // 이 위협 모델에서 더 나쁜 결과다.
-  const nonce = token!.split(':')[0];
-  return (await exists(`revoked:${nonce}`)) !== true;
+  const db = revocationDb();
+  if (!db) return false;
+  return !(await isRevoked(db, token!.split(':')[0]));
 }
 
 // CSRF: 상태 변경 요청은 동일 origin에서 왔는지 확인.

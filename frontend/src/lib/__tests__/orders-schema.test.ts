@@ -31,7 +31,7 @@ describe('OrderInput', () => {
     const { zipcode, note, ...required } = valid;
     void zipcode; void note;
     expect(OrderInput.safeParse(required).success).toBe(true);
-    expect(OrderInput.safeParse({ ...valid, zipcode: null, note: null, email: null }).success).toBe(true);
+    expect(OrderInput.safeParse({ ...valid, zipcode: null, note: null }).success).toBe(true);
   });
 
   it('연락처는 필수다 — 이메일을 받지 않으므로 손님에게 닿는 유일한 길이다', () => {
@@ -51,8 +51,9 @@ describe('OrderInput', () => {
     expect(OrderInput.safeParse({ ...valid, delivery_method: 'drone' }).success).toBe(false);
   });
 
-  it('이메일 칸이 있던 옛 탭의 이메일도 받는다', () => {
-    expect(OrderInput.parse({ ...valid, email: 'hong@example.com' }).email).toBe('hong@example.com');
+  it('이메일은 받지 않는다 — 옛 탭이 보내도 버려서 손님 메일이 나갈 길이 없다', () => {
+    const parsed = OrderInput.parse({ ...valid, email: 'victim@example.com' });
+    expect('email' in parsed).toBe(false);
   });
 
   it('장바구니 항목의 나머지 필드는 서버로 넘어가지 않는다', () => {
@@ -66,7 +67,6 @@ describe('OrderInput', () => {
   });
 
   it('말이 안 되는 값은 막는다', () => {
-    expect(OrderInput.safeParse({ ...valid, email: 'not-an-email' }).success).toBe(false);
     expect(OrderInput.safeParse({ ...valid, name: '' }).success).toBe(false);
     expect(OrderInput.safeParse({ ...valid, items: [] }).success).toBe(false);
     expect(OrderInput.safeParse({ ...valid, items: [{ id: 3, quantity: 0 }] }).success).toBe(false);

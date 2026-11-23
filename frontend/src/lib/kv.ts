@@ -91,13 +91,3 @@ export async function incrementWithTtl(
   }
 }
 
-/** 값 하나를 만료와 함께 저장한다. 성공했는지 여부를 돌려준다. */
-export async function setWithTtl(key: string, value: string, ttlSeconds: number): Promise<boolean> {
-  return (await command<string>(['SET', key, value, 'EX', String(ttlSeconds)])) === 'OK';
-}
-
-/** 키가 있는지. 저장소가 없거나 실패하면 `null`(= 모름). */
-export async function exists(key: string): Promise<boolean | null> {
-  const n = await command<number>(['EXISTS', key]);
-  return n === null ? null : n === 1;
-}
