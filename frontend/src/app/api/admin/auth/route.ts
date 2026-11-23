@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 export async function DELETE() {
   const jar = await cookies();
   const current = jar.get(SESSION_COOKIE)?.value;
-  if (current) revoke(current);
+  if (current) await revoke(current);
   const response = NextResponse.json({ ok: true });
   response.cookies.delete(SESSION_COOKIE);
   return response;

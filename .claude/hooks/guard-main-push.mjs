@@ -1,38 +1,11 @@
 #!/usr/bin/env node
-// PreToolUse(Bash) 훅: `main`으로 가는 `git push`를 막는다.
+// PreToolUse(Bash) 훅: main으로 가는 `git push`를 막는다. main 푸시는 곧 Vercel 운영 배포다.
 //
-// main은 Vercel에 물려 있어 푸시가 곧 프로덕션 배포다. 권한 규칙
-// (`Bash(git push * main)`)은 명령 글자만 보므로, 브랜치를 적지 않은
-// `git push`가 main으로 가는 경우를 잡지 못한다:
-//   - 지금 브랜치가 main일 때
-//   - 지금 브랜치의 upstream이 origin/main일 때(2026-08-24 lab-palette에서 실제로 있었다)
-// 이 훅은 그 두 경우와, refspec에 main을 직접 적은 경우를 모두 막는다.
-//
-// 종료 코드 2 = 차단(표준 오류가 Claude에게 전달된다). 그 밖에는 조용히 통과.
+// 명령 글자로는 판단하지 않는다(`HEAD`, `@`, `HEAD:heads/main`, 따옴표 등 우회가 많다).
+// 같은 인자로 `git push --dry-run --porcelain`을 돌려 git이 실제로 갱신할 ref를 보고,
+// refs/heads/main이 있으면 막는다. 판단할 수 없으면 막는다. 종료 코드 2 = 차단.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-
-let command = '';
-try {
-  command = JSON.parse(readFileSync(0, 'utf8'))?.tool_input?.command ?? '';
-} catch {
-  process.exit(0);
-}
-
-// `git push`, `git -C dir push`, `git -c k=v push`를 모두 잡는다.
-const PUSH = /\bgit\b(?:\s+-[cC]\s+\S+|\s+--[\w-]+(?:=\S+)?)*\s+push\b([^;&|\n]*)/g;
-
-const git = (...args) => {
-  try {
-    return execFileSync('git', args, {
-      cwd: process.env.CLAUDE_PROJECT_DIR || process.cwd(),
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return '';
-  }
-};
 
 const block = (why) => {
   process.stderr.write(
@@ -43,29 +16,99 @@ const block = (why) => {
   process.exit(2);
 };
 
-for (const match of command.matchAll(PUSH)) {
-  const args = match[1].trim().split(/\s+/).filter(Boolean);
-  const positional = args.filter((a) => !a.startsWith('-'));
-  const refspecs = positional.slice(1); // [remote, ...refspecs]
+let command = '';
+try {
+  command = JSON.parse(readFileSync(0, 'utf8'))?.tool_input?.command ?? '';
+} catch {
+  block('훅 입력을 읽지 못했습니다.');
+}
 
-  // 1) refspec에 main을 직접 적은 경우: `origin main`, `HEAD:main`, `+main`, `refs/heads/main`
-  const targetsMain = refspecs.some((r) => {
-    const dst = r.replace(/^\+/, '').split(':').pop();
-    return dst === 'main' || dst === 'refs/heads/main';
-  });
-  if (targetsMain) block(`\`${match[0].trim()}\`이 main을 대상으로 합니다.`);
+if (!/\bgit\b[\s\S]*\bpush\b/.test(command)) process.exit(0);
 
-  if (args.includes('--all') || args.includes('--mirror')) {
-    block('`--all`/`--mirror`는 main까지 함께 푸시합니다.');
+// 셸 확장이 끼면 실제 인자를 알 수 없다.
+if (/\$\(|`|\$\{?\w/.test(command)) block('푸시 명령에 셸 확장이 있어 대상을 확인할 수 없습니다.');
+
+// 따옴표를 풀어 셸처럼 단어로 나눈다. 명령 구분자(; && || | 줄바꿈)는 따로 토큰으로 남긴다.
+function tokenize(text) {
+  const tokens = [];
+  let cur = '';
+  let quote = null;
+  let has = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      else if (c === '\\' && quote === '"' && i + 1 < text.length) cur += text[++i];
+      else cur += c;
+      continue;
+    }
+    if (c === '"' || c === "'") { quote = c; has = true; continue; }
+    // 리다이렉션(`2>&1`, `>/dev/null`, `< file`)은 git 인자가 아니다 — 버린다.
+    if (c === '>' || c === '<') {
+      if (/^\d+$/.test(cur)) { cur = ''; has = false; }
+      if (has) { tokens.push(cur); cur = ''; has = false; }
+      if (text[i + 1] === c) i++;
+      if (text[i + 1] === '&') {
+        i++;
+        while (i + 1 < text.length && /[\d-]/.test(text[i + 1])) i++;
+        continue;
+      }
+      while (i + 1 < text.length && /[ \t]/.test(text[i + 1])) i++;
+      while (i + 1 < text.length && !/[\s;|&<>]/.test(text[i + 1])) i++;
+      continue;
+    }
+    if (c === '\\' && i + 1 < text.length) { cur += text[++i]; has = true; continue; }
+    if (/\s/.test(c) && c !== '\n') { if (has) tokens.push(cur); cur = ''; has = false; continue; }
+    if (c === ';' || c === '|' || c === '&' || c === '\n') {
+      if (has) tokens.push(cur);
+      cur = ''; has = false;
+      tokens.push({ sep: c });
+      continue;
+    }
+    cur += c; has = true;
+  }
+  if (quote) block('푸시 명령의 따옴표가 닫히지 않았습니다.');
+  if (has) tokens.push(cur);
+  return tokens;
+}
+
+const tokens = tokenize(command);
+const segments = [[]];
+for (const t of tokens) {
+  if (typeof t === 'object') segments.push([]);
+  else segments[segments.length - 1].push(t);
+}
+
+const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+for (const words of segments) {
+  const g = words.indexOf('git');
+  if (g === -1) continue;
+  const p = words.indexOf('push', g + 1);
+  if (p === -1) continue;
+
+  const globalOpts = words.slice(g + 1, p);
+  // `-q`는 dry-run의 porcelain 출력까지 숨긴다.
+  const pushArgs = words.slice(p + 1).filter((a) => a !== '-q' && a !== '--quiet');
+  if (pushArgs.includes('--all') || pushArgs.includes('--mirror')) block('`--all`/`--mirror`는 main까지 함께 푸시합니다.');
+
+  let output = '';
+  try {
+    output = execFileSync('git', [...globalOpts, 'push', '--dry-run', '--porcelain', ...pushArgs], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 8000,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    });
+  } catch (error) {
+    output = typeof error?.stdout === 'string' ? error.stdout : '';
   }
 
-  // 2) refspec이 없으면 git이 현재 브랜치와 upstream으로 대상을 정한다.
-  if (refspecs.length === 0) {
-    const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
-    if (branch === 'main') block('지금 브랜치가 main입니다.');
-    const upstream = git('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}');
-    if (upstream === 'origin/main') {
-      block(`\`${branch}\` 브랜치의 upstream이 origin/main이라 그대로 푸시하면 main으로 갑니다.`);
-    }
+  const refLines = output.split('\n').filter((line) => /^[ +\-*=!]\t/.test(line));
+  if (refLines.length === 0) block('푸시가 갱신할 ref를 확인하지 못했습니다(dry-run 실패).');
+  for (const line of refLines) {
+    const dst = line.split('\t')[1]?.split(':').pop();
+    if (dst === 'refs/heads/main') block(`\`${words.slice(g).join(' ')}\`이 main을 갱신합니다.`);
   }
 }

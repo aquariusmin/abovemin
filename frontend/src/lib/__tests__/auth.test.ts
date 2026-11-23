@@ -36,7 +36,7 @@ describe('세션 토큰', () => {
   it('로그아웃한 토큰은 다시 쓸 수 없다', () => {
     const { token } = signSession();
     expect(verifySession(token)).toBe(true);
-    revoke(token);
+    void revoke(token);
     expect(verifySession(token)).toBe(false);
   });
 
@@ -66,16 +66,6 @@ describe('assertSameOrigin()', () => {
     expect(
       assertSameOrigin(req({ origin: 'https://abovemin.com.evil.example', host: 'abovemin.com' })),
     ).toBe(false);
-  });
-});
-
-describe('공유 저장소가 없을 때', () => {
-  it('kv는 꺼져 있고 세션 검사는 네트워크를 타지 않는다', async () => {
-    // Upstash를 설정하지 않은 배포에서 인증 경로가 예전과 같아야 한다.
-    const { kvEnabled, exists, setWithTtl } = await import('@/lib/kv');
-    expect(kvEnabled).toBe(false);
-    expect(await exists('anything')).toBeNull();
-    expect(await setWithTtl('a', 'b', 10)).toBe(false);
   });
 });
 

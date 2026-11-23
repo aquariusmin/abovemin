@@ -3,9 +3,9 @@ import { OrderInput, isHoneypotFilled } from '@/lib/orders-schema';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { rateLimitShared, clientIp } from '@/lib/rate-limit';
 import { log } from '@/lib/logger';
-import { OWNER_EMAIL, buildBuyerEmail, buildOwnerEmail, configuredBankInfo, hasBuyerEmail, sendEmails, type EmailMessage } from '@/lib/order-email';
+import { OWNER_EMAIL, buildOwnerEmail, configuredBankInfo, sendEmails, type EmailMessage } from '@/lib/order-email';
 import { emailSentPatch, recordEmailSent, type OrderEmailKind } from '@/lib/order-email-status';
-import { isMissingColumnError, isNotNullViolation, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
+import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { resolveOrderItems, type OrderableProduct } from '@/lib/order-items';
 import { orderPlacedBody } from '@/lib/order-placed';
 import { noteWithPickupTag, type DeliveryMethod } from '@/lib/delivery';
@@ -30,7 +30,6 @@ import { noteWithPickupTag, type DeliveryMethod } from '@/lib/delivery';
  */
 const PER_IP = { limit: 10, windowMs: 10 * 60 * 1000 };
 const PER_CONTACT = { limit: 3, windowMs: 60 * 60 * 1000 };
-const BUYER_EMAIL_GLOBAL = { limit: 30, windowMs: 60 * 60 * 1000 };
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -78,7 +77,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { name, email, phone, zipcode, address, note, items, website, idempotency_key } = parsed.data;
+  const { name, phone, zipcode, address, note, items, website, idempotency_key } = parsed.data;
   // 옛 탭은 수령 방법 없이 온다 — 그때까지는 전부 택배였다.
   const deliveryMethod: DeliveryMethod = parsed.data.delivery_method ?? 'parcel';
   const pickup = deliveryMethod === 'pickup';
@@ -108,8 +107,6 @@ export async function POST(request: Request) {
   const existing = await findOrderByIdempotencyKey(supabase, idempotencyKey);
   if (existing) return replayResponse(existing);
 
-  // 이메일은 이메일 칸이 있던 옛 탭에서만 온다(`orders-schema.ts`).
-  const buyerEmail = email?.trim() || null;
   const contactKey = phone.replace(/\D/g, '') || phone.toLowerCase();
   const contact = await rateLimitShared(`orders:contact:${contactKey}`, PER_CONTACT);
   if (!contact.ok) {
@@ -172,7 +169,7 @@ export async function POST(request: Request) {
     delivery_method?: DeliveryMethod;
   } = {
     name,
-    email: buyerEmail,
+    email: null,
     phone,
     zipcode: pickup ? null : zipcode || null,
     address: pickup ? '' : address,
@@ -202,14 +199,7 @@ export async function POST(request: Request) {
       () => insertKeyed(delivery_method === 'pickup' ? { ...legacy, note: noteWithPickupTag(legacy.note) } : legacy),
     );
   };
-  let { data: order, error: dbError } = await insertOrder(row);
-  // `orders.email`이 아직 NOT NULL이다(`20261123000000_orders_email_optional.sql`
-  // 적용 전). 이메일 없는 주문은 빈 문자열로 다시 넣는다 — 읽는 쪽은 null과
-  // ''를 똑같이 "이메일 없음"으로 본다(`hasBuyerEmail`).
-  if (dbError && row.email === null && isNotNullViolation(dbError)) {
-    log.warn('orders.email_not_null', { hint: 'apply 20261123000000_orders_email_optional.sql' });
-    ({ data: order, error: dbError } = await insertOrder({ ...row, email: '' }));
-  }
+  const { data: order, error: dbError } = await insertOrder(row);
 
   // 같은 키의 요청이 동시에 들어와 둘 다 위의 조회를 통과했다. 늦은 쪽이 유니크
   // 인덱스에 막힌 것이니, 먼저 들어간 주문으로 답한다.
@@ -229,7 +219,7 @@ export async function POST(request: Request) {
   const emailOrder = {
     id: orderId,
     name,
-    email: buyerEmail,
+    email: null,
     phone,
     zipcode: row.zipcode,
     address: row.address,
@@ -253,16 +243,6 @@ export async function POST(request: Request) {
     try {
       const kinds: OrderEmailKind[] = [];
       const messages: EmailMessage[] = [];
-      // 손님 메일은 이메일이 있는 주문(옛 탭)에만. 없으면 손님에게는 완료 화면의
-      // 계좌 안내가 전부이고, 운영자가 전화로 연락한다.
-      if (hasBuyerEmail(emailOrder)) {
-        const buyerQuota = await rateLimitShared('orders:buyer-email:all', BUYER_EMAIL_GLOBAL);
-        if (!buyerQuota.ok) log.warn('orders.buyer_email_capped', { orderId });
-        else {
-          kinds.push('buyer');
-          messages.push(buildBuyerEmail(emailOrder));
-        }
-      }
       // 운영자 주소가 없으면 알림을 건너뛴다(`OWNER_EMAIL`의 주석). 주문은 이미
       // 저장됐고 관리 화면에 보이지만, 알림이 안 간다는 사실은 로그에 남긴다.
       if (OWNER_EMAIL) {

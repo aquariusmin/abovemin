@@ -101,6 +101,8 @@
 
 되돌리기: 코드를 이전 배포로 되돌린 뒤 `alter table public.orders drop constraint if exists orders_delivery_method_check; alter table public.orders drop column if exists delivery_method;`
 
+`supabase/migrations/20261123020000_admin_revoked_sessions.sql`은 순서와 무관합니다. 로그아웃한 관리자 세션을 모든 서버 인스턴스가 알게 하는 테이블입니다(RLS 켜짐, 정책 없음 — 서버만 씀). 적용 전에는 예전처럼 그 인스턴스 메모리에서만 로그아웃이 효력을 갖습니다. 되돌리기: `drop table if exists public.admin_revoked_sessions;`
+
 **위치 정보는 공개 테이블에 저장하지 않습니다.** `photos`는 누구나 anon 키로 읽을 수 있어서, 사진별 위도·경도 컬럼은 두지 않습니다. 사진 GPS는 채우기 작업이 서버 메모리에서만 읽어 장소마다 중앙값을 소수점 한 자리로 반올림한 뒤 `places`에 넣고, 어떤 API 응답에도 반올림 전 좌표를 싣지 않습니다.
 
 ### 탭
