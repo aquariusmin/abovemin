@@ -46,6 +46,7 @@ export default function LocationRename({ initialFrom, initialTo, onRenamed }: Pr
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 상태는 fetch가 끝난 뒤에 바뀐다
     void load();
   }, [load]);
 

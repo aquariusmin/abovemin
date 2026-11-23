@@ -185,7 +185,10 @@ export default function PhotoManager({ albumSlug, albums, filter, onFilterChange
     }
   }, [albumSlug]);
 
-  useEffect(() => { void load(); }, [load, refreshToken]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 데이터를 불러오는 effect다
+    void load();
+  }, [load, refreshToken]);
   // 세션이 끝난 동안 불러오기에 실패했으면, 다시 로그인한 뒤 한 번 더 읽는다.
   useRetryAfterRelogin(loadError, () => void load());
 

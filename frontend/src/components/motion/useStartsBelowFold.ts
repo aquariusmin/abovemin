@@ -22,7 +22,6 @@ export function useStartsBelowFold<T extends Element>() {
     if (!el) return;
     // 레이아웃을 재서 그 결과로 다시 그리는 것은 layout effect의 본래 용도다
     // — 다음 페인트 전에 끝나므로 숨는 순간이 화면에 찍히지 않는다.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (el.getBoundingClientRect().top > window.innerHeight) setDeferred(true);
   }, []);
 
