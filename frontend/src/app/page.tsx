@@ -93,7 +93,7 @@ export default async function Home() {
     .slice(0, 4);
 
   const heroImage = settings['hero_image'] || DEFAULT_HERO_IMAGE;
-  const heroTitle = settings['hero_title'] || 'Collecting the Greenery';
+  const heroTitle = settings['hero_title'] || 'Collecting the Winter Light';
   const heroSubtitle =
     settings['hero_subtitle'] ||
     '여행지에서, 사는 동네에서 찍은 사진을 모아 둡니다.';

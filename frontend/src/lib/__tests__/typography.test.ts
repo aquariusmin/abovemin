@@ -6,7 +6,7 @@ describe('typography', () => {
     expect(displayFace('2027 Calendar (탁상형)')).toBe('font-display-ko');
     expect(displayFace('5개의 앨범')).toBe('font-display-ko');
     expect(displayFace('Japan 🇯🇵')).toBe('font-serif');
-    expect(displayFace('Collecting the Greenery')).toBe('font-serif');
+    expect(displayFace('Collecting the Winter Light')).toBe('font-serif');
     expect(displayFace(null)).toBe('font-serif');
   });
 

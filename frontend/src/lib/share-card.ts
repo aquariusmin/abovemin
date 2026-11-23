@@ -44,7 +44,7 @@ interface ShareCardInput {
  *
  * Next는 메타데이터를 **얕게** 병합한다 — 경로가 `openGraph`를 적지 않으면 루트
  * 것이 통째로 내려와, `/shop`이나 `/portfolio`를 공유해도 카드에는 사이트 기본
- * 제목과 설명("Collecting the Greenery")이 찍힌다. 반대로 일부만 적으면 루트의
+ * 제목과 설명("Collecting the Winter Light")이 찍힌다. 반대로 일부만 적으면 루트의
  * `siteName`·`locale`과 이미지가 사라진다. 그래서 적을 때는 전부 다시 적어야
  * 하고, 그 반복을 여기 모은다.
  *
