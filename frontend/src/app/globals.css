@@ -812,6 +812,36 @@ body {
 
 } /* @layer components */
 
+/* ── Winter decoration (home only, `lib/season.ts`) ─────────────────────── */
+
+/* 상자 위에 살짝 쌓인 눈. 홈의 `<main data-winter>` 안에서만 그려지고, 기간이
+   끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
+   SVG이고, 대부분 상자 **위**에 얹혀 사진은 가장자리 몇 px만 덮는다. 흰 눈이
+   크림 바탕에서도 보이도록 아주 옅은 그림자를 준다. 클릭은 막지 않는다. */
+[data-winter] .snow-cap {
+  position: relative;
+}
+[data-winter] .snow-cap::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 6px;
+  right: 6px;
+  top: -6px;
+  height: 11px;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 7C0 2 4 0 12 0H188C196 0 200 2 200 7C196 8 192 7 188 9C182 12 176 8 168 9C160 10 156 7 148 8C140 9 136 12 128 9C120 7 112 9 104 8C96 7 90 11 82 9C74 7 66 8 58 9C50 10 44 7 36 8C28 9 22 12 14 9C8 7 4 8 0 7Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--forest-black) 22%, transparent));
+}
+/* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
+   쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
+[data-winter] .snow-cap-pill::before {
+  left: 14px;
+  right: 14px;
+  top: -5px;
+  height: 9px;
+}
+
 /* ── Print (portfolio) — preserved ─────────────────────────────────────── */
 
 /* No Nav on these routes (see `lib/chrome`), so no room reserved for one. */

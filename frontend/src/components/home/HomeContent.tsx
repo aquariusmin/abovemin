@@ -10,6 +10,8 @@ import { placeholderStyle, storedRatioStyle } from '@/components/photo-placehold
 import Reveal from '@/components/motion/Reveal';
 import { balanceColumns, photoRatio } from '@/lib/layout-photos';
 import { displayFace } from '@/lib/typography';
+import Garland from './Garland';
+import Snowfall from './Snowfall';
 
 // Minimal shape of the fields this view actually renders.
 interface FeaturedProduct {
@@ -59,6 +61,8 @@ const RISE_BLOCK = { ...RISE, amount: 0.25 } as const;
 const RISE_ITEM = { ...RISE, amount: 0.15 } as const;
 
 interface HomeContentProps {
+  /** 겨울 장식 기간이면 눈·전구 줄·상자 위 눈을 그린다(`lib/season.ts`). */
+  winter?: boolean;
   heroImage: string;
   /** Delivered width ÷ height of the hero photo. The frame is built from it. */
   heroAspect: number;
@@ -76,6 +80,7 @@ interface HomeContentProps {
 }
 
 export default function HomeContent({
+  winter = false,
   heroImage,
   heroAspect,
   titleHead,
@@ -122,7 +127,9 @@ export default function HomeContent({
   const heroWidth = Math.min(1400, Math.round(heroAspect * 850));
 
   return (
-    <main className="bg-canvas text-ink-body">
+    <main className="relative bg-canvas text-ink-body" data-winter={winter || undefined}>
+      {winter && <Garland />}
+      {winter && <Snowfall />}
 
       {/* ── Hero: one photograph, sized by that photograph ─────────────────
            The hero image is admin-configurable and arrives in any
@@ -292,7 +299,7 @@ export default function HomeContent({
                           <Reveal as="li" {...RISE_ITEM} key={photo.id}>
                             <Link
                               href={photoPagePath(photo)}
-                              className="group block"
+                              className="group block snow-cap"
                             >
                               <div className="overflow-hidden rounded-md bg-cream-deep" style={placeholderStyle(photo.src)}>
                                 <FadeImage
@@ -378,7 +385,7 @@ export default function HomeContent({
                     style={memoryRow ? { flex: `${memoryRatios[index].toFixed(3)} 1 0%` } : undefined}
                   >
                   <Reveal {...RISE_ITEM}>
-                    <Link href={photoPagePath(photo)} className="group block">
+                    <Link href={photoPagePath(photo)} className="group block snow-cap">
                       <div className="overflow-hidden rounded-md bg-stone" style={placeholderStyle(photo.src)}>
                         <FadeImage
                           src={cloudinary(photo.src, { watermark: true, width: 600 })}
@@ -532,7 +539,7 @@ export default function HomeContent({
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 shrink-0">
             <Link
               href="/archive"
-              className="btn-primary bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
+              className="btn-primary snow-cap snow-cap-pill bg-moss text-forest-black hover:bg-cream hover:text-forest-deep"
             >
               사진 보기
             </Link>

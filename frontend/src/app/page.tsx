@@ -2,6 +2,7 @@ import { getAllPhotos, getProducts, getSiteSettings } from '@/lib/supabase';
 import { isAvailable } from '@/lib/product';
 import { cloudinaryAspect, DEFAULT_ASPECT } from '@/lib/cloudinary';
 import HomeContent from '@/components/home/HomeContent';
+import { isWinterDecor } from '@/lib/season';
 import { onThisDay, seoulToday } from '@/lib/on-this-day';
 import { buildFallback } from '@/lib/build-phase';
 import type { Metadata } from 'next';
@@ -109,6 +110,7 @@ export default async function Home() {
 
   return (
     <HomeContent
+      winter={isWinterDecor()}
       heroImage={heroImage}
       heroAspect={heroAspect}
       titleHead={titleHead}
