@@ -814,14 +814,16 @@ body {
 
 /* ── Winter decoration (home only, `lib/season.ts`) ─────────────────────── */
 
-/* 상자 위에 살짝 쌓인 눈. 홈의 `<main data-winter>` 안에서만 그려지고, 기간이
-   끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
+/* 상자 위에 살짝 쌓인 눈 — 고정된 그림. 홈의 `<main data-winter>` 안에서만, 그리고
+   눈 캔버스가 돌지 않을 때만(동작 줄이기) 그려진다. 캔버스가 돌면 `<main>`에
+   `data-snow-live`가 붙고, 눈은 캔버스가 실시간으로 쌓아 그린다(`Snowfall.tsx`).
+   기간이 끝나면 속성이 빠져 저절로 사라진다. 눈 모양은 아래가 울퉁불퉁한 흰 덩어리
    SVG이고, 대부분 상자 **위**에 얹혀 사진은 가장자리 몇 px만 덮는다. 흰 눈이
    크림 바탕에서도 보이도록 아주 옅은 그림자를 준다. 클릭은 막지 않는다. */
 [data-winter] .snow-cap {
   position: relative;
 }
-[data-winter] .snow-cap::before {
+[data-winter]:not([data-snow-live]) .snow-cap::before {
   content: "";
   position: absolute;
   z-index: 2;
@@ -835,7 +837,7 @@ body {
 }
 /* 알약 모양 버튼은 양 끝이 둥글어서 눈을 안쪽에만 얹는다. 짙은 띠 위의 버튼에만
    쓴다 — 크림 바탕에서는 흰 눈이 보이지 않고 그림자만 남는다. */
-[data-winter] .snow-cap-pill::before {
+[data-winter]:not([data-snow-live]) .snow-cap-pill::before {
   left: 14px;
   right: 14px;
   top: -5px;
