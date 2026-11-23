@@ -316,7 +316,7 @@ export default function CheckoutPage() {
               </div>
               {delivery === 'pickup' && (
                 <p className="mt-2 text-xs text-slate leading-relaxed">
-                  만날 곳과 시간은 적어 주신 연락처로 정합니다.
+                  추후 연락드리겠습니다.
                 </p>
               )}
             </fieldset>
@@ -389,7 +389,7 @@ export default function CheckoutPage() {
                 autoComplete="off"
                 value={form.note}
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder={delivery === 'pickup' ? '편한 동네나 시간이 있으면 적어 주세요' : '전할 말이 있으면 적어 주세요'}
+                placeholder="전할 말이 있으면 적어 주세요"
               />
             </div>
 

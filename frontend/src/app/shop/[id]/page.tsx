@@ -246,7 +246,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 {[
                   ['주문서 작성', '이름과 연락처를 적고, 택배와 대면 전달 중에서 고릅니다.'],
                   ['입금 안내', '주문하면 입금할 금액과 계좌가 화면에 바로 나옵니다.'],
-                  ['확인 후 전달', '입금이 확인되면 택배로 보내거나, 연락드려 만나서 전합니다.'],
+                  ['확인 후 전달', '입금이 확인되면 택배로 보내고, 대면 전달은 추후 연락드립니다.'],
                 ].map(([title, body], index) => (
                   <li key={title} className="flex gap-3">
                     <span
