@@ -47,7 +47,7 @@ export default function Footer({ hasNotes = false }: { hasNotes?: boolean }) {
     // the other way at the same time: the dimmed text (links at 70%, labels and
     // meta at 40%) is lifted, because "smaller" only reads as tidy if the type
     // that remains is easier to read, not fainter.
-    <footer className="band-navy texture-grain">
+    <footer data-site-footer className="band-navy texture-grain">
       {/* Canopy gradient hairline capping the band */}
       <div aria-hidden className="h-[2px] bg-gradient-to-r from-forest via-fern to-moss" />
 

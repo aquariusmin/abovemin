@@ -895,6 +895,14 @@ body.chromeless-route > div {
 /* Smooth in-page anchor scrolling (respects reduced-motion below) */
 html {
   scroll-behavior: smooth;
+  /* 루트 배경. 본문은 `<body>`의 `bg-canvas`가 칠하고, 이 색은 iOS Safari가
+     주소창 뒤와 화면 끝의 튕김 영역에 쓴다. 푸터(`.band-navy`)가 보이는 동안은
+     푸터 색이다(`ThemeShell`). 지정하지 않으면 body의 크림색이 그 자리로 번져
+     짙은 푸터 아래에 흰 띠가 남는다. */
+  background-color: var(--background);
+}
+html[data-footer-in-view] {
+  background-color: var(--forest-black);
 }
 
 /* 이 사이트는 라이트 테마 하나다. 루트에 밝히면 폼 컨트롤·스크롤바 같은 브라우저
