@@ -35,6 +35,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
   const groupId = useId();
   const hintId = `${groupId}-hint`;
   const [addonQuantity, setAddonQuantity] = useState<Record<string, number>>({});
+  const [quantity, setQuantity] = useState(1);
   const showAddons = addons.length > 0 && !soldOut;
 
   const priceText = selected
@@ -131,6 +132,28 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
         </fieldset>
       )}
 
+      {!soldOut && (
+        <div className="flex min-h-14 items-center justify-between gap-4 border-y border-hairline py-2">
+          <p className="label-ko text-muted-foreground">수량</p>
+          <div className="flex items-center gap-4">
+            {/* 두 개 이상일 때만 합계를 보인다. 옵션을 아직 안 골랐으면 금액을 모른다. */}
+            {line && quantity > 1 && (
+              <p aria-live="polite" className="text-[14px] tabular-nums text-slate">
+                {formatPrice(line.price * quantity)}
+              </p>
+            )}
+            <QuantityStepper
+              name={product.name}
+              value={quantity}
+              min={1}
+              max={MAX_LINE_QUANTITY}
+              onChange={setQuantity}
+              className="shrink-0"
+            />
+          </div>
+        </div>
+      )}
+
       {showAddons && (
         <fieldset className="space-y-1">
           <legend className="label-ko text-muted-foreground mb-2">추가 상품</legend>
@@ -165,7 +188,7 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
             {extras.length === 0
               ? `수량을 정하면 이 상품과 함께 ${directOrder ? '주문됩니다' : '담깁니다'}.`
               : line
-              ? `추가 상품을 더해 ${formatPrice(line.price + extrasTotal)}`
+              ? `추가 상품을 더해 ${formatPrice(line.price * quantity + extrasTotal)}`
               : `추가 상품 ${formatPrice(extrasTotal)} · 옵션을 고르면 함께 ${directOrder ? '주문됩니다' : '담깁니다'}.`}
           </p>
         </fieldset>
@@ -173,10 +196,14 @@ export default function ProductPurchase({ product, options, addons, priceMin, pr
 
       <AddToCartButton
         line={line}
+        quantity={quantity}
         soldOut={soldOut}
         describedBy={hasOptions ? hintId : undefined}
         extras={extras}
-        onAdded={() => setAddonQuantity({})}
+        onAdded={() => {
+          setAddonQuantity({});
+          setQuantity(1);
+        }}
         directOrder={directOrder}
       />
 
