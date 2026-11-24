@@ -6,6 +6,7 @@ import {
   MAX_OPTION_LABEL,
   MAX_RELATED,
   OPTION_ID_RE,
+  isValidSlug,
   optionsMinPrice,
   parseAddons,
   parseImages,
@@ -41,6 +42,8 @@ export interface ProductDraft {
   description: string;
   status: ProductStatus;
   edition: string;
+  /** 상세 주소 `/shop/<slug>`. 비우면 숫자 id. */
+  slug: string;
   sort_order: string;
   images: DraftImage[];
   options: DraftOption[];
@@ -66,6 +69,8 @@ export interface AdminProductRow {
   // 20261014010000_product_addons 이후 컬럼.
   addons?: unknown;
   related_ids?: unknown;
+  // 20261124000000_product_slug 이후 컬럼.
+  slug?: string | null;
 }
 
 export const EMPTY_PRODUCT_DRAFT: ProductDraft = {
@@ -77,6 +82,7 @@ export const EMPTY_PRODUCT_DRAFT: ProductDraft = {
   // 새 상품은 초안이다 — 가격을 확인하기 전에 샵에 걸리지 않게.
   status: 'draft',
   edition: '',
+  slug: '',
   sort_order: '0',
   images: [],
   options: [],
@@ -97,6 +103,7 @@ export function draftFromProduct(row: AdminProductRow): ProductDraft {
     description: row.description ?? '',
     status: productStatus(row),
     edition: row.edition ?? '',
+    slug: row.slug ?? '',
     sort_order: String(row.sort_order ?? 0),
     images: parseImages(row.images, row.image_url).map(image => ({
       url: image.url,
@@ -122,6 +129,7 @@ export interface ProductPayload {
   description: string;
   status: ProductStatus;
   edition: string;
+  slug: string | null;
   image_url: string;
   images: ProductImage[];
   options: ProductOption[];
@@ -189,6 +197,11 @@ export function payloadFromDraft(
   if (selfId !== undefined && related_ids.includes(selfId)) return { ok: false, error: '함께 구매에 이 상품 자신을 넣을 수 없습니다.' };
 
   // 옵션이 있으면 가격은 가장 싼 옵션 값 — 서버와 같게 맞춰야 바뀐 필드 비교가 헛돌지 않는다.
+  const slug = draft.slug.trim().toLowerCase();
+  if (slug && !isValidSlug(slug)) {
+    return { ok: false, error: '주소는 영문 소문자·숫자·하이픈으로, 글자를 하나 이상 넣어 60자 이내로 적어 주세요.' };
+  }
+
   const price = options.length ? optionsMinPrice(options) : Number(priceText);
   const problem = availabilityProblem({ status: draft.status, price, options });
   if (problem) return { ok: false, error: problem };
@@ -203,6 +216,7 @@ export function payloadFromDraft(
       description: draft.description.trim(),
       status: draft.status,
       edition: draft.edition.trim(),
+      slug: slug || null,
       image_url: images[0].url,
       images,
       options,

@@ -11,6 +11,7 @@ import {
   MAX_RELATED,
   OPTION_ID_RE,
   PRODUCT_STATUSES,
+  isValidSlug,
 } from '@/lib/product';
 
 export { ALBUM_SLUG_RE, MAX_BULK, MAX_ORPHAN_DELETE, MIN_YEAR };
@@ -369,6 +370,14 @@ const ProductFields = {
   image_url: z.string().trim().min(1, '상품 이미지가 없습니다.').max(1000),
   status: z.enum(PRODUCT_STATUSES, { error: '상품 상태가 올바르지 않습니다.' }),
   edition: optionalText(60, '에디션'),
+  // 빈 칸은 null(주소를 정하지 않음 → /shop/<id>). 규칙은 `isValidSlug`, DB check와 같다.
+  slug: z
+    .string()
+    .trim()
+    .transform(value => value.toLowerCase())
+    .refine(value => value === '' || isValidSlug(value), '주소는 영문 소문자·숫자·하이픈으로, 글자를 하나 이상 넣어 60자 이내로 적어 주세요.')
+    .transform(value => value || null)
+    .nullable(),
   images: z
     .array(ProductImageInput)
     .max(MAX_IMAGES, `이미지는 ${MAX_IMAGES}장까지 올릴 수 있습니다.`)
@@ -400,6 +409,7 @@ export const ProductCreate = z
     image_url: ProductFields.image_url.optional(),
     status: ProductFields.status.optional(),
     edition: ProductFields.edition.optional(),
+    slug: ProductFields.slug.optional(),
     images: ProductFields.images.optional(),
     options: ProductFields.options.optional(),
     addons: ProductFields.addons.optional(),
@@ -420,6 +430,7 @@ export const ProductUpdate = z
     image_url: ProductFields.image_url.optional(),
     status: ProductFields.status.optional(),
     edition: ProductFields.edition.optional(),
+    slug: ProductFields.slug.optional(),
     images: ProductFields.images.min(1, '상품 이미지를 한 장 이상 남겨 주세요.').optional(),
     options: ProductFields.options.optional(),
     addons: ProductFields.addons.optional(),

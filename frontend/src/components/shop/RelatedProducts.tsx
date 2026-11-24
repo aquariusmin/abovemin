@@ -5,10 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
 import { formatPriceRange } from '@/lib/price';
-import { SOLD_OUT_LABEL } from '@/lib/product';
+import { productPath, SOLD_OUT_LABEL } from '@/lib/product';
 
 export interface RelatedItem {
   id: number;
+  slug: string | null;
   name: string;
   image_url: string;
   state: 'available' | 'sold_out';
@@ -68,7 +69,7 @@ export default function RelatedProducts({ items }: { items: RelatedItem[] }) {
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[15px] font-medium leading-snug text-ink-body transition-colors group-hover:text-primary">
-                  <Link href={`/shop/${item.id}`} className="card-link outline-none">
+                  <Link href={productPath(item)} className="card-link outline-none">
                     {item.name}
                   </Link>
                 </h3>

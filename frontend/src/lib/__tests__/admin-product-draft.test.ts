@@ -262,3 +262,27 @@ describe('relatedCandidates()', () => {
     expect(relatedCandidates(products, [99], 2).map(p => p.id)).toEqual([1, 3, 4]);
   });
 });
+
+describe('주소(slug)', () => {
+  it('비우면 null, 대문자는 소문자로, 형식이 틀리면 저장 전에 막는다', () => {
+    const empty = payloadFromDraft(filled({ slug: '' }), { includeSortOrder: false });
+    expect(empty.ok && empty.body.slug).toBeNull();
+    const upper = payloadFromDraft(filled({ slug: '2027-Calendar' }), { includeSortOrder: false });
+    expect(upper.ok && upper.body.slug).toBe('2027-calendar');
+    expect(payloadFromDraft(filled({ slug: '2027' }), { includeSortOrder: false }).ok).toBe(false);
+  });
+
+  it('행에서 읽고, 바꾸지 않으면 PATCH에 싣지 않는다', () => {
+    const row: AdminProductRow = {
+      id: 1, name: '2027 Calendar', price: 13000, image_url: 'https://x/c.jpg', category: '', tag: null,
+      description: '', in_stock: true, status: 'available', slug: '2027-calendar',
+    };
+    const draft = draftFromProduct(row);
+    expect(draft.slug).toBe('2027-calendar');
+    const before = payloadFromDraft(draft, { includeSortOrder: false });
+    const after = payloadFromDraft({ ...draft, name: '2027 Photo Calendar' }, { includeSortOrder: false });
+    if (!before.ok || !after.ok) throw new Error('payload');
+    expect(changedFields(before.body, after.body)).toEqual({ name: '2027 Photo Calendar' });
+    expect(ProductUpdate.parse({ id: 1, ...changedFields(before.body, after.body) })).not.toHaveProperty('slug');
+  });
+});

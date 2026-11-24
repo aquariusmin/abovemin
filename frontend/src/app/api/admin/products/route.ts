@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { log } from '@/lib/logger';
 import { isOwnCloudinaryUrl } from '@/lib/cloudinary-upload';
-import { isMissingColumnError, withColumnFallback } from '@/lib/db-compat';
+import { isMissingColumnError, isUniqueViolation, withColumnFallback } from '@/lib/db-compat';
 import { Id, ProductCreate, ProductUpdate } from '@/lib/admin/schemas';
 import { revalidateShop } from '@/lib/admin/revalidate';
 import { writeWithFallback, type BlockedBy } from '@/lib/admin/product-columns';
@@ -21,6 +21,7 @@ import {
   parseImages,
   parseOptions,
   PRODUCT_ADDONS_MIGRATION,
+  PRODUCT_SLUG_MIGRATION,
   productStatus,
   SHOP_READY_MIGRATION,
   syncedColumns,
@@ -53,9 +54,13 @@ function checkImages(urls: Array<string | undefined>): Response | null {
 }
 
 function migrationBlockedResponse(blocked: BlockedBy): Response {
-  const file = blocked === 'addons' ? PRODUCT_ADDONS_MIGRATION : SHOP_READY_MIGRATION;
+  const file =
+    blocked === 'slug' ? PRODUCT_SLUG_MIGRATION : blocked === 'addons' ? PRODUCT_ADDONS_MIGRATION : SHOP_READY_MIGRATION;
   return jsonError(migrationNotice(file), 409, { migration: true });
 }
+
+// products의 유니크 제약은 slug 하나뿐이다.
+const SLUG_TAKEN = '이 주소는 다른 상품이 이미 쓰고 있습니다. 다른 주소를 적어 주세요.';
 
 // "판매 중인데 가격 없음"은 여기서 막는다 — 공개 화면은 조용히 숨기기 때문이다.
 function finalize(merged: {
@@ -81,7 +86,7 @@ export async function GET() {
   if (!db.ok) return db.response;
 
   // 상품이 0개일 수 있어 새 컬럼 유무는 마이그레이션 파일마다 한 컬럼씩 찔러 본다.
-  const [list, probe, addonsProbe] = await Promise.all([
+  const [list, probe, addonsProbe, slugProbe] = await Promise.all([
     withColumnFallback(
       'admin_products.list',
       () => db.value.from('products').select('*').order('sort_order').order('id'),
@@ -89,16 +94,19 @@ export async function GET() {
     ),
     db.value.from('products').select('status').limit(1),
     db.value.from('products').select('addons').limit(1),
+    db.value.from('products').select('slug').limit(1),
   ]);
   if (list.error) return dbErrorResponse('admin_products_fetch', list.error);
   if (probe.error && !isMissingColumnError(probe.error)) log.warn('admin_products_probe', probe.error);
   if (addonsProbe.error && !isMissingColumnError(addonsProbe.error)) log.warn('admin_products_addons_probe', addonsProbe.error);
+  if (slugProbe.error && !isMissingColumnError(slugProbe.error)) log.warn('admin_products_slug_probe', slugProbe.error);
 
   return NextResponse.json({
     products: list.data ?? [],
     migrationPending: list.migrationPending,
     shopMigrationPending: Boolean(probe.error && isMissingColumnError(probe.error)),
     addonsMigrationPending: Boolean(addonsProbe.error && isMissingColumnError(addonsProbe.error)),
+    slugMigrationPending: Boolean(slugProbe.error && isMissingColumnError(slugProbe.error)),
   });
 }
 
@@ -135,6 +143,7 @@ export async function POST(request: Request) {
     // 비어 있으면 키째 뺀다 — 그 마이그레이션 전에도 첫 시도에 들어가게.
     ...(input.addons?.length ? { addons: input.addons } : {}),
     ...(input.related_ids?.length ? { related_ids: input.related_ids } : {}),
+    ...(input.slug ? { slug: input.slug } : {}),
     ...(sort_order === undefined ? {} : { sort_order }),
   };
 
@@ -150,6 +159,7 @@ export async function POST(request: Request) {
     void _dropped;
     result = await insert(oldest);
   }
+  if (isUniqueViolation(result.error)) return jsonError(SLUG_TAKEN, 409);
   if (result.error || !result.data) return dbErrorResponse('admin_products_insert', result.error, SHOP_READY_MIGRATION);
 
   log.info('admin_products_created', { id: result.data.id });
@@ -191,6 +201,7 @@ export async function PATCH(request: Request) {
 
   const { result, migrationPending, blocked } = await writeWithFallback(row, update);
   if (blocked) return migrationBlockedResponse(blocked);
+  if (isUniqueViolation(result.error)) return jsonError(SLUG_TAKEN, 409);
   if (result.error) return dbErrorResponse('admin_products_update', result.error, SHOP_READY_MIGRATION);
   if (!result.data) return jsonError('상품을 찾을 수 없습니다.', 404);
 

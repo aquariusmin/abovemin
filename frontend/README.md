@@ -101,6 +101,16 @@
 
 되돌리기: 코드를 이전 배포로 되돌린 뒤 `alter table public.orders drop constraint if exists orders_delivery_method_check; alter table public.orders drop column if exists delivery_method;`
 
+`supabase/migrations/20261124000000_product_slug.sql`은 **shop_ready 다음에** 적용합니다(그 뒤 파일들과는 순서 무관). 추가만 하고, 다시 돌려도 안전합니다.
+
+- `products.slug`(`text`, nullable, 유니크) — 상품 상세 주소 `/shop/<slug>`. 영문 소문자·숫자·하이픈, 글자가 하나 이상(숫자만이면 id와 헷갈립니다), 60자 이하(`products_slug_format` check, 관리 API의 `isValidSlug`와 같은 규칙). **컬럼을 처음 만들 때만** id 1(2027 탁상달력)에 `2027-calendar`를 넣습니다.
+- 주소를 정한 상품을 숫자로 찾아오면(`/shop/1`) `/shop/<slug>`로 308 영구 이동합니다 — 이미 공유된 링크가 끊기지 않습니다. 주소를 비운 상품은 `/shop/<id>`. 장바구니·주문은 계속 숫자 id를 씁니다.
+- 관리 화면 샵 탭의 상품 편집에 **주소** 칸이 있습니다. 다른 상품이 쓰는 주소는 409로 막습니다. 공유한 뒤에 주소를 바꾸면 예전 slug 주소는 끊깁니다(숫자 주소는 언제나 새 주소로 갑니다).
+
+이 파일 없이도 사이트는 전과 같습니다: 모든 상품이 `/shop/<id>`이고, slug 주소는 404입니다. 관리 화면에는 "마이그레이션 적용 필요"가 뜨고 주소 칸이 잠기며, 주소를 저장하려 하면 409로 알립니다.
+
+되돌리기(코드를 이전 배포로 되돌린 뒤): `drop index if exists public.products_slug_key; alter table public.products drop constraint if exists products_slug_format; alter table public.products drop column if exists slug;`
+
 `supabase/migrations/20261123020000_admin_revoked_sessions.sql`은 순서와 무관합니다. 로그아웃한 관리자 세션을 모든 서버 인스턴스가 알게 하는 테이블입니다(RLS 켜짐, 정책 없음 — 서버만 씀). 적용 전에는 예전처럼 그 인스턴스 메모리에서만 로그아웃이 효력을 갖습니다. 되돌리기: `drop table if exists public.admin_revoked_sessions;`
 
 **위치 정보는 공개 테이블에 저장하지 않습니다.** `photos`는 누구나 anon 키로 읽을 수 있어서, 사진별 위도·경도 컬럼은 두지 않습니다. 사진 GPS는 채우기 작업이 서버 메모리에서만 읽어 장소마다 중앙값을 소수점 한 자리로 반올림한 뒤 `places`에 넣고, 어떤 API 응답에도 반올림 전 좌표를 싣지 않습니다.

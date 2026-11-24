@@ -118,3 +118,28 @@ describe('writeWithFallback()', () => {
     expect(outcome.migrationPending).toBe(false);
   });
 });
+
+describe('writeWithFallback() — slug(20261124000000_product_slug)', () => {
+  it('slug 컬럼이 없는데 주소를 저장하려 하면 막는다 — 빼고 저장하면 주소가 바뀐 줄 안다', async () => {
+    const db = fakeDb(['slug']);
+    const outcome = await writeWithFallback({ ...base, slug: '2027-calendar' }, db.write);
+    expect(outcome.blocked).toBe('slug');
+    expect(db.attempts).toHaveLength(1);
+  });
+
+  it('주소를 비운 저장(null)은 slug만 빼고 나머지를 저장한다', async () => {
+    const db = fakeDb(['slug']);
+    const outcome = await writeWithFallback({ ...base, slug: null }, db.write);
+    expect(outcome.blocked).toBeUndefined();
+    expect(outcome.migrationPending).toBe(true);
+    expect(db.attempts[1]).toEqual(base);
+  });
+
+  it('slug와 추가 상품 컬럼이 둘 다 없으면 새 것부터 한 겹씩 벗긴다', async () => {
+    const db = fakeDb(['slug', ...ADDONS]);
+    const outcome = await writeWithFallback({ ...base, slug: null, addons: [], related_ids: [] }, db.write);
+    expect(outcome.result.error).toBeNull();
+    expect(db.attempts).toHaveLength(3);
+    expect(db.attempts[2]).toEqual(base);
+  });
+});
