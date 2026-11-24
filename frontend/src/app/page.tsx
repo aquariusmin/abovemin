@@ -122,6 +122,7 @@ export default async function Home() {
       albumCount={albumCount}
       featured={featured.map(p => ({
         id: p.id,
+        slug: p.slug ?? null,
         name: p.name,
         price: p.price,
         image_url: p.image_url,

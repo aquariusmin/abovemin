@@ -3,15 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 import { log } from './logger';
 import { NOTES_CACHE_TAG, NOTES_PRESENCE_TAG, SETTINGS_CACHE_TAG } from './cache-tags';
-import { isMissingSchemaError, withColumnFallback } from './db-compat';
+import { isMissingColumnError, isMissingSchemaError, withColumnFallback } from './db-compat';
 import { placeFromRow, type PlaceCoord } from './places';
 import { noteFromRow, sortNotes, type Note, type NoteRow } from './notes';
 import {
   isListed,
+  isValidSlug,
   parseAddons,
   parseImages,
   parseOptions,
   parseRelatedIds,
+  parseSlug,
   productStatus,
   type ProductAddon,
   type ProductImage,
@@ -79,6 +81,8 @@ export interface Product {
   /** product_addons 이후 컬럼. 적용 전에는 빈 목록. */
   addons?: ProductAddon[];
   related_ids?: number[];
+  /** product_slug 이후 컬럼. 없으면 상세 주소는 /shop/<id>(`productPath`). */
+  slug?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -283,7 +287,7 @@ export const hasPublishedNotes = unstable_cache(
 
 // jsonb 안쪽은 믿지 않고 다시 읽는다.
 function publicProduct(
-  row: Product & { status?: unknown; images?: unknown; options?: unknown; addons?: unknown; related_ids?: unknown },
+  row: Product & { status?: unknown; images?: unknown; options?: unknown; addons?: unknown; related_ids?: unknown; slug?: unknown },
 ): Product {
   const edition = typeof row.edition === 'string' ? row.edition.trim() : '';
   return {
@@ -302,6 +306,7 @@ function publicProduct(
     edition: edition || null,
     addons: parseAddons(row.addons),
     related_ids: parseRelatedIds(row.related_ids, row.id),
+    slug: parseSlug(row.slug),
     ...(row.created_at ? { created_at: row.created_at } : {}),
     ...(row.updated_at ? { updated_at: row.updated_at } : {}),
   };
@@ -323,6 +328,20 @@ export const getProductById = cache(async (id: number): Promise<Product | null> 
   if (!Number.isSafeInteger(id) || id <= 0) return null;
   const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
   if (error) { log.error('getProductById', error); throw error; }
+  if (!data) return null;
+  const product = publicProduct(data);
+  return isListed(product) ? product : null;
+});
+
+// 초안·없는 주소는 `null`(404). slug 컬럼이 아직 없으면(마이그레이션 전) 어떤 slug도 없는 것이다.
+export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  if (!isValidSlug(slug)) return null;
+  const { data, error } = await supabase.from('products').select('*').eq('slug', slug).maybeSingle();
+  if (error) {
+    if (isMissingColumnError(error)) return null;
+    log.error('getProductBySlug', error);
+    throw error;
+  }
   if (!data) return null;
   const product = publicProduct(data);
   return isListed(product) ? product : null;

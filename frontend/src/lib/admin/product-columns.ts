@@ -34,7 +34,10 @@ export function losesAddonDataWithoutMigration(row: Row): boolean {
   return ADDON_COLUMNS.some(key => Array.isArray(row[key]) && (row[key] as unknown[]).length > 0);
 }
 
-export type BlockedBy = 'addons' | 'shop_ready';
+/** `slug`는 20261124000000_product_slug 이후 컬럼이다. */
+export const SLUG_COLUMNS = ['slug'] as const;
+
+export type BlockedBy = 'slug' | 'addons' | 'shop_ready';
 
 export interface WriteResult<T> {
   data: T | null;
@@ -49,7 +52,7 @@ export interface WriteOutcome<T> {
   blocked?: BlockedBy;
 }
 
-// 추가 상품 컬럼 → shop_ready 컬럼 순으로 한 겹씩 벗겨 다시 쓴다. 오류 문구는 읽지 않는다.
+// slug → 추가 상품 컬럼 → shop_ready 컬럼 순으로(새 것부터) 한 겹씩 벗겨 다시 쓴다. 오류 문구는 읽지 않는다.
 export async function writeWithFallback<T>(
   row: Row,
   write: (values: Row) => PromiseLike<WriteResult<T>>,
@@ -57,6 +60,14 @@ export async function writeWithFallback<T>(
   let written = row;
   let result = await write(written);
   let migrationPending = false;
+
+  // 주소를 정했는데 컬럼이 없으면 막는다 — 빼고 저장하면 관리자는 주소가 바뀐 줄 안다.
+  if (result.error && isMissingColumnError(result.error) && SLUG_COLUMNS.some(key => key in written)) {
+    if (written.slug) return { result, written, migrationPending, blocked: 'slug' };
+    migrationPending = true;
+    written = without(written, SLUG_COLUMNS);
+    result = await write(written);
+  }
 
   if (result.error && isMissingColumnError(result.error) && ADDON_COLUMNS.some(key => key in written)) {
     if (losesAddonDataWithoutMigration(written)) return { result, written, migrationPending, blocked: 'addons' };

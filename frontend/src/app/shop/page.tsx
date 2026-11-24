@@ -31,6 +31,7 @@ export default async function Shop() {
     const { min, max } = priceRange(product);
     return {
       id: product.id,
+      slug: product.slug ?? null,
       name: product.name,
       category: product.category,
       tag: product.tag,

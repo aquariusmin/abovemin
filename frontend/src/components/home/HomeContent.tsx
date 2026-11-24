@@ -9,11 +9,13 @@ import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
 import { balanceColumnsByHeight, photoRatio } from '@/lib/layout-photos';
+import { productPath } from '@/lib/product';
 import { displayFace } from '@/lib/typography';
 import Snowfall from './Snowfall';
 
 interface FeaturedProduct {
   id: number;
+  slug: string | null;
   name: string;
   price: number;
   image_url: string;
@@ -318,7 +320,7 @@ export default function HomeContent({
           {featured.length === 1 ? (
             <Reveal
               as="a"
-              href={`/shop/${featured[0].id}`}
+              href={productPath(featured[0])}
               className="group grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-14 lg:gap-20"
               {...RISE_ITEM}
             >
@@ -357,7 +359,7 @@ export default function HomeContent({
                 <Reveal
                   as="a"
                   key={item.id}
-                  href={`/shop/${item.id}`}
+                  href={productPath(item)}
                   className="group lift-card flex flex-col gap-3"
                   {...RISE_ITEM}
                 >

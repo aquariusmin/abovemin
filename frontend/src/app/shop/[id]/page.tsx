@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { getProducts, getProductById } from '@/lib/supabase';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getProducts, getProductById, getProductBySlug } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ProductGallery from '@/components/shop/ProductGallery';
 import ProductPurchase from '@/components/shop/ProductPurchase';
@@ -9,7 +9,16 @@ import { PackageSection, ProductDescriptionBody, sectionSlot } from '@/component
 import RelatedProducts, { type RelatedItem } from '@/components/shop/RelatedProducts';
 import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
-import { isOptionAvailable, parseImages, priceRange, publicState, relatedProducts, SOLD_OUT_LABEL } from '@/lib/product';
+import {
+  isOptionAvailable,
+  parseImages,
+  parseProductParam,
+  priceRange,
+  productPath,
+  publicState,
+  relatedProducts,
+  SOLD_OUT_LABEL,
+} from '@/lib/product';
 import BackLink from '@/components/BackLink';
 import { displayFace, labelFace } from '@/lib/typography';
 
@@ -18,17 +27,24 @@ export const revalidate = 60;
 // 조회 실패는 빈 배열 — 배포 순간 Supabase가 흔들려도 빌드가 죽지 않게(dynamicParams가 받친다).
 export async function generateStaticParams() {
   const products = await getProducts().catch(() => []);
-  return products.map(p => ({ id: String(p.id) }));
+  return products.map(p => ({ id: p.slug ?? String(p.id) }));
+}
+
+// 폴더 이름은 [id]지만 값은 slug(`2027-calendar`)이거나, 주소를 정하기 전에 공유된 숫자 id다.
+async function resolveProduct(param: string) {
+  const parsed = parseProductParam(decodeURIComponent(param));
+  if (!parsed) return null;
+  return 'id' in parsed ? getProductById(parsed.id) : getProductBySlug(parsed.slug);
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const product = await getProductById(Number(id));
+  const product = await resolveProduct(id);
 
   if (!product) return { title: 'Product Not Found' };
 
   const description = product.description || `${product.name} — phorage shop`;
-  const path = `/shop/${id}`;
+  const path = productPath(product);
   // 저장된 주소를 그대로 실으면 원본 크기나 크롤러가 못 읽는 f_auto 포맷이 간다 — 1200×630 JPG로.
   const stored = product.images?.[0]?.url ?? product.image_url;
   const og = stored ? cloudinaryOgImage(stored) : null;
@@ -49,11 +65,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId) || numId <= 0) notFound();
-
-  const product = await getProductById(numId);
+  const product = await resolveProduct(id);
   if (!product) notFound();
+  // 주소를 정한 상품을 숫자 id로 찾아오면(이미 공유된 /shop/1) 새 주소로 영구 이동한다.
+  const path = productPath(product);
+  if (`/shop/${decodeURIComponent(id)}` !== path) permanentRedirect(path);
 
   const state = publicState(product);
   const soldOut = state !== 'available';
@@ -78,6 +94,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     const { min, max } = priceRange(item);
     return {
       id: item.id,
+      slug: item.slug ?? null,
       name: item.name,
       image_url: item.images?.[0]?.url ?? item.image_url,
       state: publicState(item) === 'available' ? 'available' : 'sold_out',

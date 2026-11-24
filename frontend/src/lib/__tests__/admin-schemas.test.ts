@@ -643,3 +643,17 @@ describe('SettingsUpdate — 사이트 설정', () => {
     expect(SettingsUpdate.parse({ hero_image: 5, hero_title: 'a' })).toEqual([['hero_title', 'a']]);
   });
 });
+
+describe('ProductUpdate — slug', () => {
+  it('빈 칸은 null(숫자 주소로), 대문자는 소문자로', () => {
+    expect(ProductUpdate.parse({ id: 1, slug: '' }).slug).toBeNull();
+    expect(ProductUpdate.parse({ id: 1, slug: ' 2027-Calendar ' }).slug).toBe('2027-calendar');
+    expect(ProductUpdate.parse({ id: 1, slug: null }).slug).toBeNull();
+  });
+
+  it('숫자만이거나 형식이 틀리면 거절한다', () => {
+    expect(ProductUpdate.safeParse({ id: 1, slug: '2027' }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, slug: '달력' }).success).toBe(false);
+    expect(ProductUpdate.safeParse({ id: 1, slug: 'cal_endar' }).success).toBe(false);
+  });
+});

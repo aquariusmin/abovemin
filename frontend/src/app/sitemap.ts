@@ -1,7 +1,7 @@
 import { SITE_URL } from '@/lib/site';
 import { getAlbumsWithCounts, getAllPhotos, getProducts } from '@/lib/supabase';
 import { photoImageUrl, photoPagePath } from '@/lib/photo-share';
-import { isAvailable } from '@/lib/product';
+import { isAvailable, productPath } from '@/lib/product';
 import { portfolioProjects } from '@/data/portfolio';
 import { getPublishedNotes } from '@/lib/supabase';
 
@@ -78,7 +78,7 @@ export default async function sitemap() {
   const productPages = products.map(p => {
     const available = isAvailable(p);
     return {
-      url: `${BASE}/shop/${p.id}`,
+      url: `${BASE}${productPath(p)}`,
       lastModified: rowDate(p),
       changeFrequency: available ? ('weekly' as const) : ('monthly' as const),
       priority: available ? 0.8 : 0.4,

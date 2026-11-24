@@ -7,13 +7,14 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { revealTarget, useBelowFoldReveal } from '@/components/motion/useBelowFoldReveal';
 import { useCartStore } from '@/store/cartStore';
 import { formatPriceRange } from '@/lib/price';
-import { SOLD_OUT_LABEL } from '@/lib/product';
+import { productPath, SOLD_OUT_LABEL } from '@/lib/product';
 import { placeholderStyle } from '@/components/photo-placeholder';
 import { mayHaveAlpha } from '@/lib/cloudinary';
 import { displayFace, labelFace } from '@/lib/typography';
 
 export interface CatalogItem {
   id: number;
+  slug: string | null;
   name: string;
   category: string;
   tag: string | null;
@@ -223,7 +224,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 <div className="min-w-0">
                   <p className={`${labelFace(item.category)} text-muted-foreground mb-1.5`}>{item.category}</p>
                   <h2 className="text-[15px] font-medium text-ink-body leading-snug group-hover:text-primary transition-colors">
-                    <Link href={`/shop/${item.id}`} className="card-link outline-none">
+                    <Link href={productPath(item)} className="card-link outline-none">
                       {item.name}
                     </Link>
                   </h2>
@@ -314,7 +315,7 @@ function FeaturedCard({
       <div className="max-w-md">
         <p className={`${labelFace(item.category)} text-muted-foreground`}>{item.category}</p>
         <h2 className={`mt-4 ${displayFace(item.name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors`}>
-          <Link href={`/shop/${item.id}`} className="card-link outline-none">
+          <Link href={productPath(item)} className="card-link outline-none">
             {item.name}
           </Link>
         </h2>

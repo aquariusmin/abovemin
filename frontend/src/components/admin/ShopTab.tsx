@@ -28,6 +28,9 @@ import {
   MAX_OPTIONS,
   MAX_RELATED,
   PRODUCT_ADDONS_MIGRATION,
+  PRODUCT_SLUG_MIGRATION,
+  MAX_SLUG,
+  isValidSlug,
   PRODUCT_STATUS_LABEL,
   PRODUCT_STATUSES,
   SHOP_READY_MIGRATION,
@@ -69,6 +72,7 @@ export default function ShopTab() {
   const [migrationPending, setMigrationPending] = useState(false);
   const [shopMigrationPending, setShopMigrationPending] = useState(false);
   const [addonsMigrationPending, setAddonsMigrationPending] = useState(false);
+  const [slugMigrationPending, setSlugMigrationPending] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [editing, setEditing] = useState<number | 'new' | null>(null);
@@ -94,12 +98,14 @@ export default function ShopTab() {
           migrationPending: boolean;
           shopMigrationPending?: boolean;
           addonsMigrationPending?: boolean;
+          slugMigrationPending?: boolean;
         }>('/api/admin/products');
         if (cancelled) return;
         setProducts(data.products);
         setMigrationPending(data.migrationPending);
         setShopMigrationPending(Boolean(data.shopMigrationPending));
         setAddonsMigrationPending(Boolean(data.addonsMigrationPending));
+        setSlugMigrationPending(Boolean(data.slugMigrationPending));
         setLoadError(null);
       } catch (e) {
         if (!cancelled) setLoadError(errorMessage(e, '상품을 불러오지 못했습니다.'));
@@ -150,6 +156,7 @@ export default function ShopTab() {
         <MigrationNotice feature="상품 상태(초안·품절)·여러 장 이미지·옵션·에디션" file={SHOP_READY_MIGRATION} />
       )}
       {addonsMigrationPending && <MigrationNotice feature="추가 상품·함께 구매" file={PRODUCT_ADDONS_MIGRATION} />}
+      {slugMigrationPending && <MigrationNotice feature="상품 주소(/shop/이름)" file={PRODUCT_SLUG_MIGRATION} />}
       {dialog}
       <StatusLine message={message} />
 
@@ -161,6 +168,7 @@ export default function ShopTab() {
           migrationPending={migrationPending}
           shopMigrationPending={shopMigrationPending}
           addonsMigrationPending={addonsMigrationPending}
+          slugMigrationPending={slugMigrationPending}
           onDirtyChange={setEditorDirty}
           onClose={() => void openEditor(null)}
           onSaved={text => {
@@ -232,6 +240,7 @@ function ProductEditor({
   migrationPending,
   shopMigrationPending,
   addonsMigrationPending,
+  slugMigrationPending,
   onDirtyChange,
   onClose,
   onSaved,
@@ -242,6 +251,8 @@ function ProductEditor({
   shopMigrationPending: boolean;
   /** `addons`·`related_ids` 컬럼이 아직 없다 — 두 칸을 잠근다. */
   addonsMigrationPending: boolean;
+  /** `slug` 컬럼이 아직 없다 — 주소 칸을 잠근다. */
+  slugMigrationPending: boolean;
   onDirtyChange: (dirty: boolean) => void;
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -363,6 +374,31 @@ function ProductEditor({
         <div className="sm:col-span-2">
           <label htmlFor={`${id}-name`} className={LABEL_CLASS}>상품명</label>
           <input id={`${id}-name`} className={INPUT_CLASS} value={draft.name} onChange={e => set('name', e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor={`${id}-slug`} className={LABEL_CLASS}>주소 (선택)</label>
+          <div className="flex items-center gap-1.5">
+            <span className="shrink-0 text-sm text-muted-foreground">abovemin.com/shop/</span>
+            <input
+              id={`${id}-slug`}
+              className={INPUT_CLASS}
+              value={draft.slug}
+              maxLength={MAX_SLUG}
+              disabled={slugMigrationPending}
+              aria-describedby={`${id}-slug-help`}
+              autoCapitalize="none"
+              spellCheck={false}
+              onChange={e => set('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+              placeholder={product ? String(product.id) : '2027-calendar'}
+            />
+          </div>
+          <p id={`${id}-slug-help`} className="mt-1 text-[12px] text-muted-foreground">
+            {slugMigrationPending
+              ? '마이그레이션을 적용하면 정할 수 있습니다. 지금은 숫자 주소를 씁니다.'
+              : draft.slug.trim() && !isValidSlug(draft.slug.trim())
+              ? '영문 소문자·숫자·하이픈만, 글자를 하나 이상 넣어 주세요.'
+              : '비우면 숫자 주소입니다. 숫자 주소는 언제나 이 주소로 넘어가지만, 공유한 뒤에 이 주소를 바꾸면 예전 주소는 끊깁니다.'}
+          </p>
         </div>
         <div>
           <label htmlFor={`${id}-status`} className={LABEL_CLASS}>상태</label>

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   availabilityProblem,
+  isValidSlug,
+  parseProductParam,
+  productPath,
   isAvailable,
   isListed,
   isAddonAvailable,
@@ -249,5 +252,28 @@ describe('relatedProducts()', () => {
 
   it('마이그레이션 전의 상품(related_ids 없음)은 빈 목록', () => {
     expect(relatedProducts(parseRelatedIds(undefined), catalog)).toEqual([]);
+  });
+});
+
+describe('상세 주소(slug)', () => {
+  it('영문 소문자·숫자·하이픈, 글자 하나 이상, 60자 이하', () => {
+    for (const ok of ['2027-calendar', 'calendar', 'a1', 'postcard-set-2']) expect(isValidSlug(ok)).toBe(true);
+    for (const bad of ['2027', '', '-calendar', 'calendar-', 'cal--endar', 'Calendar', '달력', 'cal endar', 'a'.repeat(61)]) {
+      expect(isValidSlug(bad)).toBe(false);
+    }
+  });
+
+  it('slug가 있으면 그 주소, 없으면 숫자 id', () => {
+    expect(productPath({ id: 1, slug: '2027-calendar' })).toBe('/shop/2027-calendar');
+    expect(productPath({ id: 1, slug: null })).toBe('/shop/1');
+    expect(productPath({ id: 7 })).toBe('/shop/7');
+  });
+
+  it('주소 조각: 숫자면 id, 형식에 맞으면 slug, 아니면 null', () => {
+    expect(parseProductParam('1')).toEqual({ id: 1 });
+    expect(parseProductParam('2027-calendar')).toEqual({ slug: '2027-calendar' });
+    expect(parseProductParam('0')).toBeNull();
+    expect(parseProductParam('../admin')).toBeNull();
+    expect(parseProductParam('Calendar')).toBeNull();
   });
 });

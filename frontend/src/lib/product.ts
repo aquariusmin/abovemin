@@ -193,3 +193,32 @@ export function syncedColumns(input: {
     in_stock: input.status === 'available',
   };
 }
+
+// ── 상세 주소(slug) ───────────────────────────────────────────────────────────
+export const PRODUCT_SLUG_MIGRATION = 'supabase/migrations/20261124000000_product_slug.sql';
+export const MAX_SLUG = 60;
+
+/** 마이그레이션의 `products_slug_format`과 같다. 글자가 하나는 있어야 한다 — 숫자만이면 id와 헷갈린다. */
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function isValidSlug(value: string): boolean {
+  return value.length <= MAX_SLUG && SLUG_RE.test(value) && /[a-z]/.test(value);
+}
+
+export function parseSlug(raw: unknown): string | null {
+  return typeof raw === 'string' && isValidSlug(raw) ? raw : null;
+}
+
+/** 상세 주소. slug가 없으면(정하지 않았거나 마이그레이션 전) 숫자 id. */
+export function productPath(product: { id: number; slug?: string | null }): string {
+  return `/shop/${product.slug ?? product.id}`;
+}
+
+/** `/shop/<param>`의 param: 숫자면 id, 아니면 slug. 어느 쪽도 아니면 null(404). */
+export function parseProductParam(param: string): { id: number } | { slug: string } | null {
+  if (/^\d+$/.test(param)) {
+    const id = Number(param);
+    return Number.isSafeInteger(id) && id > 0 ? { id } : null;
+  }
+  return isValidSlug(param) ? { slug: param } : null;
+}
