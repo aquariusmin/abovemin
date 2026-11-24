@@ -4,7 +4,8 @@ import { getProducts, getProductById } from '@/lib/supabase';
 import Reveal from '@/components/motion/Reveal';
 import ProductGallery from '@/components/shop/ProductGallery';
 import ProductPurchase from '@/components/shop/ProductPurchase';
-import { splitProductDescription } from '@/lib/product-specs';
+import { parseDescriptionSections, splitProductDescription } from '@/lib/product-specs';
+import { PackageSection, ProductDescriptionBody, sectionSlot } from '@/components/shop/ProductDescription';
 import RelatedProducts, { type RelatedItem } from '@/components/shop/RelatedProducts';
 import { cloudinaryAspect, cloudinaryOgImage, OG_HEIGHT, OG_WIDTH } from '@/lib/cloudinary';
 import { shareCard } from '@/lib/share-card';
@@ -56,7 +57,11 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   const state = publicState(product);
   const soldOut = state !== 'available';
-  const { story, specs } = splitProductDescription(product.description ?? '');
+  // `[제목]` 섹션이 있으면 긴 설명은 사진·구매 영역 아래로 내린다. 없으면 예전처럼 구매 영역 안에 둔다.
+  const sections = parseDescriptionSections(product.description ?? '');
+  const { story, specs } = sections ? { story: '', specs: [] } : splitProductDescription(product.description ?? '');
+  const packageSection = sections?.find(section => sectionSlot(section) === 'package');
+  const bodySections = sections?.filter(section => section !== packageSection) ?? [];
   const options = product.options ?? [];
   const range = priceRange(product);
   const images = parseImages(product.images, product.image_url);
@@ -148,6 +153,13 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             )}
           </div>
 
+          {packageSection && (
+            <>
+              <hr className="rule" />
+              <PackageSection section={packageSection} />
+            </>
+          )}
+
           <ProductPurchase
             product={{ id: product.id, name: product.name, price: product.price, image_url: images[0]?.url ?? product.image_url }}
             options={options}
@@ -173,8 +185,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 <div className="space-y-3">
                   <p className="eyebrow text-muted-foreground">Details</p>
                   <dl className="divide-y divide-hairline border-y border-hairline">
-                    {specs.map(spec => (
-                      <div key={spec.label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-3">
+                    {specs.map((spec, i) => (
+                      <div key={i} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-3">
                         <dt className="label-ko text-slate">{spec.label}</dt>
                         <dd className="text-[15px] text-ink-body tabular-nums">{spec.value}</dd>
                       </div>
@@ -212,6 +224,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           )}
         </Reveal>
       </section>
+
+      {bodySections.length > 0 && <ProductDescriptionBody sections={bodySections} />}
 
       {related.length > 0 && <RelatedProducts items={related} />}
     </main>
