@@ -8,6 +8,8 @@ import type { NewCartLine } from '@/lib/cart-lines';
 
 interface Props {
   line: NewCartLine | null;
+  /** 상품 줄의 수량. 추가 상품 수량은 `extras`가 따로 갖는다. */
+  quantity?: number;
   soldOut: boolean;
   describedBy?: string;
   /** 상품 줄과 한 번에 담긴다 — 추가 상품은 부모 줄 없이 장바구니에 들어가지 않는다(`lib/cart-lines.ts`). */
@@ -17,7 +19,7 @@ interface Props {
   directOrder?: boolean;
 }
 
-export default function AddToCartButton({ line, soldOut, describedBy, extras, onAdded, directOrder = false }: Props) {
+export default function AddToCartButton({ line, quantity = 1, soldOut, describedBy, extras, onAdded, directOrder = false }: Props) {
   // Selector, not the whole store: destructuring re-rendered every Add button on each cart change.
   const addItems = useCartStore(state => state.addItems);
   const clearCart = useCartStore(state => state.clearCart);
@@ -31,11 +33,11 @@ export default function AddToCartButton({ line, soldOut, describedBy, extras, on
     if (!line || soldOut) return;
     if (directOrder) {
       clearCart();
-      addItems([{ line }, ...(extras ?? [])]);
+      addItems([{ line, quantity }, ...(extras ?? [])]);
       router.push(`/cart/checkout?from=${line.id}`);
       return;
     }
-    addItems([{ line }, ...(extras ?? [])]);
+    addItems([{ line, quantity }, ...(extras ?? [])]);
     onAdded?.();
     setAdded(true);
     if (timerRef.current) clearTimeout(timerRef.current);
