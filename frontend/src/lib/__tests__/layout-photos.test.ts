@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumFacts, balanceColumns, featureIndices, photoRatio } from '@/lib/layout-photos';
+import { albumFacts, balanceColumns, balanceColumnsByHeight, featureIndices, photoRatio } from '@/lib/layout-photos';
 
 const ratio = (r: number) => ({ width: Math.round(r * 1000), height: 1000 });
 
@@ -71,5 +71,33 @@ describe('albumFacts', () => {
   it('한 해뿐이면 범위가 아니라 그 해다', () => {
     expect(albumFacts([{ year: 2025, location: null }]).years).toBe('2025');
     expect(albumFacts([]).years).toBeNull();
+  });
+});
+
+describe('balanceColumnsByHeight', () => {
+  // 홈 "최근 올라온 사진"에 실제로 있던 여덟 장의 비율.
+  const ratios = [0.75, 0.75, 4 / 3, 0.75, 1.5, 16 / 9, 2 / 3, 2 / 3];
+  const items = ratios.map((r, id) => ({ id, ...ratio(r) }));
+  const spread = (cols: (typeof items)[]) => {
+    const h = cols.map(col => col.reduce((sum, p) => sum + 1 / photoRatio(p) + 0.12, 0));
+    return Math.max(...h) - Math.min(...h);
+  };
+
+  it('순서대로 놓을 때보다 열 끝이 고르다', () => {
+    const tight = balanceColumnsByHeight(items, 4, photoRatio, 0.12);
+    expect(spread(tight)).toBeLessThan(spread(balanceColumns(items, 4, photoRatio, 0.12)));
+    expect(spread(tight)).toBeLessThan(0.7);
+  });
+
+  it('모든 사진을 한 번씩 놓고, 열 안은 원래 순서이며 첫 사진이 첫 열 맨 위다', () => {
+    const cols = balanceColumnsByHeight(items, 4, photoRatio, 0.12);
+    expect(cols.flat().map(p => p.id).toSorted((a, b) => a - b)).toEqual(items.map(p => p.id));
+    for (const col of cols) expect(col.map(p => p.id)).toEqual(col.map(p => p.id).toSorted((a, b) => a - b));
+    expect(cols[0][0].id).toBe(0);
+  });
+
+  it('사진이 열보다 적으면 빈 열이 뒤에 남는다', () => {
+    const cols = balanceColumnsByHeight(items.slice(0, 2), 4, photoRatio);
+    expect(cols.map(col => col.length)).toEqual([1, 1, 0, 0]);
   });
 });

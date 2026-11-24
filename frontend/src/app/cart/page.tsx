@@ -62,7 +62,7 @@ export default function CartPage() {
       <p className="eyebrow text-muted-foreground mb-4">Cart</p>
       <h1 ref={headingRef} tabIndex={-1} className="font-display-ko text-3xl md:text-4xl font-medium text-ink mb-8">장바구니가 비어 있습니다.</h1>
       <p className="text-[15px] text-slate max-w-sm mb-8 break-keep">
-        아직 담은 소품이 없어요. 자연에서 영감 받은 포스터와 라이프스타일 소품을 둘러보세요.
+        아직 담은 소품이 없습니다. 사진으로 만든 소품을 둘러보세요.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Link href="/shop" className="btn-primary">소품 보러 가기</Link>

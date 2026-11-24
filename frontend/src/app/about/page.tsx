@@ -18,7 +18,7 @@ const WHAT_I_DO = [
   { title: 'Archive', href: '/archive', action: '사진 보기',
     desc: '필름과 디지털로 담은 사진들을 앨범 단위로 정리합니다.' },
   { title: 'Shop', href: '/shop', action: '소품 보기',
-    desc: '자연에서 영감 받은 포스터, 문구, 라이프스타일 소품을 소개합니다.' },
+    desc: '사진으로 만든 달력과 엽서 같은 소품을 판매합니다.' },
   { title: 'Portfolio', href: '/portfolio', action: '프로젝트 보기',
     desc: '데이터 분석, 경제·재무 연구, 핀테크와 서비스 기획 사례를 의사결정 중심으로 정리합니다.' },
   { title: 'Lab', href: '/lab', action: '대시보드 보기', italic: true,

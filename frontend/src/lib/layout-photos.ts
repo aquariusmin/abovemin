@@ -26,6 +26,39 @@ export function balanceColumns<T>(
   return cols;
 }
 
+/**
+ * 몇 장 안 되는 사진을 열 높이가 고르게 나눈다. 순서대로 놓는 `balanceColumns`는 마지막 몇 장에서
+ * 열 끝이 크게 어긋난다(8장이면 한 열이 한 장만 갖기도 한다). 긴 사진부터 가장 짧은 열에 놓고,
+ * 열 안에서는 원래 순서(최신 위)를 지킨다.
+ */
+export function balanceColumnsByHeight<T>(
+  items: readonly T[],
+  columns: number,
+  ratioOf: (item: T) => number,
+  extra = 0,
+): T[][] {
+  const height = (item: T) => {
+    const ratio = ratioOf(item);
+    return (ratio > 0 ? 1 / ratio : 1 / FALLBACK_RATIO) + extra;
+  };
+  const cols: number[][] = Array.from({ length: Math.max(1, columns) }, () => []);
+  const heights = cols.map(() => 0);
+  const order = items.map((_, i) => i).toSorted((a, b) => height(items[b]) - height(items[a]) || a - b);
+  for (const i of order) {
+    let target = 0;
+    for (let c = 1; c < cols.length; c++) {
+      if (heights[c] < heights[target] - 1e-9) target = c;
+    }
+    cols[target].push(i);
+    heights[target] += height(items[i]);
+  }
+  // 첫 사진(가장 최신)이 있는 열이 왼쪽에 오도록, 열을 맨 위 사진의 순서로 놓는다.
+  return cols
+    .map(col => col.toSorted((a, b) => a - b))
+    .toSorted((a, b) => (a[0] ?? Infinity) - (b[0] ?? Infinity))
+    .map(col => col.map(i => items[i]));
+}
+
 // 가로 사진만 고른다 — 세로 사진을 전체 폭으로 펴면 화면보다 길어진다.
 export function featureIndices(
   photos: readonly { width?: number | null; height?: number | null }[],
