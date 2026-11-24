@@ -10,7 +10,7 @@ import { formatPriceRange } from '@/lib/price';
 import { SOLD_OUT_LABEL } from '@/lib/product';
 import { placeholderStyle } from '@/components/photo-placeholder';
 import { mayHaveAlpha } from '@/lib/cloudinary';
-import { labelFace } from '@/lib/typography';
+import { displayFace, labelFace } from '@/lib/typography';
 
 export interface CatalogItem {
   id: number;
@@ -161,8 +161,20 @@ export default function ShopCatalog({ products, loadError }: { products: Product
         <div className="max-w-[1400px] mx-auto py-20 text-center">
           <p className="text-lg text-ink-body">이 카테고리에는 아직 상품이 없습니다.</p>
         </div>
+      ) : filtered.length === 1 ? (
+        <FeaturedCard
+          item={filtered[0]}
+          showAdd={filtered[0].state === 'available' && !filtered[0].hasOptions && !directOrder}
+          added={addedId === filtered[0].id}
+          onAdd={() => handleAddToCart(filtered[0])}
+        />
       ) : (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8 max-w-[1400px] mx-auto">
+        // 두 개면 세 번째 열이 비어 보이니 두 열에서 멈춘다.
+        <div
+          className={`columns-1 sm:columns-2 gap-6 md:gap-8 space-y-6 md:space-y-8 mx-auto ${
+            filtered.length === 2 ? 'max-w-[960px]' : 'lg:columns-3 max-w-[1400px]'
+          }`}
+        >
           {filtered.map((item, i) => {
             const available = item.state === 'available';
             const cutout = mayHaveAlpha(item.image_url);
@@ -224,17 +236,7 @@ export default function ShopCatalog({ products, loadError }: { products: Product
                 </div>
 
                 {available && !item.hasOptions && !directOrder && (
-                <button
-                  onClick={() => handleAddToCart(item)}
-                  aria-label={`${item.name} 장바구니에 담기`}
-                  className={`relative z-10 shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                    addedId === item.id
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : 'border-border text-forest hover:border-primary hover:bg-moss-wash hover:-translate-y-0.5 active:translate-y-0'
-                  }`}
-                >
-                  {addedId === item.id ? '✓' : '+'}
-                </button>
+                  <AddButton name={item.name} added={addedId === item.id} onAdd={() => handleAddToCart(item)} />
                 )}
               </div>
             </RevealCard>
@@ -243,5 +245,88 @@ export default function ShopCatalog({ products, loadError }: { products: Product
         </div>
       )}
     </>
+  );
+}
+
+function AddButton({ name, added, onAdd }: { name: string; added: boolean; onAdd: () => void }) {
+  return (
+    <button
+      onClick={onAdd}
+      aria-label={`${name} 장바구니에 담기`}
+      className={`relative z-10 shrink-0 w-10 h-10 rounded-full border flex items-center justify-center text-base leading-none font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+        added
+          ? 'bg-primary border-primary text-primary-foreground'
+          : 'border-border text-forest hover:border-primary hover:bg-moss-wash hover:-translate-y-0.5 active:translate-y-0'
+      }`}
+    >
+      {added ? '✓' : '+'}
+    </button>
+  );
+}
+
+/**
+ * 상품이 하나뿐일 때. 세 열 그리드에 카드 하나를 두면 데스크톱에서 화면 대부분이 빈다 —
+ * 홈의 "새로 나온 소품"처럼 사진과 글을 나란히 크게 놓는다. 사진은 자르지 않는다.
+ */
+function FeaturedCard({
+  item,
+  showAdd,
+  added,
+  onAdd,
+}: {
+  item: Product;
+  showAdd: boolean;
+  added: boolean;
+  onAdd: () => void;
+}) {
+  const available = item.state === 'available';
+  const cutout = mayHaveAlpha(item.image_url);
+  return (
+    <RevealCard className="card-surface group max-w-[1400px] mx-auto grid items-center gap-8 md:grid-cols-2 md:gap-14 lg:gap-20 rounded-md has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring">
+      <div className="flex justify-center md:justify-end">
+        <div
+          className={cutout ? 'relative' : 'relative overflow-hidden rounded-lg border border-border-light bg-stone transition-colors duration-500 group-hover:border-primary'}
+          style={cutout ? undefined : placeholderStyle(item.image_url)}
+        >
+          {!available ? (
+            <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20 normal-case tracking-normal text-xs">
+              {SOLD_OUT_LABEL}
+            </span>
+          ) : item.tag ? (
+            <span className="badge-solid pointer-events-none absolute top-3 right-3 z-20">{item.tag}</span>
+          ) : null}
+          <Image
+            src={item.image_url}
+            alt={item.name}
+            width={0}
+            height={0}
+            // 칸 폭: 두 열 중 하나(max-w 1400, 간격 56/80px). 높이 상한이 걸리면 더 좁다.
+            sizes="(min-width: 1480px) 660px, (min-width: 768px) 45vw, calc(100vw - 40px)"
+            className="block h-auto w-auto max-w-full max-h-[min(36rem,70svh)] transition-transform duration-700 group-hover:scale-[1.01]"
+            style={item.aspect ? { aspectRatio: `auto ${item.aspect}` } : undefined}
+            draggable={false}
+            loading="eager"
+            fetchPriority="high"
+          />
+        </div>
+      </div>
+
+      <div className="max-w-md">
+        <p className={`${labelFace(item.category)} text-muted-foreground`}>{item.category}</p>
+        <h2 className={`mt-4 ${displayFace(item.name)} text-3xl md:text-4xl font-medium tracking-tight leading-[1.15] text-ink group-hover:text-primary transition-colors`}>
+          <Link href={`/shop/${item.id}`} className="card-link outline-none">
+            {item.name}
+          </Link>
+        </h2>
+        {item.edition && <p className="mt-2 text-[15px] text-slate">{item.edition}</p>}
+        <p className={`mt-4 text-lg tabular-nums ${available && item.priceMin > 0 ? 'font-medium text-ink-body' : 'text-muted-foreground'}`}>
+          {formatPriceRange({ min: item.priceMin, max: item.priceMax })}
+        </p>
+        <div className="mt-8 flex items-center gap-5">
+          <span className="link-underline text-sm text-ink">자세히 보기 →</span>
+          {showAdd && <AddButton name={item.name} added={added} onAdd={onAdd} />}
+        </div>
+      </div>
+    </RevealCard>
   );
 }

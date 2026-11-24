@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+// 없으면 탭 제목이 루트 기본값(홈 제목)으로 나간다.
+export const metadata: Metadata = {
+  title: '페이지를 찾을 수 없습니다',
+  robots: { index: false },
+};
 
 /**
  * 이 페이지가 **404 상태 코드와 함께** 나가려면 루트에 `loading.tsx`가 없어야
@@ -18,7 +25,7 @@ import Link from 'next/link';
  */
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-8 bg-canvas">
+    <main className="min-h-screen flex items-center justify-center px-8 bg-canvas">
       <div className="text-center space-y-7">
         <p className="eyebrow text-accent">404</p>
         <h1 className="font-display-ko text-3xl md:text-4xl font-medium text-ink break-keep">
@@ -30,6 +37,6 @@ export default function NotFound() {
           <Link href="/shop" className="btn-outline">샵</Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

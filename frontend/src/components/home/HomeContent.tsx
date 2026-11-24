@@ -8,7 +8,7 @@ import { monthDayLabel } from '@/lib/timeline';
 import FadeImage from '@/components/FadeImage';
 import { placeholderStyle, storedRatioStyle } from '@/components/photo-placeholder';
 import Reveal from '@/components/motion/Reveal';
-import { balanceColumns, photoRatio } from '@/lib/layout-photos';
+import { balanceColumnsByHeight, photoRatio } from '@/lib/layout-photos';
 import { displayFace } from '@/lib/typography';
 import Snowfall from './Snowfall';
 
@@ -72,7 +72,7 @@ export default function HomeContent({
   featured,
 }: HomeContentProps) {
   const hasShop = featured.length > 0;
-  const recentColumns = balanceColumns(recent, 4, photoRatio, 0.12);
+  const recentColumns = balanceColumnsByHeight(recent, 4, photoRatio, 0.12);
 
   // 서너 장 이하면 한 줄로 편다: `flex-grow`가 비율이라 높이가 같고 자르지 않는다. 줄 높이 상한.
   const MEMORY_ROW = 440;
@@ -182,7 +182,7 @@ export default function HomeContent({
               <Link href="/archive" className="btn-outline">사진 전체 보기</Link>
             </Reveal>
 
-            {/* 자르지 않는 masonry. CSS columns 대신 높이를 맞춰 미리 나눈 네 열(`balanceColumns`). */}
+            {/* 자르지 않는 masonry. CSS columns 대신 높이를 맞춰 미리 나눈 네 열(`balanceColumnsByHeight`). */}
             <div className="grid grid-cols-2 items-start gap-3 md:gap-5">
               {[0, 2].map(half => (
                 <div key={half} className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 md:gap-5">

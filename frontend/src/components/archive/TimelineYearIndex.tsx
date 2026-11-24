@@ -64,7 +64,7 @@ export default function TimelineYearIndex({ years }: { years: YearEntry[] }) {
             className="btn-outline gap-1.5 px-3.5 py-2 tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             {year.label}
-            <span className={current === year.anchor ? 'text-primary-foreground/70' : 'text-muted-foreground'}>{year.count}</span>
+            <span className={current === year.anchor ? 'text-primary-foreground/85' : 'text-muted-foreground'}>{year.count}</span>
           </a>
         </li>
       ))}
